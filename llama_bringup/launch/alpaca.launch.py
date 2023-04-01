@@ -16,12 +16,12 @@ def generate_launch_description():
                 os.path.join(llama_bringup_shared_dir, "launch", "llama.launch.py")),
             launch_arguments={
                 "n_threads": "4",
-                "n_predict": "256",
-                "repeat_last_n": "1",
+                "n_predict": "128",
+                "repeat_last_n": "8",
                 "n_ctx": "512",
-                "n_batch": "512",
+                "n_batch": "64",
                 "keep": "0",
-                "top_k": "256",
+                "top_k": "64",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/alpaca.bin"))),
                 "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
