@@ -32,14 +32,11 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
               {"top_k", 40},
           });
   this->declare_parameters<std::string>(
-      "",
-      {
-          {"model", std::string("/home/miguel/llama.cpp/models/alpaca/"
-                                "ggml-alpaca-7b-q4-ggjt.bin")},
-          {"prompt", "Below is an instruction that describes a task. Write a "
-                     "response that appropriately completes the request."},
-          {"input_prefix", ""},
-      });
+      "", {
+              {"model", std::string("models/lamma-7B/ggml-model.bin")},
+              {"prompt", ""},
+              {"input_prefix", ""},
+          });
   this->declare_parameters<float>("", {
                                           {"top_p", 0.95f},
                                           {"temp", 0.80f},
@@ -47,7 +44,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                       });
   this->declare_parameters<bool>("", {
                                          {"memory_f16", true},
-                                         {"instruct", true},
+                                         {"instruct", false},
                                          {"ignore_eos", false},
                                          {"use_mlock", false},
                                      });
