@@ -1,3 +1,5 @@
+
+import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
@@ -20,7 +22,7 @@ def generate_launch_description():
                          "n_keep": LaunchConfiguration("n_keep", default=0),
                          "top_k": LaunchConfiguration("top_k", default=40),
 
-                         "model": LaunchConfiguration("model", default="~/llama_models/lamma/ggml-model.bin"),
+                         "model": LaunchConfiguration("model", default=os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin")))),
                          "prompt": LaunchConfiguration("prompt", default=""),
                          "input_prefix": LaunchConfiguration("input_prefix", default=""),
 

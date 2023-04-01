@@ -1,3 +1,4 @@
+
 import os
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
@@ -22,7 +23,7 @@ def generate_launch_description():
                 "keep": "0",
                 "top_k": "256",
 
-                "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/ggml-alpaca-7b-q4-ggjt.bin"))),
+                "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/alpaca.bin"))),
                 "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
 
                 "temp": "0.8",
