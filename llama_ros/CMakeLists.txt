@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.8)
+project(llama_ros)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(llama_msgs REQUIRED)
+
+INCLUDE_DIRECTORIES(
+  include
+)
+
+set(LLAMA_NODE_SOURCES
+  src/ggml.c
+  src/llama.cpp
+  src/llama_node.cpp
+)
+add_executable(llama_node ${LLAMA_NODE_SOURCES})
+target_link_libraries(llama_node)
+ament_target_dependencies(llama_node rclcpp llama_msgs)
+
+# INSTALL
+install(TARGETS
+  llama_node
+  DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+ament_package()
