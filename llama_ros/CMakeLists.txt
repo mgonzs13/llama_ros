@@ -14,13 +14,10 @@ INCLUDE_DIRECTORIES(
   include
 )
 
-set(LLAMA_NODE_SOURCES
-  src/ggml.c
-  src/llama.cpp
-  src/llama_node.cpp
-)
-add_executable(llama_node ${LLAMA_NODE_SOURCES})
-target_link_libraries(llama_node)
+add_subdirectory(llama_cpp)
+
+add_executable(llama_node src/llama_node.cpp)
+target_link_libraries(llama_node llama)
 ament_target_dependencies(llama_node rclcpp llama_msgs)
 
 # INSTALL
