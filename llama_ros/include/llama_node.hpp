@@ -1,10 +1,8 @@
-
 #ifndef LLAMA_NODE_H
 #define LLAMA_NODE_H
 
-#include <memory>
-#include <random>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
 
 #include "llama.h"
 #include "llama_msgs/srv/gpt.hpp"
@@ -43,30 +41,26 @@ private:
   std::vector<std::string>
       antiprompt; // string upon seeing which more user input is prompted
 
-  bool memory_f16;  // use f16 instead of f32 for memory kv
-  bool interactive; // interactive mode
+  bool memory_f16; // use f16 instead of f32 for memory kv
+  bool instruct;   // instruction mode (used for Alpaca models)
+  bool ignore_eos; // do not stop generating after eos
+  bool use_mlock;  // use mlock to keep model in memory
 
-  bool interactive_start; // wait for user input immediately
-
-  bool instruct;       // instruction mode (used for Alpaca models)
-  bool ignore_eos;     // do not stop generating after eos
-  bool use_mlock;      // use mlock to keep model in memory
-  bool verbose_prompt; // print prompt tokens before generation
-
-  bool is_interacting = false;
   std::vector<llama_token> embd_inp;
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
   std::vector<llama_token> llama_token_newline;
+  std::vector<llama_token> last_n_tokens;
 
-  bool is_antiprompt = false;
-  bool input_noecho = false;
+  bool is_antiprompt;
+  bool input_noecho;
 
-  int n_past = 0;
-  int n_remain = this->n_predict;
-  int n_consumed = 0;
+  int n_past;
+  int n_remain;
+  int n_consumed;
 
   rclcpp::Service<llama_msgs::srv::GPT>::SharedPtr gpt_service;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr text_pub;
 
   std::vector<llama_token> llama_node_tokenize(struct llama_context *ctx,
                                                const std::string &text,
