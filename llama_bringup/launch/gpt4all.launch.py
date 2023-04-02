@@ -26,7 +26,7 @@ def generate_launch_description():
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/gpt4all.bin"))),
                 "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
 
-                "temp": "0.8",
+                "temp": "0.2",
 
                 "instruct": "True"
             }.items()

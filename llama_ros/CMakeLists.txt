@@ -25,4 +25,10 @@ install(TARGETS
   llama_node
   DESTINATION lib/${PROJECT_NAME})
 
+install(PROGRAMS
+  llama_ros/llama_client_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME llama_client_node
+)
+
 ament_package()
