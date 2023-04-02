@@ -66,7 +66,7 @@ private:
                                                const std::string &text,
                                                bool add_bos);
   void process_initial_prompt(std::string prompt);
-  std::string process_prompt();
+  std::string process_prompt(bool publish);
 };
 
 #endif

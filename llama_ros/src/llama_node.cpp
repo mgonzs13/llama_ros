@@ -103,8 +103,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
               this->n_threads, std::thread::hardware_concurrency(),
               llama_print_system_info());
 
-  this->process_initial_prompt(prompt);
-
   // prefix & suffix for instruct mode
   this->inp_pfx =
       this->llama_node_tokenize(this->ctx, "\n\n### Instruction:\n\n", true);
@@ -139,6 +137,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
       "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
       n_ctx, this->n_batch, this->n_predict, this->n_keep);
 
+  this->process_initial_prompt(prompt);
+
   // srv and pub
   this->text_pub =
       this->create_publisher<std_msgs::msg::String>("gpt_text", 10);
@@ -155,6 +155,7 @@ void LlamaNode::gpt_cb(
     std::shared_ptr<llama_msgs::srv::GPT::Response> response) {
 
   std::string buffer = request->prompt;
+  RCLCPP_INFO(this->get_logger(), "Prompt received");
 
   if (buffer.length() > 1) {
 
@@ -178,7 +179,7 @@ void LlamaNode::gpt_cb(
     this->n_remain -= line_inp.size();
   }
 
-  response->response = this->process_prompt();
+  response->response = this->process_prompt(true);
 }
 
 std::vector<llama_token>
@@ -216,10 +217,10 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
     this->n_keep = (int)this->embd_inp.size();
   }
 
-  this->process_prompt();
+  this->process_prompt(false);
 }
 
-std::string LlamaNode::process_prompt() {
+std::string LlamaNode::process_prompt(bool publish) {
 
   bool input_noecho = true;
 
@@ -313,7 +314,7 @@ std::string LlamaNode::process_prompt() {
     }
 
     // display text
-    if (!input_noecho) {
+    if (!input_noecho && publish) {
       for (auto id : embd) {
         std::string aux_s = llama_token_to_str(this->ctx, id);
 
