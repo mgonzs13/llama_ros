@@ -177,9 +177,9 @@ void LlamaNode::gpt_cb(
     }
 
     this->n_remain -= line_inp.size();
-  }
 
-  response->response = this->process_prompt(true);
+    response->response = this->process_prompt(true);
+  }
 }
 
 std::vector<llama_token>
@@ -217,7 +217,9 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
     this->n_keep = (int)this->embd_inp.size();
   }
 
-  this->process_prompt(false);
+  if (prompt.length() > 1) {
+    this->process_prompt(false);
+  }
 }
 
 std::string LlamaNode::process_prompt(bool publish) {
