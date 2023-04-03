@@ -22,7 +22,9 @@ class LlamaClientNode(Node):
         self.client.wait_for_service()
         req = GPT.Request()
         req.prompt = text
-        self.client.call_async(req)
+        future = self.client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        print("\n")
 
 
 def main():
@@ -33,7 +35,6 @@ def main():
     node.send_prompt("""Do you know the city of León from Spain?
 Can you tell me a bit about its history?""")
 
-    rclpy.spin(node)
     rclpy.shutdown()
 
 
