@@ -78,7 +78,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->get_parameter("reverse_prompt", this->antiprompt);
 
-  if (this->antiprompt.front().empty() && this->antiprompt.size() == 0) {
+  if (this->antiprompt.front().empty() && this->antiprompt.size() == 1) {
     this->antiprompt.clear();
   }
 
