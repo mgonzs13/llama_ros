@@ -23,15 +23,15 @@ def generate_launch_description():
                 "keep": "48",
                 "top_k": "64",
 
-                "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin"))),
+                "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/vicuna.bin"))),
                 "prompt": "",
-                "file": os.path.join(llama_bringup_shared_dir, "prompts/chat-with-bob.txt"),
+                "file": os.path.join(llama_bringup_shared_dir, "prompts/vicuna.txt"),
 
                 "temp": "0.8",
 
                 "instruct": "False",
 
-                "reverse_prompt": "['User:']"
+                "reverse_prompt": "['Human:']"
             }.items()
         )
     ])
