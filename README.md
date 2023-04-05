@@ -16,11 +16,11 @@ $ colcon build
 Download the models and place them in `~/llama_models`.
 
 ```shell
-$ ros2 launch llama_bringup alpaca.launch.py
+$ ros2 launch llama_bringup gpt4all.launch.py
 ```
 
 ```shell
-$ ros2 run llama_ros llama_client_node
+$ ros2 run llama_ros llama_client_node --ros-args -p prompt:="your prompt"
 ```
 
 https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4
