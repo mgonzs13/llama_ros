@@ -50,6 +50,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"ignore_eos", false},
                                          {"use_mlock", false},
                                      });
+  this->declare_parameter<std::vector<std::string>>("reverse_prompt",
+                                                    std::vector<std::string>());
 
   this->get_parameter("seed", this->seed);
   this->get_parameter("n_threads", this->n_threads);
@@ -73,6 +75,12 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("instruct", this->instruct);
   this->get_parameter("ignore_eos", this->ignore_eos);
   this->get_parameter("use_mlock", this->use_mlock);
+
+  this->get_parameter("reverse_prompt", this->antiprompt);
+
+  if (this->antiprompt.front().empty() && this->antiprompt.size() == 0) {
+    this->antiprompt.clear();
+  }
 
   if (this->n_ctx > 2048) {
     RCLCPP_WARN(this->get_logger(),
@@ -159,6 +167,10 @@ void LlamaNode::gpt_cb(
 
   if (buffer.length() > 1) {
 
+    if (this->input_prefix.empty()) {
+      buffer += this->input_prefix;
+    }
+
     // instruct mode: insert instruction prefix
     if (this->instruct && !this->is_antiprompt) {
       this->n_consumed = this->embd_inp.size();
@@ -203,14 +215,6 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   // tokenize the prompt
   this->embd_inp = this->llama_node_tokenize(this->ctx, prompt, true);
 
-  if ((int)this->embd_inp.size() > this->n_ctx - 4) {
-    RCLCPP_ERROR(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
-                 (int)this->embd_inp.size(), this->n_ctx - 4);
-    throw LlamaException("Prompt is too long (" +
-                         std::to_string((int)this->embd_inp.size()) +
-                         " tokens, max " + std::to_string(this->n_ctx) + ")");
-  }
-
   // number of tokens to keep when resetting context
   if (this->n_keep < 0 || this->n_keep > (int)this->embd_inp.size() ||
       this->instruct) {
@@ -223,6 +227,14 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
 }
 
 std::string LlamaNode::process_prompt(bool publish) {
+
+  if ((int)this->embd_inp.size() > this->n_ctx - 4) {
+    RCLCPP_ERROR(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
+                 (int)this->embd_inp.size(), this->n_ctx - 4);
+    throw LlamaException("Prompt is too long (" +
+                         std::to_string((int)this->embd_inp.size()) +
+                         " tokens, max " + std::to_string(this->n_ctx) + ")");
+  }
 
   bool input_noecho = true;
 
@@ -329,8 +341,8 @@ std::string LlamaNode::process_prompt(bool publish) {
       }
     }
 
-    // when not currently processing queued inputs
-    // check if we should end
+    // when not currently processing queued
+    // inputs check if we should end
     if ((int)this->embd_inp.size() <= this->n_consumed) {
 
       // check for reverse prompt
@@ -341,8 +353,9 @@ std::string LlamaNode::process_prompt(bool publish) {
         }
 
         this->is_antiprompt = false;
-        // check if each of the reverse prompts appears at the end of the
-        // output.
+
+        // check if each of the reverse prompts
+        // appears at the end of the output.
         bool aux = false;
         for (std::string &a : this->antiprompt) {
           if (last_output.find(a.c_str(), last_output.length() - a.length(),
@@ -363,8 +376,7 @@ std::string LlamaNode::process_prompt(bool publish) {
       break;
     }
 
-    // respect the maximum number of tokens and drop back
-    // to user input when reached.
+    // respect the maximum number of tokens
     if (this->n_remain <= 0 && this->n_predict != -1) {
       this->n_remain = this->n_predict;
     }

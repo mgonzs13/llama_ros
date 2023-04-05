@@ -30,8 +30,8 @@ class LlamaClientNode(Node):
 def main():
 
     rclpy.init()
-    node = LlamaClientNode()
 
+    node = LlamaClientNode()
     node.send_prompt("""Do you know the city of León from Spain?
 Can you tell me a bit about its history?""")
 
