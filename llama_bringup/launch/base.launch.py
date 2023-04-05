@@ -3,6 +3,7 @@ import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -25,6 +26,7 @@ def generate_launch_description():
 
                 "model": LaunchConfiguration("model", default=os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin")))),
                 "prompt": LaunchConfiguration("prompt", default=""),
+                "file": LaunchConfiguration("file", default=""),
                 "input_prefix": LaunchConfiguration("input_prefix", default=""),
 
                 "top_p": LaunchConfiguration("top_p", default=0.95),

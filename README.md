@@ -11,13 +11,9 @@ $ cd ~/ros2_ws
 $ colcon build
 ```
 
-## Usage
+## Demo
 
-Download the models, place them in `~/llama_models` and rename the models as follow:
-
-- `llama`: `llama.bin`
-- `alpaca`: `alpaca.bin`
-- `gpt4all`: `gpt4all.bin`
+Download the models and place them in `~/llama_models`.
 
 ```shell
 $ ros2 launch llama_bringup alpaca.launch.py

@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <memory>
 #include <signal.h>
 #include <string>
@@ -17,7 +18,8 @@ using std::placeholders::_2;
 
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
-  std::string prompt;
+  std::string prompt = "";
+  std::string file_path;
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>(
@@ -37,6 +39,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
       "", {
               {"model", std::string("models/lamma-7B/ggml-model.bin")},
               {"prompt", ""},
+              {"file", ""},
               {"input_prefix", ""},
           });
   this->declare_parameters<float>("", {
@@ -65,6 +68,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->get_parameter("model", this->model);
   this->get_parameter("prompt", prompt);
+  this->get_parameter("file", file_path);
   this->get_parameter("input_prefix", this->input_prefix);
 
   this->get_parameter("temp", this->temp);
@@ -87,6 +91,20 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                 "Model does not support context sizes greater than 2048 tokens "
                 "(%d specified); expect poor results",
                 this->n_ctx);
+  }
+
+  // load prompt from file
+  if (!file_path.empty()) {
+    std::ifstream file(file_path.c_str());
+    if (!file) {
+      LlamaException("Failed to open file " + file_path);
+    }
+
+    std::copy(std::istreambuf_iterator<char>(file),
+              std::istreambuf_iterator<char>(), back_inserter(prompt));
+    if (prompt.back() == '\n') {
+      prompt.pop_back();
+    }
   }
 
   // load the model
@@ -237,42 +255,40 @@ std::string LlamaNode::process_prompt(bool publish) {
   }
 
   bool input_noecho = true;
-
-  std::vector<llama_token> embd;
   std::string result;
 
   while (this->n_remain != 0) {
 
     // predict
-    if (embd.size() > 0) {
+    if (this->embd.size() > 0) {
       // infinite text generation via context swapping
       // if we run out of context:
       // - take the n_keep first tokens from the original prompt (via n_past)
       // - take half of the last (n_ctx - n_keep) tokens and recompute the
       // logits in a batch
-      if (this->n_past + (int)embd.size() > this->n_ctx) {
+      if (this->n_past + (int)this->embd.size() > this->n_ctx) {
 
         const int n_left = this->n_past - this->n_keep;
         this->n_past = this->n_keep;
 
-        // insert n_left/2 tokens at the start of embd from last_n_tokens
-        embd.insert(embd.begin(),
-                    this->last_n_tokens.begin() + this->n_ctx - n_left / 2 -
-                        embd.size(),
-                    this->last_n_tokens.end() - embd.size());
+        // insert n_left/2 tokens at the start of this->embd from last_n_tokens
+        this->embd.insert(this->embd.begin(),
+                          this->last_n_tokens.begin() + this->n_ctx -
+                              n_left / 2 - this->embd.size(),
+                          this->last_n_tokens.end() - this->embd.size());
       }
 
-      if (llama_eval(this->ctx, embd.data(), embd.size(), this->n_past,
-                     this->n_threads)) {
+      if (llama_eval(this->ctx, this->embd.data(), this->embd.size(),
+                     this->n_past, this->n_threads)) {
         RCLCPP_ERROR(this->get_logger(), "Failed to eval");
         throw LlamaException("Failed to eval");
       }
     }
 
-    this->n_past += embd.size();
-    embd.clear();
+    this->n_past += this->embd.size();
+    this->embd.clear();
 
-    if ((int)embd_inp.size() <= this->n_consumed) {
+    if ((int)this->embd_inp.size() <= this->n_consumed) {
       // out of user input, sample next token
 
       llama_token id = 0;
@@ -306,7 +322,7 @@ std::string LlamaNode::process_prompt(bool publish) {
       }
 
       // add it to the context
-      embd.push_back(id);
+      this->embd.push_back(id);
 
       // echo this to console
       input_noecho = false;
@@ -317,11 +333,11 @@ std::string LlamaNode::process_prompt(bool publish) {
     } else {
       // some user input remains from prompt, forward it to processing
       while ((int)this->embd_inp.size() > this->n_consumed) {
-        embd.push_back(this->embd_inp[this->n_consumed]);
+        this->embd.push_back(this->embd_inp[this->n_consumed]);
         this->last_n_tokens.erase(this->last_n_tokens.begin());
         this->last_n_tokens.push_back(this->embd_inp[this->n_consumed]);
         ++this->n_consumed;
-        if ((int)embd.size() >= this->n_batch) {
+        if ((int)this->embd.size() >= this->n_batch) {
           break;
         }
       }
@@ -329,7 +345,7 @@ std::string LlamaNode::process_prompt(bool publish) {
 
     // display text
     if (!input_noecho && publish) {
-      for (auto id : embd) {
+      for (auto id : this->embd) {
         std::string aux_s = llama_token_to_str(this->ctx, id);
 
         result.append(aux_s);
@@ -372,13 +388,14 @@ std::string LlamaNode::process_prompt(bool publish) {
       }
     }
 
-    if (embd.back() == llama_token_eos()) {
+    if (this->embd.back() == llama_token_eos()) {
       break;
     }
 
     // respect the maximum number of tokens
     if (this->n_remain <= 0 && this->n_predict != -1) {
       this->n_remain = this->n_predict;
+      break;
     }
   }
 

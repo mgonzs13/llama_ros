@@ -51,6 +51,7 @@ private:
   std::vector<llama_token> inp_sfx;
   std::vector<llama_token> llama_token_newline;
   std::vector<llama_token> last_n_tokens;
+  std::vector<llama_token> embd;
 
   bool is_antiprompt;
   bool input_noecho;
