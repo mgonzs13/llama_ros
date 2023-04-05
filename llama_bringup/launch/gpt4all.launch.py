@@ -13,7 +13,7 @@ def generate_launch_description():
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(llama_bringup_shared_dir, "launch", "llama.launch.py")),
+                os.path.join(llama_bringup_shared_dir, "launch", "base.launch.py")),
             launch_arguments={
                 "n_threads": "4",
                 "n_predict": "128",

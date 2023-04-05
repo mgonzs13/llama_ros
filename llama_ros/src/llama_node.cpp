@@ -163,12 +163,12 @@ void LlamaNode::gpt_cb(
     std::shared_ptr<llama_msgs::srv::GPT::Response> response) {
 
   std::string buffer = request->prompt;
-  RCLCPP_INFO(this->get_logger(), "Prompt received");
+  RCLCPP_INFO(this->get_logger(), "Prompt received: %s", buffer.c_str());
 
   if (buffer.length() > 1) {
 
     if (this->input_prefix.empty()) {
-      buffer += this->input_prefix;
+      buffer = this->input_prefix + buffer;
     }
 
     // instruct mode: insert instruction prefix
