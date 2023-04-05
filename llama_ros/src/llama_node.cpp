@@ -137,7 +137,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   // in instruct mode, we inject a prefix and a suffix to each input by the user
   if (this->instruct) {
-    this->antiprompt.push_back("### Instruction:\n\n");
+    this->antiprompt.push_back("### Instruction:");
   }
 
   // determine newline token

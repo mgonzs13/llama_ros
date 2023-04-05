@@ -16,10 +16,10 @@ def generate_launch_description():
                 os.path.join(llama_bringup_shared_dir, "launch", "base.launch.py")),
             launch_arguments={
                 "n_threads": "4",
-                "n_predict": "128",
+                "n_predict": "512",
                 "repeat_last_n": "8",
                 "n_ctx": "512",
-                "n_batch": "64",
+                "n_batch": "512",
                 "keep": "0",
                 "top_k": "64",
 
