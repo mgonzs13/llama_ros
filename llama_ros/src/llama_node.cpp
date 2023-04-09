@@ -357,17 +357,15 @@ std::string LlamaNode::process_prompt(bool publish) {
 
         // check if each of the reverse prompts
         // appears at the end of the output.
-        bool aux = false;
         for (std::string &a : this->antiprompt) {
           if (last_output.find(a.c_str(), last_output.length() - a.length(),
                                a.length()) != std::string::npos) {
             this->is_antiprompt = true;
-            aux = true;
             break;
           }
         }
 
-        if (aux) {
+        if (this->is_antiprompt) {
           break;
         }
       }
