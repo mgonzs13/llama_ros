@@ -1,11 +1,13 @@
-#ifndef LLAMA_NODE_H
-#define LLAMA_NODE_H
+#ifndef LLAMA_NODE_HPP
+#define LLAMA_NODE_HPP
 
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 
 #include "llama.h"
 #include "llama_msgs/srv/gpt.hpp"
+
+namespace llama_ros {
 
 class LlamaNode : public rclcpp::Node {
 public:
@@ -63,11 +65,11 @@ private:
   rclcpp::Service<llama_msgs::srv::GPT>::SharedPtr gpt_service;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr text_pub;
 
-  std::vector<llama_token> llama_node_tokenize(struct llama_context *ctx,
-                                               const std::string &text,
-                                               bool add_bos);
+  std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
   void process_initial_prompt(std::string prompt);
   std::string process_prompt(bool publish);
 };
+
+} // namespace llama_ros
 
 #endif

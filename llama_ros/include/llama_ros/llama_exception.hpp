@@ -1,4 +1,11 @@
+
+
+#ifndef LLAMA_EXCEPTION_HPP
+#define LLAMA_EXCEPTION_HPP
+
 #include <iostream>
+
+namespace llama_ros {
 
 class LlamaException : public std::exception {
 public:
@@ -8,3 +15,6 @@ public:
 private:
   std::string message;
 };
+} // namespace llama_ros
+
+#endif

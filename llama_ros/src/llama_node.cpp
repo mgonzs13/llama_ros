@@ -10,9 +10,10 @@
 #include <std_msgs/msg/string.hpp>
 
 #include "llama.h"
-#include "llama_exception.hpp"
-#include "llama_node.hpp"
+#include "llama_ros/llama_exception.hpp"
+#include "llama_ros/llama_node.hpp"
 
+using namespace llama_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -130,10 +131,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
               llama_print_system_info());
 
   // prefix & suffix for instruct mode
-  this->inp_pfx =
-      this->llama_node_tokenize(this->ctx, "\n\n### Instruction:\n\n", true);
-  this->inp_sfx =
-      this->llama_node_tokenize(this->ctx, "\n\n### Response:\n\n", false);
+  this->inp_pfx = this->tokenize("\n\n### Instruction:\n\n", true);
+  this->inp_sfx = this->tokenize("\n\n### Response:\n\n", false);
 
   // in instruct mode, we inject a prefix and a suffix to each input by the user
   if (this->instruct) {
@@ -141,7 +140,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   }
 
   // determine newline token
-  this->llama_token_newline = this->llama_node_tokenize(ctx, "\n", false);
+  this->llama_token_newline = this->tokenize("\n", false);
 
   // TODO: replace with ring-buffer
   this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
@@ -196,7 +195,7 @@ void LlamaNode::gpt_cb(
                             this->inp_pfx.end());
     }
 
-    auto line_inp = this->llama_node_tokenize(this->ctx, buffer, false);
+    auto line_inp = this->tokenize(buffer, false);
     this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
                           line_inp.end());
 
@@ -212,12 +211,12 @@ void LlamaNode::gpt_cb(
   }
 }
 
-std::vector<llama_token>
-LlamaNode::llama_node_tokenize(struct llama_context *ctx,
-                               const std::string &text, bool add_bos) {
+std::vector<llama_token> LlamaNode::tokenize(const std::string &text,
+                                             bool add_bos) {
   // initialize to prompt numer of chars, since n_tokens <= n_prompt_chars
   std::vector<llama_token> res(text.size() + (int)add_bos);
-  int n = llama_tokenize(ctx, text.c_str(), res.data(), res.size(), add_bos);
+  int n =
+      llama_tokenize(this->ctx, text.c_str(), res.data(), res.size(), add_bos);
   assert(n >= 0);
   res.resize(n);
 
@@ -231,7 +230,7 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   prompt.insert(0, 1, ' ');
 
   // tokenize the prompt
-  this->embd_inp = this->llama_node_tokenize(this->ctx, prompt, true);
+  this->embd_inp = this->tokenize(prompt, true);
 
   // number of tokens to keep when resetting context
   if (this->n_keep < 0 || this->n_keep > (int)this->embd_inp.size() ||
@@ -271,7 +270,7 @@ std::string LlamaNode::process_prompt(bool publish) {
         const int n_left = this->n_past - this->n_keep;
         this->n_past = this->n_keep;
 
-        // insert n_left/2 tokens at the start of this->embd from last_n_tokens
+        // insert n_left/2 tokens at the start of embd from last_n_tokens
         this->embd.insert(this->embd.begin(),
                           this->last_n_tokens.begin() + this->n_ctx -
                               n_left / 2 - this->embd.size(),
@@ -315,7 +314,7 @@ std::string LlamaNode::process_prompt(bool publish) {
         if (this->antiprompt.size() != 0) {
           // tokenize and inject first reverse prompt
           const auto first_antiprompt =
-              this->llama_node_tokenize(ctx, this->antiprompt.front(), false);
+              this->tokenize(this->antiprompt.front(), false);
           this->embd_inp.insert(this->embd_inp.end(), first_antiprompt.begin(),
                                 first_antiprompt.end());
         }
@@ -328,7 +327,7 @@ std::string LlamaNode::process_prompt(bool publish) {
       input_noecho = false;
 
       // decrement remaining sampling budget
-      --n_remain;
+      --this->n_remain;
 
     } else {
       // some user input remains from prompt, forward it to processing
@@ -340,20 +339,6 @@ std::string LlamaNode::process_prompt(bool publish) {
         if ((int)this->embd.size() >= this->n_batch) {
           break;
         }
-      }
-    }
-
-    // display text
-    if (!input_noecho && publish) {
-      for (auto id : this->embd) {
-        std::string aux_s = llama_token_to_str(this->ctx, id);
-
-        result.append(aux_s);
-        RCLCPP_INFO(this->get_logger(), "Generating text...");
-
-        std_msgs::msg::String msg;
-        msg.data = aux_s;
-        this->text_pub->publish(msg);
       }
     }
 
@@ -390,6 +375,20 @@ std::string LlamaNode::process_prompt(bool publish) {
 
     if (this->embd.back() == llama_token_eos()) {
       break;
+    }
+
+    // display text
+    if (!input_noecho && publish) {
+      for (auto id : this->embd) {
+        std::string aux_s = llama_token_to_str(this->ctx, id);
+
+        result.append(aux_s);
+        RCLCPP_INFO(this->get_logger(), "Generating text...");
+
+        std_msgs::msg::String msg;
+        msg.data = aux_s;
+        this->text_pub->publish(msg);
+      }
     }
 
     // respect the maximum number of tokens
