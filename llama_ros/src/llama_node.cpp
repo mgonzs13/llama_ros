@@ -114,6 +114,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   lparams.n_parts = this->n_parts;
   lparams.seed = this->seed;
   lparams.f16_kv = this->memory_f16;
+  lparams.use_mmap = true;
   lparams.use_mlock = this->use_mlock;
 
   this->ctx = llama_init_from_file(this->model.c_str(), lparams);
