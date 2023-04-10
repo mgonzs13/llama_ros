@@ -10,7 +10,6 @@
 #include <std_msgs/msg/string.hpp>
 
 #include "llama.h"
-#include "llama_ros/llama_exception.hpp"
 #include "llama_ros/llama_node.hpp"
 
 using namespace llama_ros;
@@ -21,21 +20,21 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   std::string prompt = "";
   std::string file_path;
+  std::string model;
+  auto lparams = llama_context_default_params();
 
   // node params from llama.cpp common.h
-  this->declare_parameters<int32_t>(
-      "", {
-              {"seed", -1},
-              {"n_threads",
-               std::min(4, (int32_t)std::thread::hardware_concurrency())},
-              {"n_predict", 128},
-              {"repeat_last_n", 64},
-              {"n_parts", -1},
-              {"n_ctx", 512},
-              {"n_batch", 8},
-              {"n_keep", 0},
-              {"top_k", 40},
-          });
+  this->declare_parameters<int32_t>("", {
+                                            {"seed", -1},
+                                            {"n_threads", 1},
+                                            {"n_predict", 128},
+                                            {"repeat_last_n", 64},
+                                            {"n_parts", -1},
+                                            {"n_ctx", 512},
+                                            {"n_batch", 8},
+                                            {"n_keep", 0},
+                                            {"top_k", 40},
+                                        });
   this->declare_parameters<std::string>(
       "", {
               {"model", std::string("models/lamma-7B/ggml-model.bin")},
@@ -50,37 +49,36 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                       });
   this->declare_parameters<bool>("", {
                                          {"memory_f16", true},
+                                         {"use_mmap", true},
                                          {"instruct", false},
-                                         {"ignore_eos", false},
                                          {"use_mlock", false},
                                      });
   this->declare_parameter<std::vector<std::string>>("reverse_prompt",
                                                     std::vector<std::string>());
 
-  this->get_parameter("seed", this->seed);
+  this->get_parameter("seed", lparams.seed);
+  this->get_parameter("n_parts", lparams.n_parts);
+  this->get_parameter("n_ctx", lparams.n_ctx);
+  this->get_parameter("memory_f16", lparams.f16_kv);
+  this->get_parameter("use_mmap", lparams.use_mmap);
+  this->get_parameter("use_mlock", lparams.use_mlock);
+
   this->get_parameter("n_threads", this->n_threads);
   this->get_parameter("n_predict", this->n_predict);
   this->get_parameter("repeat_last_n", this->repeat_last_n);
-  this->get_parameter("n_parts", this->n_parts);
-  this->get_parameter("n_ctx", this->n_ctx);
   this->get_parameter("n_batch", this->n_batch);
   this->get_parameter("n_keep", this->n_keep);
   this->get_parameter("top_k", this->top_k);
-
-  this->get_parameter("model", this->model);
-  this->get_parameter("prompt", prompt);
-  this->get_parameter("file", file_path);
-  this->get_parameter("input_prefix", this->input_prefix);
-
   this->get_parameter("temp", this->temp);
   this->get_parameter("top_p", this->top_p);
   this->get_parameter("repeat_penalty", this->repeat_penalty);
 
-  this->get_parameter("memory_f16", this->memory_f16);
-  this->get_parameter("instruct", this->instruct);
-  this->get_parameter("ignore_eos", this->ignore_eos);
-  this->get_parameter("use_mlock", this->use_mlock);
+  this->get_parameter("model", model);
+  this->get_parameter("prompt", prompt);
+  this->get_parameter("file", file_path);
+  this->get_parameter("input_prefix", this->input_prefix);
 
+  this->get_parameter("instruct", this->instruct);
   this->get_parameter("reverse_prompt", this->antiprompt);
 
   if (this->antiprompt.front().empty() && this->antiprompt.size() == 1) {
@@ -98,7 +96,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   if (!file_path.empty()) {
     std::ifstream file(file_path.c_str());
     if (!file) {
-      LlamaException("Failed to open file " + file_path);
+      RCLCPP_ERROR(this->get_logger(), "Failed to open file %s",
+                   file_path.c_str());
     }
 
     std::copy(std::istreambuf_iterator<char>(file),
@@ -109,21 +108,12 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   }
 
   // load the model
-  auto lparams = llama_context_default_params();
-  lparams.n_ctx = this->n_ctx;
-  lparams.n_parts = this->n_parts;
-  lparams.seed = this->seed;
-  lparams.f16_kv = this->memory_f16;
-  lparams.use_mmap = true;
-  lparams.use_mlock = this->use_mlock;
-
-  this->ctx = llama_init_from_file(this->model.c_str(), lparams);
+  this->ctx = llama_init_from_file(model.c_str(), lparams);
   this->n_ctx = llama_n_ctx(this->ctx);
 
   if (this->ctx == NULL) {
     RCLCPP_ERROR(this->get_logger(), "Failed to load model '%s'",
-                 this->model.c_str());
-    throw LlamaException("Failed to load model " + this->model);
+                 model.c_str());
   }
 
   // show system information
@@ -249,9 +239,6 @@ std::string LlamaNode::process_prompt(bool publish) {
   if ((int)this->embd_inp.size() > this->n_ctx - 4) {
     RCLCPP_ERROR(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
                  (int)this->embd_inp.size(), this->n_ctx - 4);
-    throw LlamaException("Prompt is too long (" +
-                         std::to_string((int)this->embd_inp.size()) +
-                         " tokens, max " + std::to_string(this->n_ctx) + ")");
   }
 
   bool input_noecho = true;
@@ -281,7 +268,6 @@ std::string LlamaNode::process_prompt(bool publish) {
       if (llama_eval(this->ctx, this->embd.data(), this->embd.size(),
                      this->n_past, this->n_threads)) {
         RCLCPP_ERROR(this->get_logger(), "Failed to eval");
-        throw LlamaException("Failed to eval");
       }
     }
 
@@ -294,12 +280,6 @@ std::string LlamaNode::process_prompt(bool publish) {
       llama_token id = 0;
 
       {
-        auto logits = llama_get_logits(this->ctx);
-
-        if (this->ignore_eos) {
-          logits[llama_token_eos()] = 0;
-        }
-
         id = llama_sample_top_p_top_k(
             this->ctx, this->last_n_tokens.data() + n_ctx - this->repeat_last_n,
             this->repeat_last_n, this->top_k, this->top_p, this->temp,

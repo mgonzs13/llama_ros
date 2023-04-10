@@ -21,15 +21,12 @@ protected:
   llama_context *ctx;
 
 private:
-  int32_t seed; // RNG seed
   int32_t n_threads;
   int32_t n_predict;     // new tokens to predict
   int32_t repeat_last_n; // last n tokens to penalize
-  int32_t
-      n_parts;   // amount of model parts (-1 = determine from model dimensions)
-  int32_t n_ctx; // context size
-  int32_t n_batch; // batch size for prompt processing
-  int32_t n_keep;  // number of tokens to keep from initial prompt
+  int32_t n_ctx;         // context size
+  int32_t n_batch;       // batch size for prompt processing
+  int32_t n_keep;        // number of tokens to keep from initial prompt
 
   // sampling parameters
   int32_t top_k;
@@ -37,16 +34,11 @@ private:
   float temp;
   float repeat_penalty;
 
-  std::string model;        // model path
   std::string input_prefix; // string to prefix user inputs with
 
   std::vector<std::string>
       antiprompt; // string upon seeing which more user input is prompted
-
-  bool memory_f16; // use f16 instead of f32 for memory kv
-  bool instruct;   // instruction mode (used for Alpaca models)
-  bool ignore_eos; // do not stop generating after eos
-  bool use_mlock;  // use mlock to keep model in memory
+  bool instruct;  // instruction mode (used for Alpaca models)
 
   std::vector<llama_token> embd_inp;
   std::vector<llama_token> inp_pfx;
