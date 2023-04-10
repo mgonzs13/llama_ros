@@ -13,6 +13,7 @@
   <test_depend>ament_lint_common</test_depend>
 
   <depend>llama_msgs</depend>
+  <depend>std_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

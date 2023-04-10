@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(llama_msgs REQUIRED)
 
 INCLUDE_DIRECTORIES(
@@ -18,7 +19,7 @@ add_subdirectory(llama_cpp)
 
 add_executable(llama_node src/llama_node.cpp)
 target_link_libraries(llama_node llama)
-ament_target_dependencies(llama_node rclcpp llama_msgs)
+ament_target_dependencies(llama_node rclcpp std_msgs llama_msgs)
 
 # INSTALL
 install(TARGETS
