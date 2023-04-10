@@ -12,7 +12,7 @@ class LlamaClientNode(Node):
         super().__init__("llama_client_node")
 
         self.declare_parameter(
-            "prompt", "Do you know the city of León from Spain?\nCan you tell me a bit about its history?\n")
+            "prompt", "Do you know the city of León from Spain?\nCan you tell me a bit about its history?")
         self.prompt = self.get_parameter(
             "prompt").get_parameter_value().string_value
         self.prompt = self.prompt.replace("\\n", "\n")
@@ -30,7 +30,6 @@ class LlamaClientNode(Node):
         req.prompt = self.prompt
         future = self.client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
-        print("\n")
 
 
 def main():

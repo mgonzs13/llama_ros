@@ -14,8 +14,8 @@ public:
   LlamaNode();
   ~LlamaNode();
 
-  void gpt_cb(const std::shared_ptr<llama_msgs::srv::GPT::Request> request,
-              std::shared_ptr<llama_msgs::srv::GPT::Response> response);
+  std::string detokenize(std::vector<llama_token> tokens);
+  std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
 
 protected:
   llama_context *ctx;
@@ -34,32 +34,31 @@ private:
   float temp;
   float repeat_penalty;
 
-  std::string input_prefix; // string to prefix user inputs with
-
-  std::vector<std::string>
-      antiprompt; // string upon seeing which more user input is prompted
-  bool instruct;  // instruction mode (used for Alpaca models)
-
-  std::vector<llama_token> embd_inp;
+  // prefix, suffix, stop
+  std::string stop;
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
-  std::vector<llama_token> llama_token_newline;
+
+  // aux
   std::vector<llama_token> last_n_tokens;
+  std::vector<llama_token> embd_inp;
   std::vector<llama_token> embd;
 
   bool is_antiprompt;
   bool input_noecho;
-
   int n_past;
   int n_remain;
   int n_consumed;
 
+  // ros2
   rclcpp::Service<llama_msgs::srv::GPT>::SharedPtr gpt_service;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr text_pub;
 
-  std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
+  // methods
   void process_initial_prompt(std::string prompt);
-  std::string process_prompt(bool publish);
+  std::string generate(bool publish);
+  void gpt_cb(const std::shared_ptr<llama_msgs::srv::GPT::Request> request,
+              std::shared_ptr<llama_msgs::srv::GPT::Response> response);
 };
 
 } // namespace llama_ros

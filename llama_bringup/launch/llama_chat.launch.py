@@ -24,14 +24,13 @@ def generate_launch_description():
                 "top_k": "64",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin"))),
-                "prompt": "",
                 "file": os.path.join(llama_bringup_shared_dir, "prompts/chat-with-bob.txt"),
 
+                "prefix": "\n\n### User:\n",
+                "suffix": "\n\n### Bob:\n",
+                "stop": "### User:\n",
+
                 "temp": "0.8",
-
-                "instruct": "False",
-
-                "reverse_prompt": "['User:']"
             }.items()
         )
     ])

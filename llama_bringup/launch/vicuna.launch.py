@@ -16,7 +16,7 @@ def generate_launch_description():
                 os.path.join(llama_bringup_shared_dir, "launch", "base.launch.py")),
             launch_arguments={
                 "n_threads": "4",
-                "n_predict": "256",
+                "n_predict": "512",
                 "repeat_last_n": "8",
                 "n_ctx": "512",
                 "n_batch": "1024",
@@ -24,14 +24,13 @@ def generate_launch_description():
                 "top_k": "64",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/vicuna.bin"))),
-                "prompt": "",
                 "file": os.path.join(llama_bringup_shared_dir, "prompts/vicuna.txt"),
 
-                "temp": "0.8",
+                "prefix": "\n\n### Human:\n",
+                "suffix": "\n\n### Assistant:\n",
+                "stop": "### Human:\n",
 
-                "instruct": "False",
-
-                "reverse_prompt": "['Human:']"
+                "temp": "0.2"
             }.items()
         )
     ])

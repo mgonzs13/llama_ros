@@ -24,11 +24,13 @@ def generate_launch_description():
                 "top_k": "64",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/gpt4all.bin"))),
-                "prompt": "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+                "file": os.path.join(llama_bringup_shared_dir, "prompts/alpaca.txt"),
 
-                "temp": "0.2",
+                "prefix": "\n\n### Instruction:\n",
+                "suffix": "\n\n### Response:\n",
+                "stop": "### Instruction:\n",
 
-                "instruct": "True"
+                "temp": "0.2"
             }.items()
         )
     ])

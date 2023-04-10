@@ -18,9 +18,11 @@ using std::placeholders::_2;
 
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
-  std::string prompt = "";
+  std::string prompt;
   std::string file_path;
   std::string model;
+  std::string prefix;
+  std::string suffix;
   auto lparams = llama_context_default_params();
 
   // node params from llama.cpp common.h
@@ -35,13 +37,14 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"n_keep", 0},
                                             {"top_k", 40},
                                         });
-  this->declare_parameters<std::string>(
-      "", {
-              {"model", std::string("models/lamma-7B/ggml-model.bin")},
-              {"prompt", ""},
-              {"file", ""},
-              {"input_prefix", ""},
-          });
+  this->declare_parameters<std::string>("", {
+                                                {"model", ""},
+                                                {"prompt", ""},
+                                                {"file", ""},
+                                                {"prefix", ""},
+                                                {"suffix", ""},
+                                                {"stop", ""},
+                                            });
   this->declare_parameters<float>("", {
                                           {"top_p", 0.95f},
                                           {"temp", 0.80f},
@@ -50,11 +53,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->declare_parameters<bool>("", {
                                          {"memory_f16", true},
                                          {"use_mmap", true},
-                                         {"instruct", false},
                                          {"use_mlock", false},
                                      });
-  this->declare_parameter<std::vector<std::string>>("reverse_prompt",
-                                                    std::vector<std::string>());
 
   this->get_parameter("seed", lparams.seed);
   this->get_parameter("n_parts", lparams.n_parts);
@@ -76,14 +76,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("model", model);
   this->get_parameter("prompt", prompt);
   this->get_parameter("file", file_path);
-  this->get_parameter("input_prefix", this->input_prefix);
-
-  this->get_parameter("instruct", this->instruct);
-  this->get_parameter("reverse_prompt", this->antiprompt);
-
-  if (this->antiprompt.front().empty() && this->antiprompt.size() == 1) {
-    this->antiprompt.clear();
-  }
+  this->get_parameter("prefix", prefix);
+  this->get_parameter("suffix", suffix);
+  this->get_parameter("stop", this->stop);
 
   if (this->n_ctx > 2048) {
     RCLCPP_WARN(this->get_logger(),
@@ -99,12 +94,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
       RCLCPP_ERROR(this->get_logger(), "Failed to open file %s",
                    file_path.c_str());
     }
-
     std::copy(std::istreambuf_iterator<char>(file),
               std::istreambuf_iterator<char>(), back_inserter(prompt));
-    if (prompt.back() == '\n') {
-      prompt.pop_back();
-    }
   }
 
   // load the model
@@ -121,17 +112,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
               this->n_threads, std::thread::hardware_concurrency(),
               llama_print_system_info());
 
-  // prefix & suffix for instruct mode
-  this->inp_pfx = this->tokenize("\n\n### Instruction:\n\n", true);
-  this->inp_sfx = this->tokenize("\n\n### Response:\n\n", false);
-
-  // in instruct mode, we inject a prefix and a suffix to each input by the user
-  if (this->instruct) {
-    this->antiprompt.push_back("### Instruction:");
-  }
-
-  // determine newline token
-  this->llama_token_newline = this->tokenize("\n", false);
+  // prefix & suffix
+  this->inp_pfx = this->tokenize(prefix, true);
+  this->inp_sfx = this->tokenize(suffix, false);
 
   // TODO: replace with ring-buffer
   this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
@@ -175,12 +158,8 @@ void LlamaNode::gpt_cb(
 
   if (buffer.length() > 1) {
 
-    if (this->input_prefix.empty()) {
-      buffer = this->input_prefix + buffer;
-    }
-
-    // instruct mode: insert instruction prefix
-    if (this->instruct && !this->is_antiprompt) {
+    // insert prefix
+    if (!this->is_antiprompt) {
       this->n_consumed = this->embd_inp.size();
       this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
                             this->inp_pfx.end());
@@ -190,15 +169,13 @@ void LlamaNode::gpt_cb(
     this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
                           line_inp.end());
 
-    // instruct mode: insert response suffix
-    if (this->instruct) {
-      this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
-                            this->inp_sfx.end());
-    }
+    // insert suffix
+    this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
+                          this->inp_sfx.end());
 
     this->n_remain -= line_inp.size();
 
-    response->response = this->process_prompt(true);
+    response->response = this->generate(true);
   }
 }
 
@@ -214,6 +191,14 @@ std::vector<llama_token> LlamaNode::tokenize(const std::string &text,
   return res;
 }
 
+std::string LlamaNode::detokenize(std::vector<llama_token> tokens) {
+  std::string output = "";
+  for (llama_token token : tokens) {
+    output += llama_token_to_str(this->ctx, token);
+  }
+  return output;
+}
+
 void LlamaNode::process_initial_prompt(std::string prompt) {
 
   // Add a space in front of the first character to match OG llama tokenizer
@@ -224,21 +209,18 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   this->embd_inp = this->tokenize(prompt, true);
 
   // number of tokens to keep when resetting context
-  if (this->n_keep < 0 || this->n_keep > (int)this->embd_inp.size() ||
-      this->instruct) {
-    this->n_keep = (int)this->embd_inp.size();
-  }
+  this->n_keep = (int)this->embd_inp.size();
 
   if (prompt.length() > 1) {
-    this->process_prompt(false);
+    this->generate(false);
   }
 }
 
-std::string LlamaNode::process_prompt(bool publish) {
+std::string LlamaNode::generate(bool publish) {
 
   if ((int)this->embd_inp.size() > this->n_ctx - 4) {
-    RCLCPP_ERROR(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
-                 (int)this->embd_inp.size(), this->n_ctx - 4);
+    RCLCPP_WARN(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
+                (int)this->embd_inp.size(), this->n_ctx - 4);
   }
 
   bool input_noecho = true;
@@ -289,18 +271,6 @@ std::string LlamaNode::process_prompt(bool publish) {
         this->last_n_tokens.push_back(id);
       }
 
-      // replace end of text token with newline token
-      if (id == llama_token_eos() && !this->instruct) {
-        id = this->llama_token_newline.front();
-        if (this->antiprompt.size() != 0) {
-          // tokenize and inject first reverse prompt
-          const auto first_antiprompt =
-              this->tokenize(this->antiprompt.front(), false);
-          this->embd_inp.insert(this->embd_inp.end(), first_antiprompt.begin(),
-                                first_antiprompt.end());
-        }
-      }
-
       // add it to the context
       this->embd.push_back(id);
 
@@ -327,28 +297,15 @@ std::string LlamaNode::process_prompt(bool publish) {
     // inputs check if we should end
     if ((int)this->embd_inp.size() <= this->n_consumed) {
 
-      // check for reverse prompt
-      if (this->antiprompt.size()) {
-        std::string last_output;
-        for (auto id : this->last_n_tokens) {
-          last_output += llama_token_to_str(this->ctx, id);
-        }
+      // check if stop appears at the end of the output
+      std::string last_output = this->detokenize(this->last_n_tokens);
+      this->is_antiprompt = false;
 
-        this->is_antiprompt = false;
-
-        // check if each of the reverse prompts
-        // appears at the end of the output.
-        for (std::string &a : this->antiprompt) {
-          if (last_output.find(a.c_str(), last_output.length() - a.length(),
-                               a.length()) != std::string::npos) {
-            this->is_antiprompt = true;
-            break;
-          }
-        }
-
-        if (this->is_antiprompt) {
-          break;
-        }
+      if (last_output.find(this->stop.c_str(),
+                           last_output.length() - this->stop.length(),
+                           this->stop.length()) != std::string::npos) {
+        this->is_antiprompt = true;
+        break;
       }
     }
 
@@ -358,16 +315,11 @@ std::string LlamaNode::process_prompt(bool publish) {
 
     // display text
     if (!input_noecho && publish) {
-      for (auto id : this->embd) {
-        std::string aux_s = llama_token_to_str(this->ctx, id);
-
-        result.append(aux_s);
-        RCLCPP_INFO(this->get_logger(), "Generating text...");
-
-        std_msgs::msg::String msg;
-        msg.data = aux_s;
-        this->text_pub->publish(msg);
-      }
+      RCLCPP_INFO(this->get_logger(), "Generating text...");
+      std_msgs::msg::String msg;
+      msg.data = this->detokenize(this->embd);
+      result.append(msg.data);
+      this->text_pub->publish(msg);
     }
 
     // respect the maximum number of tokens

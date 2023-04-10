@@ -25,20 +25,19 @@ def generate_launch_description():
                 "top_k": LaunchConfiguration("top_k", default=40),
 
                 "model": LaunchConfiguration("model", default=os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin")))),
-                "prompt": LaunchConfiguration("prompt", default=""),
+                "prompt": ParameterValue(LaunchConfiguration("prompt", default=""), value_type=str),
                 "file": LaunchConfiguration("file", default=""),
-                "input_prefix": LaunchConfiguration("input_prefix", default=""),
+                "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
+                "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
+                "stop": ParameterValue(LaunchConfiguration("stop", default=""), value_type=str),
 
                 "top_p": LaunchConfiguration("top_p", default=0.95),
                 "temp": LaunchConfiguration("temp", default=0.80),
                 "repeat_penalty": LaunchConfiguration("repeat_penalty", default=1.10),
 
                 "memory_f16": LaunchConfiguration("memory_f16", default=True),
-                "instruct": LaunchConfiguration("instruct", default=False),
-                "ignore_eos": LaunchConfiguration("ignore_eos", default=False),
-                "use_mlock": LaunchConfiguration("use_mlock", default=False),
-
-                "reverse_prompt": LaunchConfiguration("reverse_prompt", default="['']")
+                "use_mmap": LaunchConfiguration("use_mmap", default=True),
+                "use_mlock": LaunchConfiguration("use_mlock", default=False)
             }]
         )
     ])
