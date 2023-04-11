@@ -358,6 +358,7 @@ std::string LlamaNode::generate(bool publish) {
         }
 
         this->send_text(text);
+        result.append(text);
       }
     }
 
