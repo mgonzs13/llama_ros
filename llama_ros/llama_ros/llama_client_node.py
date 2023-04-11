@@ -25,21 +25,20 @@ class LlamaClientNode(Node):
 
     def send_prompt(self) -> None:
 
-        req = GPT.Goal()
-        req.prompt = self.prompt
+        goal = GPT.Goal()
+        goal.prompt = self.prompt
 
         self._action_client.wait_for_server()
         send_goal_future = self._action_client.send_goal_async(
-            req, feedback_callback=self.text_cb)
+            goal, feedback_callback=self.text_cb)
 
         rclpy.spin_until_future_complete(self, send_goal_future)
         get_result_future = send_goal_future.result().get_result_async()
 
         rclpy.spin_until_future_complete(self, get_result_future)
-        result = get_result_future.result().result
+        # result = get_result_future.result().result
 
-        if result.response and result.response[-1] != "\n":
-            print()
+        self.get_logger().info("END")
 
 
 def main():
