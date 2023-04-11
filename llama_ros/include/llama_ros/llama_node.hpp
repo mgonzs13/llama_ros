@@ -57,6 +57,7 @@ private:
   // methods
   void process_initial_prompt(std::string prompt);
   std::string generate(bool publish);
+  void send_text(std::string text);
   void gpt_cb(const std::shared_ptr<llama_msgs::srv::GPT::Request> request,
               std::shared_ptr<llama_msgs::srv::GPT::Response> response);
 };

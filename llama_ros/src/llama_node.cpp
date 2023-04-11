@@ -225,6 +225,8 @@ std::string LlamaNode::generate(bool publish) {
 
   bool input_noecho = true;
   std::string result;
+  std::string stopping_text;
+  std::string aux;
 
   while (this->n_remain != 0) {
 
@@ -313,13 +315,50 @@ std::string LlamaNode::generate(bool publish) {
       break;
     }
 
-    // display text
-    if (!input_noecho && publish) {
-      RCLCPP_INFO(this->get_logger(), "Generating text...");
-      std_msgs::msg::String msg;
-      msg.data = this->detokenize(this->embd);
-      result.append(msg.data);
-      this->text_pub->publish(msg);
+    // check if stop tokens appears at the end of the output
+    aux = this->detokenize(this->embd);
+    if (((int)this->embd_inp.size() <= this->n_consumed) &&
+        this->stop.find(aux.c_str(), stopping_text.size(), aux.length()) !=
+            std::string::npos) {
+
+      // remove and send chars before stop
+      if (!stopping_text.size()) {
+        for (int i = 0; i < (int)aux.size(); i++) {
+          if (aux.at(0) != this->stop[i]) {
+
+            if (!input_noecho && publish) {
+              this->send_text(aux.substr(0, 1));
+              result.append(aux.substr(0, 1));
+            }
+
+            aux.erase(aux.begin());
+
+          } else {
+            break;
+          }
+        }
+      }
+
+      stopping_text.append(aux);
+
+      if (stopping_text.size() == this->stop.size()) {
+        this->is_antiprompt = true;
+        break;
+      }
+
+    } else {
+
+      // send text
+      if (!input_noecho && publish) {
+        std::string text = aux;
+
+        if (stopping_text.size()) {
+          text = stopping_text + text;
+          stopping_text.clear();
+        }
+
+        this->send_text(text);
+      }
     }
 
     // respect the maximum number of tokens
@@ -330,6 +369,13 @@ std::string LlamaNode::generate(bool publish) {
   }
 
   return result;
+}
+
+void LlamaNode::send_text(std::string text) {
+  RCLCPP_INFO(this->get_logger(), "Generating text...");
+  std_msgs::msg::String msg;
+  msg.data = text;
+  this->text_pub->publish(msg);
 }
 
 void sigint_handler(int signo) {

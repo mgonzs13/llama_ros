@@ -25,11 +25,17 @@ class LlamaClientNode(Node):
         print(msg.data, end="", flush=True)
 
     def send_prompt(self) -> None:
+
         self.client.wait_for_service()
         req = GPT.Request()
         req.prompt = self.prompt
+
         future = self.client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        text = future.result()
+        if text.response[-1] != "\n":
+            print()
 
 
 def main():
