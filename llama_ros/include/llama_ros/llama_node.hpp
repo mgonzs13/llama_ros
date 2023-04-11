@@ -2,14 +2,18 @@
 #define LLAMA_NODE_HPP
 
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 
 #include "llama.h"
-#include "llama_msgs/srv/gpt.hpp"
+#include "llama_msgs/action/gpt.hpp"
 
 namespace llama_ros {
 
 class LlamaNode : public rclcpp::Node {
+
+  using GPT = llama_msgs::action::GPT;
+  using GoalHandleGPT = rclcpp_action::ServerGoalHandle<GPT>;
+
 public:
   LlamaNode();
   ~LlamaNode();
@@ -51,15 +55,24 @@ private:
   int n_consumed;
 
   // ros2
-  rclcpp::Service<llama_msgs::srv::GPT>::SharedPtr gpt_service;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr text_pub;
+  rclcpp_action::Server<GPT>::SharedPtr gpt_action_server_;
+  GPT::Goal current_goal_;
+  std::shared_ptr<GoalHandleGPT> goal_handle_;
+  std::mutex handle_accepted_mtx_;
 
   // methods
   void process_initial_prompt(std::string prompt);
-  std::string generate(bool publish);
+  std::string generate();
+
+  rclcpp_action::GoalResponse
+  handle_goal(const rclcpp_action::GoalUUID &uuid,
+              std::shared_ptr<const GPT::Goal> goal);
+  rclcpp_action::CancelResponse
+  handle_cancel(const std::shared_ptr<GoalHandleGPT> goal_handle);
+  void handle_accepted(const std::shared_ptr<GoalHandleGPT> goal_handle);
+
+  void execute(const std::shared_ptr<GoalHandleGPT> goal_handle);
   void send_text(std::string text);
-  void gpt_cb(const std::shared_ptr<llama_msgs::srv::GPT::Request> request,
-              std::shared_ptr<llama_msgs::srv::GPT::Response> response);
 };
 
 } // namespace llama_ros

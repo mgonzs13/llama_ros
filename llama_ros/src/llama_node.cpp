@@ -6,9 +6,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-
 #include "llama.h"
 #include "llama_ros/llama_node.hpp"
 
@@ -138,46 +135,17 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->process_initial_prompt(prompt);
 
-  // srv and pub
-  this->text_pub =
-      this->create_publisher<std_msgs::msg::String>("gpt_text", 10);
-  this->gpt_service = this->create_service<llama_msgs::srv::GPT>(
-      "gpt", std::bind(&LlamaNode::gpt_cb, this, _1, _2));
+  // gpt action
+  this->goal_handle_ = nullptr;
+  this->gpt_action_server_ = rclcpp_action::create_server<GPT>(
+      this, "gpt", std::bind(&LlamaNode::handle_goal, this, _1, _2),
+      std::bind(&LlamaNode::handle_cancel, this, _1),
+      std::bind(&LlamaNode::handle_accepted, this, _1));
 
   RCLCPP_INFO(this->get_logger(), "Llama Node started");
 }
 
 LlamaNode::~LlamaNode() { llama_free(this->ctx); }
-
-void LlamaNode::gpt_cb(
-    const std::shared_ptr<llama_msgs::srv::GPT::Request> request,
-    std::shared_ptr<llama_msgs::srv::GPT::Response> response) {
-
-  std::string buffer = request->prompt;
-  RCLCPP_INFO(this->get_logger(), "Prompt received: %s", buffer.c_str());
-
-  if (buffer.length() > 1) {
-
-    // insert prefix
-    if (!this->is_antiprompt) {
-      this->n_consumed = this->embd_inp.size();
-      this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
-                            this->inp_pfx.end());
-    }
-
-    auto line_inp = this->tokenize(buffer, false);
-    this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
-                          line_inp.end());
-
-    // insert suffix
-    this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
-                          this->inp_sfx.end());
-
-    this->n_remain -= line_inp.size();
-
-    response->response = this->generate(true);
-  }
-}
 
 std::vector<llama_token> LlamaNode::tokenize(const std::string &text,
                                              bool add_bos) {
@@ -212,11 +180,11 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   this->n_keep = (int)this->embd_inp.size();
 
   if (prompt.length() > 1) {
-    this->generate(false);
+    this->generate();
   }
 }
 
-std::string LlamaNode::generate(bool publish) {
+std::string LlamaNode::generate() {
 
   if ((int)this->embd_inp.size() > this->n_ctx - 4) {
     RCLCPP_WARN(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
@@ -315,6 +283,13 @@ std::string LlamaNode::generate(bool publish) {
       break;
     }
 
+    if (this->goal_handle_ != nullptr) {
+      if (this->goal_handle_->is_canceling()) {
+        RCLCPP_INFO(this->get_logger(), "Action Canceled");
+        break;
+      }
+    }
+
     // check if stop tokens appears at the end of the output
     aux = this->detokenize(this->embd);
     if (((int)this->embd_inp.size() <= this->n_consumed) &&
@@ -326,7 +301,7 @@ std::string LlamaNode::generate(bool publish) {
         for (int i = 0; i < (int)aux.size(); i++) {
           if (aux.at(0) != this->stop[i]) {
 
-            if (!input_noecho && publish) {
+            if (!input_noecho && this->goal_handle_ != nullptr) {
               this->send_text(aux.substr(0, 1));
               result.append(aux.substr(0, 1));
             }
@@ -349,7 +324,7 @@ std::string LlamaNode::generate(bool publish) {
     } else {
 
       // send text
-      if (!input_noecho && publish) {
+      if (!input_noecho && this->goal_handle_ != nullptr) {
         std::string text = aux;
 
         if (stopping_text.size()) {
@@ -372,11 +347,77 @@ std::string LlamaNode::generate(bool publish) {
   return result;
 }
 
+rclcpp_action::GoalResponse
+LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
+                       std::shared_ptr<const GPT::Goal> goal) {
+  (void)uuid;
+  (void)goal;
+
+  if (this->goal_handle_ != nullptr && this->goal_handle_->is_active()) {
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse
+LlamaNode::handle_cancel(const std::shared_ptr<GoalHandleGPT> goal_handle) {
+  (void)goal_handle;
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel");
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void LlamaNode::handle_accepted(
+    const std::shared_ptr<GoalHandleGPT> goal_handle) {
+  this->goal_handle_ = goal_handle;
+  std::thread{std::bind(&LlamaNode::execute, this, _1), goal_handle}.detach();
+}
+
+void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
+
+  auto result = std::make_shared<GPT::Result>();
+  auto prompt = goal_handle->get_goal()->prompt;
+  this->goal_handle_ = goal_handle;
+
+  RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
+
+  if (prompt.length() > 1) {
+
+    // insert prefix
+    if (!this->is_antiprompt) {
+      this->n_consumed = this->embd_inp.size();
+      this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
+                            this->inp_pfx.end());
+    }
+
+    auto line_inp = this->tokenize(prompt, false);
+    this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
+                          line_inp.end());
+
+    // insert suffix
+    this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
+                          this->inp_sfx.end());
+
+    this->n_remain -= line_inp.size();
+
+    result->response = this->generate();
+  }
+
+  if (rclcpp::ok()) {
+    if (goal_handle_->is_canceling()) {
+      goal_handle_->canceled(result);
+    } else {
+      goal_handle->succeed(result);
+    }
+    this->goal_handle_ = nullptr;
+  }
+}
+
 void LlamaNode::send_text(std::string text) {
   RCLCPP_INFO(this->get_logger(), "Generating text...");
-  std_msgs::msg::String msg;
-  msg.data = text;
-  this->text_pub->publish(msg);
+  auto feedback = std::make_shared<GPT::Feedback>();
+  feedback->text = text;
+  this->goal_handle_->publish_feedback(feedback);
 }
 
 void sigint_handler(int signo) {
