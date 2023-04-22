@@ -1,5 +1,7 @@
 string prompt
+bool embedding
 ---
 string response
+float32[] embeddings
 ---
 string text

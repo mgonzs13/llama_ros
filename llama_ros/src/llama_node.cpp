@@ -55,6 +55,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"memory_f16", true},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
+                                         {"embedding", true},
                                      });
 
   this->get_parameter("seed", lparams.seed);
@@ -63,6 +64,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("memory_f16", lparams.f16_kv);
   this->get_parameter("use_mmap", lparams.use_mmap);
   this->get_parameter("use_mlock", lparams.use_mlock);
+  this->get_parameter("embedding", lparams.embedding);
+  this->embedding = lparams.embedding;
 
   this->get_parameter("n_threads", this->n_threads);
   this->get_parameter("n_predict", this->n_predict);
@@ -178,7 +181,7 @@ std::vector<llama_token> LlamaNode::tokenize(const std::string &text,
   return res;
 }
 
-std::string LlamaNode::detokenize(std::vector<llama_token> tokens) {
+std::string LlamaNode::detokenize(const std::vector<llama_token> &tokens) {
   std::string output = "";
   for (llama_token token : tokens) {
     output += llama_token_to_str(this->ctx, token);
@@ -366,6 +369,33 @@ std::string LlamaNode::generate() {
   return result;
 }
 
+std::vector<float> LlamaNode::create_embeddings(const std::string &prompt) {
+
+  if (!this->embedding) {
+    RCLCPP_ERROR(
+        this->get_logger(),
+        "Llama must be created with embedding=true to create embeddings");
+    this->goal_handle_->abort(std::make_shared<GPT::Result>());
+    return {};
+  }
+
+  auto tokens = this->tokenize(prompt, true);
+
+  if (llama_eval(ctx, tokens.data(), tokens.size(), 0, this->n_threads)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to eval");
+  }
+
+  const int n_embd = llama_n_embd(ctx);
+  const auto embeddings = llama_get_embeddings(ctx);
+  std::vector<float> embeddings_list;
+
+  for (int i = 0; i < n_embd; i++) {
+    embeddings_list.push_back(embeddings[i]);
+  }
+
+  return embeddings_list;
+}
+
 rclcpp_action::GoalResponse
 LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
                        std::shared_ptr<const GPT::Goal> goal) {
@@ -395,44 +425,61 @@ void LlamaNode::handle_accepted(
 void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 
   auto result = std::make_shared<GPT::Result>();
-  auto prompt = goal_handle->get_goal()->prompt;
+  std::string prompt = goal_handle->get_goal()->prompt;
+  bool embedding = goal_handle->get_goal()->embedding;
   this->goal_handle_ = goal_handle;
 
   RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
 
   if (prompt.length() > 1) {
 
-    // insert prefix
-    if (!this->is_antiprompt) {
-      this->n_consumed = this->embd_inp.size();
-      this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
-                            this->inp_pfx.end());
+    if (embedding) {
+
+      result->embeddings = this->create_embeddings(prompt);
+
+    } else {
+
+      // insert prefix
+      if (!this->is_antiprompt) {
+        this->n_consumed = this->embd_inp.size();
+        this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
+                              this->inp_pfx.end());
+      }
+
+      auto line_inp = this->tokenize(prompt, false);
+      this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
+                            line_inp.end());
+
+      // insert suffix
+      this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
+                            this->inp_sfx.end());
+
+      this->n_remain -= line_inp.size();
+
+      result->response = this->generate();
     }
-
-    auto line_inp = this->tokenize(prompt, false);
-    this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
-                          line_inp.end());
-
-    // insert suffix
-    this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
-                          this->inp_sfx.end());
-
-    this->n_remain -= line_inp.size();
-
-    result->response = this->generate();
   }
 
   if (rclcpp::ok()) {
-    if (goal_handle_->is_canceling()) {
-      goal_handle_->canceled(result);
+
+    if (embedding) {
+      if (result->embeddings.size()) {
+        this->goal_handle_->succeed(result);
+      }
+
     } else {
-      goal_handle->succeed(result);
+      if (this->goal_handle_->is_canceling()) {
+        this->goal_handle_->canceled(result);
+      } else {
+        this->goal_handle_->succeed(result);
+      }
     }
+
     this->goal_handle_ = nullptr;
   }
 }
 
-void LlamaNode::send_text(std::string text) {
+void LlamaNode::send_text(const std::string &text) {
   RCLCPP_INFO(this->get_logger(), "Generating text...");
   auto feedback = std::make_shared<GPT::Feedback>();
   feedback->text = text;

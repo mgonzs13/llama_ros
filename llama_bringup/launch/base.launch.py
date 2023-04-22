@@ -39,7 +39,8 @@ def generate_launch_description():
 
                 "memory_f16": LaunchConfiguration("memory_f16", default=True),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
-                "use_mlock": LaunchConfiguration("use_mlock", default=False)
+                "use_mlock": LaunchConfiguration("use_mlock", default=False),
+                "embedding": LaunchConfiguration("embedding", default=True)
             }]
         )
     ])

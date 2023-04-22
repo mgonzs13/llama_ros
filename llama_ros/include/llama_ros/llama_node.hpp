@@ -18,7 +18,7 @@ public:
   LlamaNode();
   ~LlamaNode();
 
-  std::string detokenize(std::vector<llama_token> tokens);
+  std::string detokenize(const std::vector<llama_token> &tokens);
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
 
 protected:
@@ -31,6 +31,7 @@ private:
   int32_t n_ctx;         // context size
   int32_t n_batch;       // batch size for prompt processing
   int32_t n_keep;        // number of tokens to keep from initial prompt
+  bool embedding;
 
   // sampling parameters
   int32_t top_k;
@@ -63,6 +64,7 @@ private:
   // methods
   void process_initial_prompt(std::string prompt);
   std::string generate();
+  std::vector<float> create_embeddings(const std::string &prompt);
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,
@@ -72,7 +74,7 @@ private:
   void handle_accepted(const std::shared_ptr<GoalHandleGPT> goal_handle);
 
   void execute(const std::shared_ptr<GoalHandleGPT> goal_handle);
-  void send_text(std::string text);
+  void send_text(const std::string &text);
 };
 
 } // namespace llama_ros
