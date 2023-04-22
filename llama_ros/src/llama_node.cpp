@@ -431,7 +431,7 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 
   RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
 
-  if (prompt.length() > 1) {
+  if (prompt.length() > 0) {
 
     if (embedding) {
 
@@ -463,7 +463,7 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
   if (rclcpp::ok()) {
 
     if (embedding) {
-      if (result->embeddings.size()) {
+      if (this->embedding) {
         this->goal_handle_->succeed(result);
       }
 
