@@ -25,6 +25,8 @@ def generate_launch_description():
                 "top_k": LaunchConfiguration("top_k", default=40),
 
                 "model": LaunchConfiguration("model", default=os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin")))),
+                "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
+                "lora_base": LaunchConfiguration("lora_base", default=""),
                 "prompt": ParameterValue(LaunchConfiguration("prompt", default=""), value_type=str),
                 "file": LaunchConfiguration("file", default=""),
                 "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),

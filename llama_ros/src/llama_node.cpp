@@ -18,6 +18,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   std::string prompt;
   std::string file_path;
   std::string model;
+  std::string lora_adapter;
+  std::string lora_base;
   std::string prefix;
   std::string suffix;
   auto lparams = llama_context_default_params();
@@ -36,6 +38,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
+                                                {"lora_adapter", ""},
+                                                {"lora_base", ""},
                                                 {"prompt", ""},
                                                 {"file", ""},
                                                 {"prefix", ""},
@@ -71,6 +75,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("repeat_penalty", this->repeat_penalty);
 
   this->get_parameter("model", model);
+  this->get_parameter("lora_adapter", lora_adapter);
+  this->get_parameter("lora_base", lora_base);
   this->get_parameter("prompt", prompt);
   this->get_parameter("file", file_path);
   this->get_parameter("prefix", prefix);
@@ -102,6 +108,14 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   if (this->ctx == NULL) {
     RCLCPP_ERROR(this->get_logger(), "Failed to load model '%s'",
                  model.c_str());
+  }
+
+  if (lora_adapter.empty()) {
+    if (llama_apply_lora_from_file(ctx, lora_adapter.c_str(),
+                                   lora_base.empty() ? NULL : lora_base.c_str(),
+                                   this->n_threads)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to apply lora adapter");
+    }
   }
 
   // show system information
