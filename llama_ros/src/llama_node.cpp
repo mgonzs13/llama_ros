@@ -101,6 +101,11 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
               std::istreambuf_iterator<char>(), back_inserter(prompt));
   }
 
+  // when using lora, mmap is disable
+  if (!lora_adapter.empty()) {
+    lparams.use_mmap = false;
+  }
+
   // load the model
   this->ctx = llama_init_from_file(model.c_str(), lparams);
   this->n_ctx = llama_n_ctx(this->ctx);
@@ -110,7 +115,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                  model.c_str());
   }
 
-  if (lora_adapter.empty()) {
+  if (!lora_adapter.empty()) {
     if (llama_apply_lora_from_file(ctx, lora_adapter.c_str(),
                                    lora_base.empty() ? NULL : lora_base.c_str(),
                                    this->n_threads)) {
