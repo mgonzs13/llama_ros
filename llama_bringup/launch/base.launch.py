@@ -21,7 +21,7 @@ def generate_launch_description():
                 "n_parts": LaunchConfiguration("n_parts", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
                 "n_batch": LaunchConfiguration("n_batch", default=8),
-                "n_keep": LaunchConfiguration("n_keep", default=0),
+                "n_keep": LaunchConfiguration("n_keep", default=-1),
                 "top_k": LaunchConfiguration("top_k", default=40),
 
                 "model": LaunchConfiguration("model", default=os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/llama.bin")))),

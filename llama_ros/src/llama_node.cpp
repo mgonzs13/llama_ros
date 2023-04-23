@@ -33,7 +33,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"n_parts", -1},
                                             {"n_ctx", 512},
                                             {"n_batch", 8},
-                                            {"n_keep", 0},
+                                            {"n_keep", -1},
                                             {"top_k", 40},
                                         });
   this->declare_parameters<std::string>("", {
@@ -196,10 +196,17 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   prompt.insert(0, 1, ' ');
 
   // tokenize the prompt
-  this->embd_inp = this->tokenize(prompt, true);
+  this->prompt_tokens = this->tokenize(prompt, true);
+
+  if ((int)this->prompt_tokens.size() > this->n_ctx - 4) {
+    RCLCPP_WARN(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
+                (int)this->prompt_tokens.size(), this->n_ctx - 4);
+  }
 
   // number of tokens to keep when resetting context
-  this->n_keep = (int)this->embd_inp.size();
+  if (this->n_keep == -1) {
+    this->n_keep = (int)this->prompt_tokens.size();
+  }
 
   if (prompt.length() > 1) {
     this->generate();
@@ -207,11 +214,6 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
 }
 
 std::string LlamaNode::generate() {
-
-  if ((int)this->embd_inp.size() > this->n_ctx - 4) {
-    RCLCPP_WARN(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
-                (int)this->embd_inp.size(), this->n_ctx - 4);
-  }
 
   bool input_noecho = true;
   std::string result;
@@ -221,34 +223,37 @@ std::string LlamaNode::generate() {
   while (this->n_remain != 0) {
 
     // predict
-    if (this->embd.size() > 0) {
+    if (this->batch_tokens.size() > 0) {
       // infinite text generation via context swapping
       // if we run out of context:
       // - take the n_keep first tokens from the original prompt (via n_past)
       // - take half of the last (n_ctx - n_keep) tokens and recompute the
       // logits in a batch
-      if (this->n_past + (int)this->embd.size() > this->n_ctx) {
+      if (this->n_past + (int)this->batch_tokens.size() > this->n_ctx) {
 
         const int n_left = this->n_past - this->n_keep;
         this->n_past = this->n_keep;
 
-        // insert n_left/2 tokens at the start of embd from last_n_tokens
-        this->embd.insert(this->embd.begin(),
-                          this->last_n_tokens.begin() + this->n_ctx -
-                              n_left / 2 - this->embd.size(),
-                          this->last_n_tokens.end() - this->embd.size());
+        // insert n_left/2 tokens at the start of batch_tokens
+        // from last_n_tokens
+        this->batch_tokens.insert(this->batch_tokens.begin(),
+                                  this->last_n_tokens.begin() + this->n_ctx -
+                                      n_left / 2 - this->batch_tokens.size(),
+                                  this->last_n_tokens.end() -
+                                      this->batch_tokens.size());
       }
 
-      if (llama_eval(this->ctx, this->embd.data(), this->embd.size(),
-                     this->n_past, this->n_threads)) {
+      if (llama_eval(this->ctx, this->batch_tokens.data(),
+                     this->batch_tokens.size(), this->n_past,
+                     this->n_threads)) {
         RCLCPP_ERROR(this->get_logger(), "Failed to eval");
       }
     }
 
-    this->n_past += this->embd.size();
-    this->embd.clear();
+    this->n_past += this->batch_tokens.size();
+    this->batch_tokens.clear();
 
-    if ((int)this->embd_inp.size() <= this->n_consumed) {
+    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
       // out of user input, sample next token
 
       llama_token id = 0;
@@ -264,7 +269,7 @@ std::string LlamaNode::generate() {
       }
 
       // add it to the context
-      this->embd.push_back(id);
+      this->batch_tokens.push_back(id);
 
       // echo this to console
       input_noecho = false;
@@ -274,12 +279,12 @@ std::string LlamaNode::generate() {
 
     } else {
       // some user input remains from prompt, forward it to processing
-      while ((int)this->embd_inp.size() > this->n_consumed) {
-        this->embd.push_back(this->embd_inp[this->n_consumed]);
+      while ((int)this->prompt_tokens.size() > this->n_consumed) {
+        this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
         this->last_n_tokens.erase(this->last_n_tokens.begin());
-        this->last_n_tokens.push_back(this->embd_inp[this->n_consumed]);
+        this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
         ++this->n_consumed;
-        if ((int)this->embd.size() >= this->n_batch) {
+        if ((int)this->batch_tokens.size() >= this->n_batch) {
           break;
         }
       }
@@ -287,7 +292,7 @@ std::string LlamaNode::generate() {
 
     // when not currently processing queued
     // inputs check if we should end
-    if ((int)this->embd_inp.size() <= this->n_consumed) {
+    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // check if stop appears at the end of the output
       std::string last_output = this->detokenize(this->last_n_tokens);
@@ -301,7 +306,7 @@ std::string LlamaNode::generate() {
       }
     }
 
-    if (this->embd.back() == llama_token_eos()) {
+    if (this->batch_tokens.back() == llama_token_eos()) {
       break;
     }
 
@@ -313,8 +318,8 @@ std::string LlamaNode::generate() {
     }
 
     // check if stop tokens appears at the end of the output
-    aux = this->detokenize(this->embd);
-    if (((int)this->embd_inp.size() <= this->n_consumed) &&
+    aux = this->detokenize(this->batch_tokens);
+    if (((int)this->prompt_tokens.size() <= this->n_consumed) &&
         this->stop.find(aux.c_str(), stopping_text.size(), aux.length()) !=
             std::string::npos) {
 
@@ -369,7 +374,7 @@ std::string LlamaNode::generate() {
   return result;
 }
 
-std::vector<float> LlamaNode::create_embeddings(const std::string &prompt) {
+std::vector<float> LlamaNode::create_embeddings(std::string prompt) {
 
   if (!this->embedding) {
     RCLCPP_ERROR(
@@ -379,6 +384,7 @@ std::vector<float> LlamaNode::create_embeddings(const std::string &prompt) {
     return {};
   }
 
+  prompt.insert(0, 1, ' ');
   auto tokens = this->tokenize(prompt, true);
 
   if (llama_eval(ctx, tokens.data(), tokens.size(), 0, this->n_threads)) {
@@ -441,18 +447,18 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 
       // insert prefix
       if (!this->is_antiprompt) {
-        this->n_consumed = this->embd_inp.size();
-        this->embd_inp.insert(this->embd_inp.end(), this->inp_pfx.begin(),
-                              this->inp_pfx.end());
+        this->n_consumed = this->prompt_tokens.size();
+        this->prompt_tokens.insert(this->prompt_tokens.end(),
+                                   this->inp_pfx.begin(), this->inp_pfx.end());
       }
 
       auto line_inp = this->tokenize(prompt, false);
-      this->embd_inp.insert(this->embd_inp.end(), line_inp.begin(),
-                            line_inp.end());
+      this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
+                                 line_inp.end());
 
       // insert suffix
-      this->embd_inp.insert(this->embd_inp.end(), this->inp_sfx.begin(),
-                            this->inp_sfx.end());
+      this->prompt_tokens.insert(this->prompt_tokens.end(),
+                                 this->inp_sfx.begin(), this->inp_sfx.end());
 
       this->n_remain -= line_inp.size();
 

@@ -20,7 +20,6 @@ def generate_launch_description():
                 "repeat_last_n": "8",
                 "n_ctx": "512",
                 "n_batch": "512",
-                "keep": "0",
                 "top_k": "64",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/alpaca.bin"))),

@@ -46,14 +46,14 @@ private:
 
   // aux
   std::vector<llama_token> last_n_tokens;
-  std::vector<llama_token> embd_inp;
-  std::vector<llama_token> embd;
+  std::vector<llama_token> prompt_tokens;
+  std::vector<llama_token> batch_tokens;
 
   bool is_antiprompt;
   bool input_noecho;
-  int n_past;
-  int n_remain;
-  int n_consumed;
+  int32_t n_past;
+  int32_t n_remain;
+  int32_t n_consumed;
 
   // ros2
   rclcpp_action::Server<GPT>::SharedPtr gpt_action_server_;
@@ -64,7 +64,7 @@ private:
   // methods
   void process_initial_prompt(std::string prompt);
   std::string generate();
-  std::vector<float> create_embeddings(const std::string &prompt);
+  std::vector<float> create_embeddings(std::string prompt);
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,
