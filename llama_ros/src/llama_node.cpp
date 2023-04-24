@@ -298,7 +298,8 @@ std::string LlamaNode::generate() {
       std::string last_output = this->detokenize(this->last_n_tokens);
       this->is_antiprompt = false;
 
-      if (last_output.find(this->stop.c_str(),
+      if (this->stop.size() &&
+          last_output.find(this->stop.c_str(),
                            last_output.length() - this->stop.length(),
                            this->stop.length()) != std::string::npos) {
         this->is_antiprompt = true;
@@ -320,6 +321,7 @@ std::string LlamaNode::generate() {
     // check if stop tokens appears at the end of the output
     aux = this->detokenize(this->batch_tokens);
     if (((int)this->prompt_tokens.size() <= this->n_consumed) &&
+        this->stop.size() &&
         this->stop.find(aux.c_str(), stopping_text.size(), aux.length()) !=
             std::string::npos) {
 
