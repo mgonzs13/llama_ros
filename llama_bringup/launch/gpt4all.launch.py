@@ -19,8 +19,8 @@ def generate_launch_description():
                 "n_predict": "512",
                 "repeat_last_n": "8",
                 "n_ctx": "512",
-                "n_batch": "512",
-                "top_k": "64",
+                "n_batch": "8",
+                "top_k": "40",
 
                 "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/gpt4all.bin"))),
                 "file": os.path.join(llama_bringup_shared_dir, "prompts/alpaca.txt"),
