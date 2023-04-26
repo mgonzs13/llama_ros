@@ -135,6 +135,11 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->inp_pfx = this->tokenize(prefix, true);
   this->inp_sfx = this->tokenize(suffix, false);
 
+  // number of tokens to keep when resetting context
+  if (this->n_keep == -1) {
+    this->n_keep = (int)this->prompt_tokens.size();
+  }
+
   // TODO: replace with ring-buffer
   this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
   std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
@@ -201,11 +206,6 @@ void LlamaNode::process_initial_prompt(std::string prompt) {
   if ((int)this->prompt_tokens.size() > this->n_ctx - 4) {
     RCLCPP_WARN(this->get_logger(), "Prompt is too long (%d tokens, max %d)",
                 (int)this->prompt_tokens.size(), this->n_ctx - 4);
-  }
-
-  // number of tokens to keep when resetting context
-  if (this->n_keep == -1) {
-    this->n_keep = (int)this->prompt_tokens.size();
   }
 
   if (prompt.length() > 1) {
@@ -435,9 +435,23 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
   auto result = std::make_shared<GPT::Result>();
   std::string prompt = goal_handle->get_goal()->prompt;
   bool embedding = goal_handle->get_goal()->embedding;
+  bool reset = goal_handle->get_goal()->reset;
   this->goal_handle_ = goal_handle;
 
   RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
+
+  if (reset) {
+    this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
+    std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
+
+    this->n_past = 0;
+    this->is_antiprompt = false;
+    this->n_remain = this->n_predict;
+    this->n_consumed = 0;
+
+    this->prompt_tokens.clear();
+    this->batch_tokens.clear();
+  }
 
   if (prompt.length() > 0) {
 
@@ -447,20 +461,33 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 
     } else {
 
+      if (!this->prompt_tokens.size()) {
+        prompt.insert(0, 1, ' ');
+      }
+      auto line_inp = this->tokenize(prompt, false);
+
+      if ((int)(this->prompt_tokens.size() + this->inp_pfx.size() +
+                line_inp.size() + this->inp_sfx.size()) > this->n_ctx - 4) {
+        RCLCPP_WARN(this->get_logger(),
+                    "Prompt is too long (%d tokens, max %d)",
+                    (int)this->prompt_tokens.size(), this->n_ctx - 4);
+      }
+
       // insert prefix
-      if (!this->is_antiprompt) {
+      if (this->inp_pfx.size() && !this->is_antiprompt) {
         this->n_consumed = this->prompt_tokens.size();
         this->prompt_tokens.insert(this->prompt_tokens.end(),
                                    this->inp_pfx.begin(), this->inp_pfx.end());
       }
 
-      auto line_inp = this->tokenize(prompt, false);
       this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
                                  line_inp.end());
 
       // insert suffix
-      this->prompt_tokens.insert(this->prompt_tokens.end(),
-                                 this->inp_sfx.begin(), this->inp_sfx.end());
+      if (this->inp_sfx.size()) {
+        this->prompt_tokens.insert(this->prompt_tokens.end(),
+                                   this->inp_sfx.begin(), this->inp_sfx.end());
+      }
 
       this->n_remain -= line_inp.size();
 
