@@ -34,10 +34,18 @@ private:
   bool embedding;
 
   // sampling parameters
+  float temp;
   int32_t top_k;
   float top_p;
-  float temp;
+  float tfs_z;
+  float typical_p;
   float repeat_penalty;
+  float presence_penalty;
+  float frequency_penalty;
+  int mirostat;
+  float mirostat_tau;
+  float mirostat_eta;
+  bool penalize_nl;
 
   // prefix, suffix, stop
   std::string stop;

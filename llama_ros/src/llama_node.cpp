@@ -32,9 +32,10 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"repeat_last_n", 64},
                                             {"n_parts", -1},
                                             {"n_ctx", 512},
-                                            {"n_batch", 8},
+                                            {"n_batch", 512},
                                             {"n_keep", -1},
                                             {"top_k", 40},
+                                            {"mirostat", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -47,8 +48,14 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                                 {"stop", ""},
                                             });
   this->declare_parameters<float>("", {
-                                          {"top_p", 0.95f},
                                           {"temp", 0.80f},
+                                          {"top_p", 0.95f},
+                                          {"tfs_z", 1.00f},
+                                          {"typical_p", 1.00f},
+                                          {"presence_penalty", 0.00f},
+                                          {"frequency_penalty", 0.00f},
+                                          {"mirostat_tau", 5.10f},
+                                          {"mirostat_eta", 0.10f},
                                           {"repeat_penalty", 1.10f},
                                       });
   this->declare_parameters<bool>("", {
@@ -56,6 +63,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"embedding", true},
+                                         {"penalize_nl", true},
                                      });
 
   this->get_parameter("seed", lparams.seed);
@@ -69,12 +77,23 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->get_parameter("n_threads", this->n_threads);
   this->get_parameter("n_predict", this->n_predict);
-  this->get_parameter("repeat_last_n", this->repeat_last_n);
-  this->get_parameter("n_batch", this->n_batch);
   this->get_parameter("n_keep", this->n_keep);
-  this->get_parameter("top_k", this->top_k);
+  this->get_parameter("n_batch", this->n_batch);
+  this->get_parameter("repeat_last_n", this->repeat_last_n);
+  this->repeat_last_n =
+      this->repeat_last_n < 0 ? lparams.n_ctx : this->repeat_last_n;
+
   this->get_parameter("temp", this->temp);
+  this->get_parameter("top_k", this->top_k);
   this->get_parameter("top_p", this->top_p);
+  this->get_parameter("tfs_z", this->tfs_z);
+  this->get_parameter("typical_p", this->typical_p);
+  this->get_parameter("presence_penalty", this->presence_penalty);
+  this->get_parameter("frequency_penalty", this->frequency_penalty);
+  this->get_parameter("mirostat", this->mirostat);
+  this->get_parameter("mirostat_tau", this->mirostat_tau);
+  this->get_parameter("mirostat_eta", this->mirostat_eta);
+  this->get_parameter("penalize_nl", this->penalize_nl);
   this->get_parameter("repeat_penalty", this->repeat_penalty);
 
   this->get_parameter("model", model);
@@ -85,13 +104,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("prefix", prefix);
   this->get_parameter("suffix", suffix);
   this->get_parameter("stop", this->stop);
-
-  if (this->n_ctx > 2048) {
-    RCLCPP_WARN(this->get_logger(),
-                "Model does not support context sizes greater than 2048 tokens "
-                "(%d specified); expect poor results",
-                this->n_ctx);
-  }
 
   // load prompt from file
   if (!file_path.empty()) {
@@ -112,6 +124,13 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   // load the model
   this->ctx = llama_init_from_file(model.c_str(), lparams);
   this->n_ctx = llama_n_ctx(this->ctx);
+
+  if (this->n_ctx > 2048) {
+    RCLCPP_WARN(this->get_logger(),
+                "Model does not support context sizes greater than 2048 tokens "
+                "(%d specified); expect poor results",
+                this->n_ctx);
+  }
 
   if (this->ctx == NULL) {
     RCLCPP_ERROR(this->get_logger(), "Failed to load model '%s'",
@@ -243,6 +262,8 @@ std::string LlamaNode::generate() {
                                       this->batch_tokens.size());
       }
 
+      RCLCPP_INFO(this->get_logger(), "EVAL %d",
+                  (int)this->batch_tokens.size());
       if (llama_eval(this->ctx, this->batch_tokens.data(),
                      this->batch_tokens.size(), this->n_past,
                      this->n_threads)) {
@@ -259,12 +280,68 @@ std::string LlamaNode::generate() {
       llama_token id = 0;
 
       {
-        id = llama_sample_top_p_top_k(
-            this->ctx, this->last_n_tokens.data() + n_ctx - this->repeat_last_n,
-            this->repeat_last_n, this->top_k, this->top_p, this->temp,
-            this->repeat_penalty);
+        auto logits = llama_get_logits(this->ctx);
+        auto n_vocab = llama_n_vocab(this->ctx);
 
-        this->last_n_tokens.erase(this->last_n_tokens.begin());
+        std::vector<llama_token_data> candidates;
+        candidates.reserve(n_vocab);
+        for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
+          candidates.emplace_back(
+              llama_token_data{token_id, logits[token_id], 0.0f});
+        }
+
+        llama_token_data_array candidates_p = {candidates.data(),
+                                               candidates.size(), false};
+
+        // Apply penalties
+        float nl_logit = logits[llama_token_nl()];
+        auto last_n_repeat = std::min(
+            std::min((int)this->last_n_tokens.size(), this->repeat_last_n),
+            this->n_ctx);
+
+        llama_sample_repetition_penalty(this->ctx, &candidates_p,
+                                        this->last_n_tokens.data() +
+                                            this->last_n_tokens.size() -
+                                            last_n_repeat,
+                                        last_n_repeat, this->repeat_penalty);
+        llama_sample_frequency_and_presence_penalties(
+            this->ctx, &candidates_p,
+            this->last_n_tokens.data() + this->last_n_tokens.size() -
+                last_n_repeat,
+            last_n_repeat, this->frequency_penalty, this->presence_penalty);
+        if (!this->penalize_nl) {
+          logits[llama_token_nl()] = nl_logit;
+        }
+
+        if (this->temp <= 0) {
+          // Greedy sampling
+          id = llama_sample_token_greedy(this->ctx, &candidates_p);
+        } else {
+          if (this->mirostat == 1) {
+            static float mirostat_mu = 2.0f * this->mirostat_tau;
+            const int mirostat_m = 100;
+            llama_sample_temperature(this->ctx, &candidates_p, this->temp);
+            id = llama_sample_token_mirostat(
+                this->ctx, &candidates_p, this->mirostat_tau,
+                this->mirostat_eta, mirostat_m, &mirostat_mu);
+          } else if (this->mirostat == 2) {
+            static float mirostat_mu = 2.0f * this->mirostat_tau;
+            llama_sample_temperature(ctx, &candidates_p, temp);
+            id = llama_sample_token_mirostat_v2(
+                this->ctx, &candidates_p, this->mirostat_tau,
+                this->mirostat_eta, &mirostat_mu);
+          } else {
+            // Temperature sampling
+            llama_sample_top_k(this->ctx, &candidates_p, this->top_k);
+            llama_sample_tail_free(this->ctx, &candidates_p, this->tfs_z);
+            llama_sample_typical(this->ctx, &candidates_p, this->typical_p);
+            llama_sample_top_p(this->ctx, &candidates_p, this->top_p);
+            llama_sample_temperature(this->ctx, &candidates_p, this->temp);
+            id = llama_sample_token(this->ctx, &candidates_p);
+          }
+        }
+
+        this->last_n_tokens.erase(last_n_tokens.begin());
         this->last_n_tokens.push_back(id);
       }
 
@@ -466,11 +543,12 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
       }
       auto line_inp = this->tokenize(prompt, false);
 
-      if ((int)(this->prompt_tokens.size() + this->inp_pfx.size() +
-                line_inp.size() + this->inp_sfx.size()) > this->n_ctx - 4) {
+      int prompt_size = this->prompt_tokens.size() + this->inp_pfx.size() +
+                        line_inp.size() + this->inp_sfx.size();
+      if (prompt_size > this->n_ctx - 4) {
         RCLCPP_WARN(this->get_logger(),
-                    "Prompt is too long (%d tokens, max %d)",
-                    (int)this->prompt_tokens.size(), this->n_ctx - 4);
+                    "Prompt is too long (%d tokens, max %d)", prompt_size,
+                    this->n_ctx - 4);
       }
 
       // insert prefix
