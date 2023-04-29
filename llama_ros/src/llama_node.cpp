@@ -341,7 +341,7 @@ std::string LlamaNode::generate() {
           }
         }
 
-        this->last_n_tokens.erase(last_n_tokens.begin());
+        this->last_n_tokens.erase(this->last_n_tokens.begin());
         this->last_n_tokens.push_back(id);
       }
 
