@@ -17,25 +17,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   int32_t n_threads;
   int32_t n_predict;
-  int32_t repeat_last_n;
   int32_t n_batch;
   int32_t n_keep;
 
-  float temp;
-  int32_t top_k;
-  float top_p;
-  float tfs_z;
-  float typical_p;
-  float repeat_penalty;
-  float presence_penalty;
-  float frequency_penalty;
-  int32_t mirostat;
-  float mirostat_tau;
-  float mirostat_eta;
-  bool penalize_nl;
-
-  std::string prompt;
-  std::string file_path;
   std::string model;
   std::string lora_adapter;
   std::string lora_base;
@@ -43,7 +27,11 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   std::string suffix;
   std::string stop;
 
-  auto lparams = llama_context_default_params();
+  std::string prompt;
+  std::string file_path;
+
+  auto context_params = llama_context_default_params();
+  auto sampling_params = llama_sampling_default_params();
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
@@ -73,11 +61,11 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                           {"top_p", 0.95f},
                                           {"tfs_z", 1.00f},
                                           {"typical_p", 1.00f},
+                                          {"repeat_penalty", 1.10f},
                                           {"presence_penalty", 0.00f},
                                           {"frequency_penalty", 0.00f},
-                                          {"mirostat_tau", 5.10f},
+                                          {"mirostat_tau", 5.00f},
                                           {"mirostat_eta", 0.10f},
-                                          {"repeat_penalty", 1.10f},
                                       });
   this->declare_parameters<bool>("", {
                                          {"memory_f16", true},
@@ -87,47 +75,46 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"penalize_nl", true},
                                      });
 
-  this->get_parameter("seed", lparams.seed);
-  this->get_parameter("n_parts", lparams.n_parts);
-  this->get_parameter("n_ctx", lparams.n_ctx);
-  this->get_parameter("memory_f16", lparams.f16_kv);
-  this->get_parameter("use_mmap", lparams.use_mmap);
-  this->get_parameter("use_mlock", lparams.use_mlock);
-  this->get_parameter("embedding", lparams.embedding);
+  this->get_parameter("seed", context_params.seed);
+  this->get_parameter("n_parts", context_params.n_parts);
+  this->get_parameter("n_ctx", context_params.n_ctx);
+  this->get_parameter("memory_f16", context_params.f16_kv);
+  this->get_parameter("use_mmap", context_params.use_mmap);
+  this->get_parameter("use_mlock", context_params.use_mlock);
+  this->get_parameter("embedding", context_params.embedding);
 
   this->get_parameter("n_threads", n_threads);
   this->get_parameter("n_predict", n_predict);
   this->get_parameter("n_keep", n_keep);
   this->get_parameter("n_batch", n_batch);
-  this->get_parameter("repeat_last_n", repeat_last_n);
 
-  this->get_parameter("temp", temp);
-  this->get_parameter("top_k", top_k);
-  this->get_parameter("top_p", top_p);
-  this->get_parameter("tfs_z", tfs_z);
-  this->get_parameter("typical_p", typical_p);
-  this->get_parameter("presence_penalty", presence_penalty);
-  this->get_parameter("frequency_penalty", frequency_penalty);
-  this->get_parameter("mirostat", mirostat);
-  this->get_parameter("mirostat_tau", mirostat_tau);
-  this->get_parameter("mirostat_eta", mirostat_eta);
-  this->get_parameter("penalize_nl", penalize_nl);
-  this->get_parameter("repeat_penalty", repeat_penalty);
+  this->get_parameter("temp", sampling_params.temp);
+  this->get_parameter("top_k", sampling_params.top_k);
+  this->get_parameter("top_p", sampling_params.top_p);
+  this->get_parameter("tfs_z", sampling_params.tfs_z);
+  this->get_parameter("typical_p", sampling_params.typical_p);
+  this->get_parameter("repeat_penalty", sampling_params.repeat_penalty);
+  this->get_parameter("repeat_last_n", sampling_params.repeat_last_n);
+  this->get_parameter("presence_penalty", sampling_params.presence_penalty);
+  this->get_parameter("frequency_penalty", sampling_params.frequency_penalty);
+  this->get_parameter("mirostat", sampling_params.mirostat);
+  this->get_parameter("mirostat_tau", sampling_params.mirostat_tau);
+  this->get_parameter("mirostat_eta", sampling_params.mirostat_eta);
+  this->get_parameter("penalize_nl", sampling_params.penalize_nl);
 
   this->get_parameter("model", model);
   this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", lora_base);
-  this->get_parameter("prompt", prompt);
-  this->get_parameter("file", file_path);
   this->get_parameter("prefix", prefix);
   this->get_parameter("suffix", suffix);
   this->get_parameter("stop", stop);
 
+  this->get_parameter("prompt", prompt);
+  this->get_parameter("file", file_path);
+
   // load llama
   this->llama = std::make_shared<Llama>(
-      lparams, n_threads, n_predict, repeat_last_n, n_batch, n_keep, temp,
-      top_k, top_p, tfs_z, typical_p, repeat_penalty, presence_penalty,
-      frequency_penalty, mirostat, mirostat_tau, mirostat_eta, penalize_nl,
+      context_params, n_threads, n_predict, n_batch, n_keep, sampling_params,
       model, lora_adapter, lora_base, prefix, suffix, stop);
 
   // initial prompt

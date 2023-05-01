@@ -6,33 +6,48 @@
 
 using namespace llama_ros;
 
-Llama::Llama(llama_context_params lparams, int32_t n_threads, int32_t n_predict,
-             int32_t repeat_last_n, int32_t n_batch, int32_t n_keep, float temp,
-             int32_t top_k, float top_p, float tfs_z, float typical_p,
-             float repeat_penalty, float presence_penalty,
-             float frequency_penalty, int32_t mirostat, float mirostat_tau,
-             float mirostat_eta, bool penalize_nl, std::string model,
+struct llama_sampling_params llama_sampling_default_params() {
+  struct llama_sampling_params result = {
+      /*.temp                   =*/0.80f,
+      /*.top_k                  =*/40,
+      /*.top_p                  =*/0.95f,
+      /*.tfs_z                  =*/1.00f,
+      /*.typical_p              =*/1.00f,
+      /*.repeat_penalty         =*/1.10f,
+      /*.repeat_last_n          =*/64,
+      /*.presence_penalty       =*/0.00f,
+      /*.frequency_penalty      =*/0.00f,
+      /*.mirostat               =*/0,
+      /*.mirostat_tau           =*/5.0f,
+      /*.mirostat_eta           =*/0.10f,
+      /*.penalize_nl            =*/true,
+  };
+
+  return result;
+}
+
+Llama::Llama(llama_context_params context_params, int32_t n_threads,
+             int32_t n_predict, int32_t n_batch, int32_t n_keep,
+             llama_sampling_params sampling_params, std::string model,
              std::string lora_adapter, std::string lora_base,
              std::string prefix, std::string suffix, std::string stop)
-    : n_threads(n_threads), n_predict(n_predict), repeat_last_n(repeat_last_n),
-      n_batch(n_batch), n_keep(n_keep), temp(temp), top_k(top_k), top_p(top_p),
-      tfs_z(tfs_z), typical_p(typical_p), repeat_penalty(repeat_penalty),
-      presence_penalty(presence_penalty), frequency_penalty(frequency_penalty),
-      mirostat(mirostat), mirostat_tau(mirostat_tau),
-      mirostat_eta(mirostat_eta), penalize_nl(penalize_nl), stop(stop),
+    : n_threads(n_threads), n_predict(n_predict), n_batch(n_batch),
+      n_keep(n_keep), sampling_params(sampling_params), stop(stop),
       canceled(false) {
 
-  this->embedding = lparams.embedding;
-  this->repeat_last_n =
-      this->repeat_last_n < 0 ? lparams.n_ctx : this->repeat_last_n;
+  this->embedding = context_params.embedding;
+  this->sampling_params.repeat_last_n =
+      this->sampling_params.repeat_last_n < 0
+          ? context_params.n_ctx
+          : this->sampling_params.repeat_last_n;
 
   // when using lora, mmap is disable
   if (!lora_adapter.empty()) {
-    lparams.use_mmap = false;
+    context_params.use_mmap = false;
   }
 
   // load the model
-  this->ctx = llama_init_from_file(model.c_str(), lparams);
+  this->ctx = llama_init_from_file(model.c_str(), context_params);
   this->n_ctx = llama_n_ctx(this->ctx);
 
   if (this->n_ctx > 2048) {
@@ -83,8 +98,9 @@ Llama::Llama(llama_context_params lparams, int32_t n_threads, int32_t n_predict,
           "top_p = %f, "
           "repeat_last_n = %i, "
           "repeat_penalty = %f\n",
-          this->temp, this->top_k, this->top_p, this->repeat_last_n,
-          this->repeat_penalty);
+          this->sampling_params.temp, this->sampling_params.top_k,
+          this->sampling_params.top_p, this->sampling_params.repeat_last_n,
+          this->sampling_params.repeat_penalty);
   fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
           n_ctx, this->n_batch, this->n_predict, this->n_keep);
@@ -371,46 +387,55 @@ llama_token Llama::sample() {
 
   // Apply penalties
   float nl_logit = logits[llama_token_nl()];
-  auto last_n_repeat =
-      std::min(std::min((int)this->last_n_tokens.size(), this->repeat_last_n),
-               this->n_ctx);
+  auto last_n_repeat = std::min(std::min((int)this->last_n_tokens.size(),
+                                         this->sampling_params.repeat_last_n),
+                                this->n_ctx);
 
   llama_sample_repetition_penalty(
       this->ctx, &candidates_p,
       this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, this->repeat_penalty);
+      last_n_repeat, this->sampling_params.repeat_penalty);
   llama_sample_frequency_and_presence_penalties(
       this->ctx, &candidates_p,
       this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, this->frequency_penalty, this->presence_penalty);
-  if (!this->penalize_nl) {
+      last_n_repeat, this->sampling_params.frequency_penalty,
+      this->sampling_params.presence_penalty);
+  if (!this->sampling_params.penalize_nl) {
     logits[llama_token_nl()] = nl_logit;
   }
 
-  if (this->temp <= 0) {
+  if (this->sampling_params.temp <= 0) {
     // Greedy sampling
     id = llama_sample_token_greedy(this->ctx, &candidates_p);
+
   } else {
-    if (this->mirostat == 1) {
-      static float mirostat_mu = 2.0f * this->mirostat_tau;
+    if (this->sampling_params.mirostat == 1) {
+      static float mirostat_mu = 2.0f * this->sampling_params.mirostat_tau;
       const int mirostat_m = 100;
-      llama_sample_temperature(this->ctx, &candidates_p, this->temp);
-      id = llama_sample_token_mirostat(this->ctx, &candidates_p,
-                                       this->mirostat_tau, this->mirostat_eta,
-                                       mirostat_m, &mirostat_mu);
-    } else if (this->mirostat == 2) {
-      static float mirostat_mu = 2.0f * this->mirostat_tau;
-      llama_sample_temperature(ctx, &candidates_p, temp);
-      id = llama_sample_token_mirostat_v2(this->ctx, &candidates_p,
-                                          this->mirostat_tau,
-                                          this->mirostat_eta, &mirostat_mu);
+      llama_sample_temperature(this->ctx, &candidates_p,
+                               this->sampling_params.temp);
+      id = llama_sample_token_mirostat(
+          this->ctx, &candidates_p, this->sampling_params.mirostat_tau,
+          this->sampling_params.mirostat_eta, mirostat_m, &mirostat_mu);
+
+    } else if (this->sampling_params.mirostat == 2) {
+      static float mirostat_mu = 2.0f * this->sampling_params.mirostat_tau;
+      llama_sample_temperature(this->ctx, &candidates_p,
+                               this->sampling_params.temp);
+      id = llama_sample_token_mirostat_v2(
+          this->ctx, &candidates_p, this->sampling_params.mirostat_tau,
+          this->sampling_params.mirostat_eta, &mirostat_mu);
+
     } else {
       // Temperature sampling
-      llama_sample_top_k(this->ctx, &candidates_p, this->top_k);
-      llama_sample_tail_free(this->ctx, &candidates_p, this->tfs_z);
-      llama_sample_typical(this->ctx, &candidates_p, this->typical_p);
-      llama_sample_top_p(this->ctx, &candidates_p, this->top_p);
-      llama_sample_temperature(this->ctx, &candidates_p, this->temp);
+      llama_sample_top_k(this->ctx, &candidates_p, this->sampling_params.top_k);
+      llama_sample_tail_free(this->ctx, &candidates_p,
+                             this->sampling_params.tfs_z);
+      llama_sample_typical(this->ctx, &candidates_p,
+                           this->sampling_params.typical_p);
+      llama_sample_top_p(this->ctx, &candidates_p, this->sampling_params.top_p);
+      llama_sample_temperature(this->ctx, &candidates_p,
+                               this->sampling_params.temp);
       id = llama_sample_token(this->ctx, &candidates_p);
     }
   }

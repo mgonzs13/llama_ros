@@ -7,6 +7,23 @@
 
 #include "llama.h"
 
+struct llama_sampling_params {
+  float temp;
+  int32_t top_k;
+  float top_p;
+  float tfs_z;
+  float typical_p;
+  float repeat_penalty;
+  int32_t repeat_last_n;
+  float presence_penalty;
+  float frequency_penalty;
+  int32_t mirostat;
+  float mirostat_tau;
+  float mirostat_eta;
+  bool penalize_nl;
+};
+struct llama_sampling_params llama_sampling_default_params();
+
 namespace llama_ros {
 
 class Llama {
@@ -14,14 +31,11 @@ class Llama {
   using GenerateResponseCallback = std::function<void(std::string)>;
 
 public:
-  Llama(llama_context_params lparams, int32_t n_threads, int32_t n_predict,
-        int32_t repeat_last_n, int32_t n_batch, int32_t n_keep, float temp,
-        int32_t top_k, float top_p, float tfs_z, float typical_p,
-        float repeat_penalty, float presence_penalty, float frequency_penalty,
-        int32_t mirostat, float mirostat_tau, float mirostat_eta,
-        bool penalize_nl, std::string model, std::string lora_adapter,
-        std::string lora_base, std::string prefix, std::string suffix,
-        std::string stop);
+  Llama(llama_context_params context_params, int32_t n_threads,
+        int32_t n_predict, int32_t n_batch, int32_t n_keep,
+        llama_sampling_params sampling_params, std::string model,
+        std::string lora_adapter, std::string lora_base, std::string prefix,
+        std::string suffix, std::string stop);
   ~Llama();
 
   bool embedding;
@@ -41,25 +55,12 @@ protected:
 
 private:
   int32_t n_threads;
-  int32_t n_predict;     // new tokens to predict
-  int32_t repeat_last_n; // last n tokens to penalize
-  int32_t n_ctx;         // context size
-  int32_t n_batch;       // batch size for prompt processing
-  int32_t n_keep;        // number of tokens to keep from initial prompt
+  int32_t n_predict; // new tokens to predict
+  int32_t n_ctx;     // context size
+  int32_t n_batch;   // batch size for prompt processing
+  int32_t n_keep;    // number of tokens to keep from initial prompt
 
-  // sampling parameters
-  float temp;
-  int32_t top_k;
-  float top_p;
-  float tfs_z;
-  float typical_p;
-  float repeat_penalty;
-  float presence_penalty;
-  float frequency_penalty;
-  int32_t mirostat;
-  float mirostat_tau;
-  float mirostat_eta;
-  bool penalize_nl;
+  llama_sampling_params sampling_params;
 
   // prefix, suffix, stop
   std::string stop;
@@ -70,7 +71,6 @@ private:
   std::vector<llama_token> last_n_tokens;
   std::vector<llama_token> prompt_tokens;
   std::vector<llama_token> batch_tokens;
-
   bool is_antiprompt;
   bool input_noecho;
   int32_t n_past;

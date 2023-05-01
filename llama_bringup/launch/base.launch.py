@@ -40,7 +40,7 @@ def generate_launch_description():
                 "typical_p": LaunchConfiguration("typical_p", default=1.00),
                 "presence_penalty": LaunchConfiguration("presence_penalty", default=0.00),
                 "frequency_penalty": LaunchConfiguration("frequency_penalty", default=0.00),
-                "mirostat_tau": LaunchConfiguration("mirostat_tau", default=5.10),
+                "mirostat_tau": LaunchConfiguration("mirostat_tau", default=5.00),
                 "mirostat_eta": LaunchConfiguration("mirostat_eta", default=0.10),
                 "repeat_penalty": LaunchConfiguration("repeat_penalty", default=1.10),
 
