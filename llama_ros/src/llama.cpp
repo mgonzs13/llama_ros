@@ -221,37 +221,7 @@ std::string Llama::generate_response(const std::string &input_prompt,
   // generation loop
   while (this->n_remain != 0) {
 
-    // predict
-    if (this->batch_tokens.size() > 0) {
-      // infinite text generation via context swapping
-      // if we run out of context:
-      // - take the n_keep first tokens from the original prompt (via n_past)
-      // - take half of the last (n_ctx - n_keep) tokens and recompute the
-      // logits in a batch
-      if (this->n_past + (int)this->batch_tokens.size() > this->n_ctx) {
-
-        const int n_left = this->n_past - this->n_keep;
-        this->n_past = this->n_keep;
-
-        // insert n_left/2 tokens at the start of batch_tokens
-        // from last_n_tokens
-        this->batch_tokens.insert(this->batch_tokens.begin(),
-                                  this->last_n_tokens.begin() + this->n_ctx -
-                                      n_left / 2 - this->batch_tokens.size(),
-                                  this->last_n_tokens.end() -
-                                      this->batch_tokens.size());
-      }
-
-      fprintf(stderr, "EVAL %d\n", (int)this->batch_tokens.size());
-      if (llama_eval(this->ctx, this->batch_tokens.data(),
-                     this->batch_tokens.size(), this->n_past,
-                     this->n_threads)) {
-        fprintf(stderr, "Failed to eval\n");
-      }
-    }
-
-    this->n_past += this->batch_tokens.size();
-    this->batch_tokens.clear();
+    this->eval();
 
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
@@ -268,18 +238,6 @@ std::string Llama::generate_response(const std::string &input_prompt,
 
       // decrement remaining sampling budget
       --this->n_remain;
-
-    } else {
-      // some user input remains from prompt, forward it to processing
-      while ((int)this->prompt_tokens.size() > this->n_consumed) {
-        this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
-        this->last_n_tokens.erase(this->last_n_tokens.begin());
-        this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
-        ++this->n_consumed;
-        if ((int)this->batch_tokens.size() >= this->n_batch) {
-          break;
-        }
-      }
     }
 
     // when not currently processing queued
@@ -368,6 +326,48 @@ std::string Llama::generate_response(const std::string &input_prompt,
   }
 
   return result;
+}
+
+void Llama::eval() {
+
+  while (((int)this->prompt_tokens.size() > this->n_consumed) &&
+         ((int)this->batch_tokens.size() < this->n_batch)) {
+    this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
+    this->last_n_tokens.erase(this->last_n_tokens.begin());
+    this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
+    ++this->n_consumed;
+  }
+
+  // predict
+  if (this->batch_tokens.size() > 0) {
+    // infinite text generation via context swapping
+    // if we run out of context:
+    // - take the n_keep first tokens from the original prompt (via n_past)
+    // - take half of the last (n_ctx - n_keep) tokens and recompute the
+    // logits in a batch
+    if (this->n_past + (int)this->batch_tokens.size() > this->n_ctx) {
+
+      const int n_left = this->n_past - this->n_keep;
+      this->n_past = this->n_keep;
+
+      // insert n_left/2 tokens at the start of batch_tokens
+      // from last_n_tokens
+      this->batch_tokens.insert(this->batch_tokens.begin(),
+                                this->last_n_tokens.begin() + this->n_ctx -
+                                    n_left / 2 - this->batch_tokens.size(),
+                                this->last_n_tokens.end() -
+                                    this->batch_tokens.size());
+    }
+
+    fprintf(stderr, "EVAL %d\n", (int)this->batch_tokens.size());
+    if (llama_eval(this->ctx, this->batch_tokens.data(),
+                   this->batch_tokens.size(), this->n_past, this->n_threads)) {
+      fprintf(stderr, "Failed to eval\n");
+    }
+
+    this->n_past += this->batch_tokens.size();
+    this->batch_tokens.clear();
+  }
 }
 
 llama_token Llama::sample() {

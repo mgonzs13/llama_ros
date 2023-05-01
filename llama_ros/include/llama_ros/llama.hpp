@@ -51,6 +51,7 @@ public:
 
 protected:
   llama_context *ctx;
+  void eval();
   llama_token sample();
 
 private:
