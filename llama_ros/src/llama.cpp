@@ -39,8 +39,7 @@ Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
              llama_sampling_params sampling_params, std::string model,
              std::string lora_adapter, std::string lora_base,
              std::string prefix, std::string suffix, std::string stop)
-    : eval_params(eval_params), sampling_params(sampling_params), stop(stop),
-      canceled(false) {
+    : eval_params(eval_params), sampling_params(sampling_params), stop(stop) {
 
   this->embedding = context_params.embedding;
   this->sampling_params.repeat_last_n =
@@ -94,8 +93,9 @@ Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
   this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
   std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
 
-  this->n_past = 0;
   this->is_antiprompt = false;
+  this->canceled = false;
+  this->n_past = 0;
   this->n_remain = this->eval_params.n_predict;
   this->n_consumed = 0;
 
@@ -141,8 +141,9 @@ void Llama::reset() {
   this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
   std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
 
-  this->n_past = 0;
   this->is_antiprompt = false;
+  this->canceled = false;
+  this->n_past = 0;
   this->n_remain = this->eval_params.n_predict;
   this->n_consumed = 0;
 
