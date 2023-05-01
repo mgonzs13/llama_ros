@@ -185,11 +185,13 @@ std::string Llama::generate_response(const std::string &input_prompt,
                                      bool add_pfx_sfx,
                                      GenerateResponseCallback callback) {
 
-  bool input_noecho = true;
+  this->canceled = false;
+
   std::string result;
   std::string stopping_text;
   std::string aux;
-  this->canceled = false;
+
+  bool input_noecho = true;
   std::string prompt(input_prompt);
 
   if (prompt.size() <= 0) {
