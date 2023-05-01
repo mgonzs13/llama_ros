@@ -15,11 +15,6 @@ using std::placeholders::_2;
 
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
-  int32_t n_threads;
-  int32_t n_predict;
-  int32_t n_batch;
-  int32_t n_keep;
-
   std::string model;
   std::string lora_adapter;
   std::string lora_base;
@@ -31,6 +26,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   std::string file_path;
 
   auto context_params = llama_context_default_params();
+  auto eval_params = llama_eval_default_params();
   auto sampling_params = llama_sampling_default_params();
 
   // node params from llama.cpp common.h
@@ -83,10 +79,10 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("use_mlock", context_params.use_mlock);
   this->get_parameter("embedding", context_params.embedding);
 
-  this->get_parameter("n_threads", n_threads);
-  this->get_parameter("n_predict", n_predict);
-  this->get_parameter("n_keep", n_keep);
-  this->get_parameter("n_batch", n_batch);
+  this->get_parameter("n_threads", eval_params.n_threads);
+  this->get_parameter("n_predict", eval_params.n_predict);
+  this->get_parameter("n_keep", eval_params.n_keep);
+  this->get_parameter("n_batch", eval_params.n_batch);
 
   this->get_parameter("temp", sampling_params.temp);
   this->get_parameter("top_k", sampling_params.top_k);
@@ -113,9 +109,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("file", file_path);
 
   // load llama
-  this->llama = std::make_shared<Llama>(
-      context_params, n_threads, n_predict, n_batch, n_keep, sampling_params,
-      model, lora_adapter, lora_base, prefix, suffix, stop);
+  this->llama = std::make_shared<Llama>(context_params, eval_params,
+                                        sampling_params, model, lora_adapter,
+                                        lora_base, prefix, suffix, stop);
 
   // initial prompt
   if (!file_path.empty()) {

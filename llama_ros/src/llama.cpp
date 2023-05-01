@@ -22,17 +22,24 @@ struct llama_sampling_params llama_sampling_default_params() {
       /*.mirostat_eta           =*/0.10f,
       /*.penalize_nl            =*/true,
   };
-
   return result;
 }
 
-Llama::Llama(llama_context_params context_params, int32_t n_threads,
-             int32_t n_predict, int32_t n_batch, int32_t n_keep,
+struct llama_eval_params llama_eval_default_params() {
+  struct llama_eval_params result = {
+      /*.n_threads              =*/4,
+      /*.n_threads              =*/128,
+      /*.n_batch                =*/8,
+      /*.n_keep                 =*/-1,
+  };
+  return result;
+}
+
+Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
              llama_sampling_params sampling_params, std::string model,
              std::string lora_adapter, std::string lora_base,
              std::string prefix, std::string suffix, std::string stop)
-    : n_threads(n_threads), n_predict(n_predict), n_batch(n_batch),
-      n_keep(n_keep), sampling_params(sampling_params), stop(stop),
+    : eval_params(eval_params), sampling_params(sampling_params), stop(stop),
       canceled(false) {
 
   this->embedding = context_params.embedding;
@@ -64,22 +71,23 @@ Llama::Llama(llama_context_params context_params, int32_t n_threads,
   if (!lora_adapter.empty()) {
     if (llama_apply_lora_from_file(this->ctx, lora_adapter.c_str(),
                                    lora_base.empty() ? NULL : lora_base.c_str(),
-                                   this->n_threads)) {
+                                   this->eval_params.n_threads)) {
       fprintf(stderr, "Failed to apply lora adapter\n");
     }
   }
 
   // show system information
-  fprintf(stderr, "System_info: n_threads = %d / %d | %s\n", this->n_threads,
-          std::thread::hardware_concurrency(), llama_print_system_info());
+  fprintf(stderr, "System_info: n_threads = %d / %d | %s\n",
+          this->eval_params.n_threads, std::thread::hardware_concurrency(),
+          llama_print_system_info());
 
   // prefix & suffix
   this->inp_pfx = this->tokenize(prefix, true);
   this->inp_sfx = this->tokenize(suffix, false);
 
   // number of tokens to keep when resetting context
-  if (this->n_keep == -1) {
-    this->n_keep = (int)this->prompt_tokens.size();
+  if (this->eval_params.n_keep == -1) {
+    this->eval_params.n_keep = (int)this->prompt_tokens.size();
   }
 
   // TODO: replace with ring-buffer
@@ -88,7 +96,7 @@ Llama::Llama(llama_context_params context_params, int32_t n_threads,
 
   this->n_past = 0;
   this->is_antiprompt = false;
-  this->n_remain = this->n_predict;
+  this->n_remain = this->eval_params.n_predict;
   this->n_consumed = 0;
 
   // show info
@@ -103,7 +111,8 @@ Llama::Llama(llama_context_params context_params, int32_t n_threads,
           this->sampling_params.repeat_penalty);
   fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
-          n_ctx, this->n_batch, this->n_predict, this->n_keep);
+          this->n_ctx, this->eval_params.n_batch, this->eval_params.n_predict,
+          this->eval_params.n_keep);
 }
 
 Llama::~Llama() { llama_free(this->ctx); }
@@ -134,7 +143,7 @@ void Llama::reset() {
 
   this->n_past = 0;
   this->is_antiprompt = false;
-  this->n_remain = this->n_predict;
+  this->n_remain = this->eval_params.n_predict;
   this->n_consumed = 0;
 
   this->prompt_tokens.clear();
@@ -155,7 +164,8 @@ std::vector<float> Llama::create_embeddings(const std::string &input_prompt) {
   prompt.insert(0, 1, ' ');
   auto tokens = this->tokenize(prompt, true);
 
-  if (llama_eval(this->ctx, tokens.data(), tokens.size(), 0, this->n_threads)) {
+  if (llama_eval(this->ctx, tokens.data(), tokens.size(), 0,
+                 this->eval_params.n_threads)) {
     fprintf(stderr, "Failed to eval\n");
   }
 
@@ -319,8 +329,8 @@ std::string Llama::generate_response(const std::string &input_prompt,
     }
 
     // respect the maximum number of tokens
-    if (this->n_remain <= 0 && this->n_predict != -1) {
-      this->n_remain = this->n_predict;
+    if (this->n_remain <= 0 && this->eval_params.n_predict != -1) {
+      this->n_remain = this->eval_params.n_predict;
       break;
     }
   }
@@ -331,7 +341,7 @@ std::string Llama::generate_response(const std::string &input_prompt,
 void Llama::eval() {
 
   while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-         ((int)this->batch_tokens.size() < this->n_batch)) {
+         ((int)this->batch_tokens.size() < this->eval_params.n_batch)) {
     this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
     this->last_n_tokens.erase(this->last_n_tokens.begin());
     this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
@@ -347,8 +357,8 @@ void Llama::eval() {
     // logits in a batch
     if (this->n_past + (int)this->batch_tokens.size() > this->n_ctx) {
 
-      const int n_left = this->n_past - this->n_keep;
-      this->n_past = this->n_keep;
+      const int n_left = this->n_past - this->eval_params.n_keep;
+      this->n_past = this->eval_params.n_keep;
 
       // insert n_left/2 tokens at the start of batch_tokens
       // from last_n_tokens
@@ -361,7 +371,8 @@ void Llama::eval() {
 
     fprintf(stderr, "EVAL %d\n", (int)this->batch_tokens.size());
     if (llama_eval(this->ctx, this->batch_tokens.data(),
-                   this->batch_tokens.size(), this->n_past, this->n_threads)) {
+                   this->batch_tokens.size(), this->n_past,
+                   this->eval_params.n_threads)) {
       fprintf(stderr, "Failed to eval\n");
     }
 
