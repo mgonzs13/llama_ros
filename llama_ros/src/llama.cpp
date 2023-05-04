@@ -236,23 +236,6 @@ std::string Llama::generate_response(const std::string &input_prompt,
 
     this->eval();
 
-    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
-
-      // out of user input, sample next token
-      llama_token id = this->sample();
-      this->last_n_tokens.erase(this->last_n_tokens.begin());
-      this->last_n_tokens.push_back(id);
-
-      // add it to the context
-      this->batch_tokens.push_back(id);
-
-      // echo this to console
-      input_noecho = false;
-
-      // decrement remaining sampling budget
-      --this->n_remain;
-    }
-
     // when not currently processing queued
     // inputs check if we should end
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
@@ -268,6 +251,23 @@ std::string Llama::generate_response(const std::string &input_prompt,
         this->is_antiprompt = true;
         break;
       }
+    }
+
+    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
+
+      // out of user input, sample next token
+      llama_token id = this->sample();
+      this->last_n_tokens.erase(this->last_n_tokens.begin());
+      this->last_n_tokens.push_back(id);
+
+      // add it to the context
+      this->batch_tokens.push_back(id);
+
+      // echo this to console
+      input_noecho = false;
+
+      // decrement remaining sampling budget
+      --this->n_remain;
     }
 
     if (this->batch_tokens.back() == llama_token_eos()) {
