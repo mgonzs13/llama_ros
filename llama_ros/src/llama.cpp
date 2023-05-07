@@ -372,14 +372,25 @@ void Llama::eval() {
                                     this->batch_tokens.size());
     }
 
-    fprintf(stderr, "EVAL %d\n", (int)this->batch_tokens.size());
-    if (llama_eval(this->ctx, this->batch_tokens.data(),
-                   this->batch_tokens.size(), this->n_past,
-                   this->eval_params.n_threads)) {
-      fprintf(stderr, "Failed to eval\n");
+    // evaluate tokens in batches
+    // batch_tokens is typically prepared beforehand to fit within a batch
+    // but not always
+    for (int i = 0; i < (int)this->batch_tokens.size();
+         i += this->eval_params.n_batch) {
+
+      int n_eval = (int)this->batch_tokens.size() - i;
+      if (n_eval > this->eval_params.n_batch) {
+        n_eval = this->eval_params.n_batch;
+      }
+
+      fprintf(stderr, "EVAL %d\n", n_eval);
+      if (llama_eval(this->ctx, &this->batch_tokens[i], n_eval, this->n_past,
+                     this->eval_params.n_threads)) {
+        fprintf(stderr, "Failed to eval\n");
+      }
+      this->n_past += n_eval;
     }
 
-    this->n_past += this->batch_tokens.size();
     this->batch_tokens.clear();
   }
 }
@@ -442,12 +453,14 @@ llama_token Llama::sample() {
 
     } else {
       // Temperature sampling
-      llama_sample_top_k(this->ctx, &candidates_p, this->sampling_params.top_k);
+      llama_sample_top_k(this->ctx, &candidates_p, this->sampling_params.top_k,
+                         1);
       llama_sample_tail_free(this->ctx, &candidates_p,
-                             this->sampling_params.tfs_z);
+                             this->sampling_params.tfs_z, 1);
       llama_sample_typical(this->ctx, &candidates_p,
-                           this->sampling_params.typical_p);
-      llama_sample_top_p(this->ctx, &candidates_p, this->sampling_params.top_p);
+                           this->sampling_params.typical_p, 1);
+      llama_sample_top_p(this->ctx, &candidates_p, this->sampling_params.top_p,
+                         1);
       llama_sample_temperature(this->ctx, &candidates_p,
                                this->sampling_params.temp);
       id = llama_sample_token(this->ctx, &candidates_p);
