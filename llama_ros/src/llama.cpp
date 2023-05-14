@@ -190,6 +190,7 @@ std::string Llama::generate_response(const std::string &input_prompt,
   std::string result;
   std::string stopping_text;
   std::string aux;
+  std::vector<llama_token> line_inp;
 
   bool input_noecho = true;
   std::string prompt(input_prompt);
@@ -201,7 +202,12 @@ std::string Llama::generate_response(const std::string &input_prompt,
   if (!this->prompt_tokens.size()) {
     prompt.insert(0, 1, ' ');
   }
-  auto line_inp = this->tokenize(prompt, false);
+
+  if (!this->prompt_tokens.size() && !add_pfx_sfx) {
+    line_inp = this->tokenize(prompt, true);
+  } else {
+    line_inp = this->tokenize(prompt, false);
+  }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
   if (add_pfx_sfx) {
