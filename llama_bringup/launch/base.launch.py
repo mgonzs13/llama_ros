@@ -15,7 +15,6 @@ def generate_launch_description():
             name="llama_node",
             parameters=[{
                 "seed": LaunchConfiguration("seed", default=-1),
-                "n_parts": LaunchConfiguration("n_parts", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
                 "memory_f16": LaunchConfiguration("memory_f16", default=True),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),

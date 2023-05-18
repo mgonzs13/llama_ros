@@ -35,7 +35,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"n_threads", 1},
                                             {"n_predict", 128},
                                             {"repeat_last_n", 64},
-                                            {"n_parts", -1},
                                             {"n_ctx", 512},
                                             {"n_batch", 512},
                                             {"n_keep", -1},
@@ -72,7 +71,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                      });
 
   this->get_parameter("seed", context_params.seed);
-  this->get_parameter("n_parts", context_params.n_parts);
   this->get_parameter("n_ctx", context_params.n_ctx);
   this->get_parameter("memory_f16", context_params.f16_kv);
   this->get_parameter("use_mmap", context_params.use_mmap);
