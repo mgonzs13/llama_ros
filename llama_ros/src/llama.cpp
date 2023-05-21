@@ -53,6 +53,7 @@ Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
   }
 
   // load the model
+  llama_init_backend();
   this->ctx = llama_init_from_file(model.c_str(), context_params);
   this->n_ctx = llama_n_ctx(this->ctx);
 
