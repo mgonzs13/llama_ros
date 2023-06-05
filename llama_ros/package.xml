@@ -3,9 +3,9 @@
 <package format="3">
   <name>llama_ros</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="mgons@unileon.es">miguel</maintainer>
-  <license>TODO: License declaration</license>
+  <description>llama.cpp for ROS 2</description>
+  <maintainer email="mgons@unileon.es">Miguel Ángel González Santamarta</maintainer>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
