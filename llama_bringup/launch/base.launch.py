@@ -43,6 +43,10 @@ def generate_launch_description():
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
                 "embedding": LaunchConfiguration("embedding", default=True),
 
+                "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
+                "main_gpu": LaunchConfiguration("main_gpu", default=0),
+                "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
+
                 "n_threads": LaunchConfiguration("n_threads", default=4),
                 "n_predict": LaunchConfiguration("n_predict", default=128),
                 "n_batch": LaunchConfiguration("n_batch", default=8),

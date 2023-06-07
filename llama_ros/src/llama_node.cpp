@@ -43,6 +43,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   std::string suffix;
   std::string stop;
 
+  std::vector<double> tensor_split;
+
   std::string prompt;
   std::string file_path;
 
@@ -61,6 +63,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"n_keep", -1},
                                             {"top_k", 40},
                                             {"mirostat", 0},
+                                            {"n_gpu_layers", 0},
+                                            {"main_gpu", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -83,6 +87,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                           {"mirostat_tau", 5.00f},
                                           {"mirostat_eta", 0.10f},
                                       });
+  this->declare_parameter<std::vector<double>>("tensor_split",
+                                               std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
                                          {"memory_f16", true},
                                          {"use_mmap", true},
@@ -97,6 +103,10 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("use_mmap", context_params.use_mmap);
   this->get_parameter("use_mlock", context_params.use_mlock);
   this->get_parameter("embedding", context_params.embedding);
+
+  this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
+  this->get_parameter("main_gpu", context_params.main_gpu);
+  this->get_parameter("tensor_split", tensor_split);
 
   this->get_parameter("n_threads", eval_params.n_threads);
   this->get_parameter("n_predict", eval_params.n_predict);
@@ -126,6 +136,15 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->get_parameter("prompt", prompt);
   this->get_parameter("file", file_path);
+
+  // parse tensor_split
+  for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i) {
+    if (i < tensor_split.size()) {
+      context_params.tensor_split[i] = (float)tensor_split[i];
+    } else {
+      context_params.tensor_split[i] = 0.0f;
+    }
+  }
 
   // load llama
   this->llama = std::make_shared<Llama>(context_params, eval_params,
