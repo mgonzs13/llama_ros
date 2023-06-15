@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_HPP
-#define LLAMA_HPP
+#ifndef LLAMA_ROS__LLAMA_HPP
+#define LLAMA_ROS__LLAMA_HPP
 
 #include <functional>
 #include <string>

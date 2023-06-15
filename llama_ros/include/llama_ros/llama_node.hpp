@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_NODE_HPP
-#define LLAMA_NODE_HPP
+#ifndef LLAMA_ROS__LLAMA_NODE_HPP
+#define LLAMA_ROS__LLAMA_NODE_HPP
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
