@@ -61,10 +61,12 @@ class Llama {
   using GenerateResponseCallback = std::function<void(std::string)>;
 
 public:
-  Llama(llama_context_params context_params, llama_eval_params eval_params,
-        llama_sampling_params sampling_params, std::string model,
-        std::string lora_adapter, std::string lora_base, std::string prefix,
-        std::string suffix, std::string stop);
+  Llama(llama_context_params context_params,
+        const llama_eval_params &eval_params,
+        const llama_sampling_params &sampling_params, const std::string &model,
+        const std::string &lora_adapter, const std::string &lora_base,
+        const std::string &prefix, const std::string &suffix,
+        const std::string &stop);
   ~Llama();
 
   bool embedding;

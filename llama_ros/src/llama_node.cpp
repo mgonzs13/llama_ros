@@ -95,7 +95,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"use_mlock", false},
                                          {"embedding", true},
                                          {"penalize_nl", true},
-                                         {"low_vram", false},
                                      });
 
   this->get_parameter("seed", context_params.seed);

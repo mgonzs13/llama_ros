@@ -56,10 +56,12 @@ struct llama_eval_params llama_eval_default_params() {
   return result;
 }
 
-Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
-             llama_sampling_params sampling_params, std::string model,
-             std::string lora_adapter, std::string lora_base,
-             std::string prefix, std::string suffix, std::string stop)
+Llama::Llama(llama_context_params context_params,
+             const llama_eval_params &eval_params,
+             const llama_sampling_params &sampling_params,
+             const std::string &model, const std::string &lora_adapter,
+             const std::string &lora_base, const std::string &prefix,
+             const std::string &suffix, const std::string &stop)
     : eval_params(eval_params), sampling_params(sampling_params), stop(stop) {
 
   this->embedding = context_params.embedding;
@@ -72,6 +74,17 @@ Llama::Llama(llama_context_params context_params, llama_eval_params eval_params,
   if (!lora_adapter.empty()) {
     context_params.use_mmap = false;
   }
+
+#ifdef GGML_USE_CUBLAS
+  context_params.low_vram = true;
+
+  if (!lora_adapter.empty() && context_params.n_gpu_layers > 0) {
+    fprintf(
+        stderr,
+        "The simultaneous use of LoRAs and GPU acceleration is not supported");
+    exit(1);
+  }
+#endif
 
   // load the model
   llama_init_backend();
