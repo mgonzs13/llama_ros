@@ -95,6 +95,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"use_mlock", false},
                                          {"embedding", true},
                                          {"penalize_nl", true},
+                                         {"low_vram", false},
                                      });
 
   this->get_parameter("seed", context_params.seed);
@@ -107,6 +108,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
+  this->get_parameter("low_vram", context_params.low_vram);
 
   this->get_parameter("n_threads", eval_params.n_threads);
   this->get_parameter("n_predict", eval_params.n_predict);
