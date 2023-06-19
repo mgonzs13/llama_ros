@@ -22,34 +22,29 @@
 
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from llama_bringup.utils import get_base_launch_path, get_llama_model_path, get_prompt_path
+from llama_bringup.utils import create_llama_launch
 
 
 def generate_launch_description():
 
     return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(get_base_launch_path()),
-            launch_arguments={
-                "n_ctx": "512",
+        create_llama_launch(
+            n_ctx=512,
 
-                "n_threads": "4",
-                "n_predict": "512",
-                "n_batch": "8",
+            n_threads=4,
+            n_predict=512,
+            n_batch=8,
 
-                "temp": "0.2",
-                "top_k": "40",
-                "repeat_last_n": "8",
+            temp=0.2,
+            top_k=40,
+            repeat_last_n=8,
 
-                "model": get_llama_model_path("vicuna-1.1.bin"),
+            model="vicuna-1.1.bin",
 
-                "prefix": "\n\nUSER:\n",
-                "suffix": "\n\nASSISTANT:\n",
-                "stop": "USER:\n",
+            prefix="\n\nUSER:\n",
+            suffix="\n\nASSISTANT:\n",
+            stop="USER:\n",
 
-                "file": get_prompt_path("vicuna_1.txt"),
-            }.items()
+            file="vicuna_1.txt"
         )
     ])
