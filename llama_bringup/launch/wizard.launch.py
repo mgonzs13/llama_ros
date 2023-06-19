@@ -21,21 +21,17 @@
 # SOFTWARE.
 
 
-import os
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from ament_index_python.packages import get_package_share_directory
+from llama_bringup.utils import get_base_launch_path, get_llama_model_path, get_prompt_path
 
 
 def generate_launch_description():
-    llama_bringup_shared_dir = get_package_share_directory(
-        "llama_bringup")
 
     return LaunchDescription([
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(llama_bringup_shared_dir, "launch", "base.launch.py")),
+            PythonLaunchDescriptionSource(get_base_launch_path()),
             launch_arguments={
                 "n_ctx": "512",
 
@@ -47,13 +43,13 @@ def generate_launch_description():
                 "top_k": "40",
                 "repeat_last_n": "8",
 
-                "model": os.path.abspath(os.path.normpath(os.path.expanduser("~/llama_models/wizard.bin"))),
+                "model": get_llama_model_path("wizard.bin"),
 
                 "prefix": "\n\n### Instruction:\n",
                 "suffix": "\n\n### Response:\n",
                 "stop": "### Instruction:\n",
 
-                "file": os.path.join(llama_bringup_shared_dir, "prompts/alpaca.txt"),
+                "file": get_prompt_path("alpaca.txt"),
             }.items()
         )
     ])

@@ -21,35 +21,28 @@
 # SOFTWARE.
 
 
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from llama_bringup.utils import get_base_launch_path, get_llama_model_path, get_prompt_path
+import os
+from ament_index_python.packages import get_package_share_directory
 
 
-def generate_launch_description():
+def get_base_launch_path() -> str:
+    return os.path.join(
+        get_package_share_directory("llama_bringup"),
+        "launch",
+        "base.launch.py")
 
-    return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(get_base_launch_path()),
-            launch_arguments={
-                "n_ctx": "512",
 
-                "n_threads": "4",
-                "n_predict": "512",
-                "n_batch": "8",
+def get_llama_model_path(model_name: str) -> str:
+    return os.path.join(
+        os.path.abspath(os.path.normpath(
+            os.path.expanduser("~/llama_models"))),
+        model_name
+    )
 
-                "temp": "0.8",
-                "top_k": "40",
-                "repeat_last_n": "8",
 
-                "model": get_llama_model_path("llama.bin"),
-
-                "prefix": "\n\n### User:\n",
-                "suffix": "\n\n### Bob:\n",
-                "stop": "### User:\n",
-
-                "file": get_prompt_path("chat-with-bob.txt"),
-            }.items()
-        )
-    ])
+def get_prompt_path(prompt_file_name: str) -> str:
+    return os.path.join(
+        get_package_share_directory("llama_bringup"),
+        "prompts",
+        prompt_file_name
+    )
