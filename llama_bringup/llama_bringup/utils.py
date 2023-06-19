@@ -43,12 +43,17 @@ def get_llama_model_path(model_name: str) -> str:
 
 
 def get_lora_model_path(model_name: str) -> str:
-    return os.path.join(
-        os.path.abspath(os.path.normpath(
-            os.path.expanduser("~/llama_models"))),
-        "lora",
-        model_name
-    )
+
+    if model_name:
+
+        return os.path.join(
+            os.path.abspath(os.path.normpath(
+                os.path.expanduser("~/llama_models"))),
+            "lora",
+            model_name
+        )
+
+    return ""
 
 
 def get_prompt_path(prompt_file_name: str) -> str:
