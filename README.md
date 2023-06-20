@@ -11,6 +11,21 @@ $ cd ~/ros2_ws
 $ colcon build
 ```
 
+
+## LLMs
+ - [LLaMA](https://huggingface.co/TheBloke/LLaMa-7B-GGML)
+ - [Alpaca](https://huggingface.co/TheBloke/gpt4-x-alpaca-13B-GGML)
+ - [GPT4All](https://huggingface.co/TheBloke/GPT4All-13B-snoozy-GGML)
+ - [Vicuna](https://huggingface.co/TheBloke/Vicuna-7B-CoT-GGML)
+ - [Vicuan-1.1](https://huggingface.co/TheBloke/vicuna-7B-1.1-GGML)
+ - [WizardLM](https://huggingface.co/TheBloke/wizardLM-7B-GGML)
+ - [WizardVicuna](https://huggingface.co/TheBloke/Wizard-Vicuna-7B-Uncensored-GGML)
+ - [Airoboros](https://huggingface.co/TheBloke/airoboros-7B-gpt4-1.2-GGML)
+ - [Tulu](https://huggingface.co/TheBloke/tulu-7B-GGML)
+ - [Robin](https://huggingface.co/TheBloke/robin-7B-v2-GGML)
+ - [Gorilla](https://huggingface.co/TheBloke/gorilla-7B-GGML)
+
+
 ## Demo
 
 Download the models and place them in `~/llama_models`.
