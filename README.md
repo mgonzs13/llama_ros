@@ -13,6 +13,7 @@ $ colcon build
 
 
 ## LLMs
+
  - [LLaMA](https://huggingface.co/TheBloke/LLaMa-7B-GGML)
  - [Alpaca](https://huggingface.co/TheBloke/gpt4-x-alpaca-13B-GGML)
  - [GPT4All](https://huggingface.co/TheBloke/GPT4All-13B-snoozy-GGML)
@@ -24,6 +25,7 @@ $ colcon build
  - [Tulu](https://huggingface.co/TheBloke/tulu-7B-GGML)
  - [Robin](https://huggingface.co/TheBloke/robin-7B-v2-GGML)
  - [Gorilla](https://huggingface.co/TheBloke/gorilla-7B-GGML)
+ - [Guanaco](https://huggingface.co/TheBloke/guanaco-7B-GGML)
 
 
 ## Demo
