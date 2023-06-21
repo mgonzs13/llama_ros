@@ -29,17 +29,15 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=2048,
+            n_ctx=512,
 
-            n_gpu_layers=25,
+            n_threads=4,
+            n_predict=512,
+            n_batch=8,
 
-            n_threads=8,
-            n_predict=-1,
-            n_batch=256,
-
-            temp=0.0,
-            top_k=200,
-            repeat_last_n=64,
+            temp=0.2,
+            top_k=40,
+            repeat_last_n=8,
 
             model="airoboros.bin",
 
