@@ -81,6 +81,7 @@ public:
                                 GenerateResponseCallback callbakc = nullptr);
 
 protected:
+  llama_model *model;
   llama_context *ctx;
   void eval();
   llama_token sample();

@@ -88,9 +88,19 @@ Llama::Llama(llama_context_params context_params,
 
   // load the model
   llama_init_backend();
-  this->ctx = llama_init_from_file(model.c_str(), context_params);
-  this->n_ctx = llama_n_ctx(this->ctx);
 
+  this->model = llama_load_model_from_file(model.c_str(), context_params);
+  if (this->model == NULL) {
+    fprintf(stderr, "Failed to load model '%s'\n", model.c_str());
+  }
+
+  this->ctx = llama_new_context_with_model(this->model, context_params);
+  if (this->ctx == NULL) {
+    fprintf(stderr, "Failed to create context with model '%s'\n",
+            model.c_str());
+  }
+
+  this->n_ctx = llama_n_ctx(this->ctx);
   if (this->n_ctx > 2048) {
     fprintf(stderr,
             "Model does not support context sizes greater than 2048 tokens "
@@ -98,14 +108,11 @@ Llama::Llama(llama_context_params context_params,
             this->n_ctx);
   }
 
-  if (this->ctx == NULL) {
-    fprintf(stderr, "Failed to load model '%s'\n", model.c_str());
-  }
-
   if (!lora_adapter.empty()) {
-    if (llama_apply_lora_from_file(this->ctx, lora_adapter.c_str(),
-                                   lora_base.empty() ? NULL : lora_base.c_str(),
-                                   this->eval_params.n_threads)) {
+    if (llama_model_apply_lora_from_file(this->model, lora_adapter.c_str(),
+                                         lora_base.empty() ? NULL
+                                                           : lora_base.c_str(),
+                                         this->eval_params.n_threads)) {
       fprintf(stderr, "Failed to apply lora adapter\n");
     }
   }
@@ -150,7 +157,10 @@ Llama::Llama(llama_context_params context_params,
           this->eval_params.n_keep);
 }
 
-Llama::~Llama() { llama_free(this->ctx); }
+Llama::~Llama() {
+  llama_free(this->ctx);
+  llama_free_model(this->model);
+}
 
 std::vector<llama_token> Llama::tokenize(const std::string &text,
                                          bool add_bos) {
