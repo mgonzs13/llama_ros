@@ -1,0 +1,10 @@
+### System:
+You are an AI assistant that follows instruction extremely well. Help as much as you can.
+
+### User:
+Hello, Assistant
+
+### Response:
+Hello. How may I help you today?
+
+### User:
