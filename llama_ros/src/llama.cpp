@@ -78,13 +78,6 @@ Llama::Llama(llama_context_params context_params,
 
 #ifdef GGML_USE_CUBLAS
   context_params.low_vram = true;
-
-  if (!lora_adapter.empty() && context_params.n_gpu_layers > 0) {
-    fprintf(
-        stderr,
-        "The simultaneous use of LoRAs and GPU acceleration is not supported");
-    exit(1);
-  }
 #endif
 
   // load the model
