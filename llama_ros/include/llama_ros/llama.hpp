@@ -65,7 +65,7 @@ public:
         const llama_eval_params &eval_params,
         const llama_sampling_params &sampling_params, const std::string &model,
         const std::string &lora_adapter, const std::string &lora_base,
-        const std::string &prefix, const std::string &suffix,
+        const bool &numa, const std::string &prefix, const std::string &suffix,
         const std::string &stop);
   ~Llama();
 

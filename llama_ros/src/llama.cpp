@@ -60,8 +60,9 @@ Llama::Llama(llama_context_params context_params,
              const llama_eval_params &eval_params,
              const llama_sampling_params &sampling_params,
              const std::string &model, const std::string &lora_adapter,
-             const std::string &lora_base, const std::string &prefix,
-             const std::string &suffix, const std::string &stop)
+             const std::string &lora_base, const bool &numa,
+             const std::string &prefix, const std::string &suffix,
+             const std::string &stop)
     : eval_params(eval_params), sampling_params(sampling_params), stop(stop) {
 
   this->embedding = context_params.embedding;
@@ -87,7 +88,7 @@ Llama::Llama(llama_context_params context_params,
 #endif
 
   // load the model
-  llama_init_backend();
+  llama_init_backend(numa);
 
   this->model = llama_load_model_from_file(model.c_str(), context_params);
   if (this->model == NULL) {

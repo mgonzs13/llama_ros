@@ -39,6 +39,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   std::string model;
   std::string lora_adapter;
   std::string lora_base;
+  bool numa;
   std::string prefix;
   std::string suffix;
   std::string stop;
@@ -95,6 +96,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"use_mlock", false},
                                          {"embedding", true},
                                          {"penalize_nl", true},
+                                         {"numa", false},
                                      });
 
   this->get_parameter("seed", context_params.seed);
@@ -131,6 +133,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("model", model);
   this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", lora_base);
+  this->get_parameter("numa", numa);
   this->get_parameter("prefix", prefix);
   this->get_parameter("suffix", suffix);
   this->get_parameter("stop", stop);
@@ -150,7 +153,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   // load llama
   this->llama = std::make_shared<Llama>(context_params, eval_params,
                                         sampling_params, model, lora_adapter,
-                                        lora_base, prefix, suffix, stop);
+                                        lora_base, numa, prefix, suffix, stop);
 
   // initial prompt
   if (!file_path.empty()) {
