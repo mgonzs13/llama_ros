@@ -66,6 +66,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"mirostat", 0},
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
+                                            {"n_probs", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -129,6 +130,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("mirostat_tau", sampling_params.mirostat_tau);
   this->get_parameter("mirostat_eta", sampling_params.mirostat_eta);
   this->get_parameter("penalize_nl", sampling_params.penalize_nl);
+  this->get_parameter("n_probs", sampling_params.n_probs);
 
   this->get_parameter("model", model);
   this->get_parameter("lora_adapter", lora_adapter);

@@ -42,6 +42,8 @@ def generate_launch_description():
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
                 "embedding": LaunchConfiguration("embedding", default=True),
+                "numa": LaunchConfiguration("numa", default=True),
+                "n_probs": LaunchConfiguration("n_probs", default=0),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),

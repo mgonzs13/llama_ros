@@ -42,6 +42,7 @@ struct llama_sampling_params llama_sampling_default_params() {
       /*.mirostat_tau           =*/5.0f,
       /*.mirostat_eta           =*/0.10f,
       /*.penalize_nl            =*/true,
+      /*.n_probs                =*/0,
   };
   return result;
 }
@@ -475,8 +476,13 @@ llama_token Llama::sample() {
   }
 
   if (this->sampling_params.temp <= 0) {
+
     // Greedy sampling
     id = llama_sample_token_greedy(this->ctx, &candidates_p);
+
+    if (this->sampling_params.n_probs > 0) {
+      llama_sample_softmax(this->ctx, &candidates_p);
+    }
 
   } else {
     if (this->sampling_params.mirostat == 1) {
@@ -497,15 +503,18 @@ llama_token Llama::sample() {
           this->sampling_params.mirostat_eta, &mirostat_mu);
 
     } else {
+
       // Temperature sampling
+      size_t min_keep = std::max(1, this->sampling_params.n_probs);
+
       llama_sample_top_k(this->ctx, &candidates_p, this->sampling_params.top_k,
-                         1);
+                         min_keep);
       llama_sample_tail_free(this->ctx, &candidates_p,
-                             this->sampling_params.tfs_z, 1);
+                             this->sampling_params.tfs_z, min_keep);
       llama_sample_typical(this->ctx, &candidates_p,
-                           this->sampling_params.typical_p, 1);
+                           this->sampling_params.typical_p, min_keep);
       llama_sample_top_p(this->ctx, &candidates_p, this->sampling_params.top_p,
-                         1);
+                         min_keep);
       llama_sample_temperature(this->ctx, &candidates_p,
                                this->sampling_params.temp);
       id = llama_sample_token(this->ctx, &candidates_p);

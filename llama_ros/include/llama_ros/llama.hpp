@@ -43,6 +43,7 @@ struct llama_sampling_params {
   float mirostat_tau;
   float mirostat_eta;
   bool penalize_nl;
+  int32_t n_probs;
 };
 struct llama_sampling_params llama_sampling_default_params();
 
