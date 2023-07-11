@@ -41,9 +41,9 @@ def generate_launch_description():
 
             model="llama.bin",
 
-            prefix="\n\nUSER:\n",
-            suffix="\n\nASSISTANT:\n",
-            stop="USER:\n",
+            prefix="\n\n### User:\n",
+            suffix="\n\n### Bob:\n",
+            stop="### User:\n",
 
             file="chat-with-bob.txt"
         )
