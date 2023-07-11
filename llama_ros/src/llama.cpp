@@ -72,11 +72,6 @@ Llama::Llama(llama_context_params context_params,
           ? context_params.n_ctx
           : this->sampling_params.repeat_last_n;
 
-  // when using lora, mmap is disable
-  if (!lora_adapter.empty()) {
-    context_params.use_mmap = false;
-  }
-
 #ifdef GGML_USE_CUBLAS
   context_params.low_vram = true;
 #endif
