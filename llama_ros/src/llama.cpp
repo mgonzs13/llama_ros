@@ -82,7 +82,7 @@ Llama::Llama(llama_context_params context_params,
 #endif
 
   // load the model
-  llama_init_backend(numa);
+  llama_backend_init(numa);
 
   this->model = llama_load_model_from_file(model.c_str(), context_params);
   if (this->model == NULL) {
@@ -155,6 +155,7 @@ Llama::Llama(llama_context_params context_params,
 Llama::~Llama() {
   llama_free(this->ctx);
   llama_free_model(this->model);
+  llama_backend_free();
 }
 
 std::vector<llama_token> Llama::tokenize(const std::string &text,
