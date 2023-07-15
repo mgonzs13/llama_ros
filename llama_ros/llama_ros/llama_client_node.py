@@ -26,7 +26,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from llama_msgs.action import GPT
+from llama_msgs.action import GenerateResponse
 
 
 class LlamaClientNode(Node):
@@ -41,14 +41,15 @@ class LlamaClientNode(Node):
         self.prompt = self.prompt.replace("\\n", "\n")
 
         self._get_result_future = None
-        self._action_client = ActionClient(self, GPT, "gpt")
+        self._action_client = ActionClient(
+            self, GenerateResponse, "generate_response")
 
     def text_cb(self, msg) -> None:
         print(msg.feedback.text, end="", flush=True)
 
     def send_prompt(self) -> None:
 
-        goal = GPT.Goal()
+        goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
 
         self._action_client.wait_for_server()

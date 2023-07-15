@@ -63,8 +63,7 @@ class Llama {
 
 public:
   Llama(llama_context_params context_params,
-        const llama_eval_params &eval_params,
-        const llama_sampling_params &sampling_params, const std::string &model,
+        const llama_eval_params &eval_params, const std::string &model,
         const std::string &lora_adapter, const std::string &lora_base,
         const bool &numa, const std::string &prefix, const std::string &suffix,
         const std::string &stop);
@@ -79,19 +78,19 @@ public:
   std::vector<float> create_embeddings(const std::string &input_prompt);
   std::string generate_response(const std::string &input_prompt,
                                 bool add_pfx_sfx = true,
+                                const llama_sampling_params &sampling_params =
+                                    llama_sampling_default_params(),
                                 GenerateResponseCallback callbakc = nullptr);
 
 protected:
   llama_model *model;
   llama_context *ctx;
   void eval();
-  llama_token sample();
+  llama_token sample(llama_sampling_params sampling_params);
 
 private:
   int32_t n_ctx; // context size
-
   llama_eval_params eval_params;
-  llama_sampling_params sampling_params;
 
   // prefix, suffix, stop
   std::string stop;

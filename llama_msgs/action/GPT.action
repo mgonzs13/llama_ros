@@ -1,8 +1,0 @@
-string prompt
-bool reset false
-bool embedding false
----
-string response
-float32[] embeddings
----
-string text

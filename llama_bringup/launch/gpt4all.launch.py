@@ -35,10 +35,6 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            temp=0.2,
-            top_k=40,
-            repeat_last_n=8,
-
             model="gpt4all.bin",
 
             prefix="\n\n### Instruction:\n",

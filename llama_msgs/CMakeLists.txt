@@ -10,7 +10,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "action/GPT.action"
+  "msg/SamplingConfig.msg"
+  "action/GenerateResponse.action"
+  "srv/GenerateEmbeddings.srv"
+  "srv/Tokenize.srv"
 )
 
 ament_package()

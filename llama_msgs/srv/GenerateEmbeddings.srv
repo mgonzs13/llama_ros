@@ -1,0 +1,3 @@
+string prompt           # prompt
+---
+float32[] embeddings    # embeddings

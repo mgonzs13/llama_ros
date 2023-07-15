@@ -51,22 +51,17 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   auto context_params = llama_context_default_params();
   auto eval_params = llama_eval_default_params();
-  auto sampling_params = llama_sampling_default_params();
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
                                             {"seed", -1},
                                             {"n_threads", 1},
                                             {"n_predict", 128},
-                                            {"repeat_last_n", 64},
                                             {"n_ctx", 512},
                                             {"n_batch", 512},
                                             {"n_keep", -1},
-                                            {"top_k", 40},
-                                            {"mirostat", 0},
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
-                                            {"n_probs", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -79,15 +74,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                                 {"stop", ""},
                                             });
   this->declare_parameters<float>("", {
-                                          {"temp", 0.80f},
-                                          {"top_p", 0.95f},
-                                          {"tfs_z", 1.00f},
-                                          {"typical_p", 1.00f},
-                                          {"repeat_penalty", 1.10f},
-                                          {"presence_penalty", 0.00f},
-                                          {"frequency_penalty", 0.00f},
-                                          {"mirostat_tau", 5.00f},
-                                          {"mirostat_eta", 0.10f},
                                           {"rope_freq_base", 10000.0f},
                                           {"rope_freq_scale", 1.0f},
                                       });
@@ -98,7 +84,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"embedding", true},
-                                         {"penalize_nl", true},
+                                         {"low_vram", false},
                                          {"numa", false},
                                      });
 
@@ -112,35 +98,21 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
-  this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
-
-  this->get_parameter("rope_freq_base", context_params.rope_freq_base);
   this->get_parameter("low_vram", context_params.low_vram);
+
+  this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
+  this->get_parameter("rope_freq_base", context_params.rope_freq_base);
 
   this->get_parameter("n_threads", eval_params.n_threads);
   this->get_parameter("n_predict", eval_params.n_predict);
   this->get_parameter("n_keep", eval_params.n_keep);
   this->get_parameter("n_batch", eval_params.n_batch);
 
-  this->get_parameter("temp", sampling_params.temp);
-  this->get_parameter("top_k", sampling_params.top_k);
-  this->get_parameter("top_p", sampling_params.top_p);
-  this->get_parameter("tfs_z", sampling_params.tfs_z);
-  this->get_parameter("typical_p", sampling_params.typical_p);
-  this->get_parameter("repeat_penalty", sampling_params.repeat_penalty);
-  this->get_parameter("repeat_last_n", sampling_params.repeat_last_n);
-  this->get_parameter("presence_penalty", sampling_params.presence_penalty);
-  this->get_parameter("frequency_penalty", sampling_params.frequency_penalty);
-  this->get_parameter("mirostat", sampling_params.mirostat);
-  this->get_parameter("mirostat_tau", sampling_params.mirostat_tau);
-  this->get_parameter("mirostat_eta", sampling_params.mirostat_eta);
-  this->get_parameter("penalize_nl", sampling_params.penalize_nl);
-  this->get_parameter("n_probs", sampling_params.n_probs);
-
   this->get_parameter("model", model);
   this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", lora_base);
   this->get_parameter("numa", numa);
+
   this->get_parameter("prefix", prefix);
   this->get_parameter("suffix", suffix);
   this->get_parameter("stop", stop);
@@ -158,9 +130,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   }
 
   // load llama
-  this->llama = std::make_shared<Llama>(context_params, eval_params,
-                                        sampling_params, model, lora_adapter,
-                                        lora_base, numa, prefix, suffix, stop);
+  this->llama =
+      std::make_shared<Llama>(context_params, eval_params, model, lora_adapter,
+                              lora_base, numa, prefix, suffix, stop);
 
   // initial prompt
   if (!file_path.empty()) {
@@ -172,21 +144,50 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
     std::copy(std::istreambuf_iterator<char>(file),
               std::istreambuf_iterator<char>(), back_inserter(prompt));
   }
-  this->llama->generate_response(prompt, false, nullptr);
+  this->llama->generate_response(prompt, false, llama_sampling_default_params(),
+                                 nullptr);
 
-  // gpt action
+  // services
+  this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
+      "tokenize",
+      std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
+  this->generate_embeddings_service_ =
+      this->create_service<llama_msgs::srv::GenerateEmbeddings>(
+          "generate_embeddings",
+          std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
+                    _2));
+
+  // generate reponse action server
   this->goal_handle_ = nullptr;
-  this->gpt_action_server_ = rclcpp_action::create_server<GPT>(
-      this, "gpt", std::bind(&LlamaNode::handle_goal, this, _1, _2),
-      std::bind(&LlamaNode::handle_cancel, this, _1),
-      std::bind(&LlamaNode::handle_accepted, this, _1));
+  this->generate_response_action_server_ =
+      rclcpp_action::create_server<GenerateResponse>(
+          this, "generate_response",
+          std::bind(&LlamaNode::handle_goal, this, _1, _2),
+          std::bind(&LlamaNode::handle_cancel, this, _1),
+          std::bind(&LlamaNode::handle_accepted, this, _1));
 
   RCLCPP_INFO(this->get_logger(), "Llama Node started");
 }
 
+void LlamaNode::tokenize_service_callback(
+    const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
+    std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
+
+  response->tokens = this->llama->tokenize(request->prompt, false);
+}
+
+void LlamaNode::generate_embeddings_service_callback(
+    const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
+    std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
+
+  if (this->llama->embedding) {
+    response->embeddings = this->llama->create_embeddings(request->prompt);
+  }
+}
+
 rclcpp_action::GoalResponse
 LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
-                       std::shared_ptr<const GPT::Goal> goal) {
+                       std::shared_ptr<const GenerateResponse::Goal> goal) {
   (void)uuid;
   (void)goal;
 
@@ -197,8 +198,8 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse
-LlamaNode::handle_cancel(const std::shared_ptr<GoalHandleGPT> goal_handle) {
+rclcpp_action::CancelResponse LlamaNode::handle_cancel(
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
   (void)goal_handle;
   RCLCPP_INFO(this->get_logger(), "Received request to cancel");
   this->llama->cancel();
@@ -206,48 +207,57 @@ LlamaNode::handle_cancel(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 }
 
 void LlamaNode::handle_accepted(
-    const std::shared_ptr<GoalHandleGPT> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
   this->goal_handle_ = goal_handle;
   std::thread{std::bind(&LlamaNode::execute, this, _1), goal_handle}.detach();
 }
 
-void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
+void LlamaNode::execute(
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
 
-  auto result = std::make_shared<GPT::Result>();
+  // get goal data
   std::string prompt = goal_handle->get_goal()->prompt;
-  bool embedding = goal_handle->get_goal()->embedding;
   bool reset = goal_handle->get_goal()->reset;
+  auto sampling_config = goal_handle->get_goal()->sampling_config;
+
+  auto result = std::make_shared<GenerateResponse::Result>();
   this->goal_handle_ = goal_handle;
 
   RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
 
+  // reset llama
   if (reset) {
     this->llama->reset();
   }
 
-  if (embedding) {
-    result->embeddings = this->llama->create_embeddings(prompt);
+  // prepare sampling params
+  auto sampling_params = llama_sampling_default_params();
+  sampling_params.temp = sampling_config.temp;
+  sampling_params.top_k = sampling_config.top_k;
+  sampling_params.top_p = sampling_config.top_p;
+  sampling_params.tfs_z = sampling_config.tfs_z;
+  sampling_params.typical_p = sampling_config.typical_p;
+  sampling_params.repeat_last_n = sampling_config.repeat_last_n;
+  sampling_params.repeat_penalty = sampling_config.repeat_penalty;
+  sampling_params.presence_penalty = sampling_config.presence_penalty;
+  sampling_params.frequency_penalty = sampling_config.frequency_penalty;
+  sampling_params.mirostat = sampling_config.mirostat;
+  sampling_params.mirostat_eta = sampling_config.mirostat_eta;
+  sampling_params.mirostat_tau = sampling_config.mirostat_tau;
+  sampling_params.penalize_nl = sampling_config.penalize_nl;
+  sampling_params.n_probs = sampling_config.n_probs;
 
-  } else {
-    result->response = this->llama->generate_response(
-        prompt, true, std::bind(&LlamaNode::send_text, this, _1));
-  }
+  // call llama
+  result->response = this->llama->generate_response(
+      prompt, true, sampling_params,
+      std::bind(&LlamaNode::send_text, this, _1));
 
   if (rclcpp::ok()) {
 
-    if (embedding) {
-      if (this->llama->embedding) {
-        this->goal_handle_->succeed(result);
-      } else {
-        this->goal_handle_->abort(result);
-      }
-
+    if (this->goal_handle_->is_canceling()) {
+      this->goal_handle_->canceled(result);
     } else {
-      if (this->goal_handle_->is_canceling()) {
-        this->goal_handle_->canceled(result);
-      } else {
-        this->goal_handle_->succeed(result);
-      }
+      this->goal_handle_->succeed(result);
     }
 
     this->goal_handle_ = nullptr;
@@ -257,7 +267,7 @@ void LlamaNode::execute(const std::shared_ptr<GoalHandleGPT> goal_handle) {
 void LlamaNode::send_text(const std::string &text) {
   if (this->goal_handle_ != nullptr) {
     RCLCPP_INFO(this->get_logger(), "Generating text...");
-    auto feedback = std::make_shared<GPT::Feedback>();
+    auto feedback = std::make_shared<GenerateResponse::Feedback>();
     feedback->text = text;
     this->goal_handle_->publish_feedback(feedback);
   }

@@ -42,7 +42,6 @@ def generate_launch_description():
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
                 "embedding": LaunchConfiguration("embedding", default=True),
                 "numa": LaunchConfiguration("numa", default=True),
-                "n_probs": LaunchConfiguration("n_probs", default=0),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
@@ -55,20 +54,6 @@ def generate_launch_description():
                 "n_predict": LaunchConfiguration("n_predict", default=128),
                 "n_batch": LaunchConfiguration("n_batch", default=8),
                 "n_keep": LaunchConfiguration("n_keep", default=-1),
-
-                "temp": LaunchConfiguration("temp", default=0.80),
-                "top_k": LaunchConfiguration("top_k", default=40),
-                "top_p": LaunchConfiguration("top_p", default=0.95),
-                "tfs_z": LaunchConfiguration("tfs_z", default=1.00),
-                "typical_p": LaunchConfiguration("typical_p", default=1.00),
-                "repeat_last_n": LaunchConfiguration("repeat_last_n", default=64),
-                "repeat_penalty": LaunchConfiguration("repeat_penalty", default=1.10),
-                "presence_penalty": LaunchConfiguration("presence_penalty", default=0.00),
-                "frequency_penalty": LaunchConfiguration("frequency_penalty", default=0.00),
-                "mirostat": LaunchConfiguration("mirostat", default=0),
-                "mirostat_tau": LaunchConfiguration("mirostat_tau", default=5.00),
-                "mirostat_eta": LaunchConfiguration("mirostat_eta", default=0.10),
-                "penalize_nl": LaunchConfiguration("penalize_nl", default=True),
 
                 "model": LaunchConfiguration("model", default=""),
                 "lora_adapter": LaunchConfiguration("lora_adapter", default=""),

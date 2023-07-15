@@ -50,7 +50,7 @@ struct llama_sampling_params llama_sampling_default_params() {
 struct llama_eval_params llama_eval_default_params() {
   struct llama_eval_params result = {
       /*.n_threads              =*/4,
-      /*.n_threads              =*/128,
+      /*.n_predict              =*/128,
       /*.n_batch                =*/8,
       /*.n_keep                 =*/-1,
   };
@@ -58,19 +58,13 @@ struct llama_eval_params llama_eval_default_params() {
 }
 
 Llama::Llama(llama_context_params context_params,
-             const llama_eval_params &eval_params,
-             const llama_sampling_params &sampling_params,
-             const std::string &model, const std::string &lora_adapter,
-             const std::string &lora_base, const bool &numa,
-             const std::string &prefix, const std::string &suffix,
-             const std::string &stop)
-    : eval_params(eval_params), sampling_params(sampling_params), stop(stop) {
+             const llama_eval_params &eval_params, const std::string &model,
+             const std::string &lora_adapter, const std::string &lora_base,
+             const bool &numa, const std::string &prefix,
+             const std::string &suffix, const std::string &stop)
+    : eval_params(eval_params), stop(stop) {
 
   this->embedding = context_params.embedding;
-  this->sampling_params.repeat_last_n =
-      this->sampling_params.repeat_last_n < 0
-          ? context_params.n_ctx
-          : this->sampling_params.repeat_last_n;
 
 #ifdef GGML_USE_CUBLAS
   context_params.low_vram = true;
@@ -149,15 +143,6 @@ Llama::Llama(llama_context_params context_params,
 
   // show info
   fprintf(stderr,
-          "Sampling: temp = %f, "
-          "top_k = %d, "
-          "top_p = %f, "
-          "repeat_last_n = %i, "
-          "repeat_penalty = %f\n",
-          this->sampling_params.temp, this->sampling_params.top_k,
-          this->sampling_params.top_p, this->sampling_params.repeat_last_n,
-          this->sampling_params.repeat_penalty);
-  fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
           this->n_ctx, this->eval_params.n_batch, this->eval_params.n_predict,
           this->eval_params.n_keep);
@@ -233,9 +218,10 @@ std::vector<float> Llama::create_embeddings(const std::string &input_prompt) {
   return embeddings_list;
 }
 
-std::string Llama::generate_response(const std::string &input_prompt,
-                                     bool add_pfx_sfx,
-                                     GenerateResponseCallback callback) {
+std::string
+Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
+                         const llama_sampling_params &sampling_params,
+                         GenerateResponseCallback callback) {
 
   this->canceled = false;
 
@@ -289,6 +275,16 @@ std::string Llama::generate_response(const std::string &input_prompt,
 
   this->n_remain -= line_inp.size();
 
+  // show sampling info
+  fprintf(stderr,
+          "Sampling: temp = %f, "
+          "top_k = %d, "
+          "top_p = %f, "
+          "repeat_last_n = %i, "
+          "repeat_penalty = %f\n",
+          sampling_params.temp, sampling_params.top_k, sampling_params.top_p,
+          sampling_params.repeat_last_n, sampling_params.repeat_penalty);
+
   // generation loop
   while (this->n_remain != 0) {
 
@@ -314,7 +310,7 @@ std::string Llama::generate_response(const std::string &input_prompt,
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // out of user input, sample next token
-      llama_token id = this->sample();
+      llama_token id = this->sample(sampling_params);
       this->last_n_tokens.erase(this->last_n_tokens.begin());
       this->last_n_tokens.push_back(id);
 
@@ -453,7 +449,12 @@ void Llama::eval() {
   }
 }
 
-llama_token Llama::sample() {
+llama_token Llama::sample(llama_sampling_params sampling_params) {
+
+  sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
+                                      ? this->n_ctx
+                                      : sampling_params.repeat_last_n;
+
   llama_token id = 0;
 
   auto logits = llama_get_logits(this->ctx);
@@ -470,65 +471,62 @@ llama_token Llama::sample() {
 
   // Apply penalties
   float nl_logit = logits[llama_token_nl()];
-  auto last_n_repeat = std::min(std::min((int)this->last_n_tokens.size(),
-                                         this->sampling_params.repeat_last_n),
-                                this->n_ctx);
+  auto last_n_repeat = std::min(
+      std::min((int)this->last_n_tokens.size(), sampling_params.repeat_last_n),
+      this->n_ctx);
 
   llama_sample_repetition_penalty(
       this->ctx, &candidates_p,
       this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, this->sampling_params.repeat_penalty);
+      last_n_repeat, sampling_params.repeat_penalty);
   llama_sample_frequency_and_presence_penalties(
       this->ctx, &candidates_p,
       this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, this->sampling_params.frequency_penalty,
-      this->sampling_params.presence_penalty);
-  if (!this->sampling_params.penalize_nl) {
+      last_n_repeat, sampling_params.frequency_penalty,
+      sampling_params.presence_penalty);
+  if (!sampling_params.penalize_nl) {
     logits[llama_token_nl()] = nl_logit;
   }
 
-  if (this->sampling_params.temp <= 0) {
+  if (sampling_params.temp <= 0) {
 
     // Greedy sampling
     id = llama_sample_token_greedy(this->ctx, &candidates_p);
 
-    if (this->sampling_params.n_probs > 0) {
+    if (sampling_params.n_probs > 0) {
       llama_sample_softmax(this->ctx, &candidates_p);
     }
 
   } else {
-    if (this->sampling_params.mirostat == 1) {
-      static float mirostat_mu = 2.0f * this->sampling_params.mirostat_tau;
+    if (sampling_params.mirostat == 1) {
+      static float mirostat_mu = 2.0f * sampling_params.mirostat_tau;
       const int mirostat_m = 100;
-      llama_sample_temperature(this->ctx, &candidates_p,
-                               this->sampling_params.temp);
+      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
       id = llama_sample_token_mirostat(
-          this->ctx, &candidates_p, this->sampling_params.mirostat_tau,
-          this->sampling_params.mirostat_eta, mirostat_m, &mirostat_mu);
+          this->ctx, &candidates_p, sampling_params.mirostat_tau,
+          sampling_params.mirostat_eta, mirostat_m, &mirostat_mu);
 
-    } else if (this->sampling_params.mirostat == 2) {
-      static float mirostat_mu = 2.0f * this->sampling_params.mirostat_tau;
-      llama_sample_temperature(this->ctx, &candidates_p,
-                               this->sampling_params.temp);
+    } else if (sampling_params.mirostat == 2) {
+      static float mirostat_mu = 2.0f * sampling_params.mirostat_tau;
+      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
       id = llama_sample_token_mirostat_v2(
-          this->ctx, &candidates_p, this->sampling_params.mirostat_tau,
-          this->sampling_params.mirostat_eta, &mirostat_mu);
+          this->ctx, &candidates_p, sampling_params.mirostat_tau,
+          sampling_params.mirostat_eta, &mirostat_mu);
 
     } else {
 
       // Temperature sampling
-      size_t min_keep = std::max(1, this->sampling_params.n_probs);
+      size_t min_keep = std::max(1, sampling_params.n_probs);
 
-      llama_sample_top_k(this->ctx, &candidates_p, this->sampling_params.top_k,
+      llama_sample_top_k(this->ctx, &candidates_p, sampling_params.top_k,
                          min_keep);
-      llama_sample_tail_free(this->ctx, &candidates_p,
-                             this->sampling_params.tfs_z, min_keep);
-      llama_sample_typical(this->ctx, &candidates_p,
-                           this->sampling_params.typical_p, min_keep);
-      llama_sample_top_p(this->ctx, &candidates_p, this->sampling_params.top_p,
+      llama_sample_tail_free(this->ctx, &candidates_p, sampling_params.tfs_z,
+                             min_keep);
+      llama_sample_typical(this->ctx, &candidates_p, sampling_params.typical_p,
+                           min_keep);
+      llama_sample_top_p(this->ctx, &candidates_p, sampling_params.top_p,
                          min_keep);
-      llama_sample_temperature(this->ctx, &candidates_p,
-                               this->sampling_params.temp);
+      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
       id = llama_sample_token(this->ctx, &candidates_p);
     }
   }
