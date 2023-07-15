@@ -30,16 +30,24 @@ $ colcon build
  - [Falcon](https://huggingface.co/TheBloke/falcon-7b-instruct-GGML)
  - [Orca](https://huggingface.co/TheBloke/orca_mini_7B-GGML)
 
+
+## Usage
+
+  - Download the models and place them in `~/llama_models` 
+  - Rename the bin (check the content of the launch files)
+  - Run the launch file of the chosen model
+
+
 ## Demo
 
-Download the models and place them in `~/llama_models`.
-
 ```shell
-$ ros2 launch llama_bringup gpt4all.launch.py
+$ ros2 launch llama_bringup wizard-vicuna.launch.py
 ```
 
 ```shell
 $ ros2 run llama_ros llama_client_node --ros-args -p prompt:="your prompt"
 ```
 
-https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4
+<!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
+https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
+
