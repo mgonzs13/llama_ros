@@ -88,6 +88,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                           {"frequency_penalty", 0.00f},
                                           {"mirostat_tau", 5.00f},
                                           {"mirostat_eta", 0.10f},
+                                          {"rope_freq_base", 10000.0f},
+                                          {"rope_freq_scale", 1.0f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
@@ -110,6 +112,9 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
+  this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
+
+  this->get_parameter("rope_freq_base", context_params.rope_freq_base);
   this->get_parameter("low_vram", context_params.low_vram);
 
   this->get_parameter("n_threads", eval_params.n_threads);

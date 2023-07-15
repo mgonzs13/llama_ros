@@ -76,6 +76,29 @@ Llama::Llama(llama_context_params context_params,
   context_params.low_vram = true;
 #endif
 
+  if (context_params.rope_freq_base != 10000.0) {
+    fprintf(stderr,
+            "warning: changing RoPE frequency base to %g (default 10000.0)\n",
+            context_params.rope_freq_base);
+  }
+
+  if (context_params.rope_freq_scale != 1.0) {
+    fprintf(stderr, "warning: scaling RoPE frequency by %g (default 1.0)\n",
+            context_params.rope_freq_scale);
+  }
+
+  if (context_params.n_ctx > 2048) {
+    fprintf(stderr,
+            "warning: base model only supports context sizes no greater than "
+            "2048 tokens (%d specified);"
+            " you are on your own\n",
+            context_params.n_ctx);
+  } else if (context_params.n_ctx < 8) {
+    fprintf(stderr,
+            "warning: minimum context size is 8, using minimum size.\n");
+    context_params.n_ctx = 8;
+  }
+
   // load the model
   llama_backend_init(numa);
 
@@ -89,14 +112,7 @@ Llama::Llama(llama_context_params context_params,
     fprintf(stderr, "Failed to create context with model '%s'\n",
             model.c_str());
   }
-
   this->n_ctx = llama_n_ctx(this->ctx);
-  if (this->n_ctx > 2048) {
-    fprintf(stderr,
-            "Model does not support context sizes greater than 2048 tokens "
-            "(%d specified); expect poor results\n",
-            this->n_ctx);
-  }
 
   if (!lora_adapter.empty()) {
     if (llama_model_apply_lora_from_file(this->model, lora_adapter.c_str(),

@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 
-import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
@@ -48,6 +47,9 @@ def generate_launch_description():
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
                 "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
+
+                "rope_freq_base": LaunchConfiguration("rope_freq_base", default=10000.0),
+                "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
 
                 "n_threads": LaunchConfiguration("n_threads", default=4),
                 "n_predict": LaunchConfiguration("n_predict", default=128),
