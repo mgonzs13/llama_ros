@@ -34,6 +34,7 @@ def generate_launch_description():
             package="llama_ros",
             executable="llama_node",
             name="llama_node",
+            namespace="llama",
             parameters=[{
                 "seed": LaunchConfiguration("seed", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),

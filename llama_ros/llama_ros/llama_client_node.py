@@ -42,7 +42,7 @@ class LlamaClientNode(Node):
 
         self._get_result_future = None
         self._action_client = ActionClient(
-            self, GenerateResponse, "generate_response")
+            self, GenerateResponse, "/llama/generate_response")
 
     def text_cb(self, msg) -> None:
         print(msg.feedback.text, end="", flush=True)
