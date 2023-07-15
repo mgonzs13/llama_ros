@@ -51,6 +51,8 @@ class LlamaClientNode(Node):
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
+        goal.sampling_config.temp = 0.2
+        goal.sampling_config.repeat_last_n = 8
 
         self._action_client.wait_for_server()
         send_goal_future = self._action_client.send_goal_async(
