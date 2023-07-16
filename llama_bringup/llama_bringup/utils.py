@@ -57,11 +57,16 @@ def get_lora_model_path(model_name: str) -> str:
 
 
 def get_prompt_path(prompt_file_name: str) -> str:
-    return os.path.join(
-        get_package_share_directory("llama_bringup"),
-        "prompts",
-        prompt_file_name
-    )
+
+    if prompt_file_name:
+
+        return os.path.join(
+            get_package_share_directory("llama_bringup"),
+            "prompts",
+            prompt_file_name
+        )
+
+    return ""
 
 
 def create_llama_launch(
