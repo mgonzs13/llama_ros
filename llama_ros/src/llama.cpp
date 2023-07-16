@@ -285,6 +285,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           sampling_params.temp, sampling_params.top_k, sampling_params.top_p,
           sampling_params.repeat_last_n, sampling_params.repeat_penalty);
 
+  fprintf(stderr, "Starting Response Generation\n");
+
   // generation loop
   while (this->n_remain != 0) {
 
@@ -392,6 +394,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
   }
 
+  fprintf(stderr, "Finish Response Generation\n");
+
   return result;
 }
 
@@ -437,7 +441,8 @@ void Llama::eval() {
         n_eval = this->eval_params.n_batch;
       }
 
-      fprintf(stderr, "EVAL %d\n", n_eval);
+      spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
+
       if (llama_eval(this->ctx, &this->batch_tokens[i], n_eval, this->n_past,
                      this->eval_params.n_threads)) {
         fprintf(stderr, "Failed to eval\n");

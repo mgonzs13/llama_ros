@@ -266,7 +266,6 @@ void LlamaNode::execute(
 
 void LlamaNode::send_text(const std::string &text) {
   if (this->goal_handle_ != nullptr) {
-    RCLCPP_INFO(this->get_logger(), "Generating text...");
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
     feedback->text = text;
     this->goal_handle_->publish_feedback(feedback);

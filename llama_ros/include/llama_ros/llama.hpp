@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "llama.h"
+#include "llama_ros/spinner.hpp"
 
 struct llama_sampling_params {
   float temp;
@@ -89,6 +90,8 @@ protected:
   llama_token sample(llama_sampling_params sampling_params);
 
 private:
+  Spinner spinner;
+
   int32_t n_ctx; // context size
   llama_eval_params eval_params;
 
