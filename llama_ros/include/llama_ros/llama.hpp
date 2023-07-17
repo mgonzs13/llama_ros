@@ -76,7 +76,7 @@ public:
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
   void reset();
   void cancel();
-  std::vector<float> create_embeddings(const std::string &input_prompt);
+  std::vector<float> generate_embeddings(const std::string &input_prompt);
   std::string generate_response(const std::string &input_prompt,
                                 bool add_pfx_sfx = true,
                                 const llama_sampling_params &sampling_params =

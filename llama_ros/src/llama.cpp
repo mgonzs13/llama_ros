@@ -190,7 +190,7 @@ void Llama::reset() {
 
 void Llama::cancel() { this->canceled = true; }
 
-std::vector<float> Llama::create_embeddings(const std::string &input_prompt) {
+std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   if (!this->embedding) {
     fprintf(stderr,
@@ -201,10 +201,20 @@ std::vector<float> Llama::create_embeddings(const std::string &input_prompt) {
   std::string prompt(input_prompt);
   prompt.insert(0, 1, ' ');
   auto tokens = this->tokenize(prompt, true);
+  int n_past = 0;
 
-  if (llama_eval(this->ctx, tokens.data(), tokens.size(), 0,
-                 this->eval_params.n_threads)) {
-    fprintf(stderr, "Failed to eval\n");
+  for (int i = 0; i < (int)tokens.size(); i += this->eval_params.n_batch) {
+
+    int n_eval = (int)tokens.size() - i;
+    if (n_eval > this->eval_params.n_batch) {
+      n_eval = this->eval_params.n_batch;
+    }
+
+    if (llama_eval(this->ctx, &tokens[i], n_eval, n_past,
+                   this->eval_params.n_threads)) {
+      fprintf(stderr, "Failed to eval\n");
+    }
+    n_past += n_eval;
   }
 
   const int n_embd = llama_n_embd(this->ctx);
