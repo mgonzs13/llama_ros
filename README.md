@@ -28,6 +28,7 @@ $ colcon build
  - [Guanaco](https://huggingface.co/TheBloke/guanaco-7B-GGML)
  - [Flan](https://huggingface.co/TheBloke/Flan-OpenLlama-7B-GGML)
  - [Orca](https://huggingface.co/TheBloke/orca_mini_7B-GGML)
+ - [LLaMA2](https://huggingface.co/TheBloke/Llama-2-7B-GGML)
 
 
 ## Usage
