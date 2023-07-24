@@ -77,6 +77,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->declare_parameters<float>("", {
                                           {"rope_freq_base", 10000.0f},
                                           {"rope_freq_scale", 1.0f},
+                                          {"rms_norm_eps", 1e-6f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
@@ -104,6 +105,8 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
   this->get_parameter("rope_freq_base", context_params.rope_freq_base);
+
+  this->get_parameter("rms_norm_eps", context_params.rms_norm_eps);
 
   this->get_parameter("n_threads", eval_params.n_threads);
   this->get_parameter("n_predict", eval_params.n_predict);

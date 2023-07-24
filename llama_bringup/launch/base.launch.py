@@ -52,6 +52,8 @@ def generate_launch_description():
                 "rope_freq_base": LaunchConfiguration("rope_freq_base", default=10000.0),
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
 
+                "rms_norm_eps": LaunchConfiguration("rms_norm_eps", default=1e-6),
+
                 "n_threads": LaunchConfiguration("n_threads", default=4),
                 "n_predict": LaunchConfiguration("n_predict", default=128),
                 "n_batch": LaunchConfiguration("n_batch", default=8),

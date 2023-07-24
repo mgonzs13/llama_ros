@@ -77,10 +77,16 @@ def create_llama_launch(
     use_mmap: bool = True,
     use_mlock: bool = False,
     embedding: bool = True,
+    numa: bool = True,
 
     n_gpu_layers: int = 0,
     main_gpu: int = 0,
     tensor_split: str = "[0.0]",
+
+    rope_freq_base: float = 10000.0,
+    rope_freq_scale: float = 1.0,
+
+    rms_norm_eps: float = 1e-6,
 
     n_threads: int = 4,
     n_predict: int = 128,
@@ -109,10 +115,16 @@ def create_llama_launch(
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
             "embedding": str(embedding),
+            "numa": str(numa),
 
             "n_gpu_layers": str(n_gpu_layers),
             "main_gpu": str(main_gpu),
             "tensor_split": tensor_split,
+
+            "rope_freq_base": str(rope_freq_base),
+            "rope_freq_scale": str(rope_freq_scale),
+
+            "rms_norm_eps": str(rms_norm_eps),
 
             "n_threads": str(n_threads),
             "n_predict": str(n_predict),
