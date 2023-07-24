@@ -58,6 +58,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"n_threads", 1},
                                             {"n_predict", 128},
                                             {"n_ctx", 512},
+                                            {"n_gqa", 1},
                                             {"n_batch", 512},
                                             {"n_keep", -1},
                                             {"n_gpu_layers", 0},
@@ -94,6 +95,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("use_mmap", context_params.use_mmap);
   this->get_parameter("use_mlock", context_params.use_mlock);
   this->get_parameter("embedding", context_params.embedding);
+  this->get_parameter("n_gqa", context_params.n_gqa);
 
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
@@ -121,12 +123,12 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("file", file_path);
 
   // parse tensor_split
-  for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i) {
-    if (i < tensor_split.size()) {
-      context_params.tensor_split[i] = (float)tensor_split[i];
-    } else {
-      context_params.tensor_split[i] = 0.0f;
-    }
+  context_params.tensor_split =
+      reinterpret_cast<const float *>(tensor_split.data());
+
+  // check threads number
+  if (eval_params.n_threads < 0) {
+    eval_params.n_threads = std::thread::hardware_concurrency();
   }
 
   // load llama

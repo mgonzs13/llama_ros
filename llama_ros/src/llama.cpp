@@ -83,9 +83,8 @@ Llama::Llama(llama_context_params context_params,
 
   if (context_params.n_ctx > 2048) {
     fprintf(stderr,
-            "warning: base model only supports context sizes no greater than "
-            "2048 tokens (%d specified);"
-            " you are on your own\n",
+            "warning: base model only supports context sizes no greater "
+            "than 2048 tokens (%d specified)\n",
             context_params.n_ctx);
   } else if (context_params.n_ctx < 8) {
     fprintf(stderr,

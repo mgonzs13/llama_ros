@@ -72,6 +72,7 @@ def get_prompt_path(prompt_file_name: str) -> str:
 def create_llama_launch(
     seed: int = -1,
     n_ctx: int = 512,
+    n_gqa: int = 1,
     memory_f16: bool = True,
     use_mmap: bool = True,
     use_mlock: bool = False,
@@ -103,6 +104,7 @@ def create_llama_launch(
         launch_arguments={
             "seed": str(seed),
             "n_ctx": str(n_ctx),
+            "n_gqa": str(n_gqa),
             "memory_f16": str(memory_f16),
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),

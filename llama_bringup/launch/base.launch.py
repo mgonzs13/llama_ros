@@ -38,6 +38,7 @@ def generate_launch_description():
             parameters=[{
                 "seed": LaunchConfiguration("seed", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
+                "n_gqa": LaunchConfiguration("n_gqa", default=1),
                 "memory_f16": LaunchConfiguration("memory_f16", default=True),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
