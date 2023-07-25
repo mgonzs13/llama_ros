@@ -24,6 +24,7 @@
 #include <cmath>
 #include <thread>
 
+#include "examples/grammar-parser.h"
 #include "llama_ros/llama.hpp"
 
 using namespace llama_ros;
@@ -46,6 +47,7 @@ struct llama_sampling_params llama_sampling_default_params() {
       /*.mirostat_eta           =*/0.10f,
       /*.penalize_nl            =*/true,
       /*.n_probs                =*/0,
+      /*grammar                 =*/"",
   };
   return result;
 }
@@ -297,6 +299,18 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           sampling_params.temp, sampling_params.top_k, sampling_params.top_p,
           sampling_params.repeat_last_n, sampling_params.repeat_penalty);
 
+  // load grammar
+  this->grammar = this->load_grammar(sampling_params.grammar);
+
+  if (this->grammar != nullptr) {
+    auto it = sampling_params.logit_bias.find(llama_token_eos());
+
+    if (it != sampling_params.logit_bias.end() && it->second == -INFINITY) {
+      fprintf(stderr, "warning: EOS token is disabled, which will cause most "
+                      "grammars to fail\n");
+    }
+  }
+
   fprintf(stderr, "Starting Response Generation\n");
 
   // generation loop
@@ -408,6 +422,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   fprintf(stderr, "Finish Response Generation\n");
 
+  if (this->grammar != nullptr) {
+    llama_grammar_free(this->grammar);
+    this->grammar = nullptr;
+  }
+
   return result;
 }
 
@@ -468,18 +487,8 @@ void Llama::eval() {
 
 llama_token Llama::sample(llama_sampling_params sampling_params) {
 
-  // check repeat_last_n
-  sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
-                                      ? this->n_ctx
-                                      : sampling_params.repeat_last_n;
-
-  // add llama_token_eos
-  if (sampling_params.ignore_eos) {
-    sampling_params.logit_bias[llama_token_eos()] = -INFINITY;
-  }
-
+  // init token
   llama_token id = 0;
-
   auto logits = llama_get_logits(this->ctx);
   auto n_vocab = llama_n_vocab(this->ctx);
 
@@ -489,6 +498,7 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
     logits[it->first] += it->second;
   }
 
+  // candidates
   std::vector<llama_token_data> candidates;
   candidates.reserve(n_vocab);
   for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
@@ -515,6 +525,10 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
       sampling_params.presence_penalty);
   if (!sampling_params.penalize_nl) {
     logits[llama_token_nl()] = nl_logit;
+  }
+
+  if (this->grammar != NULL) {
+    llama_sample_grammar(this->ctx, &candidates_p, this->grammar);
   }
 
   if (sampling_params.temp <= 0) {
@@ -560,5 +574,34 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
     }
   }
 
+  if (this->grammar != NULL) {
+    llama_grammar_accept_token(this->ctx, this->grammar, id);
+  }
+
   return id;
+}
+
+llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
+
+  if (!grammar_text.empty()) {
+
+    grammar_parser::parse_state parsed_grammar =
+        grammar_parser::parse(grammar_text.c_str());
+
+    // will be empty (default) if there are parse errors
+    if (parsed_grammar.rules.empty()) {
+      return NULL;
+    }
+
+    fprintf(stderr, "GRAMMAR:\n");
+    grammar_parser::print_grammar(stderr, parsed_grammar);
+    fprintf(stderr, "\n");
+
+    std::vector<const llama_grammar_element *> grammar_rules(
+        parsed_grammar.c_rules());
+    return llama_grammar_init(grammar_rules.data(), grammar_rules.size(),
+                              parsed_grammar.symbol_ids.at("root"));
+  }
+
+  return NULL;
 }

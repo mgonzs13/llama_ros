@@ -237,6 +237,7 @@ void LlamaNode::execute(
 
   // prepare sampling params
   auto sampling_params = llama_sampling_default_params();
+  sampling_params.ignore_eos = sampling_config.ignore_eos;
   sampling_params.temp = sampling_config.temp;
   sampling_params.top_k = sampling_config.top_k;
   sampling_params.top_p = sampling_config.top_p;
@@ -251,6 +252,22 @@ void LlamaNode::execute(
   sampling_params.mirostat_tau = sampling_config.mirostat_tau;
   sampling_params.penalize_nl = sampling_config.penalize_nl;
   sampling_params.n_probs = sampling_config.n_probs;
+  sampling_params.grammar = sampling_config.grammar;
+
+  // check repeat_last_n
+  sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
+                                      ? this->llama->n_ctx
+                                      : sampling_params.repeat_last_n;
+
+  // add logit bias
+  for (auto logit_bias : sampling_config.logit_bias) {
+    sampling_params.logit_bias[logit_bias.token] = logit_bias.bias;
+  }
+
+  // add llama_token_eos
+  if (sampling_params.ignore_eos) {
+    sampling_params.logit_bias[llama_token_eos()] = -INFINITY;
+  }
 
   // call llama
   result->response = this->llama->generate_response(

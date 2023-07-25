@@ -20,3 +20,5 @@ float32 mirostat_tau        5.0     # Mirostat target entropy, parameter tau
 
 bool penalize_nl            true    # consider newlines as a repeatable token
 int32 n_probs               0       # if greater than 0, output the probabilities of top n_probs tokens
+
+string grammar                      # optional BNF-like grammar to constrain sampling

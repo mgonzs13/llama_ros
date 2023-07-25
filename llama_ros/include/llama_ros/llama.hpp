@@ -47,6 +47,7 @@ struct llama_sampling_params {
   float mirostat_eta;
   bool penalize_nl;
   int32_t n_probs;
+  std::string grammar;
 };
 struct llama_sampling_params llama_sampling_default_params();
 
@@ -73,6 +74,7 @@ public:
   ~Llama();
 
   bool embedding;
+  int32_t n_ctx; // context size
 
   std::string detokenize(const std::vector<llama_token> &tokens);
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
@@ -94,7 +96,6 @@ protected:
 private:
   Spinner spinner;
 
-  int32_t n_ctx; // context size
   llama_eval_params eval_params;
 
   // prefix, suffix, stop
@@ -112,6 +113,10 @@ private:
   int32_t n_past;
   int32_t n_remain;
   int32_t n_consumed;
+
+  // grammar
+  llama_grammar *grammar = NULL;
+  llama_grammar *load_grammar(const std::string &grammar_text);
 };
 
 } // namespace llama_ros
