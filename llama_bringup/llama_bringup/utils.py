@@ -86,7 +86,7 @@ def create_llama_launch(
     rope_freq_base: float = 10000.0,
     rope_freq_scale: float = 1.0,
 
-    rms_norm_eps: float = 1e-6,
+    rms_norm_eps: float = 5e-6,
 
     n_threads: int = 4,
     n_predict: int = 128,

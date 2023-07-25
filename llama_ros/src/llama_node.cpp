@@ -77,7 +77,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->declare_parameters<float>("", {
                                           {"rope_freq_base", 10000.0f},
                                           {"rope_freq_scale", 1.0f},
-                                          {"rms_norm_eps", 1e-6f},
+                                          {"rms_norm_eps", 5e-6f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
