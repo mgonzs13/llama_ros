@@ -24,7 +24,6 @@
 #include <cmath>
 #include <thread>
 
-#include "examples/grammar-parser.h"
 #include "llama_ros/llama.hpp"
 
 using namespace llama_ros;
@@ -595,8 +594,7 @@ llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
 
   if (!grammar_text.empty()) {
 
-    grammar_parser::parse_state parsed_grammar =
-        grammar_parser::parse(grammar_text.c_str());
+    this->parsed_grammar = grammar_parser::parse(grammar_text.c_str());
 
     // will be empty (default) if there are parse errors
     if (parsed_grammar.rules.empty()) {

@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "examples/grammar-parser.h"
 #include "llama.h"
 #include "llama_ros/spinner.hpp"
 
@@ -84,10 +85,10 @@ public:
                                     llama_sampling_default_params(),
                                 GenerateResponseCallback callbakc = nullptr);
 
-  const int get_n_embd() { return llama_n_embd(this->ctx); }
-  const int get_n_ctx() { return llama_n_ctx(this->ctx); }
-  const int get_n_vocab() { return llama_n_vocab(this->ctx); }
-  const bool is_embedding() { return this->embedding; }
+  int get_n_embd() { return llama_n_embd(this->ctx); }
+  int get_n_ctx() { return llama_n_ctx(this->ctx); }
+  int get_n_vocab() { return llama_n_vocab(this->ctx); }
+  bool is_embedding() { return this->embedding; }
 
 protected:
   llama_model *model;
@@ -119,6 +120,7 @@ private:
   int32_t n_consumed;
 
   // grammar
+  grammar_parser::parse_state parsed_grammar;
   llama_grammar *grammar = NULL;
   llama_grammar *load_grammar(const std::string &grammar_text);
 };
