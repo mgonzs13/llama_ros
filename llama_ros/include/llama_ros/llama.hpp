@@ -73,9 +73,6 @@ public:
         const std::string &stop);
   ~Llama();
 
-  bool embedding;
-  int32_t n_ctx; // context size
-
   std::string detokenize(const std::vector<llama_token> &tokens);
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
   void reset();
@@ -87,6 +84,11 @@ public:
                                     llama_sampling_default_params(),
                                 GenerateResponseCallback callbakc = nullptr);
 
+  const int get_n_embd() { return llama_n_embd(this->ctx); }
+  const int get_n_ctx() { return llama_n_ctx(this->ctx); }
+  const int get_n_vocab() { return llama_n_vocab(this->ctx); }
+  const bool is_embedding() { return this->embedding; }
+
 protected:
   llama_model *model;
   llama_context *ctx;
@@ -95,6 +97,8 @@ protected:
 
 private:
   Spinner spinner;
+
+  bool embedding;
 
   llama_eval_params eval_params;
 

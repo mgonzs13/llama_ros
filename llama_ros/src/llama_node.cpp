@@ -185,7 +185,7 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
-  if (this->llama->embedding) {
+  if (this->llama->is_embedding()) {
     response->embeddings = this->llama->generate_embeddings(request->prompt);
   }
 }
@@ -256,8 +256,13 @@ void LlamaNode::execute(
 
   // check repeat_last_n
   sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
-                                      ? this->llama->n_ctx
+                                      ? this->llama->get_n_ctx()
                                       : sampling_params.repeat_last_n;
+
+  // check top_k
+  sampling_params.top_k = sampling_params.top_k <= 0
+                              ? this->llama->get_n_vocab()
+                              : sampling_params.top_k;
 
   // add logit bias
   for (auto logit_bias : sampling_config.logit_bias) {

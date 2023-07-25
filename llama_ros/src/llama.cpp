@@ -110,7 +110,6 @@ Llama::Llama(llama_context_params context_params,
     fprintf(stderr, "Failed to create context with model '%s'\n",
             model.c_str());
   }
-  this->n_ctx = llama_n_ctx(this->ctx);
 
   if (!lora_adapter.empty()) {
     if (llama_model_apply_lora_from_file(this->model, lora_adapter.c_str(),
@@ -136,7 +135,7 @@ Llama::Llama(llama_context_params context_params,
   }
 
   // TODO: replace with ring-buffer
-  this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
+  this->last_n_tokens = std::vector<llama_token>(this->get_n_ctx());
   std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
 
   this->is_antiprompt = false;
@@ -148,8 +147,18 @@ Llama::Llama(llama_context_params context_params,
   // show info
   fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
-          this->n_ctx, this->eval_params.n_batch, this->eval_params.n_predict,
-          this->eval_params.n_keep);
+          this->get_n_ctx(), this->eval_params.n_batch,
+          this->eval_params.n_predict, this->eval_params.n_keep);
+
+  // do one empty run to warm up the model
+  {
+    const std::vector<llama_token> tmp = {
+        llama_token_bos(),
+    };
+    llama_eval(this->ctx, tmp.data(), tmp.size(), 0,
+               this->eval_params.n_threads);
+    llama_reset_timings(this->ctx);
+  }
 }
 
 Llama::~Llama() {
@@ -179,7 +188,7 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 }
 
 void Llama::reset() {
-  this->last_n_tokens = std::vector<llama_token>(this->n_ctx);
+  this->last_n_tokens = std::vector<llama_token>(this->get_n_ctx());
   std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
 
   this->is_antiprompt = false;
@@ -196,7 +205,7 @@ void Llama::cancel() { this->canceled = true; }
 
 std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
-  if (!this->embedding) {
+  if (!this->is_embedding()) {
     fprintf(stderr,
             "Llama must be created with embedding=true to create embeddings\n");
     return {};
@@ -266,9 +275,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     prompt_size += this->inp_pfx.size() + this->inp_sfx.size();
   }
 
-  if (prompt_size > this->n_ctx - 4) {
+  if (prompt_size > this->get_n_ctx() - 4) {
     fprintf(stderr, "Prompt is too long (%d tokens, max %d)\n", prompt_size,
-            this->n_ctx - 4);
+            this->get_n_ctx() - 4);
   }
 
   // insert prefix
@@ -447,18 +456,18 @@ void Llama::eval() {
     // - take the n_keep first tokens from the original prompt (via n_past)
     // - take half of the last (n_ctx - n_keep) tokens and recompute the
     // logits in a batch
-    if (this->n_past + (int)this->batch_tokens.size() > this->n_ctx) {
+    if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
       const int n_left = this->n_past - this->eval_params.n_keep;
       this->n_past = this->eval_params.n_keep;
 
       // insert n_left/2 tokens at the start of batch_tokens
       // from last_n_tokens
-      this->batch_tokens.insert(this->batch_tokens.begin(),
-                                this->last_n_tokens.begin() + this->n_ctx -
-                                    n_left / 2 - this->batch_tokens.size(),
-                                this->last_n_tokens.end() -
-                                    this->batch_tokens.size());
+      this->batch_tokens.insert(
+          this->batch_tokens.begin(),
+          this->last_n_tokens.begin() + this->get_n_ctx() - n_left / 2 -
+              this->batch_tokens.size(),
+          this->last_n_tokens.end() - this->batch_tokens.size());
     }
 
     // evaluate tokens in batches
@@ -512,7 +521,7 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
   float nl_logit = logits[llama_token_nl()];
   auto last_n_repeat = std::min(
       std::min((int)this->last_n_tokens.size(), sampling_params.repeat_last_n),
-      this->n_ctx);
+      this->get_n_ctx());
 
   llama_sample_repetition_penalty(
       this->ctx, &candidates_p,
@@ -523,6 +532,7 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
       this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
       last_n_repeat, sampling_params.frequency_penalty,
       sampling_params.presence_penalty);
+
   if (!sampling_params.penalize_nl) {
     logits[llama_token_nl()] = nl_logit;
   }
@@ -593,7 +603,7 @@ llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
       return NULL;
     }
 
-    fprintf(stderr, "GRAMMAR:\n");
+    fprintf(stderr, "\nGRAMMAR:\n");
     grammar_parser::print_grammar(stderr, parsed_grammar);
     fprintf(stderr, "\n");
 
