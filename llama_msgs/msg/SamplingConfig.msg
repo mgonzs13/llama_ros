@@ -1,5 +1,5 @@
 
-bool ignore_eos                     # ignore end of stream token and continue generating (implies --logit-bias 2-inf)
+bool ignore_eos             false   # ignore end of stream token and continue generating (implies --logit-bias 2-inf)
 LogitBias[] logit_bias              # logit bias for specific tokens
 
 float32 temp                0.80    # temperature
@@ -21,4 +21,4 @@ float32 mirostat_tau        5.0     # Mirostat target entropy, parameter tau
 bool penalize_nl            true    # consider newlines as a repeatable token
 int32 n_probs               0       # if greater than 0, output the probabilities of top n_probs tokens
 
-string grammar                      # optional BNF-like grammar to constrain sampling
+string grammar              ""      # optional BNF-like grammar to constrain sampling
