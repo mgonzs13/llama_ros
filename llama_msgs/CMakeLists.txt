@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/LogitBias.msg"
   "msg/SamplingConfig.msg"
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"

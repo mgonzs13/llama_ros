@@ -1,3 +1,7 @@
+
+bool ignore_eos                     # ignore end of stream token and continue generating (implies --logit-bias 2-inf)
+LogitBias[] logit_bias              # logit bias for specific tokens
+
 float32 temp                0.80    # temperature
 
 int32 top_k                 40      # top-k sampling (0.0 = disabled)

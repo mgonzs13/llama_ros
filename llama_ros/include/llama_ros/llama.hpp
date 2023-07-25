@@ -31,6 +31,8 @@
 #include "llama_ros/spinner.hpp"
 
 struct llama_sampling_params {
+  bool ignore_eos;
+  std::unordered_map<llama_token, float> logit_bias;
   float temp;
   int32_t top_k;
   float top_p;

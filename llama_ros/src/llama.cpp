@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include <cassert>
+#include <cmath>
 #include <thread>
 
 #include "llama_ros/llama.hpp"
@@ -29,6 +30,8 @@ using namespace llama_ros;
 
 struct llama_sampling_params llama_sampling_default_params() {
   struct llama_sampling_params result = {
+      /*ignore_eos              =*/false,
+      /*logit_bias              =*/{},
       /*.temp                   =*/0.80f,
       /*.top_k                  =*/40,
       /*.top_p                  =*/0.95f,
@@ -465,14 +468,26 @@ void Llama::eval() {
 
 llama_token Llama::sample(llama_sampling_params sampling_params) {
 
+  // check repeat_last_n
   sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
                                       ? this->n_ctx
                                       : sampling_params.repeat_last_n;
+
+  // add llama_token_eos
+  if (sampling_params.ignore_eos) {
+    sampling_params.logit_bias[llama_token_eos()] = -INFINITY;
+  }
 
   llama_token id = 0;
 
   auto logits = llama_get_logits(this->ctx);
   auto n_vocab = llama_n_vocab(this->ctx);
+
+  // apply logit_bias
+  for (auto it = sampling_params.logit_bias.begin();
+       it != sampling_params.logit_bias.end(); it++) {
+    logits[it->first] += it->second;
+  }
 
   std::vector<llama_token_data> candidates;
   candidates.reserve(n_vocab);
