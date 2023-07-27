@@ -29,6 +29,7 @@ $ colcon build
  - [Flan](https://huggingface.co/TheBloke/Flan-OpenLlama-7B-GGML)
  - [Orca](https://huggingface.co/TheBloke/orca_mini_7B-GGML)
  - [LLaMA2](https://huggingface.co/TheBloke/Llama-2-7B-GGML)
+ - [Nous Hermes](https://huggingface.co/TheBloke/Nous-Hermes-Llama2-GGML)
 
 
 ## Usage
