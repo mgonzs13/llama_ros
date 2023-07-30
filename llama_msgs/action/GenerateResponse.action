@@ -1,7 +1,7 @@
-string prompt                   # prompt
-bool reset false        # whether to reset the context
-SamplingConfig sampling_config  # sampling config
+string prompt                       # prompt
+bool reset false                    # whether to reset the context
+SamplingConfig sampling_config      # sampling config
 ---
-string response                 # final response
+Response response                   # final response
 ---
-string text                     # partial response
+PartialResponse partial_response    # partial response

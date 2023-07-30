@@ -60,11 +60,21 @@ struct llama_eval_params {
 };
 struct llama_eval_params llama_eval_default_params();
 
+struct completion_output {
+  struct token_prob {
+    llama_token token;
+    float probability;
+  };
+
+  std::vector<token_prob> probs;
+  llama_token token;
+};
+
 namespace llama_ros {
 
 class Llama {
 
-  using GenerateResponseCallback = std::function<void(std::string)>;
+  using GenerateResponseCallback = std::function<void(completion_output)>;
 
 public:
   Llama(llama_context_params context_params,
@@ -79,11 +89,11 @@ public:
   void reset();
   void cancel();
   std::vector<float> generate_embeddings(const std::string &input_prompt);
-  std::string generate_response(const std::string &input_prompt,
-                                bool add_pfx_sfx = true,
-                                const llama_sampling_params &sampling_params =
-                                    llama_sampling_default_params(),
-                                GenerateResponseCallback callbakc = nullptr);
+  std::vector<completion_output>
+  generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
+                    const llama_sampling_params &sampling_params =
+                        llama_sampling_default_params(),
+                    GenerateResponseCallback callbakc = nullptr);
 
   int get_n_embd() { return llama_n_embd(this->ctx); }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
@@ -94,7 +104,7 @@ protected:
   llama_model *model;
   llama_context *ctx;
   void eval();
-  llama_token sample(llama_sampling_params sampling_params);
+  completion_output sample(llama_sampling_params sampling_params);
 
 private:
   Spinner spinner;
@@ -105,6 +115,8 @@ private:
 
   // prefix, suffix, stop
   std::string stop;
+  std::vector<llama_token> inp_stop;
+
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
 

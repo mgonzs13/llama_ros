@@ -45,7 +45,8 @@ class LlamaClientNode(Node):
             self, GenerateResponse, "/llama/generate_response")
 
     def text_cb(self, msg) -> None:
-        print(msg.feedback.text, end="", flush=True)
+        feedback: GenerateResponse.Feedback = msg.feedback
+        print(feedback.partial_response.text, end="", flush=True)
 
     def send_prompt(self) -> None:
 
@@ -62,7 +63,7 @@ class LlamaClientNode(Node):
         get_result_future = send_goal_future.result().get_result_async()
 
         rclpy.spin_until_future_complete(self, get_result_future)
-        # result = get_result_future.result().result
+        # result: GenerateResponse.Result = get_result_future.result().result
 
         self.get_logger().info("END")
 

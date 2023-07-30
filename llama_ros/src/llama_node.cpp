@@ -28,6 +28,8 @@
 #include <vector>
 
 #include "llama.h"
+#include "llama_msgs/msg/token_prob.hpp"
+#include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
 
 using namespace llama_ros;
@@ -265,7 +267,7 @@ void LlamaNode::execute(
                               : sampling_params.top_k;
 
   // add logit bias
-  for (auto logit_bias : sampling_config.logit_bias) {
+  for (auto logit_bias : sampling_config.logit_bias.data) {
     sampling_params.logit_bias[logit_bias.token] = logit_bias.bias;
   }
 
@@ -275,9 +277,24 @@ void LlamaNode::execute(
   }
 
   // call llama
-  result->response = this->llama->generate_response(
+  auto completion_results = this->llama->generate_response(
       prompt, true, sampling_params,
       std::bind(&LlamaNode::send_text, this, _1));
+
+  for (auto completion : completion_results) {
+    result->response.text.append(this->llama->detokenize({completion.token}));
+    result->response.tokens.push_back(completion.token);
+
+    llama_msgs::msg::TokenProbArray probs_msg;
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llama->detokenize({prob.token});
+      probs_msg.data.push_back(aux);
+    }
+    result->response.probs.push_back(probs_msg);
+  }
 
   if (rclcpp::ok()) {
 
@@ -291,10 +308,24 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const std::string &text) {
+void LlamaNode::send_text(const completion_output &completion) {
+
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
-    feedback->text = text;
+
+    feedback->partial_response.text =
+        this->llama->detokenize({completion.token});
+    feedback->partial_response.token = completion.token;
+    feedback->partial_response.probs.chosen_token = completion.token;
+
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llama->detokenize({prob.token});
+      feedback->partial_response.probs.data.push_back(aux);
+    }
+
     this->goal_handle_->publish_feedback(feedback);
   }
 }

@@ -127,6 +127,7 @@ Llama::Llama(llama_context_params context_params,
   // prefix & suffix
   this->inp_pfx = this->tokenize(prefix, true);
   this->inp_sfx = this->tokenize(suffix, false);
+  this->inp_stop = this->tokenize(stop, false);
 
   // number of tokens to keep when resetting context
   if (this->eval_params.n_keep == -1) {
@@ -240,23 +241,24 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   return embeddings_list;
 }
 
-std::string
+std::vector<completion_output>
 Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                          const llama_sampling_params &sampling_params,
                          GenerateResponseCallback callback) {
 
   this->canceled = false;
+  bool input_noecho = true;
 
-  std::string result;
-  std::string stopping_text;
-  std::string aux;
+  bool stopping = false;
+  completion_output completion_result;
+  std::vector<completion_output> response;
+  std::vector<completion_output> completion_result_list;
+
+  std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
-  bool input_noecho = true;
-  std::string prompt(input_prompt);
-
   if (prompt.size() <= 0) {
-    return "";
+    return {};
   }
 
   if (!this->prompt_tokens.size()) {
@@ -346,12 +348,12 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // out of user input, sample next token
-      llama_token id = this->sample(sampling_params);
+      completion_result = this->sample(sampling_params);
       this->last_n_tokens.erase(this->last_n_tokens.begin());
-      this->last_n_tokens.push_back(id);
+      this->last_n_tokens.push_back(completion_result.token);
 
       // add it to the context
-      this->batch_tokens.push_back(id);
+      this->batch_tokens.push_back(completion_result.token);
 
       // echo this to console
       input_noecho = false;
@@ -369,55 +371,38 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       break;
     }
 
-    // check if stop tokens appears at the end of the output
-    aux = this->detokenize(this->batch_tokens);
-    if (((int)this->prompt_tokens.size() <= this->n_consumed) &&
-        this->stop.size() &&
-        this->stop.find(aux.c_str(), stopping_text.size(), aux.length()) !=
-            std::string::npos) {
+    // check if new tokens contains the stop sequence
+    completion_result_list.push_back(completion_result);
 
-      // remove and send chars before stop
-      if (!stopping_text.size()) {
-        for (int i = 0; i < (int)aux.size(); i++) {
-          if (aux.at(0) != this->stop[i]) {
+    if (completion_result_list.size() <= this->inp_stop.size()) {
 
-            if (!input_noecho) {
-              if (callback != nullptr) {
-                callback(aux.substr(0, 1));
-              }
-              result.append(aux.substr(0, 1));
-            }
+      stopping = true;
 
-            aux.erase(aux.begin());
-
-          } else {
-            break;
-          }
+      for (size_t i = 0; i < (size_t)completion_result_list.size(); i++) {
+        if (completion_result_list.at(i).token != this->inp_stop.at(i)) {
+          stopping = false;
+          break;
         }
       }
 
-      stopping_text.append(aux);
-
-      if (stopping_text.size() == this->stop.size()) {
-        this->is_antiprompt = true;
+      if (stopping && completion_result_list.size() == this->inp_stop.size()) {
         break;
       }
 
     } else {
+      stopping = false;
+    }
 
-      // send text
-      if (!input_noecho) {
-        std::string text = aux;
-
-        if (stopping_text.size()) {
-          text = stopping_text + text;
-          stopping_text.clear();
+    // send text
+    if (!input_noecho) {
+      if (!stopping) {
+        for (auto completion_ele : completion_result_list) {
+          if (callback != nullptr) {
+            callback(completion_ele);
+          }
+          response.push_back(completion_ele);
         }
-
-        if (callback != nullptr) {
-          callback(text);
-        }
-        result.append(text);
+        completion_result_list.clear();
       }
     }
 
@@ -435,7 +420,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     this->grammar = nullptr;
   }
 
-  return result;
+  return response;
 }
 
 void Llama::eval() {
@@ -493,7 +478,7 @@ void Llama::eval() {
   }
 }
 
-llama_token Llama::sample(llama_sampling_params sampling_params) {
+completion_output Llama::sample(llama_sampling_params sampling_params) {
 
   // init token
   llama_token id = 0;
@@ -587,7 +572,16 @@ llama_token Llama::sample(llama_sampling_params sampling_params) {
     llama_grammar_accept_token(this->ctx, this->grammar, id);
   }
 
-  return id;
+  // create output
+  completion_output result;
+  result.token = id;
+
+  for (size_t i = 0;
+       i < std::min(candidates_p.size, (size_t)sampling_params.n_probs); ++i) {
+    result.probs.push_back({candidates_p.data[i].id, candidates_p.data[i].p});
+  }
+
+  return result;
 }
 
 llama_grammar *Llama::load_grammar(const std::string &grammar_text) {

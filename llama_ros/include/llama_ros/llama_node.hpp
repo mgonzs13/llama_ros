@@ -34,7 +34,6 @@
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
 #include "llama_ros/llama.hpp"
-
 namespace llama_ros {
 
 class LlamaNode : public rclcpp::Node {
@@ -77,7 +76,7 @@ private:
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
 
   void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const std::string &text);
+  void send_text(const completion_output &completion);
 };
 
 } // namespace llama_ros
