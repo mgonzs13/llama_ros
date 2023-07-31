@@ -38,12 +38,9 @@ def generate_launch_description():
             parameters=[{
                 "seed": LaunchConfiguration("seed", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
+                "n_batch": LaunchConfiguration("n_batch", default=8),
                 "n_gqa": LaunchConfiguration("n_gqa", default=1),
-                "memory_f16": LaunchConfiguration("memory_f16", default=True),
-                "use_mmap": LaunchConfiguration("use_mmap", default=True),
-                "use_mlock": LaunchConfiguration("use_mlock", default=False),
-                "embedding": LaunchConfiguration("embedding", default=True),
-                "numa": LaunchConfiguration("numa", default=True),
+                "rms_norm_eps": LaunchConfiguration("rms_norm_eps", default=5e-6),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
@@ -52,16 +49,23 @@ def generate_launch_description():
                 "rope_freq_base": LaunchConfiguration("rope_freq_base", default=10000.0),
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
 
-                "rms_norm_eps": LaunchConfiguration("rms_norm_eps", default=5e-6),
+                "low_vram": LaunchConfiguration("low_vram", default=False),
+                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=False),
+                "f16_kv": LaunchConfiguration("f16_kv", default=True),
+                "logits_all": LaunchConfiguration("logits_all", default=False),
+                "vocab_only": LaunchConfiguration("vocab_only", default=False),
+                "use_mmap": LaunchConfiguration("use_mmap", default=True),
+                "use_mlock": LaunchConfiguration("use_mlock", default=False),
+                "embedding": LaunchConfiguration("embedding", default=True),
 
                 "n_threads": LaunchConfiguration("n_threads", default=4),
                 "n_predict": LaunchConfiguration("n_predict", default=128),
-                "n_batch": LaunchConfiguration("n_batch", default=8),
                 "n_keep": LaunchConfiguration("n_keep", default=-1),
 
                 "model": LaunchConfiguration("model", default=""),
                 "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
                 "lora_base": LaunchConfiguration("lora_base", default=""),
+                "numa": LaunchConfiguration("numa", default=True),
 
                 "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
                 "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),

@@ -72,12 +72,9 @@ def get_prompt_path(prompt_file_name: str) -> str:
 def create_llama_launch(
     seed: int = -1,
     n_ctx: int = 512,
+    n_batch: int = 8,
     n_gqa: int = 1,
-    memory_f16: bool = True,
-    use_mmap: bool = True,
-    use_mlock: bool = False,
-    embedding: bool = True,
-    numa: bool = True,
+    rms_norm_eps: float = 5e-6,
 
     n_gpu_layers: int = 0,
     main_gpu: int = 0,
@@ -86,16 +83,23 @@ def create_llama_launch(
     rope_freq_base: float = 10000.0,
     rope_freq_scale: float = 1.0,
 
-    rms_norm_eps: float = 5e-6,
+    low_vram: bool = False,
+    mul_mat_q: bool = False,
+    f16_kv: bool = True,
+    logits_all: bool = False,
+    vocab_only: bool = False,
+    use_mmap: bool = True,
+    use_mlock: bool = False,
+    embedding: bool = True,
 
     n_threads: int = 4,
     n_predict: int = 128,
-    n_batch: int = 8,
     n_keep: int = -1,
 
     model: str = "",
     lora_adapter: str = "",
     lora_base: str = "",
+    numa: bool = True,
 
     prefix: str = "",
     suffix: str = "",
@@ -110,12 +114,9 @@ def create_llama_launch(
         launch_arguments={
             "seed": str(seed),
             "n_ctx": str(n_ctx),
+            "n_batch": str(n_batch),
             "n_gqa": str(n_gqa),
-            "memory_f16": str(memory_f16),
-            "use_mmap": str(use_mmap),
-            "use_mlock": str(use_mlock),
-            "embedding": str(embedding),
-            "numa": str(numa),
+            "rms_norm_eps": str(rms_norm_eps),
 
             "n_gpu_layers": str(n_gpu_layers),
             "main_gpu": str(main_gpu),
@@ -124,16 +125,23 @@ def create_llama_launch(
             "rope_freq_base": str(rope_freq_base),
             "rope_freq_scale": str(rope_freq_scale),
 
-            "rms_norm_eps": str(rms_norm_eps),
+            "low_vram": str(low_vram),
+            "mul_mat_q": str(mul_mat_q),
+            "f16_kv": str(f16_kv),
+            "logits_all": str(logits_all),
+            "vocab_only": str(vocab_only),
+            "use_mmap": str(use_mmap),
+            "use_mlock": str(use_mlock),
+            "embedding": str(embedding),
 
             "n_threads": str(n_threads),
             "n_predict": str(n_predict),
-            "n_batch": str(n_batch),
             "n_keep": str(n_keep),
 
             "model": get_llama_model_path(model),
             "lora_adapter": get_lora_model_path(lora_adapter),
             "lora_base": get_llama_model_path(lora_base),
+            "numa": str(numa),
 
             "prefix": prefix,
             "suffix": suffix,

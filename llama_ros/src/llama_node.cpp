@@ -57,14 +57,14 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
                                             {"seed", -1},
-                                            {"n_threads", 1},
-                                            {"n_predict", 128},
                                             {"n_ctx", 512},
-                                            {"n_gqa", 1},
                                             {"n_batch", 512},
-                                            {"n_keep", -1},
+                                            {"n_gqa", 1},
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
+                                            {"n_threads", 1},
+                                            {"n_predict", 128},
+                                            {"n_keep", -1},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -77,38 +77,45 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                                 {"stop", ""},
                                             });
   this->declare_parameters<float>("", {
+                                          {"rms_norm_eps", 5e-6f},
                                           {"rope_freq_base", 10000.0f},
                                           {"rope_freq_scale", 1.0f},
-                                          {"rms_norm_eps", 5e-6f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
-                                         {"memory_f16", true},
+                                         {"low_vram", false},
+                                         {"mul_mat_q", false},
+                                         {"f16_kv", true},
+                                         {"logits_all", false},
+                                         {"vocab_only", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"embedding", true},
-                                         {"low_vram", false},
                                          {"numa", false},
                                      });
 
   this->get_parameter("seed", context_params.seed);
   this->get_parameter("n_ctx", context_params.n_ctx);
-  this->get_parameter("memory_f16", context_params.f16_kv);
-  this->get_parameter("use_mmap", context_params.use_mmap);
-  this->get_parameter("use_mlock", context_params.use_mlock);
-  this->get_parameter("embedding", context_params.embedding);
+  this->get_parameter("n_batch", context_params.n_batch);
   this->get_parameter("n_gqa", context_params.n_gqa);
+  this->get_parameter("rms_norm_eps", context_params.rms_norm_eps);
 
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
-  this->get_parameter("low_vram", context_params.low_vram);
 
   this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
   this->get_parameter("rope_freq_base", context_params.rope_freq_base);
 
-  this->get_parameter("rms_norm_eps", context_params.rms_norm_eps);
+  this->get_parameter("low_vram", context_params.low_vram);
+  this->get_parameter("mul_mat_q", context_params.mul_mat_q);
+  this->get_parameter("f16_kv", context_params.f16_kv);
+  this->get_parameter("logits_all", context_params.logits_all);
+  this->get_parameter("vocab_only", context_params.vocab_only);
+  this->get_parameter("use_mmap", context_params.use_mmap);
+  this->get_parameter("use_mlock", context_params.use_mlock);
+  this->get_parameter("embedding", context_params.embedding);
 
   this->get_parameter("n_threads", eval_params.n_threads);
   this->get_parameter("n_predict", eval_params.n_predict);
