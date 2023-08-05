@@ -283,7 +283,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   // insert prefix
   if (add_pfx_sfx && this->inp_pfx.size() && !this->is_antiprompt) {
-    this->n_consumed = this->prompt_tokens.size();
     this->prompt_tokens.insert(this->prompt_tokens.end(), this->inp_pfx.begin(),
                                this->inp_pfx.end());
   }
@@ -312,7 +311,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   // load grammar
   this->grammar = this->load_grammar(sampling_params.grammar);
 
-  if (this->grammar != nullptr) {
+  if (this->grammar != NULL) {
     auto it = sampling_params.logit_bias.find(llama_token_eos());
 
     if (it != sampling_params.logit_bias.end() && it->second == -INFINITY) {
@@ -328,14 +327,14 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
     this->eval();
 
-    // when not currently processing queued
-    // inputs check if we should end
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // check if stop appears at the end of the output
       std::string last_output = this->detokenize(this->last_n_tokens);
       this->is_antiprompt = false;
 
+      // when not currently processing queued
+      // inputs check if we should end
       if (this->stop.size() &&
           last_output.find(this->stop.c_str(),
                            last_output.length() - this->stop.length(),
@@ -343,17 +342,14 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
         this->is_antiprompt = true;
         break;
       }
-    }
 
-    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
-
-      // out of user input, sample next token
+      // sample next token
       completion_result = this->sample(sampling_params);
+      completion_result_list.push_back(completion_result);
+
+      this->batch_tokens.push_back(completion_result.token);
       this->last_n_tokens.erase(this->last_n_tokens.begin());
       this->last_n_tokens.push_back(completion_result.token);
-
-      // add it to the context
-      this->batch_tokens.push_back(completion_result.token);
 
       // echo this to console
       input_noecho = false;
@@ -372,8 +368,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     // check if new tokens contains the stop sequence
-    completion_result_list.push_back(completion_result);
-
     if (completion_result_list.size() <= this->inp_stop.size()) {
 
       stopping = true;
@@ -415,9 +409,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   fprintf(stderr, "Finish Response Generation\n");
 
-  if (this->grammar != nullptr) {
+  if (this->grammar != NULL) {
     llama_grammar_free(this->grammar);
-    this->grammar = nullptr;
+    this->grammar = NULL;
   }
 
   return response;
@@ -427,6 +421,7 @@ void Llama::eval() {
 
   while (((int)this->prompt_tokens.size() > this->n_consumed) &&
          ((int)this->batch_tokens.size() < this->eval_params.n_batch)) {
+
     this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
     this->last_n_tokens.erase(this->last_n_tokens.begin());
     this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
@@ -435,6 +430,7 @@ void Llama::eval() {
 
   // predict
   if (this->batch_tokens.size() > 0) {
+
     // infinite text generation via context swapping
     // if we run out of context:
     // - take the n_keep first tokens from the original prompt (via n_past)
