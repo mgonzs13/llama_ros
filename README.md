@@ -16,11 +16,11 @@ $ colcon build
 <table>
   <thead>
     <tr>
-      <th align="center">LLM</th>
-      <th align="center">Base Model</th>
-      <th align="center">Sizes</th>
-      <th align="center">Prompt Template</th>
-      <th align="center">Launch</th>
+      <th>LLM</th>
+      <th>Base Model</th>
+      <th>Sizes</th>
+      <th>Prompt Template</th>
+      <th>Launch</th>
     </tr>
   </thead>
   <tbody>
