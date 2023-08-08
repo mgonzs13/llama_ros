@@ -18,9 +18,9 @@ $ colcon build
     <tr>
       <th align="center">LLM</th>
       <th align="center">Base Model</th>
-      <th align="left">Sizes</th>
-      <th align="left">Prompt Template</th>
-      <th align="left">Launch File Example</th>
+      <th align="center">Sizes</th>
+      <th align="center">Prompt Template</th>
+      <th align="center">Launch</th>
     </tr>
   </thead>
   <tbody>
@@ -62,7 +62,10 @@ $ colcon build
       <td align="left">
         <a href="https://huggingface.co/TheBloke/gpt4-x-alpaca-13B-GGML">13B</a>
       </td>
-      <td align="left"><code>### Instruction: prompt<br />### Response:</code></td>
+      <td align="left">
+        <code>### Instruction: prompt</code><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/alpaca.launch.py">alpaca.launch.py</a>
       </td>
@@ -77,7 +80,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>### Instruction: prompt<br />### Response:</code></td>
+      <td align="left">
+        <code>### Instruction: prompt</code><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/gpt4all.launch.py">gpt4all.launch.py</a>
       </td>
@@ -91,7 +97,10 @@ $ colcon build
         <a href="https://huggingface.co/TheBloke/Vicuna-7B-CoT-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/Vicuna-13B-CoT-GGML">13B</a>
       </td>
-      <td align="left"><code>### Human: prompt<br />### Assistant:</code></td>
+      <td align="left">
+        <code>### Human: prompt</code><br />
+        <code>### Assistant:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/vicuna.launch.py">vicuna.launch.py</a>
       </td>
@@ -105,7 +114,10 @@ $ colcon build
         <a href="https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGML">13B</a>
       </td>
-      <td align="left"><code>USER: prompt<br />ASSISTANT:</code></td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/vicuna_1.launch.py">vicuna_1.launch.py</a>
       </td>
@@ -118,7 +130,10 @@ $ colcon build
       <td align="left">
         <a href="https://huggingface.co/TheBloke/wizardLM-7B-GGML">7B</a>
       </td>
-      <td align="left"><code>### Instruction: prompt<br />### Response:</code></td>
+      <td align="left">
+        <code>### Instruction: prompt</code><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/wizardlm.launch.py">wizardlm.launch.py</a>
       </td>
@@ -134,7 +149,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>USER: prompt<br />ASSISTANT:</code></td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/wizardlm_1.launch.py"
           >wizardlm_1.launch.py</a
@@ -158,7 +176,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>USER: prompt<br />ASSISTANT:</code></td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/wizard-vicuna.launch.py"
           >wizardlm-vicuna.launch.py</a
@@ -178,7 +199,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>USER: prompt<br />ASSISTANT:</code></td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/airoboros.launch.py"
           >airoboros.launch.py</a
@@ -198,7 +222,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>USER: prompt<br />ASSISTANT:</code></td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/airoboros.launch.py"
           >airoboros.launch.py</a
@@ -219,7 +246,11 @@ $ colcon build
           >13B-8K</a
         >
       </td>
-      <td align="left"><code>&lt;|user|&gt;<br />prompt<br />&lt;|assistant|&gt;</code></td>
+      <td align="left">
+        <code>&lt;|user|&gt;</code><br />
+        <code>prompt</code><br />
+        <code>&lt;|assistant|&gt;</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/tulu.launch.py">tulu.launch.py</a>
       </td>
@@ -238,7 +269,10 @@ $ colcon build
           >13B-8K</a
         >
       </td>
-      <td align="left"><code>###Human: prompt<br />###Assistant:</code></td>
+      <td align="left">
+        <code>###Human: prompt</code><br />
+        <code>###Assistant:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/robin.launch.py">robin.launch.py</a>
       </td>
@@ -251,7 +285,10 @@ $ colcon build
       <td align="left">
         <a href="https://huggingface.co/TheBloke/gorilla-7B-GGML">7B</a>
       </td>
-      <td align="left"><code>###USER: prompt<br />###ASSISTANT:</code></td>
+      <td align="left">
+        <code>###USER: prompt</code><br />
+        <code>###ASSISTANT:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/gorilla.launch.py">gorilla.launch.py</a>
       </td>
@@ -265,7 +302,10 @@ $ colcon build
         <a href="https://huggingface.co/TheBloke/guanaco-7B-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/guanaco-13B-GGML">13B</a>
       </td>
-      <td align="left"><code>### Human: prompt<br />### Assistant:</code></td>
+      <td align="left">
+        <code>### Human: prompt</code><br />
+        <code>### Assistant:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/guanaco.launch.py">guanaco.launch.py</a>
       </td>
@@ -280,7 +320,10 @@ $ colcon build
       <td align="left">
         <a href="https://huggingface.co/TheBloke/Flan-OpenLlama-7B-GGML">7B</a>
       </td>
-      <td align="left"><code>### Instruction: prompt<br />### Response:</code></td>
+      <td align="left">
+        <code>### Instruction: prompt</code><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/flan.launch.py">flan.launch.py</a>
       </td>
@@ -296,10 +339,15 @@ $ colcon build
         <a href="https://huggingface.co/TheBloke/orca_mini_v2_7B-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/orca_mini_v2_13B-GGML">13B</a>
       </td>
-      <td align="left"><code>
-        ### System:<br />system prompt<br /><br />### User:<br />prompt<br /><br />###
-        Input:<br />input<br /><br />### Response:
-      </code></td>
+      <td align="left">
+        <code>### System:</code><br />
+        <code>system prompt</code><br /><br />
+        <code>### User:</code><br />
+        <code>prompt</code><br /><br />
+        <code>###Input:</code><br />
+        <code>input</code><br /><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/orca.launch.py">orca.launch.py</a>
       </td>
@@ -317,7 +365,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>### Human: prompt<br />### Assistant:</code></td>
+      <td align="left">
+        <code>### Human: prompt</code><br />
+        <code>### Assistant:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/guanaco.launch.py">guanaco.launch.py</a>
       </td>
@@ -335,7 +386,10 @@ $ colcon build
           >13B</a
         >
       </td>
-      <td align="left"><code>### Instruction: prompt<br />### Response:</code></td>
+      <td align="left">
+        <code>### Instruction: prompt</code><br />
+        <code>### Response:</code>
+      </td>
       <td align="left">
         <a href="llama_bringup/launch/nous-hermes.launch.py"
           >nous-hermes.launch.py</a
@@ -351,9 +405,12 @@ $ colcon build
         <a href="https://huggingface.co/TheBloke/StableBeluga-7B-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/StableBeluga-13B-GGML">13B</a>
       </td>
-      <td align="left"><code>
-        ### System:<br />system prompt<br /><br />### User:<br />prompt<br /><br />###
-        Assistant:</code>
+      <td align="left">
+        <code>### System:</code><br />
+        <code>system prompt</code><br /><br />
+        <code>### User:</code><br />
+        <code>prompt</code><br /><br />
+        <code>###Assistant:</code>
       </td>
       <td align="left">
         <a href="llama_bringup/launch/stablebeluga.launch.py"
