@@ -73,8 +73,6 @@ def create_llama_launch(
     seed: int = -1,
     n_ctx: int = 512,
     n_batch: int = 8,
-    n_gqa: int = 1,
-    rms_norm_eps: float = 5e-6,
 
     n_gpu_layers: int = 0,
     main_gpu: int = 0,
@@ -115,8 +113,6 @@ def create_llama_launch(
             "seed": str(seed),
             "n_ctx": str(n_ctx),
             "n_batch": str(n_batch),
-            "n_gqa": str(n_gqa),
-            "rms_norm_eps": str(rms_norm_eps),
 
             "n_gpu_layers": str(n_gpu_layers),
             "main_gpu": str(main_gpu),

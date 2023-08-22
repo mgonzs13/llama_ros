@@ -59,7 +59,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                             {"seed", -1},
                                             {"n_ctx", 512},
                                             {"n_batch", 512},
-                                            {"n_gqa", 1},
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
@@ -77,7 +76,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                                 {"stop", ""},
                                             });
   this->declare_parameters<float>("", {
-                                          {"rms_norm_eps", 5e-6f},
                                           {"rope_freq_base", 10000.0f},
                                           {"rope_freq_scale", 1.0f},
                                       });
@@ -98,8 +96,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   this->get_parameter("seed", context_params.seed);
   this->get_parameter("n_ctx", context_params.n_ctx);
   this->get_parameter("n_batch", context_params.n_batch);
-  this->get_parameter("n_gqa", context_params.n_gqa);
-  this->get_parameter("rms_norm_eps", context_params.rms_norm_eps);
 
   this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
   this->get_parameter("main_gpu", context_params.main_gpu);
@@ -280,7 +276,8 @@ void LlamaNode::execute(
 
   // add llama_token_eos
   if (sampling_params.ignore_eos) {
-    sampling_params.logit_bias[llama_token_eos()] = -INFINITY;
+    sampling_params.logit_bias[llama_token_eos(this->llama->get_ctx())] =
+        -INFINITY;
   }
 
   // call llama

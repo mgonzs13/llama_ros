@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="stablebeluga.bin",
+            model="stablebeluga.gguf",
 
             prefix="\n\n### User:\n",
             suffix="\n\n### Assistant:\n",

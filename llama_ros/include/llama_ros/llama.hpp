@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "examples/grammar-parser.h"
+#include "common/grammar-parser.h"
 #include "llama.h"
 #include "llama_ros/spinner.hpp"
 
@@ -84,8 +84,8 @@ public:
         const std::string &stop);
   ~Llama();
 
-  std::string detokenize(const std::vector<llama_token> &tokens);
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
+  std::string detokenize(const std::vector<llama_token> &tokens);
   void reset();
   void cancel();
   std::vector<float> generate_embeddings(const std::string &input_prompt);
@@ -95,8 +95,9 @@ public:
                         llama_sampling_default_params(),
                     GenerateResponseCallback callbakc = nullptr);
 
-  int get_n_embd() { return llama_n_embd(this->ctx); }
+  const struct llama_context *get_ctx() { return this->ctx; }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
+  int get_n_embd() { return llama_n_embd(this->ctx); }
   int get_n_vocab() { return llama_n_vocab(this->ctx); }
   bool is_embedding() { return this->embedding; }
 

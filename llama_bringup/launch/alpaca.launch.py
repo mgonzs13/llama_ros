@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="alpaca.bin",
+            model="alpaca.gguf",
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",

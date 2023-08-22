@@ -39,8 +39,6 @@ def generate_launch_description():
                 "seed": LaunchConfiguration("seed", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
                 "n_batch": LaunchConfiguration("n_batch", default=8),
-                "n_gqa": LaunchConfiguration("n_gqa", default=1),
-                "rms_norm_eps": LaunchConfiguration("rms_norm_eps", default=5e-6),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),

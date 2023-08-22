@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="wizard-vicuna.bin",
+            model="wizard-vicuna.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

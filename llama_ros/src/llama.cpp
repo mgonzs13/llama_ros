@@ -153,11 +153,10 @@ Llama::Llama(llama_context_params context_params,
   // do one empty run to warm up the model
   {
     const std::vector<llama_token> tmp = {
-        llama_token_bos(),
+        llama_token_bos(this->ctx),
     };
     llama_eval(this->ctx, tmp.data(), tmp.size(), 0,
                this->eval_params.n_threads);
-    llama_reset_timings(this->ctx);
   }
 }
 
@@ -181,9 +180,22 @@ std::vector<llama_token> Llama::tokenize(const std::string &text,
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   std::string output = "";
+
   for (llama_token token : tokens) {
-    output += llama_token_to_str(this->ctx, token);
+    std::vector<char> result(8, 0);
+    const int n_tokens =
+        llama_token_to_str(ctx, token, result.data(), result.size());
+    if (n_tokens < 0) {
+      result.resize(-n_tokens);
+      int check = llama_token_to_str(ctx, token, result.data(), result.size());
+      GGML_ASSERT(check == -n_tokens);
+    } else {
+      result.resize(n_tokens);
+    }
+
+    output += std::string(result.data(), result.size());
   }
+
   return output;
 }
 
@@ -312,7 +324,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   this->grammar = this->load_grammar(sampling_params.grammar);
 
   if (this->grammar != NULL) {
-    auto it = sampling_params.logit_bias.find(llama_token_eos());
+    auto it = sampling_params.logit_bias.find(llama_token_eos(this->ctx));
 
     if (it != sampling_params.logit_bias.end() && it->second == -INFINITY) {
       fprintf(stderr, "warning: EOS token is disabled, which will cause most "
@@ -358,7 +370,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       --this->n_remain;
     }
 
-    if (this->batch_tokens.back() == llama_token_eos()) {
+    if (this->batch_tokens.back() == llama_token_eos(this->ctx)) {
       break;
     }
 
@@ -498,7 +510,7 @@ completion_output Llama::sample(llama_sampling_params sampling_params) {
                                          false};
 
   // Apply penalties
-  float nl_logit = logits[llama_token_nl()];
+  float nl_logit = logits[llama_token_nl(this->ctx)];
   auto last_n_repeat = std::min(
       std::min((int)this->last_n_tokens.size(), sampling_params.repeat_last_n),
       this->get_n_ctx());
@@ -514,7 +526,7 @@ completion_output Llama::sample(llama_sampling_params sampling_params) {
       sampling_params.presence_penalty);
 
   if (!sampling_params.penalize_nl) {
-    logits[llama_token_nl()] = nl_logit;
+    logits[llama_token_nl(this->ctx)] = nl_logit;
   }
 
   if (this->grammar != NULL) {

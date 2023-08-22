@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="llama.bin",
+            model="llama.gguf",
 
             prefix="\n\n### User:\n",
             suffix="\n\n### Bob:\n",
