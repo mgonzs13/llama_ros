@@ -48,7 +48,7 @@ def generate_launch_description():
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
 
                 "low_vram": LaunchConfiguration("low_vram", default=False),
-                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=False),
+                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "f16_kv": LaunchConfiguration("f16_kv", default=True),
                 "logits_all": LaunchConfiguration("logits_all", default=False),
                 "vocab_only": LaunchConfiguration("vocab_only", default=False),

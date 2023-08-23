@@ -83,7 +83,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                                std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
                                          {"low_vram", false},
-                                         {"mul_mat_q", false},
+                                         {"mul_mat_q", true},
                                          {"f16_kv", true},
                                          {"logits_all", false},
                                          {"vocab_only", false},

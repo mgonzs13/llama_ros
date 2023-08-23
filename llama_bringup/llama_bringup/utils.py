@@ -82,7 +82,7 @@ def create_llama_launch(
     rope_freq_scale: float = 1.0,
 
     low_vram: bool = False,
-    mul_mat_q: bool = False,
+    mul_mat_q: bool = True,
     f16_kv: bool = True,
     logits_all: bool = False,
     vocab_only: bool = False,

@@ -72,6 +72,7 @@ Llama::Llama(llama_context_params context_params,
 
 #ifdef GGML_USE_CUBLAS
   context_params.low_vram = true;
+  context_params.mul_mat_q = false;
 #endif
 
   if (context_params.rope_freq_base != 10000.0) {
