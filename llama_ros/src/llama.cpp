@@ -229,7 +229,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   auto tokens = this->tokenize(prompt, true);
   int n_past = 0;
 
-  for (int i = 0; i < (int)tokens.size(); i += this->eval_params.n_batch) {
+  for (size_t i = 0; i < tokens.size(); i += this->eval_params.n_batch) {
 
     int n_eval = (int)tokens.size() - i;
     if (n_eval > this->eval_params.n_batch) {
@@ -385,7 +385,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
       stopping = true;
 
-      for (size_t i = 0; i < (size_t)completion_result_list.size(); i++) {
+      for (size_t i = 0; i < completion_result_list.size(); i++) {
         if (completion_result_list.at(i).token != this->inp_stop.at(i)) {
           stopping = false;
           break;
@@ -466,7 +466,7 @@ void Llama::eval() {
     // evaluate tokens in batches
     // batch_tokens is typically prepared beforehand to fit within a batch
     // but not always
-    for (int i = 0; i < (int)this->batch_tokens.size();
+    for (size_t i = 0; i < this->batch_tokens.size();
          i += this->eval_params.n_batch) {
 
       int n_eval = (int)this->batch_tokens.size() - i;
@@ -527,7 +527,12 @@ completion_output Llama::sample(llama_sampling_params sampling_params) {
       sampling_params.presence_penalty);
 
   if (!sampling_params.penalize_nl) {
-    logits[llama_token_nl(this->ctx)] = nl_logit;
+    for (size_t i = 0; i < candidates_p.size; i++) {
+      if (candidates_p.data[i].id == llama_token_nl(ctx)) {
+        candidates_p.data[i].logit = nl_logit;
+        break;
+      }
+    }
   }
 
   if (this->grammar != NULL) {
