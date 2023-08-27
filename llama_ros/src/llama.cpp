@@ -174,7 +174,7 @@ std::vector<llama_token> Llama::tokenize(const std::string &text,
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
-  return llama_detokenize_spm(this->ctx, tokens);
+  return llama_detokenize_bpe(this->ctx, tokens);
 }
 
 void Llama::reset() {
