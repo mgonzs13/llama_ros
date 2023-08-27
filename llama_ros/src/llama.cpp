@@ -24,6 +24,7 @@
 #include <cmath>
 #include <thread>
 
+#include "common.h"
 #include "llama_ros/llama.hpp"
 
 using namespace llama_ros;
@@ -169,35 +170,11 @@ Llama::~Llama() {
 
 std::vector<llama_token> Llama::tokenize(const std::string &text,
                                          bool add_bos) {
-  // initialize to prompt numer of chars, since n_tokens <= n_prompt_chars
-  std::vector<llama_token> res(text.size() + (int)add_bos);
-  int n =
-      llama_tokenize(this->ctx, text.c_str(), res.data(), res.size(), add_bos);
-  assert(n >= 0);
-  res.resize(n);
-
-  return res;
+  return llama_tokenize(this->ctx, text, add_bos);
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
-  std::string output = "";
-
-  for (llama_token token : tokens) {
-    std::vector<char> result(8, 0);
-    const int n_tokens =
-        llama_token_to_str(ctx, token, result.data(), result.size());
-    if (n_tokens < 0) {
-      result.resize(-n_tokens);
-      int check = llama_token_to_str(ctx, token, result.data(), result.size());
-      GGML_ASSERT(check == -n_tokens);
-    } else {
-      result.resize(n_tokens);
-    }
-
-    output += std::string(result.data(), result.size());
-  }
-
-  return output;
+  return llama_detokenize_spm(this->ctx, tokens);
 }
 
 void Llama::reset() {
@@ -225,7 +202,6 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   }
 
   std::string prompt(input_prompt);
-  prompt.insert(0, 1, ' ');
   auto tokens = this->tokenize(prompt, true);
   int n_past = 0;
 
@@ -272,10 +248,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   if (prompt.size() <= 0) {
     return {};
-  }
-
-  if (!this->prompt_tokens.size()) {
-    prompt.insert(0, 1, ' ');
   }
 
   if (!this->prompt_tokens.size() && !add_pfx_sfx) {
