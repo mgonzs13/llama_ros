@@ -118,6 +118,8 @@ Llama::Llama(llama_context_params context_params,
                                                            : lora_base.c_str(),
                                          this->eval_params.n_threads)) {
       fprintf(stderr, "Failed to apply lora adapter\n");
+      llama_free(this->ctx);
+      llama_free_model(this->model);
     }
   }
 
