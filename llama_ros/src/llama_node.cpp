@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "common.h"
 #include "llama.h"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
@@ -36,21 +37,39 @@ using std::placeholders::_2;
 
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
-  std::string model;
-  std::string lora_adapter;
-  std::string lora_base;
-  bool numa;
-  std::string prefix;
-  std::string suffix;
+  // load llama
+  gpt_params params;
+  this->load_params(params);
+  this->llama = std::make_shared<Llama>(params);
+  this->llama->generate_response(params.prompt, false, nullptr);
+
+  // services
+  this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
+      "tokenize",
+      std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
+  this->generate_embeddings_service_ =
+      this->create_service<llama_msgs::srv::GenerateEmbeddings>(
+          "generate_embeddings",
+          std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
+                    _2));
+
+  // generate reponse action server
+  this->goal_handle_ = nullptr;
+  this->generate_response_action_server_ =
+      rclcpp_action::create_server<GenerateResponse>(
+          this, "generate_response",
+          std::bind(&LlamaNode::handle_goal, this, _1, _2),
+          std::bind(&LlamaNode::handle_cancel, this, _1),
+          std::bind(&LlamaNode::handle_accepted, this, _1));
+
+  RCLCPP_INFO(this->get_logger(), "Llama Node started");
+}
+
+void LlamaNode::load_params(gpt_params &params) {
+
   std::string stop;
-
-  std::vector<double> tensor_split;
-
-  std::string prompt;
   std::string file_path;
-
-  auto context_params = llama_context_default_params();
-  auto eval_params = llama_eval_default_params();
+  std::vector<double> tensor_split;
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
@@ -84,63 +103,55 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                                          {"mul_mat_q", true},
                                          {"f16_kv", true},
                                          {"logits_all", false},
-                                         {"vocab_only", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"embedding", true},
                                          {"numa", false},
                                      });
 
-  this->get_parameter("seed", context_params.seed);
-  this->get_parameter("n_ctx", context_params.n_ctx);
-  this->get_parameter("n_batch", context_params.n_batch);
+  this->get_parameter("seed", params.seed);
+  this->get_parameter("n_ctx", params.n_ctx);
+  this->get_parameter("n_batch", params.n_batch);
 
-  this->get_parameter("n_gpu_layers", context_params.n_gpu_layers);
-  this->get_parameter("main_gpu", context_params.main_gpu);
+  this->get_parameter("n_gpu_layers", params.n_gpu_layers);
+  this->get_parameter("main_gpu", params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
 
-  this->get_parameter("rope_freq_scale", context_params.rope_freq_scale);
-  this->get_parameter("rope_freq_base", context_params.rope_freq_base);
+  this->get_parameter("rope_freq_scale", params.rope_freq_scale);
+  this->get_parameter("rope_freq_base", params.rope_freq_base);
 
-  this->get_parameter("low_vram", context_params.low_vram);
-  this->get_parameter("mul_mat_q", context_params.mul_mat_q);
-  this->get_parameter("f16_kv", context_params.f16_kv);
-  this->get_parameter("logits_all", context_params.logits_all);
-  this->get_parameter("vocab_only", context_params.vocab_only);
-  this->get_parameter("use_mmap", context_params.use_mmap);
-  this->get_parameter("use_mlock", context_params.use_mlock);
-  this->get_parameter("embedding", context_params.embedding);
+  this->get_parameter("low_vram", params.low_vram);
+  this->get_parameter("mul_mat_q", params.mul_mat_q);
+  this->get_parameter("f16_kv", params.memory_f16);
+  this->get_parameter("logits_all", params.perplexity);
+  this->get_parameter("use_mmap", params.use_mmap);
+  this->get_parameter("use_mlock", params.use_mlock);
+  this->get_parameter("embedding", params.embedding);
 
-  this->get_parameter("n_threads", eval_params.n_threads);
-  this->get_parameter("n_predict", eval_params.n_predict);
-  this->get_parameter("n_keep", eval_params.n_keep);
-  this->get_parameter("n_batch", eval_params.n_batch);
+  this->get_parameter("n_threads", params.n_threads);
+  this->get_parameter("n_predict", params.n_predict);
+  this->get_parameter("n_keep", params.n_keep);
+  this->get_parameter("n_batch", params.n_batch);
 
-  this->get_parameter("model", model);
-  this->get_parameter("lora_adapter", lora_adapter);
-  this->get_parameter("lora_base", lora_base);
-  this->get_parameter("numa", numa);
+  this->get_parameter("model", params.model);
+  this->get_parameter("lora_adapter", params.lora_adapter);
+  this->get_parameter("lora_base", params.lora_base);
+  this->get_parameter("numa", params.numa);
 
-  this->get_parameter("prefix", prefix);
-  this->get_parameter("suffix", suffix);
+  this->get_parameter("prefix", params.input_prefix);
+  this->get_parameter("suffix", params.input_suffix);
   this->get_parameter("stop", stop);
 
-  this->get_parameter("prompt", prompt);
+  this->get_parameter("prompt", params.prompt);
   this->get_parameter("file", file_path);
 
-  // parse tensor_split
-  context_params.tensor_split =
-      reinterpret_cast<const float *>(tensor_split.data());
-
   // check threads number
-  if (eval_params.n_threads < 0) {
-    eval_params.n_threads = std::thread::hardware_concurrency();
+  if (params.n_threads < 0) {
+    params.n_threads = std::thread::hardware_concurrency();
   }
 
-  // load llama
-  this->llama =
-      std::make_shared<Llama>(context_params, eval_params, model, lora_adapter,
-                              lora_base, numa, prefix, suffix, stop);
+  // stop is the antiprompt
+  params.antiprompt.push_back(stop);
 
   // initial prompt
   if (!file_path.empty()) {
@@ -150,31 +161,22 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
                    file_path.c_str());
     }
     std::copy(std::istreambuf_iterator<char>(file),
-              std::istreambuf_iterator<char>(), back_inserter(prompt));
+              std::istreambuf_iterator<char>(), back_inserter(params.prompt));
   }
-  this->llama->generate_response(prompt, false, llama_sampling_default_params(),
-                                 nullptr);
 
-  // services
-  this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
-      "tokenize",
-      std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
-  this->generate_embeddings_service_ =
-      this->create_service<llama_msgs::srv::GenerateEmbeddings>(
-          "generate_embeddings",
-          std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
-                    _2));
+  // cublas
+#ifdef GGML_USE_CUBLAS
+  for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i) {
+    if (i < tensor_split.size()) {
+      params.tensor_split[i] = tensor_split[i];
+    } else {
+      params.tensor_split[i] = 0.0f;
+    }
+  }
 
-  // generate reponse action server
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_ =
-      rclcpp_action::create_server<GenerateResponse>(
-          this, "generate_response",
-          std::bind(&LlamaNode::handle_goal, this, _1, _2),
-          std::bind(&LlamaNode::handle_cancel, this, _1),
-          std::bind(&LlamaNode::handle_accepted, this, _1));
-
-  RCLCPP_INFO(this->get_logger(), "Llama Node started");
+  params.mul_mat_q = false;
+  params.low_vram = true;
+#endif
 }
 
 void LlamaNode::tokenize_service_callback(
@@ -238,50 +240,45 @@ void LlamaNode::execute(
     this->llama->reset();
   }
 
-  // prepare sampling params
-  auto sampling_params = llama_sampling_default_params();
-  sampling_params.ignore_eos = sampling_config.ignore_eos;
-  sampling_params.temp = sampling_config.temp;
-  sampling_params.top_k = sampling_config.top_k;
-  sampling_params.top_p = sampling_config.top_p;
-  sampling_params.tfs_z = sampling_config.tfs_z;
-  sampling_params.typical_p = sampling_config.typical_p;
-  sampling_params.repeat_last_n = sampling_config.repeat_last_n;
-  sampling_params.repeat_penalty = sampling_config.repeat_penalty;
-  sampling_params.presence_penalty = sampling_config.presence_penalty;
-  sampling_params.frequency_penalty = sampling_config.frequency_penalty;
-  sampling_params.mirostat = sampling_config.mirostat;
-  sampling_params.mirostat_eta = sampling_config.mirostat_eta;
-  sampling_params.mirostat_tau = sampling_config.mirostat_tau;
-  sampling_params.penalize_nl = sampling_config.penalize_nl;
-  sampling_params.n_probs = sampling_config.n_probs;
-  sampling_params.grammar = sampling_config.grammar;
+  // // prepare sampling params
+  gpt_params &params = this->llama->get_params();
+  params.ignore_eos = sampling_config.ignore_eos;
+  params.temp = sampling_config.temp;
+  params.top_k = sampling_config.top_k;
+  params.top_p = sampling_config.top_p;
+  params.tfs_z = sampling_config.tfs_z;
+  params.typical_p = sampling_config.typical_p;
+  params.repeat_last_n = sampling_config.repeat_last_n;
+  params.repeat_penalty = sampling_config.repeat_penalty;
+  params.presence_penalty = sampling_config.presence_penalty;
+  params.frequency_penalty = sampling_config.frequency_penalty;
+  params.mirostat = sampling_config.mirostat;
+  params.mirostat_eta = sampling_config.mirostat_eta;
+  params.mirostat_tau = sampling_config.mirostat_tau;
+  params.penalize_nl = sampling_config.penalize_nl;
+  params.n_probs = sampling_config.n_probs;
+  params.grammar = sampling_config.grammar;
 
   // check repeat_last_n
-  sampling_params.repeat_last_n = sampling_params.repeat_last_n < 0
-                                      ? this->llama->get_n_ctx()
-                                      : sampling_params.repeat_last_n;
+  params.repeat_last_n = params.repeat_last_n < 0 ? this->llama->get_n_ctx()
+                                                  : params.repeat_last_n;
 
   // check top_k
-  sampling_params.top_k = sampling_params.top_k <= 0
-                              ? this->llama->get_n_vocab()
-                              : sampling_params.top_k;
+  params.top_k = params.top_k <= 0 ? this->llama->get_n_vocab() : params.top_k;
 
   // add logit bias
   for (auto logit_bias : sampling_config.logit_bias.data) {
-    sampling_params.logit_bias[logit_bias.token] = logit_bias.bias;
+    params.logit_bias[logit_bias.token] = logit_bias.bias;
   }
 
   // add llama_token_eos
-  if (sampling_params.ignore_eos) {
-    sampling_params.logit_bias[llama_token_eos(this->llama->get_ctx())] =
-        -INFINITY;
+  if (params.ignore_eos) {
+    params.logit_bias[llama_token_eos(this->llama->get_ctx())] = -INFINITY;
   }
 
   // call llama
   auto completion_results = this->llama->generate_response(
-      prompt, true, sampling_params,
-      std::bind(&LlamaNode::send_text, this, _1));
+      prompt, true, std::bind(&LlamaNode::send_text, this, _1));
 
   for (auto completion : completion_results) {
     result->response.text.append(this->llama->detokenize({completion.token}));

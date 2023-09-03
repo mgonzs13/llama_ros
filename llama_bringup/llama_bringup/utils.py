@@ -125,7 +125,6 @@ def create_llama_launch(
             "mul_mat_q": str(mul_mat_q),
             "f16_kv": str(f16_kv),
             "logits_all": str(logits_all),
-            "vocab_only": str(vocab_only),
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
             "embedding": str(embedding),

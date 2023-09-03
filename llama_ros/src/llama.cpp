@@ -29,113 +29,25 @@
 
 using namespace llama_ros;
 
-struct llama_sampling_params llama_sampling_default_params() {
-  struct llama_sampling_params result = {
-      /*ignore_eos              =*/false,
-      /*logit_bias              =*/{},
-      /*.temp                   =*/0.80f,
-      /*.top_k                  =*/40,
-      /*.top_p                  =*/0.95f,
-      /*.tfs_z                  =*/1.00f,
-      /*.typical_p              =*/1.00f,
-      /*.repeat_penalty         =*/1.10f,
-      /*.repeat_last_n          =*/64,
-      /*.presence_penalty       =*/0.00f,
-      /*.frequency_penalty      =*/0.00f,
-      /*.mirostat               =*/0,
-      /*.mirostat_tau           =*/5.0f,
-      /*.mirostat_eta           =*/0.10f,
-      /*.penalize_nl            =*/true,
-      /*.n_probs                =*/0,
-      /*grammar                 =*/"",
-  };
-  return result;
-}
-
-struct llama_eval_params llama_eval_default_params() {
-  struct llama_eval_params result = {
-      /*.n_threads              =*/4,
-      /*.n_predict              =*/128,
-      /*.n_batch                =*/8,
-      /*.n_keep                 =*/-1,
-  };
-  return result;
-}
-
-Llama::Llama(llama_context_params context_params,
-             const llama_eval_params &eval_params, const std::string &model,
-             const std::string &lora_adapter, const std::string &lora_base,
-             const bool &numa, const std::string &prefix,
-             const std::string &suffix, const std::string &stop)
-    : eval_params(eval_params), stop(stop) {
-
-  this->embedding = context_params.embedding;
-
-#ifdef GGML_USE_CUBLAS
-  context_params.low_vram = true;
-  context_params.mul_mat_q = false;
-#endif
-
-  if (context_params.rope_freq_base != 10000.0) {
-    fprintf(stderr,
-            "warning: changing RoPE frequency base to %g (default 10000.0)\n",
-            context_params.rope_freq_base);
-  }
-
-  if (context_params.rope_freq_scale != 1.0) {
-    fprintf(stderr, "warning: scaling RoPE frequency by %g (default 1.0)\n",
-            context_params.rope_freq_scale);
-  }
-
-  if (context_params.n_ctx > 2048) {
-    fprintf(stderr,
-            "warning: base model only supports context sizes no greater "
-            "than 2048 tokens (%d specified)\n",
-            context_params.n_ctx);
-  } else if (context_params.n_ctx < 8) {
-    fprintf(stderr,
-            "warning: minimum context size is 8, using minimum size.\n");
-    context_params.n_ctx = 8;
-  }
+Llama::Llama(const gpt_params &params) : params(params) {
 
   // load the model
-  llama_backend_init(numa);
-
-  this->model = llama_load_model_from_file(model.c_str(), context_params);
-  if (this->model == NULL) {
-    fprintf(stderr, "Failed to load model '%s'\n", model.c_str());
-  }
-
-  this->ctx = llama_new_context_with_model(this->model, context_params);
-  if (this->ctx == NULL) {
-    fprintf(stderr, "Failed to create context with model '%s'\n",
-            model.c_str());
-  }
-
-  if (!lora_adapter.empty()) {
-    if (llama_model_apply_lora_from_file(this->model, lora_adapter.c_str(),
-                                         lora_base.empty() ? NULL
-                                                           : lora_base.c_str(),
-                                         this->eval_params.n_threads)) {
-      fprintf(stderr, "Failed to apply lora adapter\n");
-      llama_free(this->ctx);
-      llama_free_model(this->model);
-    }
-  }
+  llama_backend_init(this->params.numa);
+  std::tie(this->model, this->ctx) = llama_init_from_gpt_params(this->params);
 
   // show system information
   fprintf(stderr, "System_info: n_threads = %d / %d | %s\n",
-          this->eval_params.n_threads, std::thread::hardware_concurrency(),
+          this->params.n_threads, std::thread::hardware_concurrency(),
           llama_print_system_info());
 
   // prefix & suffix
-  this->inp_pfx = this->tokenize(prefix, true);
-  this->inp_sfx = this->tokenize(suffix, false);
-  this->inp_stop = this->tokenize(stop, false);
+  this->inp_pfx = this->tokenize(this->params.input_prefix, true);
+  this->inp_sfx = this->tokenize(this->params.input_suffix, false);
+  this->inp_stop = this->tokenize(this->params.antiprompt.at(0), false);
 
   // number of tokens to keep when resetting context
-  if (this->eval_params.n_keep == -1) {
-    this->eval_params.n_keep = (int)this->prompt_tokens.size();
+  if (this->params.n_keep == -1) {
+    this->params.n_keep = (int)this->prompt_tokens.size();
   }
 
   // TODO: replace with ring-buffer
@@ -145,22 +57,21 @@ Llama::Llama(llama_context_params context_params,
   this->is_antiprompt = false;
   this->canceled = false;
   this->n_past = 0;
-  this->n_remain = this->eval_params.n_predict;
+  this->n_remain = this->params.n_predict;
   this->n_consumed = 0;
 
   // show info
   fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
-          this->get_n_ctx(), this->eval_params.n_batch,
-          this->eval_params.n_predict, this->eval_params.n_keep);
+          this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
+          this->params.n_keep);
 
   // do one empty run to warm up the model
   {
     const std::vector<llama_token> tmp = {
         llama_token_bos(this->ctx),
     };
-    llama_eval(this->ctx, tmp.data(), tmp.size(), 0,
-               this->eval_params.n_threads);
+    llama_eval(this->ctx, tmp.data(), tmp.size(), 0, this->params.n_threads);
   }
 }
 
@@ -186,7 +97,7 @@ void Llama::reset() {
   this->is_antiprompt = false;
   this->canceled = false;
   this->n_past = 0;
-  this->n_remain = this->eval_params.n_predict;
+  this->n_remain = this->params.n_predict;
   this->n_consumed = 0;
 
   this->prompt_tokens.clear();
@@ -207,15 +118,15 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   auto tokens = this->tokenize(prompt, true);
   int n_past = 0;
 
-  for (size_t i = 0; i < tokens.size(); i += this->eval_params.n_batch) {
+  for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
     int n_eval = (int)tokens.size() - i;
-    if (n_eval > this->eval_params.n_batch) {
-      n_eval = this->eval_params.n_batch;
+    if (n_eval > this->params.n_batch) {
+      n_eval = this->params.n_batch;
     }
 
     if (llama_eval(this->ctx, &tokens[i], n_eval, n_past,
-                   this->eval_params.n_threads)) {
+                   this->params.n_threads)) {
       fprintf(stderr, "Failed to eval\n");
     }
     n_past += n_eval;
@@ -234,7 +145,6 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
 std::vector<completion_output>
 Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
-                         const llama_sampling_params &sampling_params,
                          GenerateResponseCallback callback) {
 
   this->canceled = false;
@@ -292,16 +202,16 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           "top_p = %f, "
           "repeat_last_n = %i, "
           "repeat_penalty = %f\n",
-          sampling_params.temp, sampling_params.top_k, sampling_params.top_p,
-          sampling_params.repeat_last_n, sampling_params.repeat_penalty);
+          params.temp, params.top_k, params.top_p, params.repeat_last_n,
+          params.repeat_penalty);
 
   // load grammar
-  this->grammar = this->load_grammar(sampling_params.grammar);
+  this->grammar = this->load_grammar(params.grammar);
 
   if (this->grammar != NULL) {
-    auto it = sampling_params.logit_bias.find(llama_token_eos(this->ctx));
+    auto it = params.logit_bias.find(llama_token_eos(this->ctx));
 
-    if (it != sampling_params.logit_bias.end() && it->second == -INFINITY) {
+    if (it != params.logit_bias.end() && it->second == -INFINITY) {
       fprintf(stderr, "warning: EOS token is disabled, which will cause most "
                       "grammars to fail\n");
     }
@@ -322,16 +232,17 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
       // when not currently processing queued
       // inputs check if we should end
-      if (this->stop.size() &&
-          last_output.find(this->stop.c_str(),
-                           last_output.length() - this->stop.length(),
-                           this->stop.length()) != std::string::npos) {
+      if (this->params.antiprompt.at(0).size() &&
+          last_output.find(
+              this->params.antiprompt.at(0).c_str(),
+              last_output.length() - this->params.antiprompt.at(0).length(),
+              this->params.antiprompt.at(0).length()) != std::string::npos) {
         this->is_antiprompt = true;
         break;
       }
 
       // sample next token
-      completion_result = this->sample(sampling_params);
+      completion_result = this->sample();
       completion_result_list.push_back(completion_result);
 
       this->batch_tokens.push_back(completion_result.token);
@@ -388,8 +299,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     // respect the maximum number of tokens
-    if (this->n_remain <= 0 && this->eval_params.n_predict != -1) {
-      this->n_remain = this->eval_params.n_predict;
+    if (this->n_remain <= 0 && this->params.n_predict != -1) {
+      this->n_remain = this->params.n_predict;
       break;
     }
   }
@@ -407,7 +318,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 void Llama::eval() {
 
   while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-         ((int)this->batch_tokens.size() < this->eval_params.n_batch)) {
+         ((int)this->batch_tokens.size() < this->params.n_batch)) {
 
     this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
     this->last_n_tokens.erase(this->last_n_tokens.begin());
@@ -425,8 +336,8 @@ void Llama::eval() {
     // logits in a batch
     if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
-      const int n_left = this->n_past - this->eval_params.n_keep;
-      this->n_past = this->eval_params.n_keep;
+      const int n_left = this->n_past - this->params.n_keep;
+      this->n_past = this->params.n_keep;
 
       // insert n_left/2 tokens at the start of batch_tokens
       // from last_n_tokens
@@ -441,17 +352,17 @@ void Llama::eval() {
     // batch_tokens is typically prepared beforehand to fit within a batch
     // but not always
     for (size_t i = 0; i < this->batch_tokens.size();
-         i += this->eval_params.n_batch) {
+         i += this->params.n_batch) {
 
       int n_eval = (int)this->batch_tokens.size() - i;
-      if (n_eval > this->eval_params.n_batch) {
-        n_eval = this->eval_params.n_batch;
+      if (n_eval > this->params.n_batch) {
+        n_eval = this->params.n_batch;
       }
 
       spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
 
       if (llama_eval(this->ctx, &this->batch_tokens[i], n_eval, this->n_past,
-                     this->eval_params.n_threads)) {
+                     this->params.n_threads)) {
         fprintf(stderr, "Failed to eval\n");
       }
       this->n_past += n_eval;
@@ -461,112 +372,34 @@ void Llama::eval() {
   }
 }
 
-completion_output Llama::sample(llama_sampling_params sampling_params) {
+completion_output Llama::sample() {
 
   // init token
-  llama_token id = 0;
   auto logits = llama_get_logits(this->ctx);
   auto n_vocab = llama_n_vocab(this->ctx);
 
   // apply logit_bias
-  for (auto it = sampling_params.logit_bias.begin();
-       it != sampling_params.logit_bias.end(); it++) {
+  for (auto it = params.logit_bias.begin(); it != params.logit_bias.end();
+       it++) {
     logits[it->first] += it->second;
   }
 
   // candidates
   std::vector<llama_token_data> candidates;
   candidates.reserve(n_vocab);
-  for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
-    candidates.emplace_back(llama_token_data{token_id, logits[token_id], 0.0f});
-  }
 
-  llama_token_data_array candidates_p = {candidates.data(), candidates.size(),
-                                         false};
-
-  // Apply penalties
-  float nl_logit = logits[llama_token_nl(this->ctx)];
-  auto last_n_repeat = std::min(
-      std::min((int)this->last_n_tokens.size(), sampling_params.repeat_last_n),
-      this->get_n_ctx());
-
-  llama_sample_repetition_penalty(
-      this->ctx, &candidates_p,
-      this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, sampling_params.repeat_penalty);
-  llama_sample_frequency_and_presence_penalties(
-      this->ctx, &candidates_p,
-      this->last_n_tokens.data() + this->last_n_tokens.size() - last_n_repeat,
-      last_n_repeat, sampling_params.frequency_penalty,
-      sampling_params.presence_penalty);
-
-  if (!sampling_params.penalize_nl) {
-    for (size_t i = 0; i < candidates_p.size; i++) {
-      if (candidates_p.data[i].id == llama_token_nl(ctx)) {
-        candidates_p.data[i].logit = nl_logit;
-        break;
-      }
-    }
-  }
-
-  if (this->grammar != NULL) {
-    llama_sample_grammar(this->ctx, &candidates_p, this->grammar);
-  }
-
-  if (sampling_params.temp <= 0) {
-
-    // Greedy sampling
-    id = llama_sample_token_greedy(this->ctx, &candidates_p);
-
-    if (sampling_params.n_probs > 0) {
-      llama_sample_softmax(this->ctx, &candidates_p);
-    }
-
-  } else {
-    if (sampling_params.mirostat == 1) {
-      static float mirostat_mu = 2.0f * sampling_params.mirostat_tau;
-      const int mirostat_m = 100;
-      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
-      id = llama_sample_token_mirostat(
-          this->ctx, &candidates_p, sampling_params.mirostat_tau,
-          sampling_params.mirostat_eta, mirostat_m, &mirostat_mu);
-
-    } else if (sampling_params.mirostat == 2) {
-      static float mirostat_mu = 2.0f * sampling_params.mirostat_tau;
-      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
-      id = llama_sample_token_mirostat_v2(
-          this->ctx, &candidates_p, sampling_params.mirostat_tau,
-          sampling_params.mirostat_eta, &mirostat_mu);
-
-    } else {
-
-      // Temperature sampling
-      size_t min_keep = std::max(1, sampling_params.n_probs);
-
-      llama_sample_top_k(this->ctx, &candidates_p, sampling_params.top_k,
-                         min_keep);
-      llama_sample_tail_free(this->ctx, &candidates_p, sampling_params.tfs_z,
-                             min_keep);
-      llama_sample_typical(this->ctx, &candidates_p, sampling_params.typical_p,
-                           min_keep);
-      llama_sample_top_p(this->ctx, &candidates_p, sampling_params.top_p,
-                         min_keep);
-      llama_sample_temperature(this->ctx, &candidates_p, sampling_params.temp);
-      id = llama_sample_token(this->ctx, &candidates_p);
-    }
-  }
-
-  if (this->grammar != NULL) {
-    llama_grammar_accept_token(this->ctx, this->grammar, id);
-  }
+  // sample token
+  const llama_token id =
+      llama_sample_token(this->ctx, NULL, this->grammar, this->params,
+                         this->last_n_tokens, candidates);
 
   // create output
   completion_output result;
   result.token = id;
 
-  for (size_t i = 0;
-       i < std::min(candidates_p.size, (size_t)sampling_params.n_probs); ++i) {
-    result.probs.push_back({candidates_p.data[i].id, candidates_p.data[i].p});
+  for (size_t i = 0; i < std::min(candidates.size(), (size_t)params.n_probs);
+       ++i) {
+    result.probs.push_back({candidates[i].id, candidates[i].p});
   }
 
   return result;

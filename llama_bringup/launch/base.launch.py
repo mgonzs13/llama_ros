@@ -51,7 +51,6 @@ def generate_launch_description():
                 "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "f16_kv": LaunchConfiguration("f16_kv", default=True),
                 "logits_all": LaunchConfiguration("logits_all", default=False),
-                "vocab_only": LaunchConfiguration("vocab_only", default=False),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
                 "embedding": LaunchConfiguration("embedding", default=True),
