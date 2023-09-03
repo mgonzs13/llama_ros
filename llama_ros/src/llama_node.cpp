@@ -22,9 +22,7 @@
 
 #include <fstream>
 #include <memory>
-#include <signal.h>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "llama.h"
@@ -332,24 +330,4 @@ void LlamaNode::send_text(const completion_output &completion) {
 
     this->goal_handle_->publish_feedback(feedback);
   }
-}
-
-void sigint_handler(int signo) {
-  if (signo == SIGINT) {
-    _exit(130);
-  }
-}
-
-int main(int argc, char *argv[]) {
-
-  struct sigaction sigint_action;
-  sigint_action.sa_handler = sigint_handler;
-  sigemptyset(&sigint_action.sa_mask);
-  sigint_action.sa_flags = 0;
-  sigaction(SIGINT, &sigint_action, NULL);
-
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<LlamaNode>());
-  rclcpp::shutdown();
-  return 0;
 }
