@@ -39,8 +39,6 @@ def generate_launch_description():
                 "seed": LaunchConfiguration("seed", default=-1),
                 "n_ctx": LaunchConfiguration("n_ctx", default=512),
                 "n_batch": LaunchConfiguration("n_batch", default=8),
-                "n_gqa": LaunchConfiguration("n_gqa", default=1),
-                "rms_norm_eps": LaunchConfiguration("rms_norm_eps", default=5e-6),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
@@ -50,10 +48,9 @@ def generate_launch_description():
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
 
                 "low_vram": LaunchConfiguration("low_vram", default=False),
-                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=False),
+                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "f16_kv": LaunchConfiguration("f16_kv", default=True),
                 "logits_all": LaunchConfiguration("logits_all", default=False),
-                "vocab_only": LaunchConfiguration("vocab_only", default=False),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
                 "embedding": LaunchConfiguration("embedding", default=True),

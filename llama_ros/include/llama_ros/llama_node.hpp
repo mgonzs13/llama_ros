@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 
+#include "common.h"
 #include "llama.h"
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
@@ -59,6 +60,7 @@ private:
   std::mutex handle_accepted_mtx_;
 
   // methods
+  void load_params(gpt_params &params);
   void tokenize_service_callback(
       const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
       std::shared_ptr<llama_msgs::srv::Tokenize::Response> response);

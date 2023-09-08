@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="guanaco.bin",
+            model="guanaco.gguf",
 
             prefix="\n\n### Human:\n",
             suffix="\n\n### Assistant:\n",

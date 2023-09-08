@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="gorilla.bin",
+            model="gorilla.gguf",
 
             prefix="\n\n###USER:\n",
             suffix="\n\n###ASSISTANT:\n",

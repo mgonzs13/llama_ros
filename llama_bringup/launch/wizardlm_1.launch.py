@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="wizard.bin",
+            model="wizard.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\n### Response:\n",

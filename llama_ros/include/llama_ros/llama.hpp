@@ -27,38 +27,10 @@
 #include <string>
 #include <vector>
 
-#include "examples/grammar-parser.h"
+#include "common.h"
+#include "common/grammar-parser.h"
 #include "llama.h"
 #include "llama_ros/spinner.hpp"
-
-struct llama_sampling_params {
-  bool ignore_eos;
-  std::unordered_map<llama_token, float> logit_bias;
-  float temp;
-  int32_t top_k;
-  float top_p;
-  float tfs_z;
-  float typical_p;
-  float repeat_penalty;
-  int32_t repeat_last_n;
-  float presence_penalty;
-  float frequency_penalty;
-  int32_t mirostat;
-  float mirostat_tau;
-  float mirostat_eta;
-  bool penalize_nl;
-  int32_t n_probs;
-  std::string grammar;
-};
-struct llama_sampling_params llama_sampling_default_params();
-
-struct llama_eval_params {
-  int32_t n_threads;
-  int32_t n_predict;
-  int32_t n_batch;
-  int32_t n_keep;
-};
-struct llama_eval_params llama_eval_default_params();
 
 struct completion_output {
   struct token_prob {
@@ -77,46 +49,38 @@ class Llama {
   using GenerateResponseCallback = std::function<void(completion_output)>;
 
 public:
-  Llama(llama_context_params context_params,
-        const llama_eval_params &eval_params, const std::string &model,
-        const std::string &lora_adapter, const std::string &lora_base,
-        const bool &numa, const std::string &prefix, const std::string &suffix,
-        const std::string &stop);
+  Llama(const gpt_params &params);
   ~Llama();
 
-  std::string detokenize(const std::vector<llama_token> &tokens);
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
+  std::string detokenize(const std::vector<llama_token> &tokens);
   void reset();
   void cancel();
   std::vector<float> generate_embeddings(const std::string &input_prompt);
   std::vector<completion_output>
   generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
-                    const llama_sampling_params &sampling_params =
-                        llama_sampling_default_params(),
                     GenerateResponseCallback callbakc = nullptr);
 
-  int get_n_embd() { return llama_n_embd(this->ctx); }
+  const struct llama_context *get_ctx() { return this->ctx; }
+  gpt_params &get_params() { return this->params; }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
+  int get_n_embd() { return llama_n_embd(this->ctx); }
   int get_n_vocab() { return llama_n_vocab(this->ctx); }
-  bool is_embedding() { return this->embedding; }
+  bool is_embedding() { return this->params.embedding; }
 
 protected:
   llama_model *model;
   llama_context *ctx;
   void eval();
-  completion_output sample(llama_sampling_params sampling_params);
+  completion_output sample();
 
 private:
   Spinner spinner;
 
-  bool embedding;
-
-  llama_eval_params eval_params;
+  gpt_params params;
 
   // prefix, suffix, stop
-  std::string stop;
   std::vector<llama_token> inp_stop;
-
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
 

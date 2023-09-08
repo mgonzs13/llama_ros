@@ -73,8 +73,6 @@ def create_llama_launch(
     seed: int = -1,
     n_ctx: int = 512,
     n_batch: int = 8,
-    n_gqa: int = 1,
-    rms_norm_eps: float = 5e-6,
 
     n_gpu_layers: int = 0,
     main_gpu: int = 0,
@@ -84,7 +82,7 @@ def create_llama_launch(
     rope_freq_scale: float = 1.0,
 
     low_vram: bool = False,
-    mul_mat_q: bool = False,
+    mul_mat_q: bool = True,
     f16_kv: bool = True,
     logits_all: bool = False,
     vocab_only: bool = False,
@@ -115,8 +113,6 @@ def create_llama_launch(
             "seed": str(seed),
             "n_ctx": str(n_ctx),
             "n_batch": str(n_batch),
-            "n_gqa": str(n_gqa),
-            "rms_norm_eps": str(rms_norm_eps),
 
             "n_gpu_layers": str(n_gpu_layers),
             "main_gpu": str(main_gpu),
@@ -129,7 +125,6 @@ def create_llama_launch(
             "mul_mat_q": str(mul_mat_q),
             "f16_kv": str(f16_kv),
             "logits_all": str(logits_all),
-            "vocab_only": str(vocab_only),
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
             "embedding": str(embedding),

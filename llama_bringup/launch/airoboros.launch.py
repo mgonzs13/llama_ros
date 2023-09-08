@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="airoboros.bin",
+            model="airoboros.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

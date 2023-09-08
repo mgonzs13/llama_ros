@@ -20,9 +20,8 @@ INCLUDE_DIRECTORIES(
 )
 
 add_subdirectory(llama_cpp)
-add_subdirectory(llama_cpp/examples)
 
-add_executable(llama_node src/llama_node.cpp src/llama.cpp)
+add_executable(llama_node src/llama.cpp src/llama_node.cpp src/llama_main.cpp)
 target_link_libraries(llama_node llama common)
 ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs)
 

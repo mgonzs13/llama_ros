@@ -35,7 +35,7 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="tulu.bin",
+            model="tulu.gguf",
 
             prefix="\n\n<|user|>\n",
             suffix="\n\n<|assistant|>\n",
