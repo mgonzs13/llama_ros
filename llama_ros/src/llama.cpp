@@ -169,7 +169,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
-  if (add_pfx_sfx) {
+  if (add_pfx_sfx && this->params.input_prefix.size()) {
     prompt_size += this->inp_pfx.size() + this->inp_sfx.size();
   }
 
@@ -179,7 +179,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   // insert prefix
-  if (add_pfx_sfx && this->inp_pfx.size() && !this->is_antiprompt) {
+  if (add_pfx_sfx && this->params.input_prefix.size() && !this->is_antiprompt) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), this->inp_pfx.begin(),
                                this->inp_pfx.end());
   }
@@ -188,7 +188,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                              line_inp.end());
 
   // insert suffix
-  if (add_pfx_sfx && this->inp_sfx.size()) {
+  if (add_pfx_sfx && this->params.input_suffix.size()) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), this->inp_sfx.begin(),
                                this->inp_sfx.end());
   }
@@ -266,7 +266,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     // check if new tokens contains the stop sequence
-    if (completion_result_list.size() <= this->inp_stop.size()) {
+    if (completion_result_list.size() <= this->inp_stop.size() &&
+        this->params.antiprompt.at(0).size()) {
 
       stopping = true;
 
