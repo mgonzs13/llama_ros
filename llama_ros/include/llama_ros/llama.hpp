@@ -46,10 +46,11 @@ namespace llama_ros {
 
 class Llama {
 
-  using GenerateResponseCallback = std::function<void(completion_output)>;
+  using GenerateResponseCallback =
+      std::function<void(struct completion_output)>;
 
 public:
-  Llama(const gpt_params &params, bool debug);
+  Llama(const struct gpt_params &params, bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
@@ -57,27 +58,29 @@ public:
   void reset();
   void cancel();
   std::vector<float> generate_embeddings(const std::string &input_prompt);
-  std::vector<completion_output>
+  std::vector<struct completion_output>
   generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
                     GenerateResponseCallback callbakc = nullptr);
 
   const struct llama_context *get_ctx() { return this->ctx; }
-  gpt_params &get_params() { return this->params; }
+  struct gpt_params &get_params() {
+    return this->params;
+  }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
   int get_n_embd() { return llama_n_embd(this->ctx); }
   int get_n_vocab() { return llama_n_vocab(this->ctx); }
   bool is_embedding() { return this->params.embedding; }
 
 protected:
-  llama_model *model;
-  llama_context *ctx;
+  struct llama_model *model;
+  struct llama_context *ctx;
   void eval();
-  completion_output sample();
+  struct completion_output sample();
 
 private:
   bool debug;
   Spinner spinner;
-  gpt_params params;
+  struct gpt_params params;
 
   // prefix, suffix, stop
   std::vector<llama_token> inp_stop;

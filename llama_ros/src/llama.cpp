@@ -29,7 +29,7 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const gpt_params &params, bool debug) : params(params) {
+Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
 
   this->debug = debug;
 
@@ -145,7 +145,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   return embeddings_list;
 }
 
-std::vector<completion_output>
+std::vector<struct completion_output>
 Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                          GenerateResponseCallback callback) {
 
@@ -153,9 +153,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   bool input_noecho = true;
 
   bool stopping = false;
-  completion_output completion_result;
-  std::vector<completion_output> response;
-  std::vector<completion_output> completion_result_list;
+  struct completion_output completion_result;
+  std::vector<struct completion_output> response;
+  std::vector<struct completion_output> completion_result_list;
 
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
@@ -377,7 +377,7 @@ void Llama::eval() {
   }
 }
 
-completion_output Llama::sample() {
+struct completion_output Llama::sample() {
 
   // init token
   auto logits = llama_get_logits(this->ctx);
@@ -399,7 +399,7 @@ completion_output Llama::sample() {
                          this->last_n_tokens, candidates);
 
   // create output
-  completion_output result;
+  struct completion_output result;
   result.token = id;
 
   for (size_t i = 0; i < std::min(candidates.size(), (size_t)params.n_probs);

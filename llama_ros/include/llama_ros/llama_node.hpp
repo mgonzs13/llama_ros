@@ -61,7 +61,7 @@ private:
   std::mutex handle_accepted_mtx_;
 
   // methods
-  void load_params(gpt_params &params);
+  void load_params(struct gpt_params &params);
   void tokenize_service_callback(
       const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
       std::shared_ptr<llama_msgs::srv::Tokenize::Response> response);
@@ -79,7 +79,7 @@ private:
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
 
   void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const completion_output &completion);
+  void send_text(const struct completion_output &completion);
 };
 
 } // namespace llama_ros

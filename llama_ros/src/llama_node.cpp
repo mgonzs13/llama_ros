@@ -38,7 +38,7 @@ using std::placeholders::_2;
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   // load llama
-  gpt_params params;
+  struct gpt_params params;
   this->load_params(params);
   this->llama = std::make_shared<Llama>(params, debug);
   this->llama->generate_response(params.prompt, false, nullptr);
@@ -65,7 +65,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   RCLCPP_INFO(this->get_logger(), "Llama Node started");
 }
 
-void LlamaNode::load_params(gpt_params &params) {
+void LlamaNode::load_params(struct gpt_params &params) {
 
   std::string stop;
   std::string file_path;
@@ -245,7 +245,7 @@ void LlamaNode::execute(
   }
 
   // // prepare sampling params
-  gpt_params &params = this->llama->get_params();
+  struct gpt_params &params = this->llama->get_params();
   params.ignore_eos = sampling_config.ignore_eos;
   params.temp = sampling_config.temp;
   params.top_k = sampling_config.top_k;
@@ -311,7 +311,7 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const completion_output &completion) {
+void LlamaNode::send_text(const struct completion_output &completion) {
 
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
