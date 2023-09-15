@@ -29,7 +29,9 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const gpt_params &params) : params(params) {
+Llama::Llama(const gpt_params &params, bool debug) : params(params) {
+
+  this->debug = debug;
 
   // load the model
   llama_backend_init(this->params.numa);
@@ -360,7 +362,9 @@ void Llama::eval() {
         n_eval = this->params.n_batch;
       }
 
-      spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
+      if (this->debug) {
+        spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
+      }
 
       if (llama_eval(this->ctx, &this->batch_tokens[i], n_eval, this->n_past,
                      this->params.n_threads)) {
@@ -417,9 +421,11 @@ llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
       return NULL;
     }
 
-    fprintf(stderr, "\nGRAMMAR:\n");
-    grammar_parser::print_grammar(stderr, parsed_grammar);
-    fprintf(stderr, "\n");
+    if (this->debug) {
+      fprintf(stderr, "\nGRAMMAR:\n");
+      grammar_parser::print_grammar(stderr, parsed_grammar);
+      fprintf(stderr, "\n");
+    }
 
     std::vector<const llama_grammar_element *> grammar_rules(
         parsed_grammar.c_rules());

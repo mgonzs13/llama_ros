@@ -40,7 +40,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   // load llama
   gpt_params params;
   this->load_params(params);
-  this->llama = std::make_shared<Llama>(params);
+  this->llama = std::make_shared<Llama>(params, debug);
   this->llama->generate_response(params.prompt, false, nullptr);
 
   // services
@@ -99,6 +99,7 @@ void LlamaNode::load_params(gpt_params &params) {
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
+                                         {"debug", true},
                                          {"low_vram", false},
                                          {"mul_mat_q", true},
                                          {"f16_kv", true},
@@ -144,6 +145,7 @@ void LlamaNode::load_params(gpt_params &params) {
 
   this->get_parameter("prompt", params.prompt);
   this->get_parameter("file", file_path);
+  this->get_parameter("debug", this->debug);
 
   // check threads number
   if (params.n_threads < 0) {
@@ -233,7 +235,9 @@ void LlamaNode::execute(
   auto result = std::make_shared<GenerateResponse::Result>();
   this->goal_handle_ = goal_handle;
 
-  RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
+  if (this->debug) {
+    RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
+  }
 
   // reset llama
   if (reset) {

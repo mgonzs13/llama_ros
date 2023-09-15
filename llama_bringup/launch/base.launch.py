@@ -70,6 +70,7 @@ def generate_launch_description():
 
                 "prompt": ParameterValue(LaunchConfiguration("prompt", default=""), value_type=str),
                 "file": LaunchConfiguration("file", default=""),
+                "debug": LaunchConfiguration("debug", default=True),
             }]
         )
     ])

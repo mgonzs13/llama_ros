@@ -49,7 +49,7 @@ class Llama {
   using GenerateResponseCallback = std::function<void(completion_output)>;
 
 public:
-  Llama(const gpt_params &params);
+  Llama(const gpt_params &params, bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
@@ -75,8 +75,8 @@ protected:
   completion_output sample();
 
 private:
+  bool debug;
   Spinner spinner;
-
   gpt_params params;
 
   // prefix, suffix, stop

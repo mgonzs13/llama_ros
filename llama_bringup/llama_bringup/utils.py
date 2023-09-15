@@ -85,7 +85,6 @@ def create_llama_launch(
     mul_mat_q: bool = True,
     f16_kv: bool = True,
     logits_all: bool = False,
-    vocab_only: bool = False,
     use_mmap: bool = True,
     use_mlock: bool = False,
     embedding: bool = True,
@@ -104,7 +103,8 @@ def create_llama_launch(
     stop: str = "",
 
     prompt: str = "",
-    file: str = ""
+    file: str = "",
+    debug: bool = True
 ) -> IncludeLaunchDescription:
 
     return IncludeLaunchDescription(
@@ -144,5 +144,6 @@ def create_llama_launch(
 
             "prompt": prompt,
             "file": get_prompt_path(file),
+            "debug": str(debug)
         }.items()
     )

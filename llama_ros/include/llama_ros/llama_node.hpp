@@ -48,6 +48,7 @@ public:
 
 private:
   std::shared_ptr<Llama> llama;
+  bool debug;
 
   // ros2
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;
