@@ -36,4 +36,6 @@ install(PROGRAMS
   RENAME llama_client_node
 )
 
+ament_python_install_package(${PROJECT_NAME})
+
 ament_package()
