@@ -427,6 +427,10 @@ $ colcon build
 - Rename the bin (check the content of the launch files)
 - Run the launch file of the chosen model
 
+### Lagnchain
+
+There is a [llama_ros integration for langchain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge.
+
 ## Demo
 
 ```shell
