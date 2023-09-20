@@ -236,7 +236,7 @@ void LlamaNode::execute(
   this->goal_handle_ = goal_handle;
 
   if (this->debug) {
-    RCLCPP_INFO(this->get_logger(), "Prompt received: %s", prompt.c_str());
+    RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 
   // reset llama
