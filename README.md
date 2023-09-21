@@ -11,6 +11,39 @@ $ cd ~/ros2_ws
 $ colcon build
 ```
 
+### CUDA
+
+To run llama_ros with CUDA, the following lines in the [CMakeLists.txt](llama_ros/CMakeLists.txt) must be uncommented:
+
+```
+option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
+add_compile_definitions(GGML_USE_CUBLAS)
+```
+
+## Usage
+
+- Download the models and place them in `~/llama_models`
+- Rename the bin (check the content of the launch files)
+- Run the launch file of the chosen model
+
+### Lagnchain
+
+There is a [llama_ros integration for langchain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge.
+
+## Demo
+
+```shell
+$ ros2 launch llama_bringup wizard-vicuna.launch.py
+```
+
+```shell
+$ ros2 run llama_ros llama_client_node --ros-args -p prompt:="your prompt"
+```
+
+<!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
+
+https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
+
 ## LLMs
 
 <table>
@@ -420,27 +453,3 @@ $ colcon build
     </tr>
   </tbody>
 </table>
-
-## Usage
-
-- Download the models and place them in `~/llama_models`
-- Rename the bin (check the content of the launch files)
-- Run the launch file of the chosen model
-
-### Lagnchain
-
-There is a [llama_ros integration for langchain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge.
-
-## Demo
-
-```shell
-$ ros2 launch llama_bringup wizard-vicuna.launch.py
-```
-
-```shell
-$ ros2 run llama_ros llama_client_node --ros-args -p prompt:="your prompt"
-```
-
-<!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
-
-https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
