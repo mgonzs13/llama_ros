@@ -81,6 +81,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                             {"n_threads", 1},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
+                                            {"n_parallel", 1},
+                                            {"n_sequences", 1},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -108,6 +110,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                          {"use_mlock", false},
                                          {"embedding", true},
                                          {"numa", false},
+                                         {"cont_batching", false},
                                      });
 
   this->get_parameter("seed", params.seed);
@@ -124,7 +127,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("low_vram", params.low_vram);
   this->get_parameter("mul_mat_q", params.mul_mat_q);
   this->get_parameter("f16_kv", params.memory_f16);
-  this->get_parameter("logits_all", params.perplexity);
+  this->get_parameter("logits_all", params.logits_all);
   this->get_parameter("use_mmap", params.use_mmap);
   this->get_parameter("use_mlock", params.use_mlock);
   this->get_parameter("embedding", params.embedding);
@@ -138,6 +141,10 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("lora_adapter", params.lora_adapter);
   this->get_parameter("lora_base", params.lora_base);
   this->get_parameter("numa", params.numa);
+
+  this->get_parameter("n_parallel", params.n_parallel);
+  this->get_parameter("n_sequences", params.n_sequences);
+  this->get_parameter("cont_batching", params.cont_batching);
 
   this->get_parameter("prefix", params.input_prefix);
   this->get_parameter("suffix", params.input_suffix);

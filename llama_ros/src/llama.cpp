@@ -67,14 +67,6 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
           this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
           this->params.n_keep);
-
-  // do one empty run to warm up the model
-  {
-    const std::vector<llama_token> tmp = {
-        llama_token_bos(this->ctx),
-    };
-    llama_eval(this->ctx, tmp.data(), tmp.size(), 0, this->params.n_threads);
-  }
 }
 
 Llama::~Llama() {
@@ -116,8 +108,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     return {};
   }
 
-  std::string prompt(input_prompt);
-  auto tokens = this->tokenize(prompt, true);
+  auto tokens = this->tokenize(input_prompt, true);
   int n_past = 0;
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
@@ -127,8 +118,9 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
       n_eval = this->params.n_batch;
     }
 
-    if (llama_eval(this->ctx, &tokens[i], n_eval, n_past,
-                   this->params.n_threads)) {
+    if (llama_decode(this->ctx,
+                     llama_batch_get_one(&tokens[i], n_eval, n_past, 0),
+                     this->params.n_threads)) {
       fprintf(stderr, "Failed to eval\n");
     }
     n_past += n_eval;
@@ -136,8 +128,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   const int n_embd = llama_n_embd(this->ctx);
   const auto embeddings = llama_get_embeddings(this->ctx);
-  std::vector<float> embeddings_list;
 
+  std::vector<float> embeddings_list;
   for (int i = 0; i < n_embd; i++) {
     embeddings_list.push_back(embeddings[i]);
   }
@@ -339,16 +331,16 @@ void Llama::eval() {
     // logits in a batch
     if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
-      const int n_left = this->n_past - this->params.n_keep;
-      this->n_past = this->params.n_keep;
+      const int n_left = this->n_past - this->params.n_keep - 1;
+      const int n_discard = n_left / 2;
 
-      // insert n_left/2 tokens at the start of batch_tokens
-      // from last_n_tokens
-      this->batch_tokens.insert(
-          this->batch_tokens.begin(),
-          this->last_n_tokens.begin() + this->get_n_ctx() - n_left / 2 -
-              this->batch_tokens.size(),
-          this->last_n_tokens.end() - this->batch_tokens.size());
+      llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep + 1,
+                            this->params.n_keep + n_discard + 1);
+      llama_kv_cache_seq_shift(this->ctx, 0,
+                               this->params.n_keep + 1 + n_discard, n_past,
+                               -n_discard);
+
+      this->n_past -= n_discard;
     }
 
     // evaluate tokens in batches
@@ -366,8 +358,10 @@ void Llama::eval() {
         spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
       }
 
-      if (llama_eval(this->ctx, &this->batch_tokens[i], n_eval, this->n_past,
-                     this->params.n_threads)) {
+      if (llama_decode(this->ctx,
+                       llama_batch_get_one(&this->batch_tokens[i], n_eval,
+                                           this->n_past, 0),
+                       this->params.n_threads)) {
         fprintf(stderr, "Failed to eval\n");
       }
       this->n_past += n_eval;
