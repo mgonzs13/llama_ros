@@ -335,12 +335,6 @@ void Llama::eval() {
                                this->params.n_keep + 1 + n_discard, n_past,
                                -n_discard);
 
-      for (size_t i = this->params.n_keep + 1 + n_discard;
-           i < this->batch_tokens.size(); i++) {
-        this->batch_tokens[i - n_discard] = this->batch_tokens[i];
-      }
-      this->batch_tokens.resize(this->batch_tokens.size() - n_discard);
-
       this->n_past -= n_discard;
     }
 
