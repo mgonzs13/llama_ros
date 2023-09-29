@@ -81,7 +81,6 @@ def create_llama_launch(
     rope_freq_base: float = 10000.0,
     rope_freq_scale: float = 1.0,
 
-    low_vram: bool = False,
     mul_mat_q: bool = True,
     f16_kv: bool = True,
     logits_all: bool = False,
@@ -121,7 +120,6 @@ def create_llama_launch(
             "rope_freq_base": str(rope_freq_base),
             "rope_freq_scale": str(rope_freq_scale),
 
-            "low_vram": str(low_vram),
             "mul_mat_q": str(mul_mat_q),
             "f16_kv": str(f16_kv),
             "logits_all": str(logits_all),
