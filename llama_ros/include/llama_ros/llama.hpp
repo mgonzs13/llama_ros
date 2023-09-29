@@ -67,8 +67,8 @@ public:
     return this->params;
   }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
-  int get_n_embd() { return llama_n_embd(this->ctx); }
-  int get_n_vocab() { return llama_n_vocab(this->ctx); }
+  int get_n_embd() { return llama_n_embd(this->model); }
+  int get_n_vocab() { return llama_n_vocab(this->model); }
   bool is_embedding() { return this->params.embedding; }
 
 protected:

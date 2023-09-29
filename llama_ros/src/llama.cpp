@@ -119,14 +119,13 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     }
 
     if (llama_decode(this->ctx,
-                     llama_batch_get_one(&tokens[i], n_eval, n_past, 0),
-                     this->params.n_threads)) {
+                     llama_batch_get_one(&tokens[i], n_eval, n_past, 0))) {
       fprintf(stderr, "Failed to eval\n");
     }
     n_past += n_eval;
   }
 
-  const int n_embd = llama_n_embd(this->ctx);
+  const int n_embd = this->get_n_embd();
   const auto embeddings = llama_get_embeddings(this->ctx);
 
   std::vector<float> embeddings_list;
@@ -324,11 +323,7 @@ void Llama::eval() {
   // predict
   if (this->batch_tokens.size() > 0) {
 
-    // infinite text generation via context swapping
-    // if we run out of context:
-    // - take the n_keep first tokens from the original prompt (via n_past)
-    // - take half of the last (n_ctx - n_keep) tokens and recompute the
-    // logits in a batch
+    // shift context
     if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
       const int n_left = this->n_past - this->params.n_keep - 1;
@@ -339,6 +334,12 @@ void Llama::eval() {
       llama_kv_cache_seq_shift(this->ctx, 0,
                                this->params.n_keep + 1 + n_discard, n_past,
                                -n_discard);
+
+      for (size_t i = this->params.n_keep + 1 + n_discard;
+           i < this->batch_tokens.size(); i++) {
+        this->batch_tokens[i - n_discard] = this->batch_tokens[i];
+      }
+      this->batch_tokens.resize(this->batch_tokens.size() - n_discard);
 
       this->n_past -= n_discard;
     }
@@ -360,8 +361,7 @@ void Llama::eval() {
 
       if (llama_decode(this->ctx,
                        llama_batch_get_one(&this->batch_tokens[i], n_eval,
-                                           this->n_past, 0),
-                       this->params.n_threads)) {
+                                           this->n_past, 0))) {
         fprintf(stderr, "Failed to eval\n");
       }
       this->n_past += n_eval;
@@ -375,7 +375,7 @@ struct completion_output Llama::sample() {
 
   // init token
   auto logits = llama_get_logits(this->ctx);
-  auto n_vocab = llama_n_vocab(this->ctx);
+  auto n_vocab = this->get_n_vocab();
 
   // apply logit_bias
   for (auto it = params.logit_bias.begin(); it != params.logit_bias.end();

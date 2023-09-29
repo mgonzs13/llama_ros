@@ -69,6 +69,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
 
   std::string stop;
   std::string file_path;
+  std::string lora_adapter;
   std::vector<double> tensor_split;
 
   // node params from llama.cpp common.h
@@ -102,7 +103,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
                                          {"debug", true},
-                                         {"low_vram", false},
                                          {"mul_mat_q", true},
                                          {"f16_kv", true},
                                          {"logits_all", false},
@@ -124,7 +124,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("rope_freq_scale", params.rope_freq_scale);
   this->get_parameter("rope_freq_base", params.rope_freq_base);
 
-  this->get_parameter("low_vram", params.low_vram);
   this->get_parameter("mul_mat_q", params.mul_mat_q);
   this->get_parameter("f16_kv", params.memory_f16);
   this->get_parameter("logits_all", params.logits_all);
@@ -138,7 +137,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("n_batch", params.n_batch);
 
   this->get_parameter("model", params.model);
-  this->get_parameter("lora_adapter", params.lora_adapter);
+  this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", params.lora_base);
   this->get_parameter("numa", params.numa);
 
@@ -157,6 +156,12 @@ void LlamaNode::load_params(struct gpt_params &params) {
   // check threads number
   if (params.n_threads < 0) {
     params.n_threads = std::thread::hardware_concurrency();
+  }
+
+  // lora_adapter
+  if (lora_adapter.size()) {
+    params.lora_adapter.push_back({lora_adapter, 1.0f});
+    params.use_mmap = false;
   }
 
   // stop is the antiprompt
@@ -184,7 +189,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
   }
 
   params.mul_mat_q = false;
-  params.low_vram = true;
 #endif
 }
 
