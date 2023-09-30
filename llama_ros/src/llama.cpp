@@ -45,7 +45,6 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
   // prefix & suffix
   this->inp_pfx = this->tokenize(this->params.input_prefix, true);
   this->inp_sfx = this->tokenize(this->params.input_suffix, false);
-  this->inp_stop = this->tokenize(this->params.antiprompt.at(0), false);
 
   // number of tokens to keep when resetting context
   if (this->params.n_keep == -1) {
@@ -259,19 +258,25 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     // check if new tokens contains the stop sequence
-    if (completion_result_list.size() <= this->inp_stop.size() &&
+    if (completion_result_list.size() <= this->params.antiprompt.at(0).size() &&
         this->params.antiprompt.at(0).size()) {
 
       stopping = true;
 
-      for (size_t i = 0; i < completion_result_list.size(); i++) {
-        if (completion_result_list.at(i).token != this->inp_stop.at(i)) {
+      std::string completion_text = "";
+      for (auto c : completion_result_list) {
+        completion_text.append(this->detokenize({c.token}));
+      }
+
+      for (size_t i = 0; i < completion_text.size(); i++) {
+        if (completion_text.at(i) != this->params.antiprompt.at(0).at(i)) {
           stopping = false;
           break;
         }
       }
 
-      if (stopping && completion_result_list.size() == this->inp_stop.size()) {
+      if (stopping &&
+          completion_text.size() == this->params.antiprompt.at(0).size()) {
         break;
       }
 

@@ -83,7 +83,6 @@ private:
   struct gpt_params params;
 
   // prefix, suffix, stop
-  std::vector<llama_token> inp_stop;
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
 
