@@ -37,10 +37,10 @@ def generate_launch_description():
 
             model="wizard.gguf",
 
-            prefix="\n\n### Instruction:\n",
+            prefix="\n\nUSER:\n",
             suffix="\n\n### Response:\n",
-            stop="### Instruction:\n",
+            stop="ASSISTANT:\n",
 
-            file="alpaca.txt"
+            file="vicuna_1.txt"
         )
     ])

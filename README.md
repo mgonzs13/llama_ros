@@ -50,7 +50,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
   <thead>
     <tr>
       <th>LLM</th>
-      <th>Base Model</th>
       <th>Sizes</th>
       <th>Prompt Template</th>
       <th>Launch</th>
@@ -61,14 +60,11 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="https://github.com/jondurbin/airoboros">Airoboros</a>
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/airoboros-7B-gpt4-1.4-GGML"
-          >7B</a
-        >,
-        <a href="https://huggingface.co/TheBloke/airoboros-13B-gpt4-1.4-GGML"
-          >13B</a
-        >
+        <a href="https://huggingface.co/TheBloke/airoboros-l2-7B-2.2.1-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/airoboros-l2-13B-2.2.1-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/airoboros-c34b-2.2.1-GGUF">34B</a>,
+        <a href="https://huggingface.co/TheBloke/Airoboros-L2-70b-2.2.1-GGUF">70B</a>
       </td>
       <td align="left">
         <code>USER: prompt</code><br />
@@ -78,94 +74,16 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
         <a href="llama_bringup/launch/airoboros.launch.py"
           >airoboros.launch.py</a
         >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/jondurbin/airoboros">Airoboros-12</a>
-      </td>
-      <td align="center">LLaMA2</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/airoboros-l2-7b-gpt4-2.0-GGML"
-          >7B</a
-        >,
-        <a href="https://huggingface.co/TheBloke/airoboros-l2-13b-gpt4-2.0-GGML"
-          >13B</a
-        >
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/airoboros.launch.py"
-          >airoboros.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://crfm.stanford.edu/2023/03/13/alpaca.html">Alpaca</a>
-      </td>
-      <td align="center">LLaMA</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/gpt4-x-alpaca-13B-GGML">13B</a>
-      </td>
-      <td align="left">
-        <code>### Instruction: prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/alpaca.launch.py">alpaca.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/conceptofmind/Flan-Open-Llama-7b"
-          >Flan</a
-        >
-      </td>
-      <td align="center">LLaMA</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Flan-OpenLlama-7B-GGML">7B</a>
-      </td>
-      <td align="left">
-        <code>### Instruction: prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/flan.launch.py">flan.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/artidoro/qlora">Guanaco</a>
-      </td>
-      <td align="center">LLaMA</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/guanaco-7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/guanaco-13B-GGML">13B</a>
-      </td>
-      <td align="left">
-        <code>### Human: prompt</code><br />
-        <code>### Assistant:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/guanaco.launch.py">guanaco.launch.py</a>
       </td>
     </tr>
     <tr>
       <td align="left">
         <a href="https://github.com/artidoro/qlora">Guanaco-QLoRA</a>
       </td>
-      <td align="center">LLaMA2</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/llama-2-7B-Guanaco-QLoRA-GGML"
-          >7B</a
-        >,
-        <a href="https://huggingface.co/TheBloke/llama-2-13B-Guanaco-QLoRA-GGML"
-          >13B</a
-        >
+        <a href="https://huggingface.co/TheBloke/llama-2-7B-Guanaco-QLoRA-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/llama-2-13B-Guanaco-QLoRA-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/llama-2-70B-Guanaco-QLoRA-GGUF">70B</a>
       </td>
       <td align="left">
         <code>### Human: prompt</code><br />
@@ -177,50 +95,12 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://shishirpatil.github.io/gorilla/">Gorilla</a>
-      </td>
-      <td align="center">LLaMA</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/gorilla-7B-GGML">7B</a>
-      </td>
-      <td align="left">
-        <code>###USER: prompt</code><br />
-        <code>###ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/gorilla.launch.py">gorilla.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://gpt4all.io/index.html">GPT4All</a>
-      </td>
-      <td align="center">LLaMA</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/GPT4All-13B-snoozy-GGML"
-          >13B</a
-        >
-      </td>
-      <td align="left">
-        <code>### Instruction: prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/gpt4all.launch.py">gpt4all.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
         <a href="https://huggingface.co/NousResearch">Nous-Hermes</a>
       </td>
-      <td align="center">LLaMA2</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama-2-7B-GGML"
-          >7B</a
-        >,
-        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-GGML"
-          >13B</a
-        >
+        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama-2-7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-70B-GGUF">70B</a>
       </td>
       <td align="left">
         <code>### Instruction: prompt</code><br />
@@ -233,29 +113,11 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       </td>
     </tr>
     <tr>
-      <td align="left">
-        <a href="https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
-          >LLaMA</a
-        >
-      </td>
-      <td align="center">-</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/LLaMa-7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/LLaMa-13B-GGML">13B</a>
-      </td>
-      <td align="left">-</td>
-      <td align="left">
-        <a href="llama_bringup/launch/llama_chat.launch.py"
-          >llama_chat.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
       <td align="left"><a href="https://ai.meta.com/llama/">LLaMA2</a></td>
-      <td align="center">-</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/Llama-2-7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Llama-2-13B-GGML">13B</a>
+        <a href="https://huggingface.co/TheBloke/Llama-2-7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/Llama-2-13B-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/Llama-2-70B-GGUF">70B</a>
       </td>
       <td align="left">-</td>
       <td align="left">
@@ -268,10 +130,10 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
           >Orca</a
         >
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/orca_mini_v3_7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/orca_mini_v3_13B-GGML">13B</a>
+        <a href="https://huggingface.co/TheBloke/orca_mini_v3_7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/orca_mini_v3_13B-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/orca_mini_v3_70B-GGUF">70B</a>
       </td>
       <td align="left">
         <code>### System:</code><br />
@@ -290,7 +152,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="https://github.com/OptimalScale/LMFlow/">Robin</a>
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
         <a href="https://huggingface.co/TheBloke/robin-7B-v2-GGML">7B</a>,
         <a href="https://huggingface.co/TheBloke/Robin-7B-v2-SuperHOT-8K-GGML"
@@ -312,10 +173,10 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="https://huggingface.co/stabilityai">StableBeluga</a>
       </td>
-      <td align="center">LLaMA2</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/StableBeluga-7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/StableBeluga-13B-GGML">13B</a>
+        <a href="https://huggingface.co/TheBloke/StableBeluga-7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/StableBeluga-13B-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/StableBeluga-70B-GGUF">70B</a>
       </td>
       <td align="left">
         <code>### System:</code><br />
@@ -334,15 +195,10 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="https://github.com/allenai/open-instruct">Tulu</a>
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/tulu-7B-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/tulu-7B-SuperHOT-8K-GGML"
-          >7B-8K</a
-        >, <a href="https://huggingface.co/TheBloke/tulu-13B-GGML">13B</a>,
-        <a href="https://huggingface.co/TheBloke/tulu-13B-SuperHOT-8K-GGML"
-          >13B-8K</a
-        >
+        <a href="https://huggingface.co/TheBloke/tulu-7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/tulu-13B-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/tulu-30B-GGUF">30B</a>,
       </td>
       <td align="left">
         <code>&lt;|user|&gt;</code><br />
@@ -357,14 +213,13 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="https://lmsys.org/blog/2023-03-30-vicuna/">Vicuna</a>
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/Vicuna-7B-CoT-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Vicuna-13B-CoT-GGML">13B</a>
+        <a href="https://huggingface.co/TheBloke/vicuna-7B-v1.5-16K-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/vicuna-13B-v1.5-16K-GGUF">13B</a>
       </td>
       <td align="left">
-        <code>### Human: prompt</code><br />
-        <code>### Assistant:</code>
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
       </td>
       <td align="left">
         <a href="llama_bringup/launch/vicuna.launch.py">vicuna.launch.py</a>
@@ -372,55 +227,18 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://lmsys.org/blog/2023-03-30-vicuna/">Vicuna-1</a>
-      </td>
-      <td align="center">LLaMA2</td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGML">13B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/vicuna_1.launch.py">vicuna_1.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
         <a href="https://github.com/nlpxucan/WizardLM">WizardLM</a>
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/wizardLM-7B-GGML">7B</a>
-      </td>
-      <td align="left">
-        <code>### Instruction: prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/wizardlm.launch.py">wizardlm.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/nlpxucan/WizardLM">WizardLM-1</a>
-      </td>
-      <td align="center">LLaMA2</td>
-      <td align="left">
-        <a
-          href="https://huggingface.co/TheBloke/WizardLM-1.0-Uncensored-Llama2-13B-GGML"
-          >13B</a
-        >
+        <a href="https://huggingface.co/TheBloke/WizardLM-1.0-Uncensored-Llama2-13B-GGUF">13B</a>
       </td>
       <td align="left">
         <code>USER: prompt</code><br />
         <code>ASSISTANT:</code>
       </td>
       <td align="left">
-        <a href="llama_bringup/launch/wizardlm_1.launch.py"
-          >wizardlm_1.launch.py</a
+        <a href="llama_bringup/launch/wizardlm.launch.py"
+          >wizardlm.launch.py</a
         >
       </td>
     </tr>
@@ -430,16 +248,10 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
           >WizardVicuna</a
         >
       </td>
-      <td align="center">LLaMA</td>
       <td align="left">
-        <a
-          href="https://huggingface.co/TheBloke/Wizard-Vicuna-7B-Uncensored-GGML"
-          >7B</a
-        >,
-        <a
-          href="https://huggingface.co/TheBloke/Wizard-Vicuna-13B-Uncensored-GGML"
-          >13B</a
-        >
+        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-7B-Uncensored-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-13B-Uncensored-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-30B-Uncensored-GGUF">30B</a>
       </td>
       <td align="left">
         <code>USER: prompt</code><br />

@@ -35,12 +35,12 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="vicuna.gguf",
+            model="vicuna_1.gguf",
 
-            prefix="\n\n### Human:\n",
-            suffix="\n\n### Assistant:\n",
-            stop="### Human:\n",
+            prefix="\n\nUSER:\n",
+            suffix="\n\nASSISTANT:\n",
+            stop="USER:\n",
 
-            file="vicuna.txt"
+            file="vicuna_1.txt"
         )
     ])
