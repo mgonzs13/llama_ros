@@ -150,27 +150,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://github.com/OptimalScale/LMFlow/">Robin</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/robin-7B-v2-GGML">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Robin-7B-v2-SuperHOT-8K-GGML"
-          >7B-8K</a
-        >, <a href="https://huggingface.co/TheBloke/robin-13B-v2-GGML">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Robin-13B-v2-SuperHOT-8K-GGML"
-          >13B-8K</a
-        >
-      </td>
-      <td align="left">
-        <code>###Human: prompt</code><br />
-        <code>###Assistant:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/robin.launch.py">robin.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
         <a href="https://huggingface.co/stabilityai">StableBeluga</a>
       </td>
       <td align="left">
