@@ -325,7 +325,6 @@ void Llama::eval() {
     ++this->n_consumed;
   }
 
-  // predict
   if (this->batch_tokens.size() > 0) {
 
     // shift context
@@ -403,7 +402,7 @@ struct completion_output Llama::sample() {
   return result;
 }
 
-llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
+struct llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
 
   if (!grammar_text.empty()) {
 

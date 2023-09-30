@@ -99,8 +99,8 @@ private:
 
   // grammar
   grammar_parser::parse_state parsed_grammar;
-  llama_grammar *grammar = NULL;
-  llama_grammar *load_grammar(const std::string &grammar_text);
+  struct llama_grammar *grammar = NULL;
+  struct llama_grammar *load_grammar(const std::string &grammar_text);
 };
 
 } // namespace llama_ros
