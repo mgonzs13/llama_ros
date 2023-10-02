@@ -95,6 +95,26 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
+        <a href="https://huggingface.co/AIDC-ai-business">Marcoroni</a>
+      </td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/Marcoroni-7b-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/Marcoroni-13b-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/Marcoroni-70b-GGUF">70B</a>
+      </td>
+      <td align="left">
+        <code>### Instruction:</code><br />
+        <code>prompt</code><br />
+        <code>### Response:</code>
+      </td>
+      <td align="left">
+        <a href="llama_bringup/launch/marcoroni.launch.py"
+          >marcoroni.launch.py</a
+        >
+      </td>
+    </tr>
+    <tr>
+      <td align="left">
         <a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral</a>
       </td>
       <td align="left">
@@ -119,7 +139,8 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
         <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-70B-GGUF">70B</a>
       </td>
       <td align="left">
-        <code>### Instruction: prompt</code><br />
+        <code>### Instruction:</code><br />
+        <code>prompt</code><br />
         <code>### Response:</code>
       </td>
       <td align="left">
