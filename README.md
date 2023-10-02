@@ -95,6 +95,22 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
+        <a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral</a>
+      </td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF">7B</a>
+      </td>
+      <td align="left">
+        <code>[INST] {prompt} [/INST]</code>
+      </td>
+      <td align="left">
+        <a href="llama_bringup/launch/mistral.launch.py"
+          >mistral.launch.py</a
+        >
+      </td>
+    </tr>
+    <tr>
+      <td align="left">
         <a href="https://huggingface.co/NousResearch">Nous-Hermes</a>
       </td>
       <td align="left">

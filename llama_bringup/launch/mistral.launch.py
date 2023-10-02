@@ -35,12 +35,12 @@ def generate_launch_description():
             n_predict=512,
             n_batch=8,
 
-            model="gpt4all.gguf",
+            model="mistral.gguf",
 
-            prefix="\n\n### Instruction:\n",
-            suffix="\n\n### Response:\n",
-            stop="### Instruction:\n",
+            prefix="\n\n[INST] ",
+            suffix="\n\n[/INST] ",
+            stop="[INST] ",
 
-            file="alpaca.txt"
+            file="mistral.txt"
         )
     ])
