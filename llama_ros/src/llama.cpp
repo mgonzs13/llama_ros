@@ -186,6 +186,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   this->n_remain -= line_inp.size();
+  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, this->params.n_ctx);
 
   // show sampling info
   fprintf(stderr,
