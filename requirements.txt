@@ -1,1 +1,1 @@
-langchain==0.0.295
+langchain==0.0.308
