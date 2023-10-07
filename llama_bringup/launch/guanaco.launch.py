@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="guanaco.gguf",
+            model_repo="TheBloke/llama-2-7B-Guanaco-QLoRA-GGUF",
+            model_filename="llama-2-7b-guanaco-qlora.Q4_0.gguf",
 
             prefix="\n\n### Human:\n",
             suffix="\n\n### Assistant:\n",

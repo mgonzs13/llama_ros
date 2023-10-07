@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="tulu.gguf",
+            model_repo="TheBloke/tulu-7B-GGUF",
+            model_filename="tulu-7b.Q4_0.gguf",
 
             prefix="\n\n<|user|>\n",
             suffix="\n\n<|assistant|>\n",

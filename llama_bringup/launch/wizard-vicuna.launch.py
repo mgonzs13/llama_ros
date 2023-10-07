@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="wizard-vicuna.gguf",
+            model_repo="TheBloke/Wizard-Vicuna-7B-Uncensored-GGUF",
+            model_filename="Wizard-Vicuna-7B-Uncensored.Q4_0.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

@@ -96,8 +96,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                 {"stop", ""},
                                             });
   this->declare_parameters<float>("", {
-                                          {"rope_freq_base", 10000.0f},
-                                          {"rope_freq_scale", 1.0f},
+                                          {"rope_freq_base", 0.0f},
+                                          {"rope_freq_scale", 0.0f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));

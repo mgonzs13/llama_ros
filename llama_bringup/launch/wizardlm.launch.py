@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="wizard.gguf",
+            model_repo="TheBloke/WizardLM-7B-V1.0-Uncensored-GGUF",
+            model_filename="wizardlm-7b-v1.0-uncensored.Q4_0.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\n### Response:\n",

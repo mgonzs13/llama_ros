@@ -23,6 +23,7 @@
 
 import os
 from ament_index_python.packages import get_package_share_directory
+from huggingface_hub import hf_hub_download
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
@@ -34,24 +35,10 @@ def get_base_launch_path() -> str:
         "base.launch.py")
 
 
-def get_llama_model_path(model_name: str) -> str:
-    return os.path.join(
-        os.path.abspath(os.path.normpath(
-            os.path.expanduser("~/llama_models"))),
-        model_name
-    )
+def download_model(repo: str, file: str) -> str:
 
-
-def get_lora_model_path(model_name: str) -> str:
-
-    if model_name:
-
-        return os.path.join(
-            os.path.abspath(os.path.normpath(
-                os.path.expanduser("~/llama_models"))),
-            "lora",
-            model_name
-        )
+    if repo and file:
+        return hf_hub_download(repo_id=repo, filename=file, force_download=False)
 
     return ""
 
@@ -78,8 +65,8 @@ def create_llama_launch(
     main_gpu: int = 0,
     tensor_split: str = "[0.0]",
 
-    rope_freq_base: float = 10000.0,
-    rope_freq_scale: float = 1.0,
+    rope_freq_base: float = 0.0,
+    rope_freq_scale: float = 0.0,
 
     mul_mat_q: bool = True,
     f16_kv: bool = True,
@@ -92,9 +79,12 @@ def create_llama_launch(
     n_predict: int = 128,
     n_keep: int = -1,
 
-    model: str = "",
-    lora_adapter: str = "",
-    lora_base: str = "",
+    model_repo: str = "",
+    model_filename: str = "",
+
+    lora_base_repo: str = "",
+    lora_base_filename: str = "",
+
     numa: bool = True,
 
     prefix: str = "",
@@ -131,9 +121,8 @@ def create_llama_launch(
             "n_predict": str(n_predict),
             "n_keep": str(n_keep),
 
-            "model": get_llama_model_path(model),
-            "lora_adapter": get_lora_model_path(lora_adapter),
-            "lora_base": get_llama_model_path(lora_base),
+            "model": download_model(model_repo, model_filename),
+            "lora_base": download_model(lora_base_repo, lora_base_filename),
             "numa": str(numa),
 
             "prefix": prefix,

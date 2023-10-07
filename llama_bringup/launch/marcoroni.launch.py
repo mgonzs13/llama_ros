@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="marcoroni.gguf",
+            model_repo="TheBloke/Marcoroni-7b-GGUF",
+            model_filename="marcoroni-7b.Q4_0.gguf",
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",

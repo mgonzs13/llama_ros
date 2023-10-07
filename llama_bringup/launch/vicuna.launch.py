@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="vicuna_1.gguf",
+            model_repo="TheBloke/vicuna-7B-v1.5-16K-GGUF",
+            model_filename="vicuna-7b-v1.5-16k.Q4_0.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

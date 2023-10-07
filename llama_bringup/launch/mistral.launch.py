@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="mistral.gguf",
+            model_repo="TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
+            model_filename="mistral-7b-instruct-v0.1.Q4_0.gguf",
 
             prefix="\n\n[INST] ",
             suffix="\n\n[/INST] ",

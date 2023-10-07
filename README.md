@@ -22,9 +22,43 @@ add_compile_definitions(GGML_USE_CUBLAS)
 
 ## Usage
 
-- Download the models and place them in `~/llama_models`
-- Rename the bin (check the content of the launch files)
-- Run the launch file of the chosen model
+Create and run the launch file:
+```python
+from launch import LaunchDescription
+from llama_bringup.utils import create_llama_launch
+
+
+def generate_launch_description():
+
+    return LaunchDescription([
+        create_llama_launch(
+            n_ctx=512, # context of the LLM in tokens
+            n_batch=8, # batch size in tokens
+            n_gpu_layers=0, # layers to load in GPU
+            n_threads=4, # threads
+            n_predict=512, # max tokens (prompt tokens + predicted tokens
+
+            model_repo="TheBloke/Nous-Hermes-Llama-2-7B-GGUF", # Hugging Face repo
+            model_filename="nous-hermes-llama-2-7b.Q4_0.gguf", # model file
+
+            prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
+            suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
+            stop="### Instruction:\n", # stop sequence
+
+            file="alpaca.txt" # initial prompt
+        )
+    ])
+```
+
+Run you launch file:
+```shell
+$ ros2 launch llama_bringup nous-hermes.launch.py
+```
+
+Send an action goal:
+```shell
+$ ros2 action send_goal /llama/generate_response llama_msgs/action/GenerateResponse "{'prompt': 'What is ROS2?'}"
+```
 
 ### Lagnchain
 
@@ -94,6 +128,18 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       </td>
     </tr>
     <tr>
+      <td align="left"><a href="https://ai.meta.com/llama/">LLaMA2</a></td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/Llama-2-7B-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/Llama-2-13B-GGUF">13B</a>,
+        <a href="https://huggingface.co/TheBloke/Llama-2-70B-GGUF">70B</a>
+      </td>
+      <td align="left">-</td>
+      <td align="left">
+        <a href="llama_bringup/launch/llama2.launch.py">llama2.launch.py</a>
+      </td>
+    </tr>
+    <tr>
       <td align="left">
         <a href="https://huggingface.co/AIDC-ai-business">Marcoroni</a>
       </td>
@@ -147,18 +193,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
         <a href="llama_bringup/launch/nous-hermes.launch.py"
           >nous-hermes.launch.py</a
         >
-      </td>
-    </tr>
-    <tr>
-      <td align="left"><a href="https://ai.meta.com/llama/">LLaMA2</a></td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Llama-2-7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Llama-2-13B-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Llama-2-70B-GGUF">70B</a>
-      </td>
-      <td align="left">-</td>
-      <td align="left">
-        <a href="llama_bringup/launch/llama2.launch.py">llama2.launch.py</a>
       </td>
     </tr>
     <tr>
@@ -243,23 +277,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://github.com/nlpxucan/WizardLM">WizardLM</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/WizardLM-1.0-Uncensored-Llama2-13B-GGUF">13B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/wizardlm.launch.py"
-          >wizardlm.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
         <a href="https://github.com/melodysdreamj/WizardVicunaLM"
           >WizardVicuna</a
         >
@@ -276,6 +293,24 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="llama_bringup/launch/wizard-vicuna.launch.py"
           >wizardlm-vicuna.launch.py</a
+        >
+      </td>
+    </tr>
+    <tr>
+      <td align="left">
+        <a href="https://github.com/nlpxucan/WizardLM">WizardLM</a>
+      </td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/WizardLM-7B-V1.0-Uncensored-GGUF">7B</a>,
+        <a href="https://huggingface.co/TheBloke/WizardLM-1.0-Uncensored-Llama2-13B-GGUF">13B</a>
+      </td>
+      <td align="left">
+        <code>USER: prompt</code><br />
+        <code>ASSISTANT:</code>
+      </td>
+      <td align="left">
+        <a href="llama_bringup/launch/wizardlm.launch.py"
+          >wizardlm.launch.py</a
         >
       </td>
     </tr>

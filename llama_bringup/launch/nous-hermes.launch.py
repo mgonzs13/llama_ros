@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             n_ctx=512,
-
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=4,
             n_predict=512,
-            n_batch=8,
 
-            model="nous-hermes.gguf",
+            model_repo="TheBloke/Nous-Hermes-Llama-2-7B-GGUF",
+            model_filename="nous-hermes-llama-2-7b.Q4_0.gguf",
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",

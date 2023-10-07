@@ -44,8 +44,8 @@ def generate_launch_description():
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
                 "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
 
-                "rope_freq_base": LaunchConfiguration("rope_freq_base", default=10000.0),
-                "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=1.0),
+                "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
+                "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
 
                 "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "f16_kv": LaunchConfiguration("f16_kv", default=True),
