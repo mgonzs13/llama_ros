@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/Marcoroni-7b-GGUF",
-            model_filename="marcoroni-7b.Q4_0.gguf",
+            model_filename="marcoroni-7b.Q4_K_M.gguf",
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",

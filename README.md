@@ -39,7 +39,7 @@ def generate_launch_description():
             n_predict=512, # max tokens (prompt tokens + predicted tokens
 
             model_repo="TheBloke/Nous-Hermes-Llama-2-7B-GGUF", # Hugging Face repo
-            model_filename="nous-hermes-llama-2-7b.Q4_0.gguf", # model file
+            model_filename="nous-hermes-llama-2-7b.Q4_K_M.gguf", # model file
 
             prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
             suffix="\n\n### Response:\n", # suffix to add at the end of the prompt

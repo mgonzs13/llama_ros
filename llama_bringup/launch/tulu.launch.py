@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/tulu-7B-GGUF",
-            model_filename="tulu-7b.Q4_0.gguf",
+            model_filename="tulu-7b.Q4_K_M.gguf",
 
             prefix="\n\n<|user|>\n",
             suffix="\n\n<|assistant|>\n",

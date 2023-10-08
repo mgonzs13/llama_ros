@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
-            model_filename="mistral-7b-instruct-v0.1.Q4_0.gguf",
+            model_filename="mistral-7b-instruct-v0.1.Q4_K_M.gguf",
 
             prefix="\n\n[INST] ",
             suffix="\n\n[/INST] ",

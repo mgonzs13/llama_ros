@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/orca_mini_v3_7B-GGUF",
-            model_filename="orca_mini_v3_7b.Q4_0.gguf",
+            model_filename="orca_mini_v3_7b.Q4_K_M.gguf",
 
             prefix="\n\n### User:\n",
             suffix="\n\n### Response:\n",

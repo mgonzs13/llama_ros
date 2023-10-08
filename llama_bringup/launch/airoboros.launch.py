@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/airoboros-l2-7B-2.2.1-GGUF",
-            model_filename="airoboros-l2-7b-2.2.1.Q4_0.gguf",
+            model_filename="airoboros-l2-7b-2.2.1.Q4_K_M.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

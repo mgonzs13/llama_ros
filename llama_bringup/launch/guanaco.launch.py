@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/llama-2-7B-Guanaco-QLoRA-GGUF",
-            model_filename="llama-2-7b-guanaco-qlora.Q4_0.gguf",
+            model_filename="llama-2-7b-guanaco-qlora.Q4_K_M.gguf",
 
             prefix="\n\n### Human:\n",
             suffix="\n\n### Assistant:\n",

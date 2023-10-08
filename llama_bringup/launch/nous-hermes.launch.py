@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/Nous-Hermes-Llama-2-7B-GGUF",
-            model_filename="nous-hermes-llama-2-7b.Q4_0.gguf",
+            model_filename="nous-hermes-llama-2-7b.Q4_K_M.gguf",
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",

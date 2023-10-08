@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/vicuna-7B-v1.5-16K-GGUF",
-            model_filename="vicuna-7b-v1.5-16k.Q4_0.gguf",
+            model_filename="vicuna-7b-v1.5-16k.Q4_K_M.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",

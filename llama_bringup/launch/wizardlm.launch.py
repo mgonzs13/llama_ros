@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/WizardLM-7B-V1.0-Uncensored-GGUF",
-            model_filename="wizardlm-7b-v1.0-uncensored.Q4_0.gguf",
+            model_filename="wizardlm-7b-v1.0-uncensored.Q4_K_M.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\n### Response:\n",

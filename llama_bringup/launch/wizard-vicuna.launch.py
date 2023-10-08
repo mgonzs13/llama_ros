@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=512,
 
             model_repo="TheBloke/Wizard-Vicuna-7B-Uncensored-GGUF",
-            model_filename="Wizard-Vicuna-7B-Uncensored.Q4_0.gguf",
+            model_filename="Wizard-Vicuna-7B-Uncensored.Q4_K_M.gguf",
 
             prefix="\n\nUSER:\n",
             suffix="\n\nASSISTANT:\n",
