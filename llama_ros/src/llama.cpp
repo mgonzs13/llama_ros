@@ -195,16 +195,19 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           "top_p = %f, "
           "repeat_last_n = %i, "
           "repeat_penalty = %f\n",
-          params.temp, params.top_k, params.top_p, params.repeat_last_n,
-          params.repeat_penalty);
+          params.sampling_params.temp, params.sampling_params.top_k,
+          params.sampling_params.top_p, params.sampling_params.repeat_last_n,
+          params.sampling_params.repeat_penalty);
 
   // load grammar
   this->grammar = this->load_grammar(params.grammar);
 
   if (this->grammar != NULL) {
-    auto it = params.logit_bias.find(llama_token_eos(this->ctx));
+    auto it =
+        params.sampling_params.logit_bias.find(llama_token_eos(this->ctx));
 
-    if (it != params.logit_bias.end() && it->second == -INFINITY) {
+    if (it != params.sampling_params.logit_bias.end() &&
+        it->second == -INFINITY) {
       fprintf(stderr, "warning: EOS token is disabled, which will cause most "
                       "grammars to fail\n");
     }
@@ -377,8 +380,8 @@ struct completion_output Llama::sample() {
   auto n_vocab = this->get_n_vocab();
 
   // apply logit_bias
-  for (auto it = params.logit_bias.begin(); it != params.logit_bias.end();
-       it++) {
+  for (auto it = params.sampling_params.logit_bias.begin();
+       it != params.sampling_params.logit_bias.end(); it++) {
     logits[it->first] += it->second;
   }
 
@@ -387,17 +390,28 @@ struct completion_output Llama::sample() {
   candidates.reserve(n_vocab);
 
   // sample token
-  const llama_token id =
-      llama_sample_token(this->ctx, NULL, this->grammar, this->params,
-                         this->last_n_tokens, candidates);
+  llama_sampling_context ctx_sampling =
+      llama_sampling_context_init(this->params, this->grammar);
+  const llama_token id = llama_sampling_sample(this->ctx, NULL, ctx_sampling,
+                                               this->last_n_tokens, candidates);
 
   // create output
   struct completion_output result;
   result.token = id;
 
-  for (size_t i = 0; i < std::min(candidates.size(), (size_t)params.n_probs);
+  // get probs
+  llama_token_data_array candidates_p = {candidates.data(), candidates.size(),
+                                         false};
+
+  if (this->params.sampling_params.temp <= 0 &&
+      this->params.sampling_params.n_probs > 0) {
+    llama_sample_softmax(this->ctx, &candidates_p);
+  }
+
+  for (size_t i = 0; i < std::min(candidates_p.size,
+                                  (size_t)this->params.sampling_params.n_probs);
        ++i) {
-    result.probs.push_back({candidates[i].id, candidates[i].p});
+    result.probs.push_back({candidates_p.data[i].id, candidates_p.data[i].p});
   }
 
   return result;
