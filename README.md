@@ -119,9 +119,9 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       </td>
       <td align="left">
         <code><|im_start|>system</code><br />
-        <code>system prompt<|im_end|></code>
-        <code><|im_end|>user</code>
-        <code>promtp<|im_end|></code>
+        <code>system prompt<|im_end|></code><br />
+        <code><|im_end|>user</code><br />
+        <code>promtp<|im_end|></code><br />
         <code><|im_start|>assistant</code>
       </td>
       <td align="left">
