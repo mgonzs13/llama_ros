@@ -112,6 +112,26 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
+        <a href="https://huggingface.co/ehartford/dolphin-2.1-mistral-7b">Dolphin-Mistral</a>
+      </td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/dolphin-2.1-mistral-7B-GGUF">7B</a>
+      </td>
+      <td align="left">
+        <code><|im_start|>system</code><br />
+        <code>system prompt<|im_end|></code>
+        <code><|im_end|>user</code>
+        <code>promtp<|im_end|></code>
+        <code><|im_start|>assistant</code>
+      </td>
+      <td align="left">
+        <a href="llama_bringup/launch/dolphin-mistral.launch.py"
+          >dolphin-mistral.launch.py</a
+        >
+      </td>
+    </tr>
+    <tr>
+      <td align="left">
         <a href="https://github.com/artidoro/qlora">Guanaco-QLoRA</a>
       </td>
       <td align="left">
@@ -311,6 +331,26 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       <td align="left">
         <a href="llama_bringup/launch/wizardlm.launch.py"
           >wizardlm.launch.py</a
+        >
+      </td>
+    </tr>
+    <tr>
+      <td align="left">
+        <a href="https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha">Zephyr</a>
+      </td>
+      <td align="left">
+        <a href="https://huggingface.co/TheBloke/zephyr-7B-alpha-GGUF">7B</a>
+      </td>
+      <td align="left">
+        <code><|system|></code><br />
+        <code>system prompt&lt;s&gt;</code><br />
+        <code><|user|></code><br />
+        <code>prompt&lt;s&gt;</code><br />
+        <code><|assistant|></code><br />
+      </td>
+      <td align="left">
+        <a href="llama_bringup/launch/zephyr.launch.py"
+          >zephyr.launch.py</a
         >
       </td>
     </tr>

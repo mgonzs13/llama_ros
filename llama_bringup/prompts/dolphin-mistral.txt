@@ -1,0 +1,11 @@
+<|im_start|>system
+Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+<|im_end|>
+<|im_end|>user
+Hello
+<|im_end|>
+<|im_start|>assistant
+Hello
+<|im_end|>
+<|im_end|>user
