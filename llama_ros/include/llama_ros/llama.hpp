@@ -81,6 +81,7 @@ private:
   bool debug;
   Spinner spinner;
   struct gpt_params params;
+  llama_sampling_context ctx_sampling;
 
   // prefix, suffix, stop
   std::vector<llama_token> inp_pfx;

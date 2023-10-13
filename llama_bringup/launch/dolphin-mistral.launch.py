@@ -40,7 +40,7 @@ def generate_launch_description():
 
             prefix="\n\n<|im_end|>user\n",
             suffix="\n\n<|im_end|>\n<|im_start|>assistant\n",
-            stop="<|im_end|>user\n",
+            stop="<|im_start|>user\n",
 
             file="dolphin-mistral.txt"
         )

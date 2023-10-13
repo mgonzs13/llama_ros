@@ -186,7 +186,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   this->n_remain -= line_inp.size();
-  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, this->params.n_ctx);
+  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, -1);
 
   // show sampling info
   fprintf(stderr,
@@ -212,6 +212,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                       "grammars to fail\n");
     }
   }
+  this->ctx_sampling = llama_sampling_context_init(this->params, this->grammar);
 
   fprintf(stderr, "Starting Response Generation\n");
 
@@ -390,10 +391,8 @@ struct completion_output Llama::sample() {
   candidates.reserve(n_vocab);
 
   // sample token
-  llama_sampling_context ctx_sampling =
-      llama_sampling_context_init(this->params, this->grammar);
-  const llama_token id = llama_sampling_sample(this->ctx, NULL, ctx_sampling,
-                                               this->last_n_tokens, candidates);
+  const llama_token id = llama_sampling_sample(
+      this->ctx, NULL, this->ctx_sampling, this->last_n_tokens, candidates);
 
   // create output
   struct completion_output result;
