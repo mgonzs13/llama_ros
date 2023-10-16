@@ -8,4 +8,4 @@ Hello
 <|im_start|>assistant
 Hello
 <|im_end|>
-<|im_end|>user
+<|im_start|>user
