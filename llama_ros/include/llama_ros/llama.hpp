@@ -53,7 +53,8 @@ public:
   Llama(const struct gpt_params &params, bool debug);
   ~Llama();
 
-  std::vector<llama_token> tokenize(const std::string &text, bool add_bos);
+  std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
+                                    bool special = false);
   std::string detokenize(const std::vector<llama_token> &tokens);
   void reset();
   void cancel();
@@ -74,6 +75,8 @@ public:
 protected:
   struct llama_model *model;
   struct llama_context *ctx;
+  struct llama_sampling_context *ctx_sampling;
+
   void eval();
   struct completion_output sample();
 
@@ -81,14 +84,12 @@ private:
   bool debug;
   Spinner spinner;
   struct gpt_params params;
-  llama_sampling_context ctx_sampling;
 
   // prefix, suffix, stop
   std::vector<llama_token> inp_pfx;
   std::vector<llama_token> inp_sfx;
 
   // aux
-  std::vector<llama_token> last_n_tokens;
   std::vector<llama_token> prompt_tokens;
   std::vector<llama_token> batch_tokens;
 
@@ -97,11 +98,6 @@ private:
   int32_t n_past;
   int32_t n_remain;
   int32_t n_consumed;
-
-  // grammar
-  grammar_parser::parse_state parsed_grammar;
-  struct llama_grammar *grammar = NULL;
-  struct llama_grammar *load_grammar(const std::string &grammar_text);
 };
 
 } // namespace llama_ros

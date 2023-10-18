@@ -43,17 +43,13 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
           llama_print_system_info());
 
   // prefix & suffix
-  this->inp_pfx = this->tokenize(this->params.input_prefix, true);
-  this->inp_sfx = this->tokenize(this->params.input_suffix, false);
+  this->inp_pfx = this->tokenize(this->params.input_prefix, true, true);
+  this->inp_sfx = this->tokenize(this->params.input_suffix, false, true);
 
   // number of tokens to keep when resetting context
   if (this->params.n_keep == -1) {
     this->params.n_keep = (int)this->prompt_tokens.size();
   }
-
-  // TODO: replace with ring-buffer
-  this->last_n_tokens = std::vector<llama_token>(this->get_n_ctx());
-  std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
 
   this->is_antiprompt = false;
   this->canceled = false;
@@ -74,9 +70,9 @@ Llama::~Llama() {
   llama_backend_free();
 }
 
-std::vector<llama_token> Llama::tokenize(const std::string &text,
-                                         bool add_bos) {
-  return llama_tokenize(this->ctx, text, add_bos);
+std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
+                                         bool special) {
+  return llama_tokenize(this->ctx, text, add_bos, special);
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
@@ -84,9 +80,6 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 }
 
 void Llama::reset() {
-  this->last_n_tokens = std::vector<llama_token>(this->get_n_ctx());
-  std::fill(this->last_n_tokens.begin(), this->last_n_tokens.end(), 0);
-
   this->is_antiprompt = false;
   this->canceled = false;
   this->n_past = 0;
@@ -107,7 +100,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     return {};
   }
 
-  auto tokens = this->tokenize(input_prompt, true);
+  auto tokens = this->tokenize(input_prompt, true, false);
   int n_past = 0;
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
@@ -155,9 +148,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   if (!this->prompt_tokens.size() && !add_pfx_sfx) {
-    line_inp = this->tokenize(prompt, true);
+    line_inp = this->tokenize(prompt, true, true);
   } else {
-    line_inp = this->tokenize(prompt, false);
+    line_inp = this->tokenize(prompt, false, false);
   }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
@@ -199,20 +192,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           params.sampling_params.top_p, params.sampling_params.repeat_last_n,
           params.sampling_params.repeat_penalty);
 
-  // load grammar
-  this->grammar = this->load_grammar(params.grammar);
-
-  if (this->grammar != NULL) {
-    auto it =
-        params.sampling_params.logit_bias.find(llama_token_eos(this->ctx));
-
-    if (it != params.sampling_params.logit_bias.end() &&
-        it->second == -INFINITY) {
-      fprintf(stderr, "warning: EOS token is disabled, which will cause most "
-                      "grammars to fail\n");
-    }
-  }
-  this->ctx_sampling = llama_sampling_context_init(this->params, this->grammar);
+  // load params
+  this->ctx_sampling = llama_sampling_init(this->params);
 
   fprintf(stderr, "Starting Response Generation\n");
 
@@ -224,7 +205,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // check if stop appears at the end of the output
-      std::string last_output = this->detokenize(this->last_n_tokens);
+      std::string last_output = this->detokenize(this->ctx_sampling->prev);
       this->is_antiprompt = false;
 
       // when not currently processing queued
@@ -243,8 +224,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       completion_result_list.push_back(completion_result);
 
       this->batch_tokens.push_back(completion_result.token);
-      this->last_n_tokens.erase(this->last_n_tokens.begin());
-      this->last_n_tokens.push_back(completion_result.token);
 
       // echo this to console
       input_noecho = false;
@@ -253,7 +232,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       --this->n_remain;
     }
 
-    if (this->batch_tokens.back() == llama_token_eos(this->ctx)) {
+    if (this->ctx_sampling->prev.back() == llama_token_eos(this->ctx)) {
       break;
     }
 
@@ -311,10 +290,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   fprintf(stderr, "Finish Response Generation\n");
 
-  if (this->grammar != NULL) {
-    llama_grammar_free(this->grammar);
-    this->grammar = NULL;
-  }
+  llama_sampling_free(this->ctx_sampling);
 
   return response;
 }
@@ -325,8 +301,8 @@ void Llama::eval() {
          ((int)this->batch_tokens.size() < this->params.n_batch)) {
 
     this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
-    this->last_n_tokens.erase(this->last_n_tokens.begin());
-    this->last_n_tokens.push_back(this->prompt_tokens[this->n_consumed]);
+    this->ctx_sampling->prev.erase(this->ctx_sampling->prev.begin());
+    this->ctx_sampling->prev.push_back(this->prompt_tokens[this->n_consumed]);
     ++this->n_consumed;
   }
 
@@ -391,53 +367,28 @@ struct completion_output Llama::sample() {
   candidates.reserve(n_vocab);
 
   // sample token
-  const llama_token id = llama_sampling_sample(
-      this->ctx, NULL, this->ctx_sampling, this->last_n_tokens, candidates);
+  const llama_token id =
+      llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
 
   // create output
   struct completion_output result;
   result.token = id;
 
   // get probs
-  llama_token_data_array candidates_p = {candidates.data(), candidates.size(),
-                                         false};
+  llama_token_data_array cur_p = {this->ctx_sampling->cur.data(),
+                                  this->ctx_sampling->cur.size(), false};
 
-  if (this->params.sampling_params.temp <= 0 &&
-      this->params.sampling_params.n_probs > 0) {
-    llama_sample_softmax(this->ctx, &candidates_p);
+  const int32_t n_probs = this->params.sampling_params.n_probs;
+  if (this->params.sampling_params.temp <= 0 && n_probs > 0) {
+    // For llama_sample_token_greedy we need to sort candidates
+    llama_sample_softmax(this->ctx, &cur_p);
   }
 
-  for (size_t i = 0; i < std::min(candidates_p.size,
-                                  (size_t)this->params.sampling_params.n_probs);
-       ++i) {
-    result.probs.push_back({candidates_p.data[i].id, candidates_p.data[i].p});
+  for (size_t i = 0; i < std::min(cur_p.size, (size_t)n_probs); ++i) {
+    result.probs.push_back({cur_p.data[i].id, cur_p.data[i].p});
   }
 
+  // return result
+  llama_sampling_accept(this->ctx_sampling, this->ctx, id);
   return result;
-}
-
-struct llama_grammar *Llama::load_grammar(const std::string &grammar_text) {
-
-  if (!grammar_text.empty()) {
-
-    this->parsed_grammar = grammar_parser::parse(grammar_text.c_str());
-
-    // will be empty (default) if there are parse errors
-    if (parsed_grammar.rules.empty()) {
-      return NULL;
-    }
-
-    if (this->debug) {
-      fprintf(stderr, "\nGRAMMAR:\n");
-      grammar_parser::print_grammar(stderr, parsed_grammar);
-      fprintf(stderr, "\n");
-    }
-
-    std::vector<const llama_grammar_element *> grammar_rules(
-        parsed_grammar.c_rules());
-    return llama_grammar_init(grammar_rules.data(), grammar_rules.size(),
-                              parsed_grammar.symbol_ids.at("root"));
-  }
-
-  return NULL;
 }
