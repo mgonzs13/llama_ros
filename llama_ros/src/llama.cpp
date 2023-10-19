@@ -102,10 +102,11 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   auto tokens = this->tokenize(input_prompt, true, false);
   int n_past = 0;
+  int n_eval = 0;
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
-    int n_eval = (int)tokens.size() - i;
+    n_eval = (int)tokens.size() - i;
     if (n_eval > this->params.n_batch) {
       n_eval = this->params.n_batch;
     }
@@ -119,11 +120,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   const int n_embd = this->get_n_embd();
   const auto embeddings = llama_get_embeddings(this->ctx);
-
-  std::vector<float> embeddings_list;
-  for (int i = 0; i < n_embd; i++) {
-    embeddings_list.push_back(embeddings[i]);
-  }
+  std::vector<float> embeddings_list(embeddings, embeddings + n_embd);
 
   return embeddings_list;
 }
