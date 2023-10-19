@@ -65,6 +65,11 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
 }
 
 Llama::~Llama() {
+
+  if (this->ctx_sampling != nullptr) {
+    llama_sampling_free(this->ctx_sampling);
+  }
+
   llama_free(this->ctx);
   llama_free_model(this->model);
   llama_backend_free();
@@ -72,10 +77,12 @@ Llama::~Llama() {
 
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
                                          bool special) {
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
   return llama_tokenize(this->ctx, text, add_bos, special);
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
   return llama_detokenize_bpe(this->ctx, tokens);
 }
 
@@ -94,6 +101,8 @@ void Llama::cancel() { this->canceled = true; }
 
 std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+
   if (!this->is_embedding()) {
     fprintf(stderr,
             "Llama must be created with embedding=true to create embeddings\n");
@@ -101,21 +110,28 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   }
 
   auto tokens = this->tokenize(input_prompt, true, false);
-  int n_past = 0;
-  int n_eval = 0;
+
+  if ((int)tokens.size() > this->get_n_ctx()) {
+    fprintf(stderr, "Prompt too long %ld, context size is %d\n", tokens.size(),
+            this->get_n_ctx());
+    return {};
+  }
+
+  int embd_n_past = 0;
+  int embd_n_eval = 0;
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
-    n_eval = (int)tokens.size() - i;
-    if (n_eval > this->params.n_batch) {
-      n_eval = this->params.n_batch;
+    embd_n_eval = (int)tokens.size() - i;
+    if (embd_n_eval > this->params.n_batch) {
+      embd_n_eval = this->params.n_batch;
     }
 
-    if (llama_decode(this->ctx,
-                     llama_batch_get_one(&tokens[i], n_eval, n_past, 0))) {
+    if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
+                                                    embd_n_past, 0))) {
       fprintf(stderr, "Failed to eval\n");
     }
-    n_past += n_eval;
+    embd_n_past += embd_n_eval;
   }
 
   const int n_embd = this->get_n_embd();
@@ -128,6 +144,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 std::vector<struct completion_output>
 Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                          GenerateResponseCallback callback) {
+
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
   bool input_noecho = true;

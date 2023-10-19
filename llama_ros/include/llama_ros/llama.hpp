@@ -24,6 +24,8 @@
 #define LLAMA_ROS__LLAMA_HPP
 
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -93,11 +95,15 @@ private:
   std::vector<llama_token> prompt_tokens;
   std::vector<llama_token> batch_tokens;
 
+  // eval
   bool is_antiprompt;
   bool canceled;
   int32_t n_past;
   int32_t n_remain;
   int32_t n_consumed;
+
+  // lock
+  std::recursive_mutex mutex;
 };
 
 } // namespace llama_ros
