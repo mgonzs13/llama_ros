@@ -121,6 +121,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   int embd_n_past = 0;
   int embd_n_eval = 0;
+  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, -1);
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
