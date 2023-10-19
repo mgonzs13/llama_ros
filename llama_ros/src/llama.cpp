@@ -103,10 +103,12 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
+  const int n_embd = this->get_n_embd();
+
   if (!this->is_embedding()) {
     fprintf(stderr,
             "Llama must be created with embedding=true to create embeddings\n");
-    return {};
+    return std::vector<float>(n_embd, 0.0f);
   }
 
   auto tokens = this->tokenize(input_prompt, true, false);
@@ -114,7 +116,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   if ((int)tokens.size() > this->get_n_ctx()) {
     fprintf(stderr, "Prompt too long %ld, context size is %d\n", tokens.size(),
             this->get_n_ctx());
-    return {};
+    return std::vector<float>(n_embd, 0.0f);
   }
 
   int embd_n_past = 0;
@@ -130,11 +132,11 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
                                                     embd_n_past, 0))) {
       fprintf(stderr, "Failed to eval\n");
+      return std::vector<float>(n_embd, 0.0f);
     }
     embd_n_past += embd_n_eval;
   }
 
-  const int n_embd = this->get_n_embd();
   const auto embeddings = llama_get_embeddings(this->ctx);
   std::vector<float> embeddings_list(embeddings, embeddings + n_embd);
 
@@ -151,6 +153,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   bool input_noecho = true;
 
   bool stopping = false;
+  bool eval_succ = true;
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
@@ -215,7 +218,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   // generation loop
   while (this->n_remain != 0) {
 
-    this->eval();
+    eval_succ = this->eval();
+
+    if (!eval_succ) {
+      break;
+    }
 
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
@@ -310,7 +317,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   return response;
 }
 
-void Llama::eval() {
+bool Llama::eval() {
 
   while (((int)this->prompt_tokens.size() > this->n_consumed) &&
          ((int)this->batch_tokens.size() < this->params.n_batch)) {
@@ -341,10 +348,11 @@ void Llama::eval() {
     // evaluate tokens in batches
     // batch_tokens is typically prepared beforehand to fit within a batch
     // but not always
+    int n_eval = 0;
     for (size_t i = 0; i < this->batch_tokens.size();
          i += this->params.n_batch) {
 
-      int n_eval = (int)this->batch_tokens.size() - i;
+      n_eval = (int)this->batch_tokens.size() - i;
       if (n_eval > this->params.n_batch) {
         n_eval = this->params.n_batch;
       }
@@ -357,12 +365,15 @@ void Llama::eval() {
                        llama_batch_get_one(&this->batch_tokens[i], n_eval,
                                            this->n_past, 0))) {
         fprintf(stderr, "Failed to eval\n");
+        return false;
       }
       this->n_past += n_eval;
     }
 
     this->batch_tokens.clear();
   }
+
+  return true;
 }
 
 struct completion_output Llama::sample() {

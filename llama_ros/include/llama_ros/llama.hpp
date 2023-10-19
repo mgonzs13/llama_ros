@@ -79,7 +79,7 @@ protected:
   struct llama_context *ctx;
   struct llama_sampling_context *ctx_sampling;
 
-  void eval();
+  bool eval();
   struct completion_output sample();
 
 private:
