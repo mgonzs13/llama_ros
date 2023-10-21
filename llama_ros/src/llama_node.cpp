@@ -258,41 +258,39 @@ void LlamaNode::execute(
   // // prepare sampling params
   struct gpt_params &params = this->llama->get_params();
   params.ignore_eos = sampling_config.ignore_eos;
-  params.sampling_params.temp = sampling_config.temp;
-  params.sampling_params.top_k = sampling_config.top_k;
-  params.sampling_params.top_p = sampling_config.top_p;
-  params.sampling_params.tfs_z = sampling_config.tfs_z;
-  params.sampling_params.typical_p = sampling_config.typical_p;
-  params.sampling_params.repeat_last_n = sampling_config.repeat_last_n;
-  params.sampling_params.repeat_penalty = sampling_config.repeat_penalty;
-  params.sampling_params.presence_penalty = sampling_config.presence_penalty;
-  params.sampling_params.frequency_penalty = sampling_config.frequency_penalty;
-  params.sampling_params.mirostat = sampling_config.mirostat;
-  params.sampling_params.mirostat_eta = sampling_config.mirostat_eta;
-  params.sampling_params.mirostat_tau = sampling_config.mirostat_tau;
-  params.sampling_params.penalize_nl = sampling_config.penalize_nl;
-  params.sampling_params.n_probs = sampling_config.n_probs;
-  params.grammar = sampling_config.grammar;
+  params.sparams.temp = sampling_config.temp;
+  params.sparams.top_k = sampling_config.top_k;
+  params.sparams.top_p = sampling_config.top_p;
+  params.sparams.tfs_z = sampling_config.tfs_z;
+  params.sparams.typical_p = sampling_config.typical_p;
+  params.sparams.penalty_last_n = sampling_config.penalty_last_n;
+  params.sparams.penalty_repeat = sampling_config.penalty_repeat;
+  params.sparams.penalty_present = sampling_config.penalty_present;
+  params.sparams.penalty_freq = sampling_config.penalty_freq;
+  params.sparams.mirostat = sampling_config.mirostat;
+  params.sparams.mirostat_eta = sampling_config.mirostat_eta;
+  params.sparams.mirostat_tau = sampling_config.mirostat_tau;
+  params.sparams.penalize_nl = sampling_config.penalize_nl;
+  params.sparams.n_probs = sampling_config.n_probs;
+  params.sparams.grammar = sampling_config.grammar;
 
-  // check repeat_last_n
-  params.sampling_params.repeat_last_n =
-      params.sampling_params.repeat_last_n < 0
-          ? this->llama->get_n_ctx()
-          : params.sampling_params.repeat_last_n;
+  // check penalty_last_n
+  params.sparams.penalty_last_n = params.sparams.penalty_last_n < 0
+                                      ? params.sparams.n_prev
+                                      : params.sparams.penalty_last_n;
 
   // check top_k
-  params.sampling_params.top_k = params.sampling_params.top_k <= 0
-                                     ? this->llama->get_n_vocab()
-                                     : params.sampling_params.top_k;
+  params.sparams.top_k = params.sparams.top_k <= 0 ? this->llama->get_n_vocab()
+                                                   : params.sparams.top_k;
 
   // add logit bias
   for (auto logit_bias : sampling_config.logit_bias.data) {
-    params.sampling_params.logit_bias[logit_bias.token] = logit_bias.bias;
+    params.sparams.logit_bias[logit_bias.token] = logit_bias.bias;
   }
 
   // add llama_token_eos
   if (params.ignore_eos) {
-    params.sampling_params.logit_bias[llama_token_eos(this->llama->get_ctx())] =
+    params.sparams.logit_bias[llama_token_eos(this->llama->get_ctx())] =
         -INFINITY;
   }
 

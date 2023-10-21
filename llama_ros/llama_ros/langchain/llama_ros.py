@@ -40,6 +40,8 @@ class LlamaROS(LLM):
     tokenize_srv_client: Client = None
 
     # sampling params
+    n_prev: int = 64
+
     ignore_eos: bool = False
     logit_bias: Dict[int, float] = {}
 
@@ -50,10 +52,10 @@ class LlamaROS(LLM):
     tfs_z: float = 1.00
     typical_p: float = 1.00
 
-    repeat_last_n: int = 64
-    repeat_penalty: float = 1.10
-    presence_penalty: float = 0.00
-    frequency_penalty: float = 0.00
+    penalty_last_n: int = 64
+    penalty_repeat: float = 1.10
+    penalty_present: float = 0.00
+    penalty_freq: float = 0.00
 
     mirostat: int = 0
     mirostat_eta: float = 0.10
@@ -106,6 +108,7 @@ class LlamaROS(LLM):
         goal.reset = True
 
         # sampling params
+        goal.sampling_config.n_prev = self.n_prev
         goal.sampling_config.ignore_eos = self.ignore_eos
         for key in self.logit_bias:
             lb = LogitBias()
@@ -120,10 +123,10 @@ class LlamaROS(LLM):
         goal.sampling_config.tfs_z = self.tfs_z
         goal.sampling_config.typical_p = self.typical_p
 
-        goal.sampling_config.repeat_last_n = self.repeat_last_n
-        goal.sampling_config.repeat_penalty = self.repeat_penalty
-        goal.sampling_config.presence_penalty = self.presence_penalty
-        goal.sampling_config.frequency_penalty = self.frequency_penalty
+        goal.sampling_config.penalty_last_n = self.penalty_last_n
+        goal.sampling_config.penalty_repeat = self.penalty_repeat
+        goal.sampling_config.penalty_present = self.penalty_present
+        goal.sampling_config.penalty_freq = self.penalty_freq
 
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta

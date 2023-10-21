@@ -205,14 +205,13 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           "Sampling: temp = %f, "
           "top_k = %d, "
           "top_p = %f, "
-          "repeat_last_n = %i, "
+          "penalty_last_n = %i, "
           "repeat_penalty = %f\n",
-          params.sampling_params.temp, params.sampling_params.top_k,
-          params.sampling_params.top_p, params.sampling_params.repeat_last_n,
-          params.sampling_params.repeat_penalty);
+          params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
+          params.sparams.penalty_last_n, params.sparams.penalty_repeat);
 
   // load params
-  this->ctx_sampling = llama_sampling_init(this->params);
+  this->ctx_sampling = llama_sampling_init(this->params.sparams);
 
   fprintf(stderr, "Starting Response Generation\n");
 
@@ -228,7 +227,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
       // check if stop appears at the end of the output
-      std::string last_output = this->detokenize(this->ctx_sampling->prev);
+      const int n_prev = 32;
+      const std::string last_output =
+          llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
       this->is_antiprompt = false;
 
       // when not currently processing queued
@@ -255,7 +256,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       --this->n_remain;
     }
 
-    if (this->ctx_sampling->prev.back() == llama_token_eos(this->ctx)) {
+    if (llama_sampling_last(this->ctx_sampling) == llama_token_eos(this->ctx)) {
       break;
     }
 
@@ -324,8 +325,8 @@ bool Llama::eval() {
          ((int)this->batch_tokens.size() < this->params.n_batch)) {
 
     this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
-    this->ctx_sampling->prev.erase(this->ctx_sampling->prev.begin());
-    this->ctx_sampling->prev.push_back(this->prompt_tokens[this->n_consumed]);
+    llama_sampling_accept(this->ctx_sampling, this->ctx,
+                          this->prompt_tokens[this->n_consumed], false);
     ++this->n_consumed;
   }
 
@@ -384,8 +385,8 @@ struct completion_output Llama::sample() {
   auto n_vocab = this->get_n_vocab();
 
   // apply logit_bias
-  for (auto it = params.sampling_params.logit_bias.begin();
-       it != params.sampling_params.logit_bias.end(); it++) {
+  for (auto it = params.sparams.logit_bias.begin();
+       it != params.sparams.logit_bias.end(); it++) {
     logits[it->first] += it->second;
   }
 
@@ -405,8 +406,8 @@ struct completion_output Llama::sample() {
   llama_token_data_array cur_p = {this->ctx_sampling->cur.data(),
                                   this->ctx_sampling->cur.size(), false};
 
-  const int32_t n_probs = this->params.sampling_params.n_probs;
-  if (this->params.sampling_params.temp <= 0 && n_probs > 0) {
+  const int32_t n_probs = this->params.sparams.n_probs;
+  if (this->params.sparams.temp <= 0 && n_probs > 0) {
     // For llama_sample_token_greedy we need to sort candidates
     llama_sample_softmax(this->ctx, &cur_p);
   }
@@ -416,6 +417,6 @@ struct completion_output Llama::sample() {
   }
 
   // return result
-  llama_sampling_accept(this->ctx_sampling, this->ctx, id);
+  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
   return result;
 }
