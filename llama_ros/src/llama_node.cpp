@@ -290,8 +290,7 @@ void LlamaNode::execute(
 
   // add llama_token_eos
   if (params.ignore_eos) {
-    params.sparams.logit_bias[llama_token_eos(this->llama->get_ctx())] =
-        -INFINITY;
+    params.sparams.logit_bias[this->llama->get_token_eos()] = -INFINITY;
   }
 
   // call llama

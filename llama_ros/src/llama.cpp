@@ -95,6 +95,8 @@ void Llama::reset() {
 
   this->prompt_tokens.clear();
   this->batch_tokens.clear();
+
+  this->params.sparams.n_prev = this->get_n_ctx();
 }
 
 void Llama::cancel() { this->canceled = true; }
@@ -121,7 +123,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   int embd_n_past = 0;
   int embd_n_eval = 0;
-  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, -1);
+  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
 
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
@@ -198,7 +200,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   this->n_remain -= line_inp.size();
-  llama_kv_cache_seq_rm(this->ctx, 0, this->n_past, -1);
+  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
 
   // show sampling info
   fprintf(stderr,
@@ -256,7 +258,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       --this->n_remain;
     }
 
-    if (llama_sampling_last(this->ctx_sampling) == llama_token_eos(this->ctx)) {
+    if (llama_sampling_last(this->ctx_sampling) == this->get_token_eos()) {
       break;
     }
 
