@@ -39,9 +39,9 @@ def generate_launch_description():
             model_filename="neural-chat-7b-v3-1.Q4_K_M.gguf",
 
             prefix="\n\n### User:\n",
-            suffix="\n\n### Response:\n",
+            suffix="\n\n### Assistant:\n",
             stop="### User:\n",
 
-            file="orca.txt"
+            file="vicuna.txt"
         )
     ])
