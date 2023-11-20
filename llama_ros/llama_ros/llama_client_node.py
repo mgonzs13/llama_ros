@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 
+import time
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -40,12 +41,16 @@ class LlamaClientNode(Node):
             "prompt").get_parameter_value().string_value
         self.prompt = self.prompt.replace("\\n", "\n")
 
+        self.tokens = 0
+        self.initial_time = 0
+
         self._get_result_future = None
         self._action_client = ActionClient(
             self, GenerateResponse, "/llama/generate_response")
 
     def text_cb(self, msg) -> None:
         feedback: GenerateResponse.Feedback = msg.feedback
+        self.tokens += 1
         print(feedback.partial_response.text, end="", flush=True)
 
     def send_prompt(self) -> None:
@@ -62,10 +67,14 @@ class LlamaClientNode(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         get_result_future = send_goal_future.result().get_result_async()
 
+        self.initial_time = time.time()
+
         rclpy.spin_until_future_complete(self, get_result_future)
         # result: GenerateResponse.Result = get_result_future.result().result
 
         self.get_logger().info("END")
+        self.get_logger().info(
+            f"Prediction speed: {self.tokens / (time.time() - self.initial_time)} t/s")
 
 
 def main():
