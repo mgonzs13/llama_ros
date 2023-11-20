@@ -132,55 +132,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://github.com/artidoro/qlora">Guanaco-QLoRA</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/llama-2-7B-Guanaco-QLoRA-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/llama-2-13B-Guanaco-QLoRA-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/llama-2-70B-Guanaco-QLoRA-GGUF">70B</a>
-      </td>
-      <td align="left">
-        <code>### Human: prompt</code><br />
-        <code>### Assistant:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/guanaco.launch.py">guanaco.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left"><a href="https://ai.meta.com/llama/">LLaMA2</a></td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Llama-2-7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Llama-2-13B-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Llama-2-70B-GGUF">70B</a>
-      </td>
-      <td align="left">-</td>
-      <td align="left">
-        <a href="llama_bringup/launch/llama2.launch.py">llama2.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/AIDC-ai-business">Marcoroni</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Marcoroni-7b-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Marcoroni-13b-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Marcoroni-70b-GGUF">70B</a>
-      </td>
-      <td align="left">
-        <code>### Instruction:</code><br />
-        <code>prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/marcoroni.launch.py"
-          >marcoroni.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
         <a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral</a>
       </td>
       <td align="left">
@@ -217,14 +168,12 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
     </tr>
     <tr>
       <td align="left">
-        <a href="https://huggingface.co/psmathur/orca_mini_v3_7b"
-          >Orca</a
+        <a href="https://huggingface.co/Intel/neural-chat-7b-v3-1"
+          >Neural-Chat</a
         >
       </td>
       <td align="left">
-        <a href="https://huggingface.co/TheBloke/orca_mini_v3_7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/orca_mini_v3_13B-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/orca_mini_v3_70B-GGUF">70B</a>
+        <a href="https://huggingface.co/TheBloke/neural-chat-7B-v3-1-GGUF">7B</a>
       </td>
       <td align="left">
         <code>### System:</code><br />
@@ -236,29 +185,7 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
         <code>### Response:</code>
       </td>
       <td align="left">
-        <a href="llama_bringup/launch/orca.launch.py">orca.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/stabilityai">StableBeluga</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/StableBeluga-7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/StableBeluga-13B-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/StableBeluga-70B-GGUF">70B</a>
-      </td>
-      <td align="left">
-        <code>### System:</code><br />
-        <code>system prompt</code><br /><br />
-        <code>### User:</code><br />
-        <code>prompt</code><br /><br />
-        <code>###Assistant:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/stablebeluga.launch.py"
-          >stablebeluga.launch.py</a
-        >
+        <a href="llama_bringup/launch/neural-chat.launch.py">neural-chat.launch.py</a>
       </td>
     </tr>
     <tr>
@@ -293,27 +220,6 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
       </td>
       <td align="left">
         <a href="llama_bringup/launch/vicuna.launch.py">vicuna.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/melodysdreamj/WizardVicunaLM"
-          >WizardVicuna</a
-        >
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-7B-Uncensored-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-13B-Uncensored-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Wizard-Vicuna-30B-Uncensored-GGUF">30B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/wizard-vicuna.launch.py"
-          >wizardlm-vicuna.launch.py</a
-        >
       </td>
     </tr>
     <tr>

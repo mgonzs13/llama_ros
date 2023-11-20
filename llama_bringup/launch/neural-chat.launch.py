@@ -35,13 +35,13 @@ def generate_launch_description():
             n_threads=4,
             n_predict=512,
 
-            model_repo="TheBloke/Marcoroni-7b-GGUF",
-            model_filename="marcoroni-7b.Q4_K_M.gguf",
+            model_repo="TheBloke/neural-chat-7B-v3-1-GGUF",
+            model_filename="neural-chat-7b-v3-1.Q4_K_M.gguf",
 
-            prefix="\n\n### Instruction:\n",
+            prefix="\n\n### User:\n",
             suffix="\n\n### Response:\n",
-            stop="### Instruction:\n",
+            stop="### User:\n",
 
-            file="alpaca.txt"
+            file="orca.txt"
         )
     ])
