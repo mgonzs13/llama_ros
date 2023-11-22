@@ -42,6 +42,6 @@ def generate_launch_description():
             suffix="\n\n### Assistant:\n",
             stop="### User:\n",
 
-            file="vicuna.txt"
+            file="neural-chat.txt"
         )
     ])
