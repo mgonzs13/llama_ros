@@ -48,11 +48,15 @@ def generate_launch_description():
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
 
                 "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
-                "f16_kv": LaunchConfiguration("f16_kv", default=True),
+                "embedding": LaunchConfiguration("embedding", default=True),
                 "logits_all": LaunchConfiguration("logits_all", default=False),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),
                 "use_mlock": LaunchConfiguration("use_mlock", default=False),
-                "embedding": LaunchConfiguration("embedding", default=True),
+
+                "dump_kv_cache": LaunchConfiguration("dump_kv_cache", default=False),
+                "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
+                "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
+                "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
 
                 "n_threads": LaunchConfiguration("n_threads", default=4),
                 "n_predict": LaunchConfiguration("n_predict", default=128),

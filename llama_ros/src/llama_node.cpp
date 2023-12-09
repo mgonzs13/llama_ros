@@ -94,6 +94,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"stop", ""},
+                                                {"cache_type_k", "f16"},
+                                                {"cache_type_v", "f16"},
                                             });
   this->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
@@ -104,13 +106,14 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->declare_parameters<bool>("", {
                                          {"debug", true},
                                          {"mul_mat_q", true},
-                                         {"f16_kv", true},
+                                         {"embedding", true},
                                          {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
-                                         {"embedding", true},
                                          {"numa", false},
                                          {"cont_batching", false},
+                                         {"dump_kv_cache", false},
+                                         {"no_kv_offload", false},
                                      });
 
   this->get_parameter("seed", params.seed);
@@ -125,11 +128,15 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("rope_freq_base", params.rope_freq_base);
 
   this->get_parameter("mul_mat_q", params.mul_mat_q);
-  this->get_parameter("f16_kv", params.memory_f16);
+  this->get_parameter("embedding", params.embedding);
   this->get_parameter("logits_all", params.logits_all);
   this->get_parameter("use_mmap", params.use_mmap);
   this->get_parameter("use_mlock", params.use_mlock);
-  this->get_parameter("embedding", params.embedding);
+
+  this->get_parameter("dump_kv_cache", params.dump_kv_cache);
+  this->get_parameter("no_kv_offload", params.no_kv_offload);
+  this->get_parameter("cache_type_k", params.cache_type_k);
+  this->get_parameter("cache_type_v", params.cache_type_v);
 
   this->get_parameter("n_threads", params.n_threads);
   this->get_parameter("n_predict", params.n_predict);

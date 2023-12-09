@@ -68,12 +68,16 @@ def create_llama_launch(
     rope_freq_base: float = 0.0,
     rope_freq_scale: float = 0.0,
 
+    embedding: bool = True,
     mul_mat_q: bool = True,
-    f16_kv: bool = True,
     logits_all: bool = False,
     use_mmap: bool = True,
     use_mlock: bool = False,
-    embedding: bool = True,
+
+    dump_kv_cache: bool = False,
+    no_kv_offload: bool = False,
+    cache_type_k: str = "f16",
+    cache_type_v: str = "f16",
 
     n_threads: int = 4,
     n_predict: int = 128,
@@ -111,11 +115,15 @@ def create_llama_launch(
             "rope_freq_scale": str(rope_freq_scale),
 
             "mul_mat_q": str(mul_mat_q),
-            "f16_kv": str(f16_kv),
+            "embedding": str(embedding),
             "logits_all": str(logits_all),
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
-            "embedding": str(embedding),
+
+            "dump_kv_cache": str(dump_kv_cache),
+            "no_kv_offload": str(no_kv_offload),
+            "cache_type_k": cache_type_k,
+            "cache_type_v": cache_type_v,
 
             "n_threads": str(n_threads),
             "n_predict": str(n_predict),
