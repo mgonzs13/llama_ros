@@ -83,4 +83,4 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 
 ## LLMs
 
-[[](https://cdn-thumbnails.huggingface.co/social-thumbnails/spaces/HuggingFaceH4/open_llm_leaderboard.png)](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
+[<img src="https://cdn-thumbnails.huggingface.co/social-thumbnails/spaces/HuggingFaceH4/open_llm_leaderboard.png">](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
