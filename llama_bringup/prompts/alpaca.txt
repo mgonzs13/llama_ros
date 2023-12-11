@@ -1,4 +1,5 @@
-Below is an instruction that describes a task. Write a response that appropriately completes the request.
+### System:
+You are an AI assistant that follows instruction extremely well. Help as much as you can.
 
 ### Instruction:
 Hello

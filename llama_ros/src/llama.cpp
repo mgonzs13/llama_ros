@@ -156,7 +156,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   bool input_noecho = true;
 
   bool stopping = false;
-  bool eval_succ = true;
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
@@ -220,9 +219,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   // generation loop
   while (this->n_remain != 0) {
 
-    eval_succ = this->eval();
-
-    if (!eval_succ) {
+    if (!this->eval()) {
       break;
     }
 

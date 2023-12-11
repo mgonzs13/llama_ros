@@ -29,19 +29,19 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=512,
-            n_batch=8,
-            n_gpu_layers=0,
+            n_ctx=4096,
+            n_batch=256,
+            n_gpu_layers=33,
             n_threads=4,
             n_predict=512,
 
-            model_repo="TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
-            model_filename="mistral-7b-instruct-v0.1.Q4_K_M.gguf",
+            model_repo="TheBloke/Marcoroni-7B-v3-GGUF",
+            model_filename="marcoroni-7b-v3.Q4_K_M.gguf",
 
-            prefix="\n\n[INST] ",
-            suffix="\n\n[/INST] ",
-            stop="[INST] ",
+            prefix="\n\n### Instruction:\n",
+            suffix="\n\n### Response:\n",
+            stop="### Instruction:\n",
 
-            file="mistral.txt"
+            file="alpaca.txt"
         )
     ])

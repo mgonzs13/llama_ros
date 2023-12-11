@@ -35,13 +35,13 @@ def generate_launch_description():
             n_threads=4,
             n_predict=512,
 
-            model_repo="TheBloke/tulu-7B-GGUF",
-            model_filename="tulu-7b.Q4_K_M.gguf",
+            model_repo="TheBloke/MetaMath-Cybertron-Starling-GGUF",
+            model_filename="metamath-cybertron-starling.Q4_K_M.gguf",
 
-            prefix="\n\n<|user|>\n",
-            suffix="\n\n<|assistant|>\n",
-            stop="<|user|>\n",
+            prefix="\n<|im_start|>user\n",
+            suffix="<|im_end|>\n<|im_start|>assistant\n",
+            stop="<|im_end|>",
 
-            file="tulu.txt"
+            file="ChatML.txt"
         )
     ])

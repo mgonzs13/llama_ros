@@ -33,15 +33,15 @@ def generate_launch_description():
             n_batch=8,
             n_gpu_layers=0,
             n_threads=4,
-            n_predict=512,
+            n_predict=-512,
 
-            model_repo="TheBloke/WizardLM-7B-V1.0-Uncensored-GGUF",
-            model_filename="wizardlm-7b-v1.0-uncensored.Q4_K_M.gguf",
+            model_repo="TheBloke/OpenHermes-2.5-neural-chat-v3-3-Slerp-GGUF",
+            model_filename="openhermes-2.5-neural-chat-v3-3-slerp.Q4_K_M.gguf",
 
-            prefix="\n\nUSER:\n",
-            suffix="\n\n### Response:\n",
-            stop="ASSISTANT:\n",
+            prefix="\n<|im_start|>user\n",
+            suffix="<|im_end|>\n<|im_start|>assistant\n",
+            stop="<|im_end|>",
 
-            file="vicuna_1.txt"
+            file="ChatML.txt"
         )
     ])

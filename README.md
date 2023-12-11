@@ -23,6 +23,7 @@ add_compile_definitions(GGML_USE_CUBLAS)
 ## Usage
 
 Create and run the launch file:
+
 ```python
 from launch import LaunchDescription
 from llama_bringup.utils import create_llama_launch
@@ -38,8 +39,8 @@ def generate_launch_description():
             n_threads=4, # threads
             n_predict=512, # max tokens (prompt tokens + predicted tokens
 
-            model_repo="TheBloke/Nous-Hermes-Llama-2-7B-GGUF", # Hugging Face repo
-            model_filename="nous-hermes-llama-2-7b.Q4_K_M.gguf", # model file
+            model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
+            model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file
 
             prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
             suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
@@ -51,11 +52,13 @@ def generate_launch_description():
 ```
 
 Run you launch file:
+
 ```shell
 $ ros2 launch llama_bringup nous-hermes.launch.py
 ```
 
 Send an action goal:
+
 ```shell
 $ ros2 action send_goal /llama/generate_response llama_msgs/action/GenerateResponse "{'prompt': 'What is ROS2?'}"
 ```
@@ -80,185 +83,4 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 
 ## LLMs
 
-<table>
-  <thead>
-    <tr>
-      <th>LLM</th>
-      <th>Sizes</th>
-      <th>Prompt Template</th>
-      <th>Launch</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/jondurbin/airoboros">Airoboros</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/airoboros-l2-7B-2.2.1-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/airoboros-l2-13B-2.2.1-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/airoboros-c34b-2.2.1-GGUF">34B</a>,
-        <a href="https://huggingface.co/TheBloke/Airoboros-L2-70b-2.2.1-GGUF">70B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/airoboros.launch.py"
-          >airoboros.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/ehartford/dolphin-2.1-mistral-7b">Dolphin-Mistral</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/dolphin-2.1-mistral-7B-GGUF">7B</a>
-      </td>
-      <td align="left">
-        <code><|im_start|>system</code><br />
-        <code>system prompt<|im_end|></code><br />
-        <code><|im_start|>user</code><br />
-        <code>promtp<|im_end|></code><br />
-        <code><|im_start|>assistant</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/dolphin-mistral.launch.py"
-          >dolphin-mistral.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF">7B</a>
-      </td>
-      <td align="left">
-        <code>[INST] {prompt} [/INST]</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/mistral.launch.py"
-          >mistral.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/NousResearch">Nous-Hermes</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama-2-7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/Nous-Hermes-Llama2-70B-GGUF">70B</a>
-      </td>
-      <td align="left">
-        <code>### Instruction:</code><br />
-        <code>prompt</code><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/nous-hermes.launch.py"
-          >nous-hermes.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/Intel/neural-chat-7b-v3-1"
-          >Neural-Chat</a
-        >
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/neural-chat-7B-v3-1-GGUF">7B</a>
-      </td>
-      <td align="left">
-        <code>### System:</code><br />
-        <code>system prompt</code><br /><br />
-        <code>### User:</code><br />
-        <code>prompt</code><br /><br />
-        <code>###Input:</code><br />
-        <code>input</code><br /><br />
-        <code>### Response:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/neural-chat.launch.py">neural-chat.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/allenai/open-instruct">Tulu</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/tulu-7B-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/tulu-13B-GGUF">13B</a>,
-        <a href="https://huggingface.co/TheBloke/tulu-30B-GGUF">30B</a>,
-      </td>
-      <td align="left">
-        <code>&lt;|user|&gt;</code><br />
-        <code>prompt</code><br />
-        <code>&lt;|assistant|&gt;</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/tulu.launch.py">tulu.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://lmsys.org/blog/2023-03-30-vicuna/">Vicuna</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/vicuna-7B-v1.5-16K-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/vicuna-13B-v1.5-16K-GGUF">13B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/vicuna.launch.py">vicuna.launch.py</a>
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://github.com/nlpxucan/WizardLM">WizardLM</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/WizardLM-7B-V1.0-Uncensored-GGUF">7B</a>,
-        <a href="https://huggingface.co/TheBloke/WizardLM-1.0-Uncensored-Llama2-13B-GGUF">13B</a>
-      </td>
-      <td align="left">
-        <code>USER: prompt</code><br />
-        <code>ASSISTANT:</code>
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/wizardlm.launch.py"
-          >wizardlm.launch.py</a
-        >
-      </td>
-    </tr>
-    <tr>
-      <td align="left">
-        <a href="https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha">Zephyr</a>
-      </td>
-      <td align="left">
-        <a href="https://huggingface.co/TheBloke/zephyr-7B-alpha-GGUF">7B</a>
-      </td>
-      <td align="left">
-        <code><|system|></code><br />
-        <code>system prompt&lt;s&gt;</code><br />
-        <code><|user|></code><br />
-        <code>prompt&lt;s&gt;</code><br />
-        <code><|assistant|></code><br />
-      </td>
-      <td align="left">
-        <a href="llama_bringup/launch/zephyr.launch.py"
-          >zephyr.launch.py</a
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
+[[](https://cdn-thumbnails.huggingface.co/social-thumbnails/spaces/HuggingFaceH4/open_llm_leaderboard.png)](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
