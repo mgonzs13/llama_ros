@@ -82,6 +82,7 @@ protected:
 
   bool eval();
   struct completion_output sample();
+  void update_sampling_params(const struct llama_sampling_params &params);
 
 private:
   bool debug;
