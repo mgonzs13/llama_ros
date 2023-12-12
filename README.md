@@ -33,11 +33,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=512, # context of the LLM in tokens
+            n_ctx=2048, # context of the LLM in tokens
             n_batch=8, # batch size in tokens
             n_gpu_layers=0, # layers to load in GPU
             n_threads=4, # threads
-            n_predict=512, # max tokens (prompt tokens + predicted tokens
+            n_predict=2048, # max tokens (prompt tokens + predicted tokens). -1 == inf
 
             model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
             model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file

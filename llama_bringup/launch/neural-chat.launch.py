@@ -29,11 +29,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=512,
+            n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
             n_threads=4,
-            n_predict=512,
+            n_predict=2048,
 
             model_repo="janhq/neural-chat-7b-v3-3-slerp-GGUF",
             model_filename="neural-chat-7b-v3-3-slerp.Q4_K_M.gguf",
