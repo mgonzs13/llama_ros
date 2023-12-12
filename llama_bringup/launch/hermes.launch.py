@@ -33,7 +33,7 @@ def generate_launch_description():
             n_batch=8,
             n_gpu_layers=0,
             n_threads=4,
-            n_predict=-512,
+            n_predict=512,
 
             model_repo="TheBloke/OpenHermes-2.5-neural-chat-v3-3-Slerp-GGUF",
             model_filename="openhermes-2.5-neural-chat-v3-3-slerp.Q4_K_M.gguf",

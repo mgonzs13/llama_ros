@@ -35,8 +35,8 @@ def generate_launch_description():
             n_threads=4,
             n_predict=512,
 
-            model_repo="TheBloke/neural-chat-7B-v3-1-GGUF",
-            model_filename="neural-chat-7b-v3-1.Q4_K_M.gguf",
+            model_repo="TheBloke/neural-chat-7B-v3-2-GGUF",
+            model_filename="neural-chat-7b-v3-2.Q4_K_M.gguf",
 
             prefix="\n\n### User:\n",
             suffix="\n\n### Assistant:\n",
