@@ -51,7 +51,6 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
     this->params.n_keep = (int)this->prompt_tokens.size();
   }
 
-  this->is_antiprompt = false;
   this->canceled = false;
   this->n_past = 0;
   this->n_remain = this->params.n_predict;
@@ -87,7 +86,6 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 }
 
 void Llama::reset() {
-  this->is_antiprompt = false;
   this->canceled = false;
   this->n_past = 0;
   this->n_remain = this->params.n_predict;
@@ -184,9 +182,21 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   // insert prefix
-  if (add_pfx_sfx && this->params.input_prefix.size() && !this->is_antiprompt) {
-    this->prompt_tokens.insert(this->prompt_tokens.end(), this->inp_pfx.begin(),
-                               this->inp_pfx.end());
+  if (add_pfx_sfx && this->params.input_prefix.size()) {
+
+    const int n_prev = 32;
+    const std::string last_output =
+        llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+
+    // check if prefix is already added
+    if (last_output.find(
+            this->params.input_prefix.c_str(),
+            last_output.length() - this->params.input_prefix.length(),
+            this->params.input_prefix.length()) == std::string::npos) {
+
+      this->prompt_tokens.insert(this->prompt_tokens.end(),
+                                 this->inp_pfx.begin(), this->inp_pfx.end());
+    }
   }
 
   this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
@@ -229,7 +239,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       const int n_prev = 32;
       const std::string last_output =
           llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
-      this->is_antiprompt = false;
 
       // when not currently processing queued
       // inputs check if we should end
@@ -238,7 +247,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
               this->params.antiprompt.at(0).c_str(),
               last_output.length() - this->params.antiprompt.at(0).length(),
               this->params.antiprompt.at(0).length()) != std::string::npos) {
-        this->is_antiprompt = true;
         break;
       }
 

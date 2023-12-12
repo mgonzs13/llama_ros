@@ -97,7 +97,6 @@ private:
   std::vector<llama_token> batch_tokens;
 
   // eval
-  bool is_antiprompt;
   bool canceled;
   int32_t n_past;
   int32_t n_remain;
