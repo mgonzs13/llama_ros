@@ -1,2 +1,2 @@
-langchain==0.0.326
-huggingface-hub==0.17.3
+langchain==0.0.349
+huggingface-hub==0.19.4
