@@ -10,10 +10,10 @@ float32 top_p               0.95    # top-p sampling (1.0 = disabled)
 float32 tfs_z               1.00    # tail free sampling, parameter z (1.0 = disabled)
 float32 typical_p           1.00    # locally typical sampling, parameter p (1.0 = disabled)
 
-int32 penalty_last_n         64     # last n tokens consider for penalize (0 = disable penalty, -1 = context size)
+int32 penalty_last_n        64     # last n tokens consider for penalize (0 = disable penalty, -1 = context size)
 float32 penalty_repeat      1.10    # penalize repeat sequence of tokens (1.0 = disabled)
-float32 penalty_present    0.00    # repeat alpha presence penalty (0.0 = disabled)
-float32 penalty_freq   0.00    # repeat alpha frequency penalty (0.0 = disable)
+float32 penalty_present     0.00    # repeat alpha presence penalty (0.0 = disabled)
+float32 penalty_freq        0.00    # repeat alpha frequency penalty (0.0 = disable)
 
 int32 mirostat              0       # Mirostart sampling (0 = disabled, 1 = mirostat, 2 = mirostat 2.0)
 float32 mirostat_eta        0.10    # Mirostat learning rate, parameter eta

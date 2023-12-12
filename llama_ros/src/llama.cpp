@@ -36,6 +36,7 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
   // load the model
   llama_backend_init(this->params.numa);
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(this->params);
+  this->ctx_sampling = nullptr;
 
   // show system information
   fprintf(stderr, "System_info: n_threads = %d / %d | %s\n",
@@ -86,6 +87,9 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 }
 
 void Llama::reset() {
+
+  llama_sampling_reset(this->ctx_sampling);
+
   this->canceled = false;
   this->n_past = 0;
   this->n_remain = this->params.n_predict;
@@ -162,7 +166,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::vector<llama_token> line_inp;
 
   // load params
-  this->ctx_sampling = llama_sampling_init(this->params.sparams);
+  if (this->ctx_sampling == nullptr) {
+    this->ctx_sampling = llama_sampling_init(this->params.sparams);
+  } else {
+    this->update_sampling_params(this->params.sparams);
+  }
 
   // prepare prompt
   if (prompt.size() <= 0) {
@@ -188,7 +196,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   // insert prefix
   if (add_pfx_sfx && this->params.input_prefix.size()) {
 
-    const int n_prev = 32;
+    const int n_prev = 64;
     const std::string last_output =
         llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
 
@@ -320,9 +328,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   fprintf(stderr, "Finish Response Generation\n");
-
-  llama_sampling_free(this->ctx_sampling);
-
   return response;
 }
 
@@ -426,4 +431,34 @@ struct completion_output Llama::sample() {
   // return result
   llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
   return result;
+}
+
+void Llama::update_sampling_params(const struct llama_sampling_params &params) {
+
+  this->ctx_sampling->params = params;
+
+  // reload grammar
+  if (this->ctx_sampling->grammar != nullptr) {
+    llama_grammar_free(this->ctx_sampling->grammar);
+  }
+  this->ctx_sampling->grammar = nullptr;
+
+  // if there is a grammar, parse it
+  if (!params.grammar.empty()) {
+    this->ctx_sampling->parsed_grammar =
+        grammar_parser::parse(params.grammar.c_str());
+
+    // will be empty (default) if there are parse errors
+    if (this->ctx_sampling->parsed_grammar.rules.empty()) {
+      fprintf(stderr, "Failed to parse grammar\n");
+      return;
+    }
+
+    std::vector<const llama_grammar_element *> grammar_rules(
+        this->ctx_sampling->parsed_grammar.c_rules());
+
+    this->ctx_sampling->grammar = llama_grammar_init(
+        grammar_rules.data(), grammar_rules.size(),
+        this->ctx_sampling->parsed_grammar.symbol_ids.at("root"));
+  }
 }
