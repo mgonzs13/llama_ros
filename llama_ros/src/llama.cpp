@@ -161,6 +161,10 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
+  // load params
+  this->ctx_sampling = llama_sampling_init(this->params.sparams);
+
+  // prepare prompt
   if (prompt.size() <= 0) {
     return {};
   }
@@ -209,7 +213,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   this->n_remain -= line_inp.size();
-  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
 
   // show sampling info
   fprintf(stderr,
@@ -220,9 +223,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
           "repeat_penalty = %f\n",
           params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
           params.sparams.penalty_last_n, params.sparams.penalty_repeat);
-
-  // load params
-  this->ctx_sampling = llama_sampling_init(this->params.sparams);
 
   fprintf(stderr, "Starting Response Generation\n");
 
