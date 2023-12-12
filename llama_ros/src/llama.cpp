@@ -88,6 +88,7 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 
 void Llama::reset() {
 
+  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
   llama_sampling_reset(this->ctx_sampling);
 
   this->canceled = false;
