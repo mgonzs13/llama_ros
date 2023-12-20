@@ -42,13 +42,18 @@ class LlamaClientNode(Node):
         self.prompt = self.prompt.replace("\\n", "\n")
 
         self.tokens = 0
-        self.initial_time = 0
+        self.initial_time = -1
+        self.eval_time = -1
 
         self._get_result_future = None
         self._action_client = ActionClient(
             self, GenerateResponse, "/llama/generate_response")
 
     def text_cb(self, msg) -> None:
+
+        if self.eval_time < 0:
+            self.eval_time = time.time()
+
         feedback: GenerateResponse.Feedback = msg.feedback
         self.tokens += 1
         print(feedback.partial_response.text, end="", flush=True)
@@ -73,8 +78,11 @@ class LlamaClientNode(Node):
         # result: GenerateResponse.Result = get_result_future.result().result
 
         self.get_logger().info("END")
+        end_time = time.time()
         self.get_logger().info(
-            f"Prediction speed: {self.tokens / (time.time() - self.initial_time)} t/s")
+            f"Time to eval: {self.eval_time - self.initial_time} s")
+        self.get_logger().info(
+            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s")
 
 
 def main():
