@@ -32,6 +32,7 @@ using namespace llama_ros;
 Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
 
   this->debug = debug;
+  log_disable();
 
   // load the model
   llama_backend_init(this->params.numa);
