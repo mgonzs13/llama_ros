@@ -73,6 +73,9 @@ public:
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
   bool is_embedding() { return this->params.embedding; }
+  bool should_add_bos_token() {
+    return llama_should_add_bos_token(this->model);
+  }
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
@@ -88,10 +91,6 @@ private:
   bool debug;
   Spinner spinner;
   struct gpt_params params;
-
-  // prefix, suffix, stop
-  std::vector<llama_token> inp_pfx;
-  std::vector<llama_token> inp_sfx;
 
   // aux
   std::vector<llama_token> prompt_tokens;

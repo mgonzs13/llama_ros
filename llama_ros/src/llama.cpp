@@ -44,10 +44,6 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
           this->params.n_threads, std::thread::hardware_concurrency(),
           llama_print_system_info());
 
-  // prefix & suffix
-  this->inp_pfx = this->tokenize(this->params.input_prefix, true, true);
-  this->inp_sfx = this->tokenize(this->params.input_suffix, false, true);
-
   // number of tokens to keep when resetting context
   if (this->params.n_keep == -1) {
     this->params.n_keep = (int)this->prompt_tokens.size();
@@ -117,7 +113,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     return std::vector<float>(n_embd, 0.0f);
   }
 
-  auto tokens = this->tokenize(input_prompt, true, false);
+  auto tokens =
+      this->tokenize(input_prompt, this->should_add_bos_token(), false);
 
   if ((int)tokens.size() > this->get_n_ctx()) {
     fprintf(stderr, "Prompt too long %ld, context size is %d\n", tokens.size(),
@@ -164,6 +161,12 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
 
+  std::vector<llama_token> inp_pfx = this->tokenize(
+      this->params.input_prefix,
+      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
+  std::vector<llama_token> inp_sfx =
+      this->tokenize(this->params.input_suffix, false, true);
+
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
@@ -180,14 +183,14 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   if (!this->prompt_tokens.size() && !add_pfx_sfx) {
-    line_inp = this->tokenize(prompt, true, true);
+    line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
   } else {
     line_inp = this->tokenize(prompt, false, false);
   }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
   if (add_pfx_sfx && this->params.input_prefix.size()) {
-    prompt_size += this->inp_pfx.size() + this->inp_sfx.size();
+    prompt_size += inp_pfx.size() + inp_sfx.size();
   }
 
   if (prompt_size > this->get_n_ctx() - 4) {
@@ -208,8 +211,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
             last_output.length() - this->params.input_prefix.length(),
             this->params.input_prefix.length()) == std::string::npos) {
 
-      this->prompt_tokens.insert(this->prompt_tokens.end(),
-                                 this->inp_pfx.begin(), this->inp_pfx.end());
+      this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
+                                 inp_pfx.end());
     }
   }
 
@@ -218,8 +221,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   // insert suffix
   if (add_pfx_sfx && this->params.input_suffix.size()) {
-    this->prompt_tokens.insert(this->prompt_tokens.end(), this->inp_sfx.begin(),
-                               this->inp_sfx.end());
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
+                               inp_sfx.end());
   }
 
   this->n_remain -= line_inp.size();
