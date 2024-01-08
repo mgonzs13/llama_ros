@@ -277,21 +277,31 @@ void LlamaNode::execute(
 
   // // prepare sampling params
   struct gpt_params &params = this->llama->get_params();
+  params.sparams.n_prev = sampling_config.n_prev;
+  params.sparams.n_probs = sampling_config.n_probs;
+
   params.ignore_eos = sampling_config.ignore_eos;
+
   params.sparams.temp = sampling_config.temp;
+
   params.sparams.top_k = sampling_config.top_k;
   params.sparams.top_p = sampling_config.top_p;
+  params.sparams.min_p = sampling_config.min_p;
   params.sparams.tfs_z = sampling_config.tfs_z;
   params.sparams.typical_p = sampling_config.typical_p;
+
   params.sparams.penalty_last_n = sampling_config.penalty_last_n;
   params.sparams.penalty_repeat = sampling_config.penalty_repeat;
-  params.sparams.penalty_present = sampling_config.penalty_present;
   params.sparams.penalty_freq = sampling_config.penalty_freq;
+  params.sparams.penalty_present = sampling_config.penalty_present;
+
   params.sparams.mirostat = sampling_config.mirostat;
   params.sparams.mirostat_eta = sampling_config.mirostat_eta;
   params.sparams.mirostat_tau = sampling_config.mirostat_tau;
+
   params.sparams.penalize_nl = sampling_config.penalize_nl;
-  params.sparams.n_probs = sampling_config.n_probs;
+
+  params.sparams.samplers_sequence = sampling_config.samplers_sequence;
   params.sparams.grammar = sampling_config.grammar;
 
   // check penalty_last_n

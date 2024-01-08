@@ -41,6 +41,7 @@ class LlamaROS(LLM):
 
     # sampling params
     n_prev: int = 64
+    n_probs: int = 1
 
     ignore_eos: bool = False
     logit_bias: Dict[int, float] = {}
@@ -49,13 +50,14 @@ class LlamaROS(LLM):
 
     top_k: int = 40
     top_p: float = 0.95
+    min_p: float = 0.05
     tfs_z: float = 1.00
     typical_p: float = 1.00
 
     penalty_last_n: int = 64
     penalty_repeat: float = 1.10
-    penalty_present: float = 0.00
     penalty_freq: float = 0.00
+    penalty_present: float = 0.00
 
     mirostat: int = 0
     mirostat_eta: float = 0.10
@@ -63,6 +65,7 @@ class LlamaROS(LLM):
 
     penalize_nl: bool = True
 
+    samplers_sequence: str = "kfypmt"
     grammar: str = ""
 
     @root_validator()
@@ -109,6 +112,8 @@ class LlamaROS(LLM):
 
         # sampling params
         goal.sampling_config.n_prev = self.n_prev
+        goal.sampling_config.n_probs = self.n_probs
+
         goal.sampling_config.ignore_eos = self.ignore_eos
         for key in self.logit_bias:
             lb = LogitBias()
@@ -120,13 +125,14 @@ class LlamaROS(LLM):
 
         goal.sampling_config.top_k = self.top_k
         goal.sampling_config.top_p = self.top_p
+        goal.sampling_config.min_p = self.min_p
         goal.sampling_config.tfs_z = self.tfs_z
         goal.sampling_config.typical_p = self.typical_p
 
         goal.sampling_config.penalty_last_n = self.penalty_last_n
         goal.sampling_config.penalty_repeat = self.penalty_repeat
-        goal.sampling_config.penalty_present = self.penalty_present
         goal.sampling_config.penalty_freq = self.penalty_freq
+        goal.sampling_config.penalty_present = self.penalty_present
 
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta
@@ -134,6 +140,7 @@ class LlamaROS(LLM):
 
         goal.sampling_config.penalize_nl = self.penalize_nl
 
+        goal.sampling_config.samplers_sequence = self.samplers_sequence
         goal.sampling_config.grammar = self.grammar
 
         # send goal
