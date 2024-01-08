@@ -70,6 +70,12 @@ def create_llama_launch(
 
     rope_freq_base: float = 0.0,
     rope_freq_scale: float = 0.0,
+    yarn_ext_factor: float = -1.0,
+    yarn_attn_factor: float = 1.0,
+    yarn_beta_fast: float = 32.0,
+    yarn_beta_slow: float = 1.0,
+    yarn_orig_ctx: float = 0,
+    rope_scaling_type: float = -1,
 
     embedding: bool = True,
     mul_mat_q: bool = True,
@@ -83,6 +89,7 @@ def create_llama_launch(
     cache_type_v: str = "f16",
 
     n_threads: int = 4,
+    n_threads_batch: int = -1,
     n_predict: int = 128,
     n_keep: int = -1,
 
@@ -119,6 +126,12 @@ def create_llama_launch(
 
             "rope_freq_base": str(rope_freq_base),
             "rope_freq_scale": str(rope_freq_scale),
+            "yarn_ext_factor": str(yarn_ext_factor),
+            "yarn_attn_factor": str(yarn_attn_factor),
+            "yarn_beta_fast": str(yarn_beta_fast),
+            "yarn_beta_slow": str(yarn_beta_slow),
+            "yarn_orig_ctx": str(yarn_orig_ctx),
+            "rope_scaling_type": str(rope_scaling_type),
 
             "mul_mat_q": str(mul_mat_q),
             "embedding": str(embedding),
@@ -132,6 +145,7 @@ def create_llama_launch(
             "cache_type_v": cache_type_v,
 
             "n_threads": str(n_threads),
+            "n_threads_batch": str(n_threads_batch),
             "n_predict": str(n_predict),
             "n_keep": str(n_keep),
 

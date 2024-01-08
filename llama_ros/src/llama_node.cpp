@@ -80,12 +80,15 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
+                                            {"n_threads_batch", -1},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
                                             {"grp_attn_n", 1},
                                             {"grp_attn_w", 512},
                                             {"n_parallel", 1},
                                             {"n_sequences", 1},
+                                            {"yarn_orig_ctx", 0},
+                                            {"rope_scaling_type", -1},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -102,6 +105,10 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
                                           {"rope_freq_scale", 0.0f},
+                                          {"yarn_ext_factor", -1.0f},
+                                          {"yarn_attn_factor", 1.0f},
+                                          {"yarn_beta_fast", 32.0f},
+                                          {"yarn_beta_slow", 1.0f},
                                       });
   this->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
@@ -144,6 +151,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("cache_type_v", params.cache_type_v);
 
   this->get_parameter("n_threads", params.n_threads);
+  this->get_parameter("n_threads_batch", params.n_threads_batch);
   this->get_parameter("n_predict", params.n_predict);
   this->get_parameter("n_keep", params.n_keep);
   this->get_parameter("n_batch", params.n_batch);
