@@ -65,6 +65,9 @@ def create_llama_launch(
     main_gpu: int = 0,
     tensor_split: str = "[0.0]",
 
+    grp_attn_n: int = 1,
+    grp_attn_w: int = 512,
+
     rope_freq_base: float = 0.0,
     rope_freq_scale: float = 0.0,
 
@@ -110,6 +113,9 @@ def create_llama_launch(
             "n_gpu_layers": str(n_gpu_layers),
             "main_gpu": str(main_gpu),
             "tensor_split": tensor_split,
+
+            "grp_attn_n": str(grp_attn_n),
+            "grp_attn_w": str(grp_attn_w),
 
             "rope_freq_base": str(rope_freq_base),
             "rope_freq_scale": str(rope_freq_scale),

@@ -70,6 +70,7 @@ public:
     return this->params;
   }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
+  int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
   bool is_embedding() { return this->params.embedding; }
@@ -101,6 +102,7 @@ private:
   int32_t n_past;
   int32_t n_remain;
   int32_t n_consumed;
+  int32_t ga_i;
 
   // lock
   std::recursive_mutex mutex;

@@ -53,12 +53,28 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
   this->n_past = 0;
   this->n_remain = this->params.n_predict;
   this->n_consumed = 0;
+  this->ga_i = 0;
 
   // show info
   fprintf(stderr,
           "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
           this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
           this->params.n_keep);
+
+  if (this->params.grp_attn_n != 1) {
+    if (this->params.grp_attn_n > 0) {
+      GGML_ASSERT("grp_attn_n must be positive\n");
+    }
+
+    if (this->params.grp_attn_w % this->params.grp_attn_n != 0) {
+      GGML_ASSERT("grp_attn_w must be a multiple of grp_attn_n\n");
+    }
+  }
+
+  fprintf(stderr,
+          "self-extend: n_ctx_train = %d, grp_attn_n = %d, grp_attn_w = %d\n",
+          this->get_n_ctx_train(), this->params.grp_attn_n,
+          this->params.grp_attn_w);
 }
 
 Llama::~Llama() {
@@ -92,6 +108,7 @@ void Llama::reset() {
   this->n_past = 0;
   this->n_remain = this->params.n_predict;
   this->n_consumed = 0;
+  this->ga_i = 0;
 
   this->prompt_tokens.clear();
   this->batch_tokens.clear();
@@ -330,6 +347,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       this->n_remain = this->params.n_predict;
       break;
     }
+
+    if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx() &&
+        this->params.n_predict == -2) {
+      break;
+    }
   }
 
   fprintf(stderr, "Finish Response Generation\n");
@@ -350,18 +372,42 @@ bool Llama::eval() {
   if (this->batch_tokens.size() > 0) {
 
     // shift context
-    if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
+    if (this->params.grp_attn_n == 1) {
+      if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
-      const int n_left = this->n_past - this->params.n_keep - 1;
-      const int n_discard = n_left / 2;
+        const int n_left = this->n_past - this->params.n_keep - 1;
+        const int n_discard = n_left / 2;
 
-      llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep + 1,
-                            this->params.n_keep + n_discard + 1);
-      llama_kv_cache_seq_shift(this->ctx, 0,
-                               this->params.n_keep + 1 + n_discard, n_past,
-                               -n_discard);
+        llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep + 1,
+                              this->params.n_keep + n_discard + 1);
+        llama_kv_cache_seq_shift(this->ctx, 0,
+                                 this->params.n_keep + 1 + n_discard, n_past,
+                                 -n_discard);
 
-      this->n_past -= n_discard;
+        this->n_past -= n_discard;
+      }
+
+    } else {
+      // context extension via Self-Extend
+      int ga_n = this->params.grp_attn_n;
+      int ga_w = this->params.grp_attn_w;
+
+      while (this->n_past >= this->ga_i + ga_w) {
+        const int ib = (ga_n * this->ga_i) / ga_w;
+        const int bd = (ga_w / ga_n) * (ga_n - 1);
+        const int dd = (ga_w / ga_n) - ib * bd - ga_w;
+
+        llama_kv_cache_seq_shift(this->ctx, 0, this->ga_i, this->n_past,
+                                 ib * bd);
+        llama_kv_cache_seq_div(this->ctx, 0, this->ga_i + ib * bd,
+                               this->ga_i + ib * bd + ga_w, ga_n);
+        llama_kv_cache_seq_shift(this->ctx, 0, this->ga_i + ib * bd + ga_w,
+                                 this->n_past + ib * bd, dd);
+
+        this->n_past -= bd;
+
+        this->ga_i += ga_w / ga_n;
+      }
     }
 
     // evaluate tokens in batches

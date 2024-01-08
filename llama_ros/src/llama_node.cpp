@@ -82,6 +82,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                             {"n_threads", 1},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
+                                            {"grp_attn_n", 1},
+                                            {"grp_attn_w", 512},
                                             {"n_parallel", 1},
                                             {"n_sequences", 1},
                                         });
@@ -123,6 +125,9 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("n_gpu_layers", params.n_gpu_layers);
   this->get_parameter("main_gpu", params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
+
+  this->get_parameter("grp_attn_n", params.grp_attn_n);
+  this->get_parameter("grp_attn_w", params.grp_attn_w);
 
   this->get_parameter("rope_freq_scale", params.rope_freq_scale);
   this->get_parameter("rope_freq_base", params.rope_freq_base);
