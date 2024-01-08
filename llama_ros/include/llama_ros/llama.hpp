@@ -26,6 +26,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <vector>
 
@@ -52,7 +53,7 @@ class Llama {
       std::function<void(struct completion_output)>;
 
 public:
-  Llama(const struct gpt_params &params, bool debug);
+  Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -89,9 +90,10 @@ protected:
   void update_sampling_params(const struct llama_sampling_params &params);
 
 private:
+  rclcpp::Logger logger;
+  struct gpt_params params;
   bool debug;
   Spinner spinner;
-  struct gpt_params params;
 
   // aux
   std::vector<llama_token> prompt_tokens;

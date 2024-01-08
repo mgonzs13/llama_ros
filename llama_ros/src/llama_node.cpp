@@ -40,7 +40,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
   // load llama
   struct gpt_params params;
   this->load_params(params);
-  this->llama = std::make_shared<Llama>(params, debug);
+  this->llama = std::make_shared<Llama>(this->get_logger(), params, debug);
   this->llama->generate_response(params.prompt, false, nullptr);
 
   // services

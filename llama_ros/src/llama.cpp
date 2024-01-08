@@ -29,9 +29,10 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
+Llama::Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
+    : logger(logger), params(params), debug(debug) {
 
-  this->debug = debug;
+  // disable llama.cpp logs
   log_disable();
 
   // load the model
@@ -40,9 +41,9 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
   this->ctx_sampling = nullptr;
 
   // show system information
-  fprintf(stderr, "System_info: n_threads = %d / %d | %s\n",
-          this->params.n_threads, std::thread::hardware_concurrency(),
-          llama_print_system_info());
+  RCLCPP_INFO(this->logger, "System_info: n_threads = %d / %d | %s",
+              this->params.n_threads, std::thread::hardware_concurrency(),
+              llama_print_system_info());
 
   // number of tokens to keep when resetting context
   if (this->params.n_keep == -1) {
@@ -56,10 +57,10 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
   this->ga_i = 0;
 
   // show info
-  fprintf(stderr,
-          "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d\n",
-          this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
-          this->params.n_keep);
+  RCLCPP_INFO(this->logger,
+              "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
+              this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
+              this->params.n_keep);
 
   if (this->params.grp_attn_n != 1) {
     if (this->params.grp_attn_n > 0) {
@@ -71,10 +72,10 @@ Llama::Llama(const struct gpt_params &params, bool debug) : params(params) {
     }
   }
 
-  fprintf(stderr,
-          "self-extend: n_ctx_train = %d, grp_attn_n = %d, grp_attn_w = %d\n",
-          this->get_n_ctx_train(), this->params.grp_attn_n,
-          this->params.grp_attn_w);
+  RCLCPP_INFO(this->logger,
+              "self-extend: n_ctx_train = %d, grp_attn_n = %d, grp_attn_w = %d",
+              this->get_n_ctx_train(), this->params.grp_attn_n,
+              this->params.grp_attn_w);
 }
 
 Llama::~Llama() {
@@ -125,8 +126,9 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
   const int n_embd = this->get_n_embd();
 
   if (!this->is_embedding()) {
-    fprintf(stderr,
-            "Llama must be created with embedding=true to create embeddings\n");
+    RCLCPP_ERROR(
+        this->logger,
+        "Llama must be created with embedding=true to create embeddings");
     return std::vector<float>(n_embd, 0.0f);
   }
 
@@ -134,8 +136,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
       this->tokenize(input_prompt, this->should_add_bos_token(), false);
 
   if ((int)tokens.size() > this->get_n_ctx()) {
-    fprintf(stderr, "Prompt too long %ld, context size is %d\n", tokens.size(),
-            this->get_n_ctx());
+    RCLCPP_ERROR(this->logger, "Prompt too long %ld, context size is %d",
+                 tokens.size(), this->get_n_ctx());
     return std::vector<float>(n_embd, 0.0f);
   }
 
@@ -152,7 +154,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
     if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
                                                     embd_n_past, 0))) {
-      fprintf(stderr, "Failed to eval\n");
+      RCLCPP_ERROR(this->logger, "Failed to eval");
       return std::vector<float>(n_embd, 0.0f);
     }
     embd_n_past += embd_n_eval;
@@ -211,8 +213,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   if (prompt_size > this->get_n_ctx() - 4) {
-    fprintf(stderr, "Prompt is too long (%d tokens, max %d)\n", prompt_size,
-            this->get_n_ctx() - 4);
+    RCLCPP_ERROR(this->logger, "Prompt is too long (%d tokens, max %d)",
+                 prompt_size, this->get_n_ctx() - 4);
   }
 
   // insert prefix
@@ -245,16 +247,16 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   this->n_remain -= line_inp.size();
 
   // show sampling info
-  fprintf(stderr,
-          "Sampling: temp = %f, "
-          "top_k = %d, "
-          "top_p = %f, "
-          "penalty_last_n = %i, "
-          "repeat_penalty = %f\n",
-          params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
-          params.sparams.penalty_last_n, params.sparams.penalty_repeat);
+  RCLCPP_INFO(this->logger,
+              "Sampling: temp = %f, "
+              "top_k = %d, "
+              "top_p = %f, "
+              "penalty_last_n = %i, "
+              "repeat_penalty = %f",
+              params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
+              params.sparams.penalty_last_n, params.sparams.penalty_repeat);
 
-  fprintf(stderr, "Starting Response Generation\n");
+  RCLCPP_INFO(this->logger, "Starting Response Generation");
 
   // generation loop
   while (this->n_remain != 0) {
@@ -298,7 +300,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     if (this->canceled) {
-      fprintf(stderr, "Canceling llama.cpp\n");
+      RCLCPP_INFO(this->logger, "Canceling llama.cpp");
       break;
     }
 
@@ -354,7 +356,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
   }
 
-  fprintf(stderr, "Finish Response Generation\n");
+  RCLCPP_INFO(this->logger, "Finish Response Generation");
   return response;
 }
 
@@ -429,7 +431,7 @@ bool Llama::eval() {
       if (llama_decode(this->ctx,
                        llama_batch_get_one(&this->batch_tokens[i], n_eval,
                                            this->n_past, 0))) {
-        fprintf(stderr, "Failed to eval\n");
+        RCLCPP_ERROR(this->logger, "Failed to eval");
         return false;
       }
       this->n_past += n_eval;
@@ -501,7 +503,7 @@ void Llama::update_sampling_params(const struct llama_sampling_params &params) {
 
     // will be empty (default) if there are parse errors
     if (this->ctx_sampling->parsed_grammar.rules.empty()) {
-      fprintf(stderr, "Failed to parse grammar\n");
+      RCLCPP_ERROR(this->logger, "Failed to parse grammar");
       return;
     }
 
