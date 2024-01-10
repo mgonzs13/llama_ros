@@ -71,7 +71,7 @@ There is a [llama_ros integration for langchain](llama_ros/llama_ros/langchain/)
 ## Demo
 
 ```shell
-$ ros2 launch llama_bringup wizard-vicuna.launch.py
+$ ros2 launch llama_bringup marcoroni.launch.py
 ```
 
 ```shell
