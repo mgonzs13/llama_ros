@@ -16,7 +16,7 @@
 
 from typing import Dict, List
 from pydantic import BaseModel, Extra, root_validator
-from langchain.embeddings.base import Embeddings
+from langchain_core.embeddings import Embeddings
 
 from simple_node import Node
 from rclpy.client import Client

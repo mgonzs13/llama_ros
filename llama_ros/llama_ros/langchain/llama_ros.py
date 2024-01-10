@@ -25,7 +25,7 @@ from llama_msgs.msg import LogitBias
 from llama_msgs.action import GenerateResponse
 from llama_msgs.srv import Tokenize
 
-from langchain.llms.base import LLM
+from langchain_core.language_models.llms import LLM
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 
 
