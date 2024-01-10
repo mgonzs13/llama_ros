@@ -7,6 +7,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 ```shell
 $ cd ~/ros2_ws/src
 $ git clone --recurse-submodules https://github.com/mgonzs13/llama_ros.git
+$ pip3 install -r llama_ros/requirements.txt
 $ cd ~/ros2_ws
 $ colcon build
 ```
@@ -54,7 +55,7 @@ def generate_launch_description():
 Run you launch file:
 
 ```shell
-$ ros2 launch llama_bringup nous-hermes.launch.py
+$ ros2 launch llama_bringup marcoroni.launch.py
 ```
 
 Send an action goal:
