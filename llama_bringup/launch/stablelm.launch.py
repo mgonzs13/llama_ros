@@ -29,7 +29,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=1024,
+            n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
             n_threads=4,
