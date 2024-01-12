@@ -33,7 +33,7 @@ def generate_launch_description():
             n_batch=8,
             n_gpu_layers=0,
             n_threads=4,
-            n_predict=1024,
+            n_predict=2048,
 
             model_repo="remyxai/stablelm-zephyr-3B_localmentor",
             model_filename="ggml-model-q4_0.gguf",
