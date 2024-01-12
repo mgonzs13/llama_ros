@@ -31,17 +31,17 @@ def generate_launch_description():
         create_llama_launch(
             n_ctx=2048,
             n_batch=8,
-            n_gpu_layers=0,
+            n_gpu_layers=33,
             n_threads=4,
             n_predict=2048,
 
-            model_repo="TheBloke/MetaMath-Cybertron-Starling-GGUF",
-            model_filename="metamath-cybertron-starling.Q4_K_M.gguf",
+            model_repo="TheBloke/phi-2-GGUF",
+            model_filename="phi-2.Q4_K_M.gguf",
 
-            prefix="\n<|im_start|>user\n",
-            suffix="<|im_end|>\n<|im_start|>assistant\n",
-            stop="<|im_end|>",
+            prefix="\n\nInstruction:\n",
+            suffix="\n\nOutput:\n",
+            stop="Instruction:\n",
 
-            file="ChatML.txt"
+            file="phi-2.txt"
         )
     ])
