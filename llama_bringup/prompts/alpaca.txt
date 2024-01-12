@@ -1,4 +1,3 @@
-### System:
 You are an AI assistant that follows instruction extremely well. Help as much as you can.
 
 ### Instruction:
