@@ -70,6 +70,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   std::string stop;
   std::string file_path;
   std::string lora_adapter;
+  std::string split_mode;
   std::vector<double> tensor_split;
 
   // node params from llama.cpp common.h
@@ -94,13 +95,14 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                 {"model", ""},
                                                 {"lora_adapter", ""},
                                                 {"lora_base", ""},
+                                                {"split_mode", "none"},
+                                                {"cache_type_k", "f16"},
+                                                {"cache_type_v", "f16"},
                                                 {"prompt", ""},
                                                 {"file", ""},
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"stop", ""},
-                                                {"cache_type_k", "f16"},
-                                                {"cache_type_v", "f16"},
                                             });
   this->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
@@ -130,6 +132,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("n_batch", params.n_batch);
 
   this->get_parameter("n_gpu_layers", params.n_gpu_layers);
+  this->get_parameter("split_mode", split_mode);
   this->get_parameter("main_gpu", params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
 
@@ -182,6 +185,15 @@ void LlamaNode::load_params(struct gpt_params &params) {
   if (lora_adapter.size()) {
     params.lora_adapter.push_back({lora_adapter, 1.0f});
     params.use_mmap = false;
+  }
+
+  // split mode
+  if (split_mode == "none") {
+    params.split_mode = LLAMA_SPLIT_NONE;
+  } else if (split_mode == "layer") {
+    params.split_mode = LLAMA_SPLIT_LAYER;
+  } else if (split_mode == "row") {
+    params.split_mode = LLAMA_SPLIT_ROW;
   }
 
   // stop is the antiprompt

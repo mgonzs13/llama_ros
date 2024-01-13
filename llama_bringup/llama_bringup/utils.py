@@ -62,6 +62,7 @@ def create_llama_launch(
     n_batch: int = 8,
 
     n_gpu_layers: int = 0,
+    split_mode: str = "none",
     main_gpu: int = 0,
     tensor_split: str = "[0.0]",
 
@@ -118,6 +119,7 @@ def create_llama_launch(
             "n_batch": str(n_batch),
 
             "n_gpu_layers": str(n_gpu_layers),
+            "split_mode": split_mode,
             "main_gpu": str(main_gpu),
             "tensor_split": tensor_split,
 

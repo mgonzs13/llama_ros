@@ -41,6 +41,7 @@ def generate_launch_description():
                 "n_batch": LaunchConfiguration("n_batch", default=8),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
+                "split_mode": LaunchConfiguration("split_mode", default="none"),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
                 "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
 
