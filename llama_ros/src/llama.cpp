@@ -362,7 +362,7 @@ stop_type Llama::find_stop_word(
 
   // check new token sequence size
   if (completion_result_list.size() <= stopping_word.size() &&
-      stopping_word.size()) {
+      completion_result_list.size() && stopping_word.size()) {
 
     std::string completion_text = "";
     for (auto c : completion_result_list) {
