@@ -171,21 +171,17 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
-  bool no_send_response = true;
   std::vector<llama_token> batch_tokens;
 
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
 
-  std::vector<llama_token> inp_pfx = this->tokenize(
-      this->params.input_prefix,
-      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
-  std::vector<llama_token> inp_sfx =
-      this->tokenize(this->params.input_suffix, false, true);
-
-  std::string prompt(input_prompt);
-  std::vector<llama_token> line_inp;
+  // load prompt
+  if (input_prompt.size() <= 0) {
+    return {};
+  }
+  this->load_prompt(input_prompt, add_pfx_sfx);
 
   // load params
   if (this->ctx_sampling == nullptr) {
@@ -193,56 +189,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   } else {
     this->update_sampling_params(this->params.sparams);
   }
-
-  // prepare prompt
-  if (prompt.size() <= 0) {
-    return {};
-  }
-
-  if (!this->prompt_tokens.size() && !add_pfx_sfx) {
-    line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
-  } else {
-    line_inp = this->tokenize(prompt, false, false);
-  }
-
-  int prompt_size = this->prompt_tokens.size() + line_inp.size();
-  if (add_pfx_sfx && this->params.input_prefix.size()) {
-    prompt_size += inp_pfx.size() + inp_sfx.size();
-  }
-
-  if (prompt_size > this->get_n_ctx() - 4) {
-    RCLCPP_ERROR(this->logger, "Prompt is too long (%d tokens, max %d)",
-                 prompt_size, this->get_n_ctx() - 4);
-  }
-
-  // insert prefix
-  if (add_pfx_sfx && this->params.input_prefix.size()) {
-
-    const int n_prev = 64;
-    const std::string last_output =
-        llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
-
-    // check if prefix is already added
-    if (last_output.find(
-            this->params.input_prefix.c_str(),
-            last_output.length() - this->params.input_prefix.length(),
-            this->params.input_prefix.length()) == std::string::npos) {
-
-      this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
-                                 inp_pfx.end());
-    }
-  }
-
-  this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
-                             line_inp.end());
-
-  // insert suffix
-  if (add_pfx_sfx && this->params.input_suffix.size()) {
-    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
-                               inp_sfx.end());
-  }
-
-  this->n_remain -= line_inp.size();
 
   // show sampling info
   RCLCPP_INFO(this->logger,
@@ -274,7 +220,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       RCLCPP_INFO(this->logger, "Partial stopping word found");
 
     } else if (stopping == NO_STOP) {
-      if (!no_send_response) {
+      if (completion_result_list.size()) {
         for (auto completion_ele : completion_result_list) {
           if (callback != nullptr) {
             callback(completion_ele);
@@ -285,18 +231,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       }
     }
 
-    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
-      // sample next token
-      completion_result = this->sample();
-      completion_result_list.push_back(completion_result);
-      batch_tokens.push_back(completion_result.token);
-
-      // send this
-      no_send_response = false;
-
-      // decrement remaining sampling budget
-      --this->n_remain;
-    }
+    // sample next token
+    completion_result = this->sample();
+    completion_result_list.push_back(completion_result);
+    batch_tokens.push_back(completion_result.token);
+    --this->n_remain;
 
     // next eval
     if (!this->eval(batch_tokens)) {
@@ -308,6 +247,58 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   RCLCPP_INFO(this->logger, "Finish Response Generation");
   return response;
+}
+
+void Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
+
+  std::vector<llama_token> inp_pfx = this->tokenize(
+      this->params.input_prefix,
+      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
+  std::vector<llama_token> inp_sfx =
+      this->tokenize(this->params.input_suffix, false, true);
+
+  std::string prompt(input_prompt);
+  std::vector<llama_token> line_inp;
+
+  if (!this->prompt_tokens.size() && !add_pfx_sfx) {
+    line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
+  } else {
+    line_inp = this->tokenize(prompt, false, false);
+  }
+
+  int prompt_size = this->prompt_tokens.size() + line_inp.size();
+  if (add_pfx_sfx && this->params.input_prefix.size()) {
+    prompt_size += inp_pfx.size() + inp_sfx.size();
+  }
+
+  // insert prefix
+  if (add_pfx_sfx && this->params.input_prefix.size()) {
+
+    const int n_prev = 64;
+    const std::string last_output =
+        llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+
+    // check if prefix is already added
+    if (last_output.find(
+            this->params.input_prefix.c_str(),
+            last_output.length() - this->params.input_prefix.length(),
+            this->params.input_prefix.length()) == std::string::npos) {
+
+      this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
+                                 inp_pfx.end());
+    }
+  }
+
+  this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
+                             line_inp.end());
+
+  // insert suffix
+  if (add_pfx_sfx && this->params.input_suffix.size()) {
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
+                               inp_sfx.end());
+  }
+
+  this->n_remain -= line_inp.size();
 }
 
 stop_type
