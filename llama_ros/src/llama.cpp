@@ -445,23 +445,10 @@ bool Llama::eval() {
 
 struct completion_output Llama::sample() {
 
-  // init token
-  auto logits = llama_get_logits(this->ctx);
-  auto n_vocab = this->get_n_vocab();
-
-  // apply logit_bias
-  for (auto it = params.sparams.logit_bias.begin();
-       it != params.sparams.logit_bias.end(); it++) {
-    logits[it->first] += it->second;
-  }
-
-  // candidates
-  std::vector<llama_token_data> candidates;
-  candidates.reserve(n_vocab);
-
   // sample token
   const llama_token id =
       llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
+  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
 
   // create output
   struct completion_output result;
@@ -482,7 +469,6 @@ struct completion_output Llama::sample() {
   }
 
   // return result
-  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
   return result;
 }
 
