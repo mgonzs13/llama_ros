@@ -35,12 +35,12 @@
 #include "llama.h"
 #include "llama_ros/spinner.hpp"
 
-struct completion_output {
-  struct token_prob {
-    llama_token token;
-    float probability;
-  };
+struct token_prob {
+  llama_token token;
+  float probability;
+};
 
+struct completion_output {
   std::vector<token_prob> probs;
   llama_token token;
 };
@@ -85,7 +85,9 @@ protected:
   struct llama_context *ctx;
   struct llama_sampling_context *ctx_sampling;
 
-  bool eval();
+  bool init_eval();
+  bool eval(std::vector<llama_token> batch_tokens);
+  std::vector<token_prob> get_probs();
   struct completion_output sample();
   void update_sampling_params(const struct llama_sampling_params &params);
 
@@ -97,7 +99,6 @@ private:
 
   // aux
   std::vector<llama_token> prompt_tokens;
-  std::vector<llama_token> batch_tokens;
 
   // eval
   bool canceled;

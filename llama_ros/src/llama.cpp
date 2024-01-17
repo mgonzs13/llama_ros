@@ -112,8 +112,6 @@ void Llama::reset() {
   this->ga_i = 0;
 
   this->prompt_tokens.clear();
-  this->batch_tokens.clear();
-
   this->params.sparams.n_prev = this->get_n_ctx();
 }
 
@@ -173,7 +171,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
-  bool input_noecho = true;
+  bool no_send_response = true;
+  std::vector<llama_token> batch_tokens;
 
   bool stopping = false;
   struct completion_output completion_result;
@@ -258,12 +257,13 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   RCLCPP_INFO(this->logger, "Starting Response Generation");
 
+  // initial eval
+  if (!this->init_eval()) {
+    return response;
+  }
+
   // generation loop
   while (this->n_remain != 0) {
-
-    if (!this->eval()) {
-      break;
-    }
 
     if ((int)this->prompt_tokens.size() <= this->n_consumed) {
 
@@ -285,11 +285,10 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       // sample next token
       completion_result = this->sample();
       completion_result_list.push_back(completion_result);
+      batch_tokens.push_back(completion_result.token);
 
-      this->batch_tokens.push_back(completion_result.token);
-
-      // echo this to console
-      input_noecho = false;
+      // send this
+      no_send_response = false;
 
       // decrement remaining sampling budget
       --this->n_remain;
@@ -332,7 +331,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     }
 
     // send text
-    if (!input_noecho) {
+    if (!no_send_response) {
       if (!stopping) {
         for (auto completion_ele : completion_result_list) {
           if (callback != nullptr) {
@@ -350,32 +349,53 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       break;
     }
 
-    if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx() &&
+    if (this->n_past + (int)batch_tokens.size() > this->get_n_ctx() &&
         this->params.n_predict == -2) {
       break;
     }
+
+    // next eval
+    if (!this->eval(batch_tokens)) {
+      break;
+    }
+
+    batch_tokens.clear();
   }
 
   RCLCPP_INFO(this->logger, "Finish Response Generation");
   return response;
 }
 
-bool Llama::eval() {
+bool Llama::init_eval() {
+  std::vector<llama_token> batch_tokens;
 
-  while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-         ((int)this->batch_tokens.size() < this->params.n_batch)) {
+  while (((int)this->prompt_tokens.size() > this->n_consumed)) {
 
-    this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
-    llama_sampling_accept(this->ctx_sampling, this->ctx,
-                          this->prompt_tokens[this->n_consumed], false);
-    ++this->n_consumed;
+    while (((int)this->prompt_tokens.size() > this->n_consumed) &&
+           ((int)batch_tokens.size() < this->params.n_batch)) {
+      batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
+      llama_sampling_accept(this->ctx_sampling, this->ctx,
+                            this->prompt_tokens[this->n_consumed], false);
+      ++this->n_consumed;
+    }
+
+    if (!this->eval(batch_tokens)) {
+      return false;
+    }
+
+    batch_tokens.clear();
   }
 
-  if (this->batch_tokens.size() > 0) {
+  return true;
+}
+
+bool Llama::eval(std::vector<llama_token> batch_tokens) {
+
+  if (batch_tokens.size() > 0) {
 
     // shift context
     if (this->params.grp_attn_n == 1) {
-      if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
+      if (this->n_past + (int)batch_tokens.size() > this->get_n_ctx()) {
 
         const int n_left = this->n_past - this->params.n_keep - 1;
         const int n_discard = n_left / 2;
@@ -416,10 +436,9 @@ bool Llama::eval() {
     // batch_tokens is typically prepared beforehand to fit within a batch
     // but not always
     int n_eval = 0;
-    for (size_t i = 0; i < this->batch_tokens.size();
-         i += this->params.n_batch) {
+    for (size_t i = 0; i < batch_tokens.size(); i += this->params.n_batch) {
 
-      n_eval = (int)this->batch_tokens.size() - i;
+      n_eval = (int)batch_tokens.size() - i;
       if (n_eval > this->params.n_batch) {
         n_eval = this->params.n_batch;
       }
@@ -428,33 +447,21 @@ bool Llama::eval() {
         spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
       }
 
-      if (llama_decode(this->ctx,
-                       llama_batch_get_one(&this->batch_tokens[i], n_eval,
-                                           this->n_past, 0))) {
+      if (llama_decode(this->ctx, llama_batch_get_one(&batch_tokens[i], n_eval,
+                                                      this->n_past, 0))) {
         RCLCPP_ERROR(this->logger, "Failed to eval");
         return false;
       }
       this->n_past += n_eval;
     }
-
-    this->batch_tokens.clear();
   }
 
   return true;
 }
 
-struct completion_output Llama::sample() {
+std::vector<token_prob> Llama::get_probs() {
+  std::vector<token_prob> probs;
 
-  // sample token
-  const llama_token id =
-      llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
-  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
-
-  // create output
-  struct completion_output result;
-  result.token = id;
-
-  // get probs
   llama_token_data_array cur_p = {this->ctx_sampling->cur.data(),
                                   this->ctx_sampling->cur.size(), false};
 
@@ -465,8 +472,22 @@ struct completion_output Llama::sample() {
   }
 
   for (size_t i = 0; i < std::min(cur_p.size, (size_t)n_probs); ++i) {
-    result.probs.push_back({cur_p.data[i].id, cur_p.data[i].p});
+    probs.push_back({cur_p.data[i].id, cur_p.data[i].p});
   }
+
+  return probs;
+}
+
+struct completion_output Llama::sample() {
+
+  // sample token
+  llama_token id = llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
+  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
+
+  // create output
+  struct completion_output result;
+  result.token = id;
+  result.probs = this->get_probs();
 
   // return result
   return result;
