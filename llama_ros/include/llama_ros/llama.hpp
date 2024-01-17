@@ -45,6 +45,12 @@ struct completion_output {
   llama_token token;
 };
 
+enum stop_type {
+  NO_STOP,
+  FULL_STOP,
+  PARTIAL_STOP,
+};
+
 namespace llama_ros {
 
 class Llama {
@@ -85,6 +91,12 @@ protected:
   struct llama_context *ctx;
   struct llama_sampling_context *ctx_sampling;
 
+  stop_type
+  find_stop(std::vector<struct completion_output> completion_result_list,
+            std::vector<std::string> stopping_words);
+  stop_type
+  find_stop_word(std::vector<struct completion_output> completion_result_list,
+                 std::string stopping_word);
   bool init_eval();
   bool eval(std::vector<llama_token> batch_tokens);
   std::vector<token_prob> get_probs();

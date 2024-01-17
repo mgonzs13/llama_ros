@@ -174,7 +174,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   bool no_send_response = true;
   std::vector<llama_token> batch_tokens;
 
-  bool stopping = false;
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
@@ -265,23 +264,28 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   // generation loop
   while (this->n_remain != 0) {
 
-    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
+    stop_type stopping =
+        this->find_stop(completion_result_list, this->params.antiprompt);
 
-      // check if stop appears at the end of the output
-      const int n_prev = 32;
-      const std::string last_output =
-          llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+    if (stopping == FULL_STOP) {
+      break;
 
-      // when not currently processing queued
-      // inputs check if we should end
-      if (this->params.antiprompt.at(0).size() &&
-          last_output.find(
-              this->params.antiprompt.at(0).c_str(),
-              last_output.length() - this->params.antiprompt.at(0).length(),
-              this->params.antiprompt.at(0).length()) != std::string::npos) {
-        break;
+    } else if (stopping == PARTIAL_STOP) {
+      RCLCPP_INFO(this->logger, "Partial stopping word found");
+
+    } else if (stopping == NO_STOP) {
+      if (!no_send_response) {
+        for (auto completion_ele : completion_result_list) {
+          if (callback != nullptr) {
+            callback(completion_ele);
+          }
+          response.push_back(completion_ele);
+        }
+        completion_result_list.clear();
       }
+    }
 
+    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
       // sample next token
       completion_result = this->sample();
       completion_result_list.push_back(completion_result);
@@ -294,66 +298,6 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
       --this->n_remain;
     }
 
-    if (llama_sampling_last(this->ctx_sampling) == this->get_token_eos()) {
-      break;
-    }
-
-    if (this->canceled) {
-      RCLCPP_INFO(this->logger, "Canceling llama.cpp");
-      break;
-    }
-
-    // check if new tokens contains the stop sequence
-    if (completion_result_list.size() <= this->params.antiprompt.at(0).size() &&
-        this->params.antiprompt.at(0).size()) {
-
-      stopping = true;
-
-      std::string completion_text = "";
-      for (auto c : completion_result_list) {
-        completion_text.append(this->detokenize({c.token}));
-      }
-
-      for (size_t i = 0; i < completion_text.size(); i++) {
-        if (completion_text.at(i) != this->params.antiprompt.at(0).at(i)) {
-          stopping = false;
-          break;
-        }
-      }
-
-      if (stopping &&
-          completion_text.size() == this->params.antiprompt.at(0).size()) {
-        break;
-      }
-
-    } else {
-      stopping = false;
-    }
-
-    // send text
-    if (!no_send_response) {
-      if (!stopping) {
-        for (auto completion_ele : completion_result_list) {
-          if (callback != nullptr) {
-            callback(completion_ele);
-          }
-          response.push_back(completion_ele);
-        }
-        completion_result_list.clear();
-      }
-    }
-
-    // respect the maximum number of tokens
-    if (this->n_remain <= 0 && this->params.n_predict != -1) {
-      this->n_remain = this->params.n_predict;
-      break;
-    }
-
-    if (this->n_past + (int)batch_tokens.size() > this->get_n_ctx() &&
-        this->params.n_predict == -2) {
-      break;
-    }
-
     // next eval
     if (!this->eval(batch_tokens)) {
       break;
@@ -364,6 +308,83 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   RCLCPP_INFO(this->logger, "Finish Response Generation");
   return response;
+}
+
+stop_type
+Llama::find_stop(std::vector<struct completion_output> completion_result_list,
+                 std::vector<std::string> stopping_words) {
+
+  // check if stop appears at the end of the output
+  const int n_prev = 32;
+  const std::string last_output =
+      llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+
+  if (this->params.antiprompt.at(0).size() &&
+      last_output.find(
+          this->params.antiprompt.at(0).c_str(),
+          last_output.length() - this->params.antiprompt.at(0).length(),
+          this->params.antiprompt.at(0).length()) != std::string::npos) {
+    return FULL_STOP;
+  }
+
+  // eos
+  if (llama_sampling_last(this->ctx_sampling) == this->get_token_eos()) {
+    return FULL_STOP;
+  }
+
+  // action server is canceled
+  if (this->canceled) {
+    RCLCPP_INFO(this->logger, "Canceling llama.cpp");
+    return FULL_STOP;
+  }
+
+  // respect the maximum number of tokens
+  if (this->n_remain <= 0 && this->params.n_predict != -1) {
+    this->n_remain = this->params.n_predict;
+    return FULL_STOP;
+  }
+
+  if (this->n_past > this->get_n_ctx() && this->params.n_predict == -2) {
+    return FULL_STOP;
+  }
+
+  for (auto w : stopping_words) {
+    stop_type s = this->find_stop_word(completion_result_list, w);
+    if (s != NO_STOP) {
+      return s;
+    }
+  }
+
+  return NO_STOP;
+}
+
+stop_type Llama::find_stop_word(
+    std::vector<struct completion_output> completion_result_list,
+    std::string stopping_word) {
+
+  // check new token sequence size
+  if (completion_result_list.size() <= stopping_word.size() &&
+      stopping_word.size()) {
+
+    std::string completion_text = "";
+    for (auto c : completion_result_list) {
+      completion_text.append(this->detokenize({c.token}));
+    }
+
+    for (size_t i = 0; i < completion_text.size(); i++) {
+      if (completion_text.at(i) != stopping_word.at(i)) {
+        return NO_STOP;
+      }
+    }
+
+    if (completion_text.size() == stopping_word.size()) {
+      return FULL_STOP;
+    } else {
+      return PARTIAL_STOP;
+    }
+  }
+
+  return NO_STOP;
 }
 
 bool Llama::init_eval() {
