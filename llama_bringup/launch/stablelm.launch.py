@@ -36,7 +36,7 @@ def generate_launch_description():
             n_predict=2048,
 
             model_repo="remyxai/stablelm-zephyr-3B_localmentor",
-            model_filename="ggml-model-q4_0.gguf",
+            model_filename="ggml-model-q4_k_m.gguf",
 
             prefix="\n<|im_start|>user\n",
             suffix="<|im_end|>\n<|im_start|>assistant\n",
