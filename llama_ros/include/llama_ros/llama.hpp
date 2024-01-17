@@ -91,7 +91,7 @@ protected:
   struct llama_context *ctx;
   struct llama_sampling_context *ctx_sampling;
 
-  void load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
             std::vector<std::string> stopping_words);

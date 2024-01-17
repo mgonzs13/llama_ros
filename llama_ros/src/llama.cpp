@@ -103,7 +103,10 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 void Llama::reset() {
 
   llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
-  llama_sampling_reset(this->ctx_sampling);
+
+  if (this->ctx_sampling != nullptr) {
+    llama_sampling_reset(this->ctx_sampling);
+  }
 
   this->canceled = false;
   this->n_past = 0;
@@ -177,17 +180,16 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
 
-  // load prompt
-  if (input_prompt.size() <= 0) {
-    return {};
-  }
-  this->load_prompt(input_prompt, add_pfx_sfx);
-
   // load params
   if (this->ctx_sampling == nullptr) {
     this->ctx_sampling = llama_sampling_init(this->params.sparams);
   } else {
     this->update_sampling_params(this->params.sparams);
+  }
+
+  // load prompt
+  if (!this->load_prompt(input_prompt, add_pfx_sfx)) {
+    return response;
   }
 
   // show sampling info
@@ -249,7 +251,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   return response;
 }
 
-void Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
+bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params.input_prefix,
@@ -259,6 +261,10 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
+
+  if (prompt.size() <= 0) {
+    return false;
+  }
 
   if (!this->prompt_tokens.size() && !add_pfx_sfx) {
     line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
@@ -299,6 +305,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
   }
 
   this->n_remain -= line_inp.size();
+  return true;
 }
 
 stop_type
