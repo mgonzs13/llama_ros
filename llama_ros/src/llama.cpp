@@ -35,6 +35,10 @@ Llama::Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
   // disable llama.cpp logs
   log_disable();
 
+  if (this->debug) {
+    print_build_info();
+  }
+
   // load the model
   llama_backend_init(this->params.numa);
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(this->params);
@@ -148,8 +152,6 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   int embd_n_past = 0;
   int embd_n_eval = 0;
-  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
-
   for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
 
     embd_n_eval = (int)tokens.size() - i;
@@ -158,7 +160,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     }
 
     if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
-                                                    embd_n_past, 0))) {
+                                                    embd_n_past, 1))) {
       RCLCPP_ERROR(this->logger, "Failed to eval");
       return std::vector<float>(n_embd, 0.0f);
     }
@@ -167,6 +169,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   const auto embeddings = llama_get_embeddings(this->ctx);
   std::vector<float> embeddings_list(embeddings, embeddings + n_embd);
+
+  llama_kv_cache_seq_rm(this->ctx, 1, 0, -1);
 
   return embeddings_list;
 }
@@ -250,6 +254,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   RCLCPP_INFO(this->logger, "Finish Response Generation");
+
+  if (this->debug) {
+    llama_print_timings(this->ctx);
+  }
+
   return response;
 }
 
