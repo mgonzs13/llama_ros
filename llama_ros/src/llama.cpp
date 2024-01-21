@@ -210,6 +210,10 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   RCLCPP_INFO(this->logger, "Starting Response Generation");
 
+  if (this->debug) {
+    llama_reset_timings(this->ctx);
+  }
+
   // initial eval
   if (!this->init_eval()) {
     return response;
