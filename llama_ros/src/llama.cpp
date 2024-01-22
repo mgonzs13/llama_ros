@@ -123,7 +123,6 @@ void Llama::reset() {
   this->ga_i = 0;
 
   this->prompt_tokens.clear();
-  this->params.sparams.n_prev = this->get_n_ctx();
 }
 
 void Llama::cancel() { this->canceled = true; }
