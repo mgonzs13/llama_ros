@@ -14,7 +14,7 @@ $ colcon build
 
 ### CUDA
 
-To run llama_ros with CUDA, the following lines in the [CMakeLists.txt](llama_ros/CMakeLists.txt) must be uncommented:
+To run llama_ros with CUDA, you have to install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) and the following lines in the [CMakeLists.txt](llama_ros/CMakeLists.txt) must be uncommented:
 
 ```
 option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
@@ -38,10 +38,10 @@ def generate_launch_description():
             n_batch=8, # batch size in tokens
             n_gpu_layers=0, # layers to load in GPU
             n_threads=4, # threads
-            n_predict=2048, # max tokens (prompt tokens + predicted tokens). -1 == inf
+            n_predict=2048, # max tokens, -1 == inf
 
             model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
-            model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file
+            model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file in repo
 
             prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
             suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
@@ -61,7 +61,7 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 Send an action goal:
 
 ```shell
-$ ros2 action send_goal /llama/generate_response llama_msgs/action/GenerateResponse "{'prompt': 'What is ROS2?'}"
+$ ros2 action send_goal /llama/generate_response llama_msgs/action/GenerateResponse "{'prompt': 'What is the Robot Operating System?'}"
 ```
 
 ### Lagnchain
@@ -83,5 +83,7 @@ $ ros2 run llama_ros llama_client_node --ros-args -p prompt:="your prompt"
 https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
 
 ## LLMs
+
+Check the [GGUF repos](https://huggingface.co/models?sort=trending&search=gguf) or the [Open LLM Leaderboard](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard) in Hugging Face.
 
 [<img src="https://cdn-thumbnails.huggingface.co/social-thumbnails/spaces/HuggingFaceH4/open_llm_leaderboard.png">](https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard)
