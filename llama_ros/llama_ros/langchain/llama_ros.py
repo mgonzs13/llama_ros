@@ -47,6 +47,8 @@ class LlamaROS(LLM):
     logit_bias: Dict[int, float] = {}
 
     temp: float = 0.80
+    dynatemp_range: float = 0.0
+    dynatemp_exponent: float = 1.0
 
     top_k: int = 40
     top_p: float = 0.95
@@ -122,6 +124,8 @@ class LlamaROS(LLM):
             goal.sampling_config.logit_bias.data.append(lb)
 
         goal.sampling_config.temp = self.temp
+        goal.sampling_config.dynatemp_range = self.dynatemp_range
+        goal.sampling_config.dynatemp_exponent = self.dynatemp_exponent
 
         goal.sampling_config.top_k = self.top_k
         goal.sampling_config.top_p = self.top_p

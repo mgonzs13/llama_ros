@@ -5,6 +5,8 @@ bool ignore_eos             false       # ignore end of stream token and continu
 LogitBiasArray logit_bias               # logit bias for specific tokens
 
 float32 temp                0.80        # temperature
+float32 dynatemp_range      0.0         # 0.0 = disabled
+float32 dynatemp_exponent   1.0         # controls how entropy maps to temperature in dynamic temperature sampler
 
 int32 top_k                 40          # top-k sampling (0.0 = disabled)
 float32 top_p               0.95        # top-p sampling (1.0 = disabled)
