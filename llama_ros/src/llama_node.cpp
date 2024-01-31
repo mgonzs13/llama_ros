@@ -212,7 +212,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
 
   // cublas
 #ifdef GGML_USE_CUBLAS
-  for (size_t i = 0; i < LLAMA_MAX_DEVICES; ++i) {
+  GGML_ASSERT(tensor_split.size() <= llama_max_devices());
+  for (size_t i = 0; i < llama_max_devices(); ++i) {
     if (i < tensor_split.size()) {
       params.tensor_split[i] = tensor_split[i];
     } else {
