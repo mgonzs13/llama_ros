@@ -40,7 +40,7 @@ def generate_launch_description():
 
             prefix="\n<|im_start|>user\n",
             suffix="<|im_end|>\n<|im_start|>assistant\n",
-            stop="<|im_end|>",
+            stop=" <|im_end|>",
 
             file="ChatML.txt"
         )
