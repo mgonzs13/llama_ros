@@ -35,13 +35,13 @@ def generate_launch_description():
             n_threads=4,
             n_predict=2048,
 
-            model_repo="janhq/neural-chat-7b-v3-3-slerp-GGUF",
-            model_filename="neural-chat-7b-v3-3-slerp.Q4_K_M.gguf",
+            model_repo="LoneStriker/WestLake-7B-v2-laser-truthy-dpo-GGUF",
+            model_filename="WestLake-7B-v2-laser-truthy-dpo-Q4_K_M.gguf",
 
-            prefix="\n\n### User:\n",
-            suffix="\n\n### Assistant:\n",
-            stop="### User:\n",
+            prefix="\n<|im_start|>user\n",
+            suffix="<|im_end|>\n<|im_start|>assistant\n",
+            stop="<|im_end|>",
 
-            file="neural-chat.txt"
+            file="ChatML.txt"
         )
     ])
