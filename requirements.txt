@@ -1,2 +1,2 @@
-langchain==0.1.0
-huggingface-hub==0.20.2
+langchain==0.1.6
+huggingface-hub==0.20.3
