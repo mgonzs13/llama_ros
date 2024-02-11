@@ -314,7 +314,8 @@ void LlamaNode::execute(
 
   params.sparams.penalize_nl = sampling_config.penalize_nl;
 
-  params.sparams.samplers_sequence = sampling_config.samplers_sequence;
+  params.sparams.samplers_sequence =
+      sampler_types_from_chars(sampling_config.samplers_sequence);
   params.sparams.grammar = sampling_config.grammar;
 
   // check penalty_last_n
