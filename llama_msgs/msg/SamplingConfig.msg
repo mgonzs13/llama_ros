@@ -25,5 +25,5 @@ float32 mirostat_tau        5.0         # Mirostat target entropy, parameter tau
 
 bool penalize_nl            true        # consider newlines as a repeatable token
 
-string samplers_sequence    "kfypmt"    # top_k, tail_free, typical_p, top_p, min_p, temp
+string samplers_sequence    "kfypmt"    # TOP_K, TFS_Z, TYPICAL_P, TOP_P, MIN_P, TEMP
 string grammar              ""          # optional BNF-like grammar to constrain sampling
