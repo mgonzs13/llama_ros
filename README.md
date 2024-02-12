@@ -2,6 +2,21 @@
 
 This repository provides a set of ROS 2 packages to integrate [llama.cpp](https://github.com/ggerganov/llama.cpp) into ROS 2. By using the llama_ros packages, you can easily incorporate the powerful optimization capabilities of [llama.cpp](https://github.com/ggerganov/llama.cpp) into your ROS 2 projects.
 
+## Table of Contents
+
+1. [Related Projects](#related-projects)
+2. [Installation](#installation)
+   - [CUDA](#cuda)
+3. [Usage](#usage)
+   - [Lagnchain](#lagnchain)
+4. [Demo](#demo)
+4. [LLMs](#llms)
+
+## Related Projects
+
+ - [chatbot_ros](https://github.com/mgonzs13/chatbot_ros)
+ - [explainable_ros](https://github.com/Dsobh/explainable_ROS)
+
 ## Installation
 
 ```shell
