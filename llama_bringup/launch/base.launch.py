@@ -50,12 +50,13 @@ def generate_launch_description():
 
                 "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
+                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=-1),
+
                 "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
                 "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
                 "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=32.0),
                 "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
                 "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
-                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=-1),
 
                 "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "embedding": LaunchConfiguration("embedding", default=True),
@@ -76,7 +77,7 @@ def generate_launch_description():
                 "model": LaunchConfiguration("model", default=""),
                 "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
                 "lora_base": LaunchConfiguration("lora_base", default=""),
-                "numa": LaunchConfiguration("numa", default=True),
+                "numa": LaunchConfiguration("numa", default=0),
 
                 "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
                 "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),

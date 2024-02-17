@@ -40,7 +40,9 @@ Llama::Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
   }
 
   // load the model
-  llama_backend_init(this->params.numa);
+  llama_backend_init();
+  llama_numa_init(this->params.numa);
+
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(this->params);
   this->ctx_sampling = nullptr;
   this->batch =

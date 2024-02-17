@@ -72,6 +72,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   std::string lora_adapter;
   std::string split_mode;
   std::vector<double> tensor_split;
+  int32_t numa;
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
@@ -88,8 +89,9 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                             {"grp_attn_w", 512},
                                             {"n_parallel", 1},
                                             {"n_sequences", 1},
-                                            {"yarn_orig_ctx", 0},
                                             {"rope_scaling_type", -1},
+                                            {"yarn_orig_ctx", 0},
+                                            {"numa", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
@@ -121,7 +123,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                          {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
-                                         {"numa", false},
                                          {"cont_batching", false},
                                          {"dump_kv_cache", false},
                                          {"no_kv_offload", false},
@@ -135,12 +136,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("split_mode", split_mode);
   this->get_parameter("main_gpu", params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
-
-  this->get_parameter("grp_attn_n", params.grp_attn_n);
-  this->get_parameter("grp_attn_w", params.grp_attn_w);
-
-  this->get_parameter("rope_freq_scale", params.rope_freq_scale);
-  this->get_parameter("rope_freq_base", params.rope_freq_base);
 
   this->get_parameter("mul_mat_q", params.mul_mat_q);
   this->get_parameter("embedding", params.embedding);
@@ -159,10 +154,23 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("n_keep", params.n_keep);
   this->get_parameter("n_batch", params.n_batch);
 
+  this->get_parameter("grp_attn_n", params.grp_attn_n);
+  this->get_parameter("grp_attn_w", params.grp_attn_w);
+
+  this->get_parameter("rope_freq_base", params.rope_freq_base);
+  this->get_parameter("rope_freq_scale", params.rope_freq_scale);
+  this->get_parameter("rope_scaling_type", params.rope_scaling_type);
+
+  this->get_parameter("yarn_ext_factor", params.yarn_ext_factor);
+  this->get_parameter("yarn_attn_factor", params.yarn_attn_factor);
+  this->get_parameter("yarn_beta_fast", params.yarn_beta_fast);
+  this->get_parameter("yarn_beta_slow", params.yarn_beta_slow);
+  this->get_parameter("yarn_orig_ctx", params.yarn_orig_ctx);
+
   this->get_parameter("model", params.model);
   this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", params.lora_base);
-  this->get_parameter("numa", params.numa);
+  this->get_parameter("numa", numa);
 
   this->get_parameter("n_parallel", params.n_parallel);
   this->get_parameter("n_sequences", params.n_sequences);
@@ -198,6 +206,28 @@ void LlamaNode::load_params(struct gpt_params &params) {
 
   // stop is the antiprompt
   params.antiprompt.push_back(stop);
+
+  // numa
+  switch (numa) {
+  case 0:
+    params.numa = GGML_NUMA_STRATEGY_DISABLED;
+    break;
+  case 1:
+    params.numa = GGML_NUMA_STRATEGY_DISTRIBUTE;
+    break;
+  case 2:
+    params.numa = GGML_NUMA_STRATEGY_ISOLATE;
+    break;
+  case 3:
+    params.numa = GGML_NUMA_STRATEGY_NUMACTL;
+    break;
+  case 4:
+    params.numa = GGML_NUMA_STRATEGY_MIRROR;
+    break;
+  default:
+    params.numa = GGML_NUMA_STRATEGY_DISABLED;
+    break;
+  }
 
   // initial prompt
   if (!file_path.empty()) {
