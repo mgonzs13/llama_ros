@@ -71,7 +71,7 @@ def create_llama_launch(
 
     rope_freq_base: float = 0.0,
     rope_freq_scale: float = 0.0,
-    rope_scaling_type: float = -1,
+    rope_scaling_type: str = "none",
 
     yarn_ext_factor: float = -1.0,
     yarn_attn_factor: float = 1.0,
@@ -101,7 +101,7 @@ def create_llama_launch(
     lora_base_repo: str = "",
     lora_base_filename: str = "",
 
-    numa: int = 0,
+    numa: str = "none",
 
     prefix: str = "",
     suffix: str = "",

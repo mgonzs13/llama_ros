@@ -70,9 +70,12 @@ void LlamaNode::load_params(struct gpt_params &params) {
   std::string stop;
   std::string file_path;
   std::string lora_adapter;
+
   std::string split_mode;
+  std::string rope_scaling_type;
+  std::string numa;
+
   std::vector<double> tensor_split;
-  int32_t numa;
 
   // node params from llama.cpp common.h
   this->declare_parameters<int32_t>("", {
@@ -89,15 +92,15 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                             {"grp_attn_w", 512},
                                             {"n_parallel", 1},
                                             {"n_sequences", 1},
-                                            {"rope_scaling_type", -1},
                                             {"yarn_orig_ctx", 0},
-                                            {"numa", 0},
                                         });
   this->declare_parameters<std::string>("", {
                                                 {"model", ""},
                                                 {"lora_adapter", ""},
                                                 {"lora_base", ""},
                                                 {"split_mode", "none"},
+                                                {"rope_scaling_type", "none"},
+                                                {"numa", "none"},
                                                 {"cache_type_k", "f16"},
                                                 {"cache_type_v", "f16"},
                                                 {"prompt", ""},
@@ -159,7 +162,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
 
   this->get_parameter("rope_freq_base", params.rope_freq_base);
   this->get_parameter("rope_freq_scale", params.rope_freq_scale);
-  this->get_parameter("rope_scaling_type", params.rope_scaling_type);
+  this->get_parameter("rope_scaling_type", rope_scaling_type);
 
   this->get_parameter("yarn_ext_factor", params.yarn_ext_factor);
   this->get_parameter("yarn_attn_factor", params.yarn_attn_factor);
@@ -195,6 +198,9 @@ void LlamaNode::load_params(struct gpt_params &params) {
     params.use_mmap = false;
   }
 
+  // stop is the antiprompt
+  params.antiprompt.push_back(stop);
+
   // split mode
   if (split_mode == "none") {
     params.split_mode = LLAMA_SPLIT_NONE;
@@ -204,29 +210,26 @@ void LlamaNode::load_params(struct gpt_params &params) {
     params.split_mode = LLAMA_SPLIT_ROW;
   }
 
-  // stop is the antiprompt
-  params.antiprompt.push_back(stop);
+  // rope_scaling_type
+  if (rope_scaling_type == "none") {
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_NONE;
+  } else if (rope_scaling_type == "linear") {
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_LINEAR;
+  } else if (rope_scaling_type == "yarn") {
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_YARN;
+  }
 
   // numa
-  switch (numa) {
-  case 0:
+  if (numa == "none") {
     params.numa = GGML_NUMA_STRATEGY_DISABLED;
-    break;
-  case 1:
+  } else if (numa == "distribute") {
     params.numa = GGML_NUMA_STRATEGY_DISTRIBUTE;
-    break;
-  case 2:
+  } else if (numa == "isolate") {
     params.numa = GGML_NUMA_STRATEGY_ISOLATE;
-    break;
-  case 3:
+  } else if (numa == "numactl") {
     params.numa = GGML_NUMA_STRATEGY_NUMACTL;
-    break;
-  case 4:
+  } else if (numa == "mirror") {
     params.numa = GGML_NUMA_STRATEGY_MIRROR;
-    break;
-  default:
-    params.numa = GGML_NUMA_STRATEGY_DISABLED;
-    break;
   }
 
   // initial prompt

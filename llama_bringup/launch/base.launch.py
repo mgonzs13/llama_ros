@@ -50,7 +50,7 @@ def generate_launch_description():
 
                 "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
-                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=-1),
+                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default="none"),
 
                 "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
                 "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
@@ -77,7 +77,7 @@ def generate_launch_description():
                 "model": LaunchConfiguration("model", default=""),
                 "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
                 "lora_base": LaunchConfiguration("lora_base", default=""),
-                "numa": LaunchConfiguration("numa", default=0),
+                "numa": LaunchConfiguration("numa", default="none"),
 
                 "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
                 "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
