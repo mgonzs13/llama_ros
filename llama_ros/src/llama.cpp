@@ -440,14 +440,13 @@ bool Llama::eval() {
     if (this->params.grp_attn_n == 1) {
       if (this->n_past + this->batch.n_tokens > this->get_n_ctx()) {
 
-        const int n_left = this->n_past - this->params.n_keep - 1;
+        const int n_left = this->n_past - this->params.n_keep;
         const int n_discard = n_left / 2;
 
-        llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep + 1,
-                              this->params.n_keep + n_discard + 1);
-        llama_kv_cache_seq_shift(this->ctx, 0,
-                                 this->params.n_keep + 1 + n_discard, n_past,
-                                 -n_discard);
+        llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep,
+                              this->params.n_keep + n_discard);
+        llama_kv_cache_seq_shift(this->ctx, 0, this->params.n_keep + n_discard,
+                                 n_past, -n_discard);
 
         this->n_past -= n_discard;
       }
