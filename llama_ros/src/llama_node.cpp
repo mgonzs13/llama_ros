@@ -203,20 +203,20 @@ void LlamaNode::load_params(struct gpt_params &params) {
 
   // split mode
   if (split_mode == "none") {
-    params.split_mode = LLAMA_SPLIT_NONE;
+    params.split_mode = LLAMA_SPLIT_MODE_NONE;
   } else if (split_mode == "layer") {
-    params.split_mode = LLAMA_SPLIT_LAYER;
+    params.split_mode = LLAMA_SPLIT_MODE_LAYER;
   } else if (split_mode == "row") {
-    params.split_mode = LLAMA_SPLIT_ROW;
+    params.split_mode = LLAMA_SPLIT_MODE_ROW;
   }
 
   // rope_scaling_type
   if (rope_scaling_type == "none") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_NONE;
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_NONE;
   } else if (rope_scaling_type == "linear") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_LINEAR;
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_LINEAR;
   } else if (rope_scaling_type == "yarn") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_YARN;
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_YARN;
   }
 
   // numa
