@@ -445,8 +445,8 @@ bool Llama::eval() {
 
         llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep,
                               this->params.n_keep + n_discard);
-        llama_kv_cache_seq_shift(this->ctx, 0, this->params.n_keep + n_discard,
-                                 n_past, -n_discard);
+        llama_kv_cache_seq_add(this->ctx, 0, this->params.n_keep + n_discard,
+                               n_past, -n_discard);
 
         this->n_past -= n_discard;
       }
@@ -461,12 +461,11 @@ bool Llama::eval() {
         const int bd = (ga_w / ga_n) * (ga_n - 1);
         const int dd = (ga_w / ga_n) - ib * bd - ga_w;
 
-        llama_kv_cache_seq_shift(this->ctx, 0, this->ga_i, this->n_past,
-                                 ib * bd);
+        llama_kv_cache_seq_add(this->ctx, 0, this->ga_i, this->n_past, ib * bd);
         llama_kv_cache_seq_div(this->ctx, 0, this->ga_i + ib * bd,
                                this->ga_i + ib * bd + ga_w, ga_n);
-        llama_kv_cache_seq_shift(this->ctx, 0, this->ga_i + ib * bd + ga_w,
-                                 this->n_past + ib * bd, dd);
+        llama_kv_cache_seq_add(this->ctx, 0, this->ga_i + ib * bd + ga_w,
+                               this->n_past + ib * bd, dd);
 
         this->n_past -= bd;
 
