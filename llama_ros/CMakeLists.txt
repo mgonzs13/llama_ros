@@ -7,7 +7,6 @@ endif()
 
 # cuBLAS
 # option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
-# add_compile_definitions(GGML_USE_CUBLAS)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)

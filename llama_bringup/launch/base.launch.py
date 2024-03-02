@@ -58,7 +58,6 @@ def generate_launch_description():
                 "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
                 "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
 
-                "mul_mat_q": LaunchConfiguration("mul_mat_q", default=True),
                 "embedding": LaunchConfiguration("embedding", default=True),
                 "logits_all": LaunchConfiguration("logits_all", default=False),
                 "use_mmap": LaunchConfiguration("use_mmap", default=True),

@@ -80,7 +80,6 @@ def create_llama_launch(
     yarn_orig_ctx: float = 0,
 
     embedding: bool = True,
-    mul_mat_q: bool = True,
     logits_all: bool = False,
     use_mmap: bool = True,
     use_mlock: bool = False,
@@ -136,7 +135,6 @@ def create_llama_launch(
             "yarn_orig_ctx": str(yarn_orig_ctx),
             "rope_scaling_type": str(rope_scaling_type),
 
-            "mul_mat_q": str(mul_mat_q),
             "embedding": str(embedding),
             "logits_all": str(logits_all),
             "use_mmap": str(use_mmap),

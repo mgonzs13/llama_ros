@@ -121,7 +121,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                std::vector<double>({0.0}));
   this->declare_parameters<bool>("", {
                                          {"debug", true},
-                                         {"mul_mat_q", true},
                                          {"embedding", true},
                                          {"logits_all", false},
                                          {"use_mmap", true},
@@ -140,7 +139,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("main_gpu", params.main_gpu);
   this->get_parameter("tensor_split", tensor_split);
 
-  this->get_parameter("mul_mat_q", params.mul_mat_q);
   this->get_parameter("embedding", params.embedding);
   this->get_parameter("logits_all", params.logits_all);
   this->get_parameter("use_mmap", params.use_mmap);
@@ -243,8 +241,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
               std::istreambuf_iterator<char>(), back_inserter(params.prompt));
   }
 
-  // cublas
-#ifdef GGML_USE_CUBLAS
+  // split tensors
   GGML_ASSERT(tensor_split.size() <= llama_max_devices());
   for (size_t i = 0; i < llama_max_devices(); ++i) {
     if (i < tensor_split.size()) {
@@ -253,9 +250,6 @@ void LlamaNode::load_params(struct gpt_params &params) {
       params.tensor_split[i] = 0.0f;
     }
   }
-
-  params.mul_mat_q = false;
-#endif
 }
 
 void LlamaNode::tokenize_service_callback(
