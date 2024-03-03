@@ -74,6 +74,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   std::string split_mode;
   std::string rope_scaling_type;
   std::string numa;
+  std::string pooling_type;
 
   std::vector<double> tensor_split;
 
@@ -98,9 +99,10 @@ void LlamaNode::load_params(struct gpt_params &params) {
                                                 {"model", ""},
                                                 {"lora_adapter", ""},
                                                 {"lora_base", ""},
-                                                {"split_mode", "none"},
-                                                {"rope_scaling_type", "none"},
+                                                {"split_mode", "layer"},
+                                                {"rope_scaling_type", ""},
                                                 {"numa", "none"},
+                                                {"pooling_type", ""},
                                                 {"cache_type_k", "f16"},
                                                 {"cache_type_v", "f16"},
                                                 {"prompt", ""},
@@ -172,6 +174,7 @@ void LlamaNode::load_params(struct gpt_params &params) {
   this->get_parameter("lora_adapter", lora_adapter);
   this->get_parameter("lora_base", params.lora_base);
   this->get_parameter("numa", numa);
+  this->get_parameter("pooling_type", pooling_type);
 
   this->get_parameter("n_parallel", params.n_parallel);
   this->get_parameter("n_sequences", params.n_sequences);
@@ -215,6 +218,8 @@ void LlamaNode::load_params(struct gpt_params &params) {
     params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_LINEAR;
   } else if (rope_scaling_type == "yarn") {
     params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_YARN;
+  } else {
+    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED;
   }
 
   // numa
@@ -228,6 +233,17 @@ void LlamaNode::load_params(struct gpt_params &params) {
     params.numa = GGML_NUMA_STRATEGY_NUMACTL;
   } else if (numa == "mirror") {
     params.numa = GGML_NUMA_STRATEGY_MIRROR;
+  }
+
+  // pooling
+  if (pooling_type == "none") {
+    params.pooling_type = LLAMA_POOLING_TYPE_NONE;
+  } else if (pooling_type == "mean") {
+    params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
+  } else if (pooling_type == "cls") {
+    params.pooling_type = LLAMA_POOLING_TYPE_CLS;
+  } else {
+    params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
   }
 
   // initial prompt

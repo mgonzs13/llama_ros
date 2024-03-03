@@ -41,7 +41,7 @@ def generate_launch_description():
                 "n_batch": LaunchConfiguration("n_batch", default=8),
 
                 "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
-                "split_mode": LaunchConfiguration("split_mode", default="none"),
+                "split_mode": LaunchConfiguration("split_mode", default="layer"),
                 "main_gpu": LaunchConfiguration("main_gpu", default=0),
                 "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
 
@@ -50,7 +50,7 @@ def generate_launch_description():
 
                 "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
                 "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
-                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default="none"),
+                "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=""),
 
                 "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
                 "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
@@ -77,6 +77,7 @@ def generate_launch_description():
                 "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
                 "lora_base": LaunchConfiguration("lora_base", default=""),
                 "numa": LaunchConfiguration("numa", default="none"),
+                "pooling_type": LaunchConfiguration("pooling_type", default=""),
 
                 "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
                 "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),

@@ -62,7 +62,7 @@ def create_llama_launch(
     n_batch: int = 8,
 
     n_gpu_layers: int = 0,
-    split_mode: str = "none",
+    split_mode: str = "layer",
     main_gpu: int = 0,
     tensor_split: str = "[0.0]",
 
@@ -71,7 +71,7 @@ def create_llama_launch(
 
     rope_freq_base: float = 0.0,
     rope_freq_scale: float = 0.0,
-    rope_scaling_type: str = "none",
+    rope_scaling_type: str = "",
 
     yarn_ext_factor: float = -1.0,
     yarn_attn_factor: float = 1.0,
@@ -101,6 +101,7 @@ def create_llama_launch(
     lora_base_filename: str = "",
 
     numa: str = "none",
+    pooling_type: str = "",
 
     prefix: str = "",
     suffix: str = "",
@@ -152,7 +153,8 @@ def create_llama_launch(
 
             "model": download_model(model_repo, model_filename),
             "lora_base": download_model(lora_base_repo, lora_base_filename),
-            "numa": str(numa),
+            "numa": numa,
+            "pooling_type": pooling_type,
 
             "prefix": prefix,
             "suffix": suffix,
