@@ -30,6 +30,7 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
+#include "llama_ros/schema_converter.hpp"
 
 using namespace llama_ros;
 using std::placeholders::_1;
@@ -360,6 +361,13 @@ void LlamaNode::execute(
   params.sparams.samplers_sequence =
       sampler_types_from_chars(sampling_config.samplers_sequence);
   params.sparams.grammar = sampling_config.grammar;
+
+  if (params.sparams.grammar.size() == 0 &&
+      sampling_config.gramar_schema.size() > 0) {
+
+    params.sparams.grammar =
+        SchemaConverter::json_schema_to_gbnf(sampling_config.gramar_schema, {});
+  }
 
   // check penalty_last_n
   params.sparams.penalty_last_n = params.sparams.penalty_last_n < 0
