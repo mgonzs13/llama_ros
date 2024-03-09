@@ -365,8 +365,8 @@ void LlamaNode::execute(
   if (params.sparams.grammar.size() == 0 &&
       sampling_config.gramar_schema.size() > 0) {
 
-    params.sparams.grammar =
-        SchemaConverter::json_schema_to_gbnf(sampling_config.gramar_schema, {});
+    params.sparams.grammar = SchemaConverter::json_schema_to_gbnf(
+        sampling_config.gramar_schema, sampling_config.prop_order);
   }
 
   // check penalty_last_n

@@ -76,7 +76,7 @@ std::string SchemaConverter::visit(const json &schema,
                                           ? prop_pairs[i].first
                                           : name + "-" + prop_pairs[i].first);
       if (i > 0) {
-        rule += ",\"\" space";
+        rule += "\",\" space";
       }
 
       rule += " " + format_literal(prop_pairs[i].first) +
@@ -142,7 +142,7 @@ std::string SchemaConverter::format_grammar() {
 
 std::string SchemaConverter::format_literal(const json &literal) {
   std::string escaped =
-      json::parse("\"" + literal.get<std::string>() + "\"").dump();
+      json::parse("\"\\\"" + literal.get<std::string>() + "\\\"\"").dump();
   return escaped;
 }
 
