@@ -62,8 +62,9 @@ std::string SchemaConverter::visit(const json &schema,
 
     std::sort(prop_pairs.begin(), prop_pairs.end(),
               [this](const auto &a, const auto &b) {
-                return prop_order[a.first] < prop_order[b.first] ||
-                       (prop_order[a.first] == prop_order[b.first] &&
+                return this->prop_order[a.first] < this->prop_order[b.first] ||
+                       (this->prop_order[a.first] ==
+                            this->prop_order[b.first] &&
                         a.first < b.first);
               });
 
@@ -90,17 +91,24 @@ std::string SchemaConverter::visit(const json &schema,
 
     std::string item_rule_name =
         visit(schema["items"], name.empty() ? "item" : name + "-item");
-    std::string list_item_operator = "\",\" space " + item_rule_name;
-    std::string first_item = "(" + item_rule_name + ")?";
+    std::string list_item_operator = "(\",\" space " + item_rule_name + ")";
     std::string successive_items = "";
+    std::string first_item;
 
     int min_items = schema.value("minItems", 0);
     int max_items = schema.value("maxItems", -1);
 
     if (min_items > 0) {
       first_item = "(" + item_rule_name + ")";
-      successive_items = list_item_operator + std::string(min_items - 1, '*');
+
+      for (int i = 0; i < min_items - 1; i++) {
+        successive_items += "*";
+      }
+
       min_items--;
+
+    } else {
+      first_item = "(" + item_rule_name + ")?";
     }
 
     if (max_items > min_items) {
@@ -120,8 +128,7 @@ std::string SchemaConverter::visit(const json &schema,
   } else {
     auto it = PRIMITIVE_RULES.find(schema_type);
     assert(it != PRIMITIVE_RULES.end());
-    return add_rule((rule_name == "root") ? schema_type : rule_name,
-                    it->second);
+    return add_rule((rule_name == "root") ? "root" : schema_type, it->second);
   }
 }
 
@@ -141,14 +148,17 @@ std::string SchemaConverter::format_literal(const json &literal) {
 
 std::string SchemaConverter::add_rule(const std::string &name,
                                       const std::string &rule) {
+
   std::string esc_name = name;
+  std::string key;
+
   std::replace_if(
       esc_name.begin(), esc_name.end(),
       [](char c) { return !std::isalnum(c) && c != '-'; }, '-');
 
-  if (this->rules.find(esc_name) != this->rules.end() &&
+  if (this->rules.find(esc_name) == this->rules.end() ||
       this->rules[esc_name] == rule) {
-    return esc_name;
+    key = esc_name;
 
   } else {
     int i = 0;
@@ -157,9 +167,9 @@ std::string SchemaConverter::add_rule(const std::string &name,
            this->rules.end()) {
       i++;
     }
-
-    std::string key = esc_name + std::to_string(i);
-    this->rules[key] = rule;
-    return key;
+    key = esc_name + std::to_string(i);
   }
+
+  this->rules[key] = rule;
+  return key;
 }
