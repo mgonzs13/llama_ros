@@ -36,7 +36,7 @@ class LlamaClientNode(Node):
         super().__init__("llama_client_node")
 
         self.declare_parameter(
-            "prompt", "Do you know the city of León from Spain?\nCan you tell me a bit about its history?")
+            "prompt", "Who won the world series in 2020?")
         self.prompt = self.get_parameter(
             "prompt").get_parameter_value().string_value
         self.prompt = self.prompt.replace("\\n", "\n")
@@ -62,8 +62,13 @@ class LlamaClientNode(Node):
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
-        goal.sampling_config.temp = 0.2
-        goal.sampling_config.penalty_last_n = 8
+        goal.sampling_config.temp = 0.0
+        import json
+        goal.sampling_config.gramar_schema = json.dumps({
+            "type": "object",
+            "properties": {"team_name": {"type": "string"}},
+            "required": ["team_name"],
+        })
 
         self._action_client.wait_for_server()
         send_goal_future = self._action_client.send_goal_async(

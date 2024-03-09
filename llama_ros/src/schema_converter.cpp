@@ -22,11 +22,11 @@ std::string SchemaConverter::visit(const json &schema,
   std::string schema_type = schema.value("type", "");
   std::string rule_name = name.empty() ? "root" : name;
 
-  if (!schema["oneOf"].is_null() || !schema["anyOf"].is_null()) {
+  if (schema.contains("oneOf") || schema.contains("anyOf")) {
     std::vector<std::string> alt_rules;
 
     for (const auto &alt_schema :
-         !schema["oneOf"].is_null()
+         schema.contains("oneOf")
              ? schema.value("oneOf", std::vector<std::string>({}))
              : schema.value("anyOf", std::vector<std::string>({}))) {
       alt_rules.push_back(visit(alt_schema));
@@ -37,10 +37,10 @@ std::string SchemaConverter::visit(const json &schema,
 
     return add_rule(rule_name, rule);
 
-  } else if (!schema["const"].is_null()) {
+  } else if (schema.contains("const")) {
     return add_rule(rule_name, format_literal(schema["const"]));
 
-  } else if (!schema["enum"].is_null()) {
+  } else if (schema.contains("enum")) {
     std::vector<std::string> enum_literals;
 
     for (const auto &v : schema["enum"]) {
@@ -52,11 +52,11 @@ std::string SchemaConverter::visit(const json &schema,
 
     return add_rule(rule_name, rule);
 
-  } else if (schema_type == "object" && !schema["properties"].is_null()) {
+  } else if (schema_type == "object" && schema.contains("properties")) {
     std::vector<std::pair<std::string, json>> prop_pairs;
 
     for (auto it = schema["properties"].begin();
-         it != schema["properties"].end(); ++it) {
+         it != schema["properties"].end(); it++) {
       prop_pairs.push_back({it.key(), it.value()});
     }
 
@@ -77,6 +77,7 @@ std::string SchemaConverter::visit(const json &schema,
       if (i > 0) {
         rule += ",\"\" space";
       }
+
       rule += " " + format_literal(prop_pairs[i].first) +
               " space \":\" space " + prop_rule_name;
     }
@@ -85,7 +86,7 @@ std::string SchemaConverter::visit(const json &schema,
 
     return add_rule(rule_name, rule);
 
-  } else if (schema_type == "array" && !schema["items"].is_null()) {
+  } else if (schema_type == "array" && schema.contains("items")) {
 
     std::string item_rule_name =
         visit(schema["items"], name.empty() ? "item" : name + "-item");
@@ -145,7 +146,7 @@ std::string SchemaConverter::add_rule(const std::string &name,
       esc_name.begin(), esc_name.end(),
       [](char c) { return !std::isalnum(c) && c != '-'; }, '-');
 
-  if (this->rules.find(esc_name) == this->rules.end() &&
+  if (this->rules.find(esc_name) != this->rules.end() &&
       this->rules[esc_name] == rule) {
     return esc_name;
 

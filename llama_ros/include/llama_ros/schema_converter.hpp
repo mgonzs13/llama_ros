@@ -38,7 +38,8 @@ const std::map<std::string, std::string> PRIMITIVE_RULES = {
     {"number", "(\"-\"? ([0-9] | [1-9] [0-9]*)) (\".\" [0-9]+)? ([eE] [-+]? "
                "[0-9]+)? space"},
     {"integer", "(\"-\"? ([0-9] | [1-9] [0-9]*)) space"},
-    {"string", R"("\"\\"(\\["\\/bfnrt]|u[0-9a-fA-F]{4})*"\\")"},
+    {"string",
+     R"("\"" ([^"\\\x7F\x00-\x1F] |"\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) )* "\"" space)"},
     {"null", "\"null\" space"}};
 
 class SchemaConverter {
