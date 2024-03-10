@@ -6,7 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # cuBLAS
-# option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
+option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)

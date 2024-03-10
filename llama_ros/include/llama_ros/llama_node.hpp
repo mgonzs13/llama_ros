@@ -56,9 +56,7 @@ private:
       generate_embeddings_service_;
   rclcpp_action::Server<GenerateResponse>::SharedPtr
       generate_response_action_server_;
-  GenerateResponse::Goal current_goal_;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
-  std::mutex handle_accepted_mtx_;
 
   // methods
   void load_params(struct gpt_params &params);
