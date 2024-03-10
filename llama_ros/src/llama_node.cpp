@@ -39,10 +39,11 @@ using std::placeholders::_2;
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   // load llama
-  struct gpt_params params;
-  this->load_params(params);
-  this->llama = std::make_shared<Llama>(this->get_logger(), params, debug);
-  this->llama->generate_response(params.prompt, false, nullptr);
+  this->gpt_params_loader.load_params(this);
+  this->llama = std::make_shared<Llama>(
+      this->get_logger(), gpt_params_loader.params, gpt_params_loader.debug);
+  this->llama->generate_response(gpt_params_loader.params.prompt, false,
+                                 nullptr);
 
   // services
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
@@ -64,209 +65,6 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
           std::bind(&LlamaNode::handle_accepted, this, _1));
 
   RCLCPP_INFO(this->get_logger(), "Llama Node started");
-}
-
-void LlamaNode::load_params(struct gpt_params &params) {
-
-  std::string stop;
-  std::string file_path;
-  std::string lora_adapter;
-
-  std::string split_mode;
-  std::string rope_scaling_type;
-  std::string numa;
-  std::string pooling_type;
-
-  std::vector<double> tensor_split;
-
-  // node params from llama.cpp common.h
-  this->declare_parameters<int32_t>("", {
-                                            {"seed", -1},
-                                            {"n_ctx", 512},
-                                            {"n_batch", 512},
-                                            {"n_gpu_layers", 0},
-                                            {"main_gpu", 0},
-                                            {"n_threads", 1},
-                                            {"n_threads_batch", -1},
-                                            {"n_predict", 128},
-                                            {"n_keep", -1},
-                                            {"grp_attn_n", 1},
-                                            {"grp_attn_w", 512},
-                                            {"n_parallel", 1},
-                                            {"n_sequences", 1},
-                                            {"yarn_orig_ctx", 0},
-                                        });
-  this->declare_parameters<std::string>("", {
-                                                {"model", ""},
-                                                {"lora_adapter", ""},
-                                                {"lora_base", ""},
-                                                {"split_mode", "layer"},
-                                                {"rope_scaling_type", ""},
-                                                {"numa", "none"},
-                                                {"pooling_type", ""},
-                                                {"cache_type_k", "f16"},
-                                                {"cache_type_v", "f16"},
-                                                {"prompt", ""},
-                                                {"file", ""},
-                                                {"prefix", ""},
-                                                {"suffix", ""},
-                                                {"stop", ""},
-                                            });
-  this->declare_parameters<float>("", {
-                                          {"rope_freq_base", 0.0f},
-                                          {"rope_freq_scale", 0.0f},
-                                          {"yarn_ext_factor", -1.0f},
-                                          {"yarn_attn_factor", 1.0f},
-                                          {"yarn_beta_fast", 32.0f},
-                                          {"yarn_beta_slow", 1.0f},
-                                      });
-  this->declare_parameter<std::vector<double>>("tensor_split",
-                                               std::vector<double>({0.0}));
-  this->declare_parameters<bool>("", {
-                                         {"debug", true},
-                                         {"embedding", true},
-                                         {"logits_all", false},
-                                         {"use_mmap", true},
-                                         {"use_mlock", false},
-                                         {"cont_batching", false},
-                                         {"dump_kv_cache", false},
-                                         {"no_kv_offload", false},
-                                     });
-
-  this->get_parameter("seed", params.seed);
-  this->get_parameter("n_ctx", params.n_ctx);
-  this->get_parameter("n_batch", params.n_batch);
-
-  this->get_parameter("n_gpu_layers", params.n_gpu_layers);
-  this->get_parameter("split_mode", split_mode);
-  this->get_parameter("main_gpu", params.main_gpu);
-  this->get_parameter("tensor_split", tensor_split);
-
-  this->get_parameter("embedding", params.embedding);
-  this->get_parameter("logits_all", params.logits_all);
-  this->get_parameter("use_mmap", params.use_mmap);
-  this->get_parameter("use_mlock", params.use_mlock);
-
-  this->get_parameter("dump_kv_cache", params.dump_kv_cache);
-  this->get_parameter("no_kv_offload", params.no_kv_offload);
-  this->get_parameter("cache_type_k", params.cache_type_k);
-  this->get_parameter("cache_type_v", params.cache_type_v);
-
-  this->get_parameter("n_threads", params.n_threads);
-  this->get_parameter("n_threads_batch", params.n_threads_batch);
-  this->get_parameter("n_predict", params.n_predict);
-  this->get_parameter("n_keep", params.n_keep);
-  this->get_parameter("n_batch", params.n_batch);
-
-  this->get_parameter("grp_attn_n", params.grp_attn_n);
-  this->get_parameter("grp_attn_w", params.grp_attn_w);
-
-  this->get_parameter("rope_freq_base", params.rope_freq_base);
-  this->get_parameter("rope_freq_scale", params.rope_freq_scale);
-  this->get_parameter("rope_scaling_type", rope_scaling_type);
-
-  this->get_parameter("yarn_ext_factor", params.yarn_ext_factor);
-  this->get_parameter("yarn_attn_factor", params.yarn_attn_factor);
-  this->get_parameter("yarn_beta_fast", params.yarn_beta_fast);
-  this->get_parameter("yarn_beta_slow", params.yarn_beta_slow);
-  this->get_parameter("yarn_orig_ctx", params.yarn_orig_ctx);
-
-  this->get_parameter("model", params.model);
-  this->get_parameter("lora_adapter", lora_adapter);
-  this->get_parameter("lora_base", params.lora_base);
-  this->get_parameter("numa", numa);
-  this->get_parameter("pooling_type", pooling_type);
-
-  this->get_parameter("n_parallel", params.n_parallel);
-  this->get_parameter("n_sequences", params.n_sequences);
-  this->get_parameter("cont_batching", params.cont_batching);
-
-  this->get_parameter("prefix", params.input_prefix);
-  this->get_parameter("suffix", params.input_suffix);
-  this->get_parameter("stop", stop);
-
-  this->get_parameter("prompt", params.prompt);
-  this->get_parameter("file", file_path);
-  this->get_parameter("debug", this->debug);
-
-  // check threads number
-  if (params.n_threads < 0) {
-    params.n_threads = std::thread::hardware_concurrency();
-  }
-
-  // lora_adapter
-  if (lora_adapter.size()) {
-    params.lora_adapter.push_back({lora_adapter, 1.0f});
-    params.use_mmap = false;
-  }
-
-  // stop is the antiprompt
-  params.antiprompt.push_back(stop);
-
-  // split mode
-  if (split_mode == "none") {
-    params.split_mode = LLAMA_SPLIT_MODE_NONE;
-  } else if (split_mode == "layer") {
-    params.split_mode = LLAMA_SPLIT_MODE_LAYER;
-  } else if (split_mode == "row") {
-    params.split_mode = LLAMA_SPLIT_MODE_ROW;
-  }
-
-  // rope_scaling_type
-  if (rope_scaling_type == "none") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_NONE;
-  } else if (rope_scaling_type == "linear") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_LINEAR;
-  } else if (rope_scaling_type == "yarn") {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_YARN;
-  } else {
-    params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED;
-  }
-
-  // numa
-  if (numa == "none") {
-    params.numa = GGML_NUMA_STRATEGY_DISABLED;
-  } else if (numa == "distribute") {
-    params.numa = GGML_NUMA_STRATEGY_DISTRIBUTE;
-  } else if (numa == "isolate") {
-    params.numa = GGML_NUMA_STRATEGY_ISOLATE;
-  } else if (numa == "numactl") {
-    params.numa = GGML_NUMA_STRATEGY_NUMACTL;
-  } else if (numa == "mirror") {
-    params.numa = GGML_NUMA_STRATEGY_MIRROR;
-  }
-
-  // pooling
-  if (pooling_type == "none") {
-    params.pooling_type = LLAMA_POOLING_TYPE_NONE;
-  } else if (pooling_type == "mean") {
-    params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
-  } else if (pooling_type == "cls") {
-    params.pooling_type = LLAMA_POOLING_TYPE_CLS;
-  } else {
-    params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
-  }
-
-  // initial prompt
-  if (!file_path.empty()) {
-    std::ifstream file(file_path.c_str());
-    if (!file) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to open file %s",
-                   file_path.c_str());
-    }
-    std::copy(std::istreambuf_iterator<char>(file),
-              std::istreambuf_iterator<char>(), back_inserter(params.prompt));
-  }
-
-  // split tensors
-  GGML_ASSERT(tensor_split.size() <= llama_max_devices());
-  for (size_t i = 0; i < llama_max_devices(); ++i) {
-    if (i < tensor_split.size()) {
-      params.tensor_split[i] = tensor_split[i];
-    } else {
-      params.tensor_split[i] = 0.0f;
-    }
-  }
 }
 
 void LlamaNode::tokenize_service_callback(
@@ -301,7 +99,7 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
 rclcpp_action::CancelResponse LlamaNode::handle_cancel(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
   (void)goal_handle;
-  RCLCPP_INFO(this->get_logger(), "Received request to cancel");
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel Llama node");
   this->llama->cancel();
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -323,7 +121,7 @@ void LlamaNode::execute(
   auto result = std::make_shared<GenerateResponse::Result>();
   this->goal_handle_ = goal_handle;
 
-  if (this->debug) {
+  if (this->gpt_params_loader.debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 

@@ -96,10 +96,10 @@ def create_llama_launch(
 
     model_repo: str = "",
     model_filename: str = "",
-
     lora_base_repo: str = "",
     lora_base_filename: str = "",
-
+    mmproj_repo: str = "",
+    mmproj_filename: str = "",
     numa: str = "none",
     pooling_type: str = "",
 
@@ -153,6 +153,7 @@ def create_llama_launch(
 
             "model": download_model(model_repo, model_filename),
             "lora_base": download_model(lora_base_repo, lora_base_filename),
+            "mmproj": download_model(mmproj_repo, mmproj_filename),
             "numa": numa,
             "pooling_type": pooling_type,
 

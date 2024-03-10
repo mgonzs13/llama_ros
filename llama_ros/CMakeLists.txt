@@ -14,19 +14,43 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(llama_msgs REQUIRED)
 
+find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
+
 INCLUDE_DIRECTORIES(
   include
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 add_subdirectory(llama_cpp)
+add_subdirectory(llama_cpp/examples/llava)
 
-add_executable(llama_node src/llama.cpp src/schema_converter.cpp src/llama_node.cpp src/llama_main.cpp)
+add_executable(llama_node
+  src/llama.cpp 
+  src/gpt_params_loader.cpp 
+  src/schema_converter.cpp 
+  src/llama_node.cpp 
+  src/llama_main.cpp
+)
 target_link_libraries(llama_node llama common)
 ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs)
+
+add_executable(llava_node
+  src/llava.cpp 
+  src/gpt_params_loader.cpp 
+  src/llava_node.cpp 
+  src/llava_main.cpp
+)
+target_link_libraries(llava_node llava llama common)
+ament_target_dependencies(llava_node rclcpp rclcpp_action llama_msgs cv_bridge)
 
 # INSTALL
 install(TARGETS
   llama_node
+  DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+  llava_node
   DESTINATION lib/${PROJECT_NAME})
 
 install(PROGRAMS
