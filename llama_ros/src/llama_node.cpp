@@ -54,7 +54,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
           std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
                     _2));
 
-  // generate reponse action server
+  // generate response action server
   this->goal_handle_ = nullptr;
   this->generate_response_action_server_ =
       rclcpp_action::create_server<GenerateResponse>(
