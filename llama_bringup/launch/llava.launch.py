@@ -29,6 +29,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
+            use_llava=True,
+
             n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
@@ -42,7 +44,7 @@ def generate_launch_description():
             mmproj_filename="mmproj-model-f16.gguf",
 
             prefix="[INST] ",
-            suffix=" [/INST]\n",
+            suffix="[/INST] ",
             stop="[INST] ",
 
             file="alpaca.txt"

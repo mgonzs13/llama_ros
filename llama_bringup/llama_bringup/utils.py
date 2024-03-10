@@ -57,6 +57,8 @@ def get_prompt_path(prompt_file_name: str) -> str:
 
 
 def create_llama_launch(
+    use_llava: bool = False,
+
     seed: int = -1,
     n_ctx: int = 512,
     n_batch: int = 8,
@@ -115,6 +117,8 @@ def create_llama_launch(
     return IncludeLaunchDescription(
         PythonLaunchDescriptionSource(get_base_launch_path()),
         launch_arguments={
+            "use_llava": str(use_llava),
+
             "seed": str(seed),
             "n_ctx": str(n_ctx),
             "n_batch": str(n_batch),
