@@ -200,14 +200,16 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   }
 
   // show sampling info
-  RCLCPP_INFO(this->logger,
-              "Sampling: temp = %f, "
-              "top_k = %d, "
-              "top_p = %f, "
-              "penalty_last_n = %i, "
-              "repeat_penalty = %f",
-              params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
-              params.sparams.penalty_last_n, params.sparams.penalty_repeat);
+  if (this->debug) {
+    RCLCPP_INFO(this->logger,
+                "Sampling: temp = %f, "
+                "top_k = %d, "
+                "top_p = %f, "
+                "penalty_last_n = %i, "
+                "repeat_penalty = %f",
+                params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
+                params.sparams.penalty_last_n, params.sparams.penalty_repeat);
+  }
 
   RCLCPP_INFO(this->logger, "Starting Response Generation");
 

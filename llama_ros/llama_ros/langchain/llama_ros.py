@@ -68,7 +68,10 @@ class LlamaROS(LLM):
     penalize_nl: bool = True
 
     samplers_sequence: str = "kfypmt"
+
     grammar: str = ""
+    grammar_schema: str = ""
+    prop_order: List[str] = []
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -145,7 +148,10 @@ class LlamaROS(LLM):
         goal.sampling_config.penalize_nl = self.penalize_nl
 
         goal.sampling_config.samplers_sequence = self.samplers_sequence
+
         goal.sampling_config.grammar = self.grammar
+        goal.sampling_config.gramar_schema = self.grammar_schema
+        goal.sampling_config.prop_order = self.prop_order
 
         # send goal
         self.action_client.wait_for_server()

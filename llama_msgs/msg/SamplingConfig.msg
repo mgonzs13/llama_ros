@@ -26,4 +26,7 @@ float32 mirostat_tau        5.0         # Mirostat target entropy, parameter tau
 bool penalize_nl            true        # consider newlines as a repeatable token
 
 string samplers_sequence    "kfypmt"    # TOP_K, TFS_Z, TYPICAL_P, TOP_P, MIN_P, TEMP
+
 string grammar              ""          # optional BNF-like grammar to constrain sampling
+string gramar_schema        ""          # grammar schema that defines a JSON BNF grammar
+string[] prop_order         []          # order of keys in a JSON BNF grammar
