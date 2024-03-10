@@ -20,22 +20,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_ROS__GPT_PARAMS_LOADER_HPP
-#define LLAMA_ROS__GPT_PARAMS_LOADER_HPP
+#ifndef LLAMA_ROS__GPT_PARAMS_HPP
+#define LLAMA_ROS__GPT_PARAMS_HPP
+
+#include <memory>
+#include <rclcpp/rclcpp.hpp>
 
 #include "common.h"
-#include <rclcpp/rclcpp.hpp>
+#include "llama.h"
+#include "llama_msgs/msg/sampling_config.hpp"
 
 namespace llama_ros {
 
-class GptParamsLoader {
+class GptParams {
 
 public:
-  GptParamsLoader();
+  GptParams();
   void load_params(rclcpp::Node *node);
+  void
+  update_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
+                         int n_vocab, llama_token token_eos);
 
   bool debug;
-  struct gpt_params params;
+  std::shared_ptr<struct gpt_params> params;
 };
 } // namespace llama_ros
 

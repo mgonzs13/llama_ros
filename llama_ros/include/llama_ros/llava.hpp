@@ -47,18 +47,34 @@ struct llava_context {
 class Llava {
 
 public:
-  Llava(rclcpp::Logger logger, const struct gpt_params &params, bool debug);
+  Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
+        bool debug);
   ~Llava();
 
   struct llava_context *llava_init(const gpt_params &params);
   void llava_free(struct llava_context *ctx_llava);
 
-  void cancel();
+  const struct llava_context *get_ctx() { return this->ctx_llava; }
+  const struct llama_model *get_llama_model() {
+    return llama_get_model(this->ctx_llava->ctx_llama);
+  }
+  int get_n_ctx() { return llama_n_ctx(this->ctx_llava->ctx_llama); }
+  int get_n_ctx_train() { return llama_n_ctx_train(this->get_llama_model()); }
+  int get_n_embd() { return llama_n_embd(this->get_llama_model()); }
+  int get_n_vocab() { return llama_n_vocab(this->get_llama_model()); }
+  bool is_embedding() { return this->params->embedding; }
+  bool should_add_bos_token() {
+    return llama_should_add_bos_token(this->get_llama_model());
+  }
+  llama_token get_token_eos() {
+    return llama_token_eos(this->get_llama_model());
+  }
 
   struct llava_image_embed *load_image(std::string base64_str);
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
 
+  void cancel();
   std::string process_prompt(struct llava_image_embed *image_embed,
                              const std::string &prompt);
 
@@ -72,7 +88,7 @@ protected:
 
 private:
   rclcpp::Logger logger;
-  struct gpt_params params;
+  std::shared_ptr<struct gpt_params> params;
   bool debug;
   bool canceled;
 };

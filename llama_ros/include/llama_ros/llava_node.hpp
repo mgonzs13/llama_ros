@@ -31,7 +31,7 @@
 
 #include "common.h"
 #include "llama_msgs/action/generate_response.hpp"
-#include "llama_ros/gpt_params_loader.hpp"
+#include "llama_ros/gpt_params.hpp"
 #include "llama_ros/llava.hpp"
 
 namespace llama_ros {
@@ -46,7 +46,7 @@ public:
   LlavaNode();
 
   std::shared_ptr<Llava> llava;
-  GptParamsLoader gpt_params_loader;
+  GptParams gpt_params;
 
   std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
                             bool url = false);

@@ -30,7 +30,8 @@
 
 using namespace llama_ros;
 
-Llava::Llava(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
+Llava::Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
+             bool debug)
     : logger(logger), params(params), debug(debug), canceled(false) {
 
   // disable llama.cpp logs
@@ -41,7 +42,7 @@ Llava::Llava(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
   }
 
   // load the model
-  this->ctx_llava = this->llava_init(params);
+  this->ctx_llava = this->llava_init(*this->params);
   if (this->ctx_llava == NULL) {
     RCLCPP_ERROR(this->logger, "Failed to init llava");
     return;
@@ -152,7 +153,7 @@ const char *Llava::sample(struct llama_sampling_context *ctx_sampling,
 
   static std::string ret;
 
-  if (id == llama_token_eos(llama_get_model(this->ctx_llava->ctx_llama))) {
+  if (id == this->get_token_eos()) {
     ret = "</s>";
   } else {
     ret = llama_token_to_piece(this->ctx_llava->ctx_llama, id);
@@ -182,7 +183,7 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   base64::decode(base64_str.begin(), base64_str.end(), img_bytes.begin());
 
   auto embed = llava_image_embed_make_with_bytes(
-      this->ctx_llava->ctx_clip, this->params.n_threads, img_bytes.data(),
+      this->ctx_llava->ctx_clip, this->params->n_threads, img_bytes.data(),
       img_bytes.size());
   if (!embed) {
     RCLCPP_ERROR(this->logger, "Could not load image from base64 string.");
@@ -199,7 +200,7 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
   this->canceled = false;
 
   const int max_tgt_len =
-      this->params.n_predict < 0 ? 256 : this->params.n_predict;
+      this->params->n_predict < 0 ? 256 : this->params->n_predict;
   const bool add_bos =
       llama_should_add_bos_token(llama_get_model(this->ctx_llava->ctx_llama));
 
@@ -219,14 +220,14 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
     user_prompt = prompt + "\nASSISTANT:";
   }
 
-  eval_string(system_prompt.c_str(), this->params.n_batch, &n_past, add_bos);
+  eval_string(system_prompt.c_str(), this->params->n_batch, &n_past, add_bos);
   llava_eval_image_embed(this->ctx_llava->ctx_llama, image_embed,
-                         this->params.n_batch, &n_past);
-  eval_string(user_prompt.c_str(), this->params.n_batch, &n_past, false);
+                         this->params->n_batch, &n_past);
+  eval_string(user_prompt.c_str(), this->params->n_batch, &n_past, false);
 
   // generate the response
   struct llama_sampling_context *ctx_sampling =
-      llama_sampling_init(this->params.sparams);
+      llama_sampling_init(this->params->sparams);
 
   std::string response = "";
   for (int i = 0; i < max_tgt_len; i++) {

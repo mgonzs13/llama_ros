@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <memory>
 #include <thread>
 
 #include "common.h"
@@ -29,7 +30,8 @@
 
 using namespace llama_ros;
 
-Llama::Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
+Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
+             bool debug)
     : logger(logger), params(params), debug(debug) {
 
   // disable llama.cpp logs
@@ -41,49 +43,49 @@ Llama::Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug)
 
   // load the model
   llama_backend_init();
-  llama_numa_init(this->params.numa);
+  llama_numa_init(this->params->numa);
 
-  std::tie(this->model, this->ctx) = llama_init_from_gpt_params(this->params);
+  std::tie(this->model, this->ctx) = llama_init_from_gpt_params(*this->params);
   this->ctx_sampling = nullptr;
   this->batch =
-      llama_batch_init(this->params.n_ctx, 0, this->params.n_parallel);
+      llama_batch_init(this->params->n_ctx, 0, this->params->n_parallel);
 
   // show system information
   RCLCPP_INFO(this->logger, "System_info: n_threads = %d / %d | %s",
-              this->params.n_threads, std::thread::hardware_concurrency(),
+              this->params->n_threads, std::thread::hardware_concurrency(),
               llama_print_system_info());
 
   // number of tokens to keep when resetting context
-  if (this->params.n_keep == -1) {
-    this->params.n_keep = (int)this->prompt_tokens.size();
+  if (this->params->n_keep == -1) {
+    this->params->n_keep = (int)this->prompt_tokens.size();
   }
 
   this->canceled = false;
   this->n_past = 0;
-  this->n_remain = this->params.n_predict;
+  this->n_remain = this->params->n_predict;
   this->n_consumed = 0;
   this->ga_i = 0;
 
   // show info
   RCLCPP_INFO(this->logger,
               "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
-              this->get_n_ctx(), this->params.n_batch, this->params.n_predict,
-              this->params.n_keep);
+              this->get_n_ctx(), this->params->n_batch, this->params->n_predict,
+              this->params->n_keep);
 
-  if (this->params.grp_attn_n != 1) {
-    if (this->params.grp_attn_n > 0) {
+  if (this->params->grp_attn_n != 1) {
+    if (this->params->grp_attn_n > 0) {
       GGML_ASSERT("grp_attn_n must be positive\n");
     }
 
-    if (this->params.grp_attn_w % this->params.grp_attn_n != 0) {
+    if (this->params->grp_attn_w % this->params->grp_attn_n != 0) {
       GGML_ASSERT("grp_attn_w must be a multiple of grp_attn_n\n");
     }
   }
 
   RCLCPP_INFO(this->logger,
               "self-extend: n_ctx_train = %d, grp_attn_n = %d, grp_attn_w = %d",
-              this->get_n_ctx_train(), this->params.grp_attn_n,
-              this->params.grp_attn_w);
+              this->get_n_ctx_train(), this->params->grp_attn_n,
+              this->params->grp_attn_w);
 }
 
 Llama::~Llama() {
@@ -120,7 +122,7 @@ void Llama::reset() {
 
   this->canceled = false;
   this->n_past = 0;
-  this->n_remain = this->params.n_predict;
+  this->n_remain = this->params->n_predict;
   this->n_consumed = 0;
   this->ga_i = 0;
 
@@ -153,11 +155,11 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
 
   int embd_n_past = 0;
   int embd_n_eval = 0;
-  for (size_t i = 0; i < tokens.size(); i += this->params.n_batch) {
+  for (size_t i = 0; i < tokens.size(); i += this->params->n_batch) {
 
     embd_n_eval = (int)tokens.size() - i;
-    if (embd_n_eval > this->params.n_batch) {
-      embd_n_eval = this->params.n_batch;
+    if (embd_n_eval > this->params->n_batch) {
+      embd_n_eval = this->params->n_batch;
     }
 
     if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
@@ -189,9 +191,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   // load params
   if (this->ctx_sampling == nullptr) {
-    this->ctx_sampling = llama_sampling_init(this->params.sparams);
+    this->ctx_sampling = llama_sampling_init(this->params->sparams);
   } else {
-    this->update_sampling_params(this->params.sparams);
+    this->update_sampling_params(this->params->sparams);
   }
 
   // load prompt
@@ -207,8 +209,9 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
                 "top_p = %f, "
                 "penalty_last_n = %i, "
                 "repeat_penalty = %f",
-                params.sparams.temp, params.sparams.top_k, params.sparams.top_p,
-                params.sparams.penalty_last_n, params.sparams.penalty_repeat);
+                params->sparams.temp, params->sparams.top_k,
+                params->sparams.top_p, params->sparams.penalty_last_n,
+                params->sparams.penalty_repeat);
   }
 
   RCLCPP_INFO(this->logger, "Starting Response Generation");
@@ -226,7 +229,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
   while (this->n_remain != 0) {
 
     stop_type stopping =
-        this->find_stop(completion_result_list, this->params.antiprompt);
+        this->find_stop(completion_result_list, this->params->antiprompt);
 
     if (stopping == FULL_STOP) {
       break;
@@ -272,10 +275,10 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
   std::vector<llama_token> inp_pfx = this->tokenize(
-      this->params.input_prefix,
+      this->params->input_prefix,
       this->should_add_bos_token() && !this->prompt_tokens.size(), true);
   std::vector<llama_token> inp_sfx =
-      this->tokenize(this->params.input_suffix, false, true);
+      this->tokenize(this->params->input_suffix, false, true);
 
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
@@ -291,12 +294,12 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
   }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
-  if (add_pfx_sfx && this->params.input_prefix.size()) {
+  if (add_pfx_sfx && this->params->input_prefix.size()) {
     prompt_size += inp_pfx.size() + inp_sfx.size();
   }
 
   // insert prefix
-  if (add_pfx_sfx && this->params.input_prefix.size()) {
+  if (add_pfx_sfx && this->params->input_prefix.size()) {
 
     const int n_prev = 64;
     const std::string last_output =
@@ -304,9 +307,9 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
     // check if prefix is already added
     if (last_output.find(
-            this->params.input_prefix.c_str(),
-            last_output.length() - this->params.input_prefix.length(),
-            this->params.input_prefix.length()) == std::string::npos) {
+            this->params->input_prefix.c_str(),
+            last_output.length() - this->params->input_prefix.length(),
+            this->params->input_prefix.length()) == std::string::npos) {
 
       this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
                                  inp_pfx.end());
@@ -317,7 +320,7 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
                              line_inp.end());
 
   // insert suffix
-  if (add_pfx_sfx && this->params.input_suffix.size()) {
+  if (add_pfx_sfx && this->params->input_suffix.size()) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
                                inp_sfx.end());
   }
@@ -335,11 +338,11 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   const std::string last_output =
       llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
 
-  if (this->params.antiprompt.at(0).size() &&
+  if (this->params->antiprompt.at(0).size() &&
       last_output.find(
-          this->params.antiprompt.at(0).c_str(),
-          last_output.length() - this->params.antiprompt.at(0).length(),
-          this->params.antiprompt.at(0).length()) != std::string::npos) {
+          this->params->antiprompt.at(0).c_str(),
+          last_output.length() - this->params->antiprompt.at(0).length(),
+          this->params->antiprompt.at(0).length()) != std::string::npos) {
     return FULL_STOP;
   }
 
@@ -355,12 +358,12 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   }
 
   // respect the maximum number of tokens
-  if (this->n_remain <= 0 && this->params.n_predict != -1) {
-    this->n_remain = this->params.n_predict;
+  if (this->n_remain <= 0 && this->params->n_predict != -1) {
+    this->n_remain = this->params->n_predict;
     return FULL_STOP;
   }
 
-  if (this->n_past > this->get_n_ctx() && this->params.n_predict == -2) {
+  if (this->n_past > this->get_n_ctx() && this->params->n_predict == -2) {
     return FULL_STOP;
   }
 
@@ -411,7 +414,7 @@ bool Llama::init_eval() {
     llama_batch_clear(this->batch);
 
     while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-           (this->batch.n_tokens < this->params.n_batch)) {
+           (this->batch.n_tokens < this->params->n_batch)) {
 
       llama_batch_add(this->batch, this->prompt_tokens[this->n_consumed],
                       this->n_past + n, {0}, true);
@@ -439,15 +442,15 @@ bool Llama::eval() {
   if (this->batch.n_tokens > 0) {
 
     // shift context
-    if (this->params.grp_attn_n == 1) {
+    if (this->params->grp_attn_n == 1) {
       if (this->n_past + this->batch.n_tokens > this->get_n_ctx()) {
 
-        const int n_left = this->n_past - this->params.n_keep;
+        const int n_left = this->n_past - this->params->n_keep;
         const int n_discard = n_left / 2;
 
-        llama_kv_cache_seq_rm(this->ctx, 0, this->params.n_keep,
-                              this->params.n_keep + n_discard);
-        llama_kv_cache_seq_add(this->ctx, 0, this->params.n_keep + n_discard,
+        llama_kv_cache_seq_rm(this->ctx, 0, this->params->n_keep,
+                              this->params->n_keep + n_discard);
+        llama_kv_cache_seq_add(this->ctx, 0, this->params->n_keep + n_discard,
                                n_past, -n_discard);
 
         this->n_past -= n_discard;
@@ -455,8 +458,8 @@ bool Llama::eval() {
 
     } else {
       // context extension via Self-Extend
-      int ga_n = this->params.grp_attn_n;
-      int ga_w = this->params.grp_attn_w;
+      int ga_n = this->params->grp_attn_n;
+      int ga_w = this->params->grp_attn_w;
 
       while (this->n_past >= this->ga_i + ga_w) {
         const int ib = (ga_n * this->ga_i) / ga_w;
@@ -479,10 +482,10 @@ bool Llama::eval() {
     // batch is typically prepared to fit within a batch
     // but not always
     for (int32_t i = 0; i < (int32_t)batch.n_tokens;
-         i += this->params.n_batch) {
+         i += this->params->n_batch) {
 
       const int32_t n_eval =
-          std::min(this->params.n_batch, (int32_t)(this->batch.n_tokens - i));
+          std::min(this->params->n_batch, (int32_t)(this->batch.n_tokens - i));
 
       llama_batch batch_view = {
           n_eval,
@@ -519,8 +522,8 @@ std::vector<token_prob> Llama::get_probs() {
   llama_token_data_array cur_p = {this->ctx_sampling->cur.data(),
                                   this->ctx_sampling->cur.size(), false};
 
-  const int32_t n_probs = this->params.sparams.n_probs;
-  if (this->params.sparams.temp <= 0 && n_probs > 0) {
+  const int32_t n_probs = this->params->sparams.n_probs;
+  if (this->params->sparams.temp <= 0 && n_probs > 0) {
     // For llama_sample_token_greedy we need to sort candidates
     llama_sample_softmax(this->ctx, &cur_p);
   }

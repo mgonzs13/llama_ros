@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include "llama_ros/gpt_params_loader.hpp"
+#include "llama_ros/gpt_params.hpp"
 #include "llama_ros/llava_node.hpp"
 
 using namespace llama_ros;
@@ -36,9 +36,9 @@ using std::placeholders::_2;
 LlavaNode::LlavaNode() : rclcpp::Node("llava_node") {
 
   // load llama
-  gpt_params_loader.load_params(this);
-  this->llava = std::make_shared<Llava>(
-      this->get_logger(), gpt_params_loader.params, gpt_params_loader.debug);
+  gpt_params.load_params(this);
+  this->llava = std::make_shared<Llava>(this->get_logger(), gpt_params.params,
+                                        gpt_params.debug);
 
   // generate response action server
   this->goal_handle_ = nullptr;
@@ -102,6 +102,12 @@ void LlavaNode::execute(
     this->goal_handle_->abort(result);
     return;
   }
+
+  // update sampling params
+  auto sampling_config = goal_handle->get_goal()->sampling_config;
+  this->gpt_params.update_sampling_params(sampling_config,
+                                          this->llava->get_n_vocab(),
+                                          this->llava->get_token_eos());
 
   // call llava
   result->response.text = this->llava->process_prompt(image_embed, prompt);

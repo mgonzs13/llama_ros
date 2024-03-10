@@ -27,8 +27,8 @@ add_subdirectory(llama_cpp/examples/llava)
 
 add_executable(llama_node
   src/llama.cpp 
-  src/gpt_params_loader.cpp 
   src/schema_converter.cpp 
+  src/gpt_params.cpp 
   src/llama_node.cpp 
   src/llama_main.cpp
 )
@@ -37,7 +37,8 @@ ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs)
 
 add_executable(llava_node
   src/llava.cpp 
-  src/gpt_params_loader.cpp 
+  src/schema_converter.cpp 
+  src/gpt_params.cpp 
   src/llava_node.cpp 
   src/llava_main.cpp
 )

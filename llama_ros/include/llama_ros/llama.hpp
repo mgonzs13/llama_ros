@@ -59,7 +59,8 @@ class Llama {
       std::function<void(struct completion_output)>;
 
 public:
-  Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug);
+  Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
+        bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -73,14 +74,11 @@ public:
                     GenerateResponseCallback callbakc = nullptr);
 
   const struct llama_context *get_ctx() { return this->ctx; }
-  struct gpt_params &get_params() {
-    return this->params;
-  }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
-  bool is_embedding() { return this->params.embedding; }
+  bool is_embedding() { return this->params->embedding; }
   bool should_add_bos_token() {
     return llama_should_add_bos_token(this->model);
   }
@@ -106,7 +104,7 @@ protected:
 
 private:
   rclcpp::Logger logger;
-  struct gpt_params params;
+  std::shared_ptr<struct gpt_params> params;
   bool debug;
   Spinner spinner;
 

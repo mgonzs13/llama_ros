@@ -30,7 +30,6 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
-#include "llama_ros/schema_converter.hpp"
 
 using namespace llama_ros;
 using std::placeholders::_1;
@@ -39,11 +38,10 @@ using std::placeholders::_2;
 LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
 
   // load llama
-  this->gpt_params_loader.load_params(this);
-  this->llama = std::make_shared<Llama>(
-      this->get_logger(), gpt_params_loader.params, gpt_params_loader.debug);
-  this->llama->generate_response(gpt_params_loader.params.prompt, false,
-                                 nullptr);
+  this->gpt_params.load_params(this);
+  this->llama = std::make_shared<Llama>(this->get_logger(), gpt_params.params,
+                                        gpt_params.debug);
+  this->llama->generate_response(gpt_params.params->prompt, false, nullptr);
 
   // services
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
@@ -116,12 +114,11 @@ void LlamaNode::execute(
   // get goal data
   std::string prompt = goal_handle->get_goal()->prompt;
   bool reset = goal_handle->get_goal()->reset;
-  auto sampling_config = goal_handle->get_goal()->sampling_config;
 
   auto result = std::make_shared<GenerateResponse::Result>();
   this->goal_handle_ = goal_handle;
 
-  if (this->gpt_params_loader.debug) {
+  if (this->gpt_params.debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 
@@ -130,61 +127,11 @@ void LlamaNode::execute(
     this->llama->reset();
   }
 
-  // // prepare sampling params
-  struct gpt_params &params = this->llama->get_params();
-  params.sparams.n_prev = sampling_config.n_prev;
-  params.sparams.n_probs = sampling_config.n_probs;
-
-  params.ignore_eos = sampling_config.ignore_eos;
-
-  params.sparams.temp = sampling_config.temp;
-
-  params.sparams.top_k = sampling_config.top_k;
-  params.sparams.top_p = sampling_config.top_p;
-  params.sparams.min_p = sampling_config.min_p;
-  params.sparams.tfs_z = sampling_config.tfs_z;
-  params.sparams.typical_p = sampling_config.typical_p;
-
-  params.sparams.penalty_last_n = sampling_config.penalty_last_n;
-  params.sparams.penalty_repeat = sampling_config.penalty_repeat;
-  params.sparams.penalty_freq = sampling_config.penalty_freq;
-  params.sparams.penalty_present = sampling_config.penalty_present;
-
-  params.sparams.mirostat = sampling_config.mirostat;
-  params.sparams.mirostat_eta = sampling_config.mirostat_eta;
-  params.sparams.mirostat_tau = sampling_config.mirostat_tau;
-
-  params.sparams.penalize_nl = sampling_config.penalize_nl;
-
-  params.sparams.samplers_sequence =
-      sampler_types_from_chars(sampling_config.samplers_sequence);
-  params.sparams.grammar = sampling_config.grammar;
-
-  if (params.sparams.grammar.size() == 0 &&
-      sampling_config.gramar_schema.size() > 0) {
-
-    params.sparams.grammar = SchemaConverter::json_schema_to_gbnf(
-        sampling_config.gramar_schema, sampling_config.prop_order);
-  }
-
-  // check penalty_last_n
-  params.sparams.penalty_last_n = params.sparams.penalty_last_n < 0
-                                      ? params.sparams.n_prev
-                                      : params.sparams.penalty_last_n;
-
-  // check top_k
-  params.sparams.top_k = params.sparams.top_k <= 0 ? this->llama->get_n_vocab()
-                                                   : params.sparams.top_k;
-
-  // add logit bias
-  for (auto logit_bias : sampling_config.logit_bias.data) {
-    params.sparams.logit_bias[logit_bias.token] = logit_bias.bias;
-  }
-
-  // add llama_token_eos
-  if (params.ignore_eos) {
-    params.sparams.logit_bias[this->llama->get_token_eos()] = -INFINITY;
-  }
+  // update sampling params
+  auto sampling_config = goal_handle->get_goal()->sampling_config;
+  this->gpt_params.update_sampling_params(sampling_config,
+                                          this->llama->get_n_vocab(),
+                                          this->llama->get_token_eos());
 
   // call llama
   auto completion_results = this->llama->generate_response(
