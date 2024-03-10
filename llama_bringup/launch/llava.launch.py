@@ -31,11 +31,11 @@ def generate_launch_description():
         create_llama_launch(
             use_llava=True,
 
-            n_ctx=2048,
+            n_ctx=4096,
             n_batch=8,
             n_gpu_layers=0,
             n_threads=1,
-            n_predict=2048,
+            n_predict=4096,
 
             model_repo="cjpais/llava-1.6-mistral-7b-gguf",
             model_filename="llava-v1.6-mistral-7b.Q4_K_M.gguf",

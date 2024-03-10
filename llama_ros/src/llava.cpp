@@ -241,7 +241,7 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
     callback(tmp);
 
     if (this->canceled) {
-      return "";
+      break;
     }
 
     if (strcmp(tmp, "</s>") == 0)
@@ -258,6 +258,7 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
   }
 
   llama_sampling_free(ctx_sampling);
+  llama_kv_cache_seq_rm(this->ctx_llava->ctx_llama, -1, 0, -1);
 
   RCLCPP_INFO(this->logger, "Finish Response Generation");
 

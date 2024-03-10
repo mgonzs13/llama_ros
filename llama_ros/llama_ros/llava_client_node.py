@@ -47,8 +47,7 @@ class LlavaClientNode(Node):
             "prompt",
             """You are an AI assistant that gives helpful, detailed, and polite answers to the human's questions
 <image>
-[INST] How many stars has the ball?
-[/INST] 
+[INST] How many stars has the dragon ball of the image? [/INST]
 """
         )
         self.prompt = self.get_parameter(
