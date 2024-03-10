@@ -88,6 +88,10 @@ void LlavaNode::execute(
   std::string prompt = goal_handle->get_goal()->prompt;
   auto image_msg = goal_handle->get_goal()->image;
 
+  if (this->gpt_params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
+  }
+
   // parse image
   cv_bridge::CvImagePtr cv_ptr =
       cv_bridge::toCvCopy(image_msg, image_msg.encoding);
@@ -97,7 +101,7 @@ void LlavaNode::execute(
   auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
   std::string encoded_image = this->base64_encode(enc_msg, buf.size());
 
-  auto image_embed = this->llava->load_image("encoded_image");
+  auto image_embed = this->llava->load_image(encoded_image);
   if (!image_embed) {
     this->goal_handle_->abort(result);
     return;

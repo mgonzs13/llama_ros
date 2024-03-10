@@ -185,8 +185,9 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   auto embed = llava_image_embed_make_with_bytes(
       this->ctx_llava->ctx_clip, this->params->n_threads, img_bytes.data(),
       img_bytes.size());
+
   if (!embed) {
-    RCLCPP_ERROR(this->logger, "Could not load image from base64 string.");
+    RCLCPP_ERROR(this->logger, "Could not load image from base64 string");
     return NULL;
   }
 
@@ -220,6 +221,8 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
         "to the human's questions.\nUSER:";
     user_prompt = prompt + "\nASSISTANT:";
   }
+
+  RCLCPP_INFO(this->logger, "Starting Response Generation");
 
   eval_string(system_prompt.c_str(), this->params->n_batch, &n_past, add_bos);
   llava_eval_image_embed(this->ctx_llava->ctx_llama, image_embed,
@@ -255,6 +258,8 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
   }
 
   llama_sampling_free(ctx_sampling);
+
+  RCLCPP_INFO(this->logger, "Finish Response Generation");
 
   return response;
 }
