@@ -110,7 +110,8 @@ void LlavaNode::execute(
                                           this->llava->get_token_eos());
 
   // call llava
-  result->response.text = this->llava->process_prompt(image_embed, prompt);
+  result->response.text = this->llava->process_prompt(
+      image_embed, prompt, std::bind(&LlavaNode::send_text, this, _1));
 
   if (rclcpp::ok()) {
 
@@ -184,4 +185,15 @@ std::string LlavaNode::base64_encode(unsigned char const *bytes_to_encode,
   }
 
   return ret;
+}
+
+void LlavaNode::send_text(const std::string &text) {
+
+  if (this->goal_handle_ != nullptr) {
+    auto feedback = std::make_shared<GenerateResponse::Feedback>();
+
+    feedback->partial_response.text = text;
+
+    this->goal_handle_->publish_feedback(feedback);
+  }
 }

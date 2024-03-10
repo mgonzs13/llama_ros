@@ -194,7 +194,8 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
 }
 
 std::string Llava::process_prompt(struct llava_image_embed *image_embed,
-                                  const std::string &prompt) {
+                                  const std::string &prompt,
+                                  GenerateResponseCallback callback) {
 
   int n_past = 0;
   this->canceled = false;
@@ -234,6 +235,7 @@ std::string Llava::process_prompt(struct llava_image_embed *image_embed,
 
     const char *tmp = sample(ctx_sampling, &n_past);
     response += tmp;
+    callback(tmp);
 
     if (this->canceled) {
       return "";

@@ -46,6 +46,8 @@ struct llava_context {
 
 class Llava {
 
+  using GenerateResponseCallback = std::function<void(std::string)>;
+
 public:
   Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
         bool debug);
@@ -76,7 +78,8 @@ public:
 
   void cancel();
   std::string process_prompt(struct llava_image_embed *image_embed,
-                             const std::string &prompt);
+                             const std::string &prompt,
+                             GenerateResponseCallback callback);
 
 protected:
   struct llava_context *ctx_llava;
