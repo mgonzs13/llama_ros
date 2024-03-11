@@ -68,6 +68,7 @@ protected:
   bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
   bool init_eval() override;
   bool eval_string(std::string prompt);
+  bool eval_image(const struct llava_image_embed *image_embed);
 };
 
 } // namespace llama_ros

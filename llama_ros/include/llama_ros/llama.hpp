@@ -95,8 +95,9 @@ protected:
   // aux
   bool debug;
   bool canceled;
+  Spinner spinner;
   std::vector<llama_token> prompt_tokens;
-  struct llama_batch batch;
+  std::vector<llama_token> batch_tokens;
 
   // eval
   int32_t n_past;
@@ -118,8 +119,6 @@ protected:
   void update_sampling_params(const struct llama_sampling_params &params);
 
 private:
-  Spinner spinner;
-
   // lock
   std::recursive_mutex mutex;
 };

@@ -80,6 +80,7 @@ bool Llava::load_image(std::string base64_str) {
 
 struct llava_image_embed *
 Llava::base64_image_to_embed(const std::string &base64_str) {
+
   auto required_bytes = base64::required_encode_size(base64_str.size());
   auto img_bytes = std::vector<unsigned char>(required_bytes);
   base64::decode(base64_str.begin(), base64_str.end(), img_bytes.begin());
@@ -118,6 +119,47 @@ bool Llava::eval_string(std::string prompt) {
   return Llama::init_eval();
 }
 
+bool Llava::eval_image(const struct llava_image_embed *image_embed) {
+
+  int n_embd = this->get_n_embd();
+
+  for (int i = 0; i < image_embed->n_image_pos; i += this->params->n_batch) {
+
+    int n_eval = image_embed->n_image_pos - i;
+
+    if (n_eval > this->params->n_batch) {
+      n_eval = this->params->n_batch;
+    }
+
+    llama_batch batch = {
+        int32_t(n_eval),
+        nullptr,
+        (image_embed->embed + i * n_embd),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        this->n_past,
+        1,
+        0,
+    };
+
+    if (this->debug) {
+      this->spinner.spin("EVALUATING IMAGE " + std::to_string(n_eval) +
+                         " TOKENS");
+    }
+
+    if (llama_decode(this->ctx_llava->ctx_llama, batch)) {
+      RCLCPP_ERROR(this->logger, "Failed in image eval");
+      return false;
+    }
+
+    this->n_past += n_eval;
+  }
+
+  return true;
+}
+
 bool Llava::init_eval() {
 
   if (!this->eval_string(this->system_prompt)) {
@@ -125,9 +167,7 @@ bool Llava::init_eval() {
   }
 
   RCLCPP_INFO(this->logger, "Evaluating the image");
-  if (!llava_eval_image_embed(this->ctx_llava->ctx_llama, this->image_embed,
-                              this->params->n_batch, &this->n_past)) {
-    RCLCPP_ERROR(this->logger, "Failed in image eval");
+  if (!this->eval_image(this->image_embed)) {
     return false;
   }
 

@@ -46,8 +46,6 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
 
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(*this->params);
   this->ctx_sampling = nullptr;
-  this->batch =
-      llama_batch_init(this->params->n_ctx, 0, this->params->n_parallel);
 
   // show system information
   RCLCPP_INFO(this->logger, "System_info: n_threads = %d / %d | %s",
@@ -92,8 +90,6 @@ Llama::~Llama() {
   if (this->ctx_sampling != nullptr) {
     llama_sampling_free(this->ctx_sampling);
   }
-
-  llama_batch_free(this->batch);
 
   llama_free(this->ctx);
   llama_free_model(this->model);
@@ -251,9 +247,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     // sample next token
     completion_result = this->sample();
     completion_result_list.push_back(completion_result);
-    llama_batch_clear(this->batch);
-    llama_batch_add(this->batch, completion_result.token, this->n_past, {0},
-                    true);
+    this->batch_tokens.push_back(completion_result.token);
     --this->n_remain;
 
     // next eval
@@ -410,22 +404,16 @@ bool Llama::init_eval() {
   while (((int)this->prompt_tokens.size() > this->n_consumed)) {
 
     int n = 0;
-    llama_batch_clear(this->batch);
 
     while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-           (this->batch.n_tokens < this->params->n_batch)) {
+           ((int)this->batch_tokens.size() < this->params->n_batch)) {
 
-      llama_batch_add(this->batch, this->prompt_tokens[this->n_consumed],
-                      this->n_past + n, {0}, true);
+      this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
       llama_sampling_accept(this->ctx_sampling, this->ctx,
                             this->prompt_tokens[this->n_consumed], false);
 
       ++this->n_consumed;
       ++n;
-    }
-
-    if ((int)this->prompt_tokens.size() <= this->n_consumed) {
-      this->batch.logits[this->batch.n_tokens - 1] = true;
     }
 
     if (!this->eval()) {
@@ -438,11 +426,11 @@ bool Llama::init_eval() {
 
 bool Llama::eval() {
 
-  if (this->batch.n_tokens > 0) {
+  if (this->batch_tokens.size() > 0) {
 
     // shift context
     if (this->params->grp_attn_n == 1) {
-      if (this->n_past + this->batch.n_tokens > this->get_n_ctx()) {
+      if (this->n_past + (int)this->batch_tokens.size() > this->get_n_ctx()) {
 
         const int n_left = this->n_past - this->params->n_keep;
         const int n_discard = n_left / 2;
@@ -480,30 +468,19 @@ bool Llama::eval() {
     // evaluate tokens in batches
     // batch is typically prepared to fit within a batch
     // but not always
-    for (int32_t i = 0; i < (int32_t)batch.n_tokens;
+    for (int32_t i = 0; i < (int32_t)this->batch_tokens.size();
          i += this->params->n_batch) {
 
-      const int32_t n_eval =
-          std::min(this->params->n_batch, (int32_t)(this->batch.n_tokens - i));
-
-      llama_batch batch_view = {
-          n_eval,
-          this->batch.token + i,
-          nullptr,
-          this->batch.pos + i,
-          this->batch.n_seq_id + i,
-          this->batch.seq_id + i,
-          this->batch.logits + i,
-          0,
-          0,
-          0,
-      };
+      const int32_t n_eval = std::min(this->params->n_batch,
+                                      (int32_t)(this->batch_tokens.size() - i));
 
       if (this->debug) {
-        spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
+        this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
       }
 
-      if (llama_decode(this->ctx, batch_view)) {
+      if (llama_decode(this->ctx,
+                       llama_batch_get_one(&this->batch_tokens[i], n_eval,
+                                           this->n_past, 0))) {
         RCLCPP_ERROR(this->logger, "Failed to eval");
         return false;
       }
@@ -511,6 +488,8 @@ bool Llama::eval() {
       this->n_past += n_eval;
     }
   }
+
+  this->batch_tokens.clear();
 
   return true;
 }
@@ -537,8 +516,7 @@ std::vector<token_prob> Llama::get_probs() {
 struct completion_output Llama::sample() {
 
   // sample token
-  llama_token id = llama_sampling_sample(this->ctx_sampling, this->ctx, NULL,
-                                         this->batch.n_tokens - 1);
+  llama_token id = llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
   llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
 
   // create output
