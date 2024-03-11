@@ -52,21 +52,23 @@ Llava::~Llava() {
     this->ctx_llava->ctx_clip = NULL;
   }
 
-  if (this->image_embed != nullptr) {
-    llava_image_embed_free(this->image_embed);
-  }
+  this->free_image();
 
   this->llama_ros::Llama::~Llama();
 
   free(this->ctx_llava);
 }
 
-bool Llava::load_image(std::string base64_str) {
-
+void Llava::free_image() {
   if (this->image_embed != nullptr) {
     llava_image_embed_free(this->image_embed);
     this->image_embed = nullptr;
   }
+}
+
+bool Llava::load_image(std::string base64_str) {
+
+  this->free_image();
 
   this->image_embed = this->base64_image_to_embed(base64_str);
 
@@ -166,9 +168,11 @@ bool Llava::init_eval() {
     return false;
   }
 
-  RCLCPP_INFO(this->logger, "Evaluating the image");
-  if (!this->eval_image(this->image_embed)) {
-    return false;
+  if (this->image_embed != nullptr) {
+    RCLCPP_INFO(this->logger, "Evaluating the image");
+    if (!this->eval_image(this->image_embed)) {
+      return false;
+    }
   }
 
   if (!this->eval_string(this->user_prompt)) {

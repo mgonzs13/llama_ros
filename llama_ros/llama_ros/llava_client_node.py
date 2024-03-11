@@ -85,6 +85,7 @@ ASSISTANT:"""
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
+        goal.reset = True
         goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
         goal.sampling_config.temp = 0.2
 

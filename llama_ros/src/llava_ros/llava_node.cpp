@@ -87,19 +87,16 @@ void LlavaNode::execute(
   // get goal data
   std::string prompt = goal_handle->get_goal()->prompt;
   auto image_msg = goal_handle->get_goal()->image;
+  bool reset = goal_handle->get_goal()->reset;
 
   if (this->gpt_params.debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 
-  // parse image
-  cv_bridge::CvImagePtr cv_ptr =
-      cv_bridge::toCvCopy(image_msg, image_msg.encoding);
-
-  std::vector<uchar> buf;
-  cv::imencode(".jpg", cv_ptr->image, buf);
-  auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
-  std::string encoded_image = this->base64_encode(enc_msg, buf.size());
+  // reset llama
+  if (reset) {
+    this->llava->reset();
+  }
 
   // update sampling params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
@@ -108,13 +105,26 @@ void LlavaNode::execute(
                                           this->llava->get_token_eos());
 
   // load image
-  if (!this->llava->load_image(encoded_image)) {
-    this->goal_handle_->abort(result);
-    return;
+  if (image_msg.data.size() > 0) {
+
+    cv_bridge::CvImagePtr cv_ptr =
+        cv_bridge::toCvCopy(image_msg, image_msg.encoding);
+
+    std::vector<uchar> buf;
+    cv::imencode(".jpg", cv_ptr->image, buf);
+    auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
+    std::string encoded_image = this->base64_encode(enc_msg, buf.size());
+
+    if (!this->llava->load_image(encoded_image)) {
+      this->goal_handle_->abort(result);
+      return;
+    }
+
+  } else {
+    this->llava->free_image();
   }
 
   // call llava
-  this->llava->reset();
   auto completion_results = this->llava->generate_response(
       prompt, true, std::bind(&LlavaNode::send_text, this, _1));
 

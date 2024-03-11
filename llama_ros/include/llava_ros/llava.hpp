@@ -52,7 +52,7 @@ public:
         bool debug = false);
   ~Llava();
 
-  void llava_free(struct llava_context *ctx_llava);
+  void free_image();
 
   bool load_image(std::string base64_str);
   struct llava_image_embed *
