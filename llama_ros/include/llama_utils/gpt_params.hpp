@@ -20,57 +20,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_ROS__LLAVA_HPP
-#define LLAMA_ROS__LLAVA_HPP
+#ifndef LLAMA_ROS__GPT_PARAMS_HPP
+#define LLAMA_ROS__GPT_PARAMS_HPP
 
-#include <functional>
 #include <memory>
-#include <mutex>
 #include <rclcpp/rclcpp.hpp>
-#include <string>
-#include <vector>
 
-#include "clip.h"
 #include "common.h"
-#include "ggml.h"
 #include "llama.h"
-#include "llama_ros/llama.hpp"
-#include "llava.h"
+#include "llama_msgs/msg/sampling_config.hpp"
 
-namespace llama_ros {
+namespace llama_utils {
 
-struct llava_context {
-  struct clip_ctx *ctx_clip = NULL;
-  struct llama_context *ctx_llama = NULL;
-  struct llama_model *model = NULL;
-};
-
-class Llava : public Llama {
+class GptParams {
 
 public:
-  Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
-        bool debug = false);
-  ~Llava();
+  GptParams();
+  void load_params(rclcpp::Node *node);
+  void
+  update_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
+                         int n_vocab, llama_token token_eos);
 
-  void llava_free(struct llava_context *ctx_llava);
-
-  bool load_image(std::string base64_str);
-  struct llava_image_embed *
-  base64_image_to_embed(const std::string &base64_str);
-
-protected:
-  struct llava_context *ctx_llava;
-
-  std::string system_prompt;
-  std::string user_prompt;
-  struct llava_image_embed *image_embed;
-
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
-  bool init_eval() override;
-  bool eval_string(std::string prompt);
-  bool eval_image(const struct llava_image_embed *image_embed);
+  bool debug;
+  std::shared_ptr<struct gpt_params> params;
 };
-
-} // namespace llama_ros
+} // namespace llama_utils
 
 #endif

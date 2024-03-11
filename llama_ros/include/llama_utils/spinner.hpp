@@ -26,7 +26,7 @@
 #include <cstdio>
 #include <string>
 
-namespace llama_ros {
+namespace llama_utils {
 
 class Spinner {
 
@@ -49,6 +49,6 @@ private:
   int index = 0;
 };
 
-} // namespace llama_ros
+} // namespace llama_utils
 
 #endif

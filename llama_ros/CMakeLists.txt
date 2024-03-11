@@ -27,21 +27,21 @@ add_subdirectory(llama_cpp)
 add_subdirectory(llama_cpp/examples/llava)
 
 add_executable(llama_node
-  src/llama.cpp 
-  src/schema_converter.cpp 
-  src/gpt_params.cpp 
-  src/llama_node.cpp 
+  src/llama_ros/llama.cpp 
+  src/llama_utils/schema_converter.cpp 
+  src/llama_utils/gpt_params.cpp 
+  src/llama_ros/llama_node.cpp 
   src/llama_main.cpp
 )
 target_link_libraries(llama_node llama common)
 ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs)
 
 add_executable(llava_node
-  src/llama.cpp 
-  src/llava.cpp 
-  src/schema_converter.cpp 
-  src/gpt_params.cpp 
-  src/llava_node.cpp 
+  src/llama_ros/llama.cpp 
+  src/llava_ros/llava.cpp 
+  src/llama_utils/schema_converter.cpp 
+  src/llama_utils/gpt_params.cpp 
+  src/llava_ros/llava_node.cpp 
   src/llava_main.cpp
 )
 target_link_libraries(llava_node llava llama common)

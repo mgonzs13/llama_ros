@@ -1,8 +1,8 @@
 
 
-#include "llama_ros/schema_converter.hpp"
+#include "llama_utils/schema_converter.hpp"
 
-using namespace llama_ros;
+using namespace llama_utils;
 using json = nlohmann::json;
 
 SchemaConverter::SchemaConverter(const std::vector<std::string> &prop_order) {

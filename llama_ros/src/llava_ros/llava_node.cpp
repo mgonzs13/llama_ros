@@ -26,10 +26,10 @@
 #include <string>
 #include <vector>
 
-#include "llama_ros/gpt_params.hpp"
-#include "llama_ros/llava_node.hpp"
+#include "llama_utils/gpt_params.hpp"
+#include "llava_ros/llava_node.hpp"
 
-using namespace llama_ros;
+using namespace llava_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 

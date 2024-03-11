@@ -34,8 +34,8 @@
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
-#include "llama_ros/gpt_params.hpp"
 #include "llama_ros/llama.hpp"
+#include "llama_utils/gpt_params.hpp"
 
 namespace llama_ros {
 
@@ -50,7 +50,7 @@ public:
 
 private:
   std::shared_ptr<Llama> llama;
-  GptParams gpt_params;
+  llama_utils::GptParams gpt_params;
 
   // ros2
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;

@@ -31,10 +31,10 @@
 
 #include "common.h"
 #include "llama_msgs/action/generate_response.hpp"
-#include "llama_ros/gpt_params.hpp"
-#include "llama_ros/llava.hpp"
+#include "llama_utils/gpt_params.hpp"
+#include "llava_ros/llava.hpp"
 
-namespace llama_ros {
+namespace llava_ros {
 
 class LlavaNode : public rclcpp::Node {
 
@@ -46,7 +46,7 @@ public:
   LlavaNode();
 
   std::shared_ptr<Llava> llava;
-  GptParams gpt_params;
+  llama_utils::GptParams gpt_params;
 
   std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
                             bool url = false);
@@ -68,6 +68,6 @@ private:
   void send_text(const struct completion_output &completion);
 };
 
-} // namespace llama_ros
+} // namespace llava_ros
 
 #endif

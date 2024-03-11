@@ -26,13 +26,13 @@
 
 #include "base64.hpp"
 #include "common.h"
-#include "llama_ros/llava.hpp"
+#include "llava_ros/llava.hpp"
 
-using namespace llama_ros;
+using namespace llava_ros;
 
 Llava::Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
              bool debug)
-    : Llama(logger, params, debug) {
+    : llama_ros::Llama(logger, params, debug) {
 
   // load clip model
   const char *clip_path = this->params->mmproj.c_str();
@@ -56,7 +56,7 @@ Llava::~Llava() {
     llava_image_embed_free(this->image_embed);
   }
 
-  this->~Llama();
+  this->llama_ros::Llama::~Llama();
 
   free(this->ctx_llava);
 }
@@ -116,7 +116,7 @@ bool Llava::eval_string(std::string prompt) {
       this->tokenize(prompt, this->should_add_bos_token(), true);
   this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
                              line_inp.end());
-  return Llama::init_eval();
+  return llama_ros::Llama::init_eval();
 }
 
 bool Llava::eval_image(const struct llava_image_embed *image_embed) {

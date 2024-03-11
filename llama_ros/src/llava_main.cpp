@@ -26,9 +26,9 @@
 #include <memory>
 #include <vector>
 
-#include "llama_ros/llava_node.hpp"
+#include "llava_ros/llava_node.hpp"
 
-using namespace llama_ros;
+using namespace llava_ros;
 
 void sigint_handler(int signo) {
   if (signo == SIGINT) {

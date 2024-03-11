@@ -33,7 +33,7 @@
 #include "common.h"
 #include "common/grammar-parser.h"
 #include "llama.h"
-#include "llama_ros/spinner.hpp"
+#include "llama_utils/spinner.hpp"
 
 struct token_prob {
   llama_token token;
@@ -95,7 +95,7 @@ protected:
   // aux
   bool debug;
   bool canceled;
-  Spinner spinner;
+  llama_utils::Spinner spinner;
   std::vector<llama_token> prompt_tokens;
   std::vector<llama_token> batch_tokens;
 

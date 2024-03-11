@@ -23,11 +23,11 @@
 #include <fstream>
 
 #include "common.h"
-#include "llama_ros/schema_converter.hpp"
+#include "llama_utils/schema_converter.hpp"
 
-#include "llama_ros/gpt_params.hpp"
+#include "llama_utils/gpt_params.hpp"
 
-using namespace llama_ros;
+using namespace llama_utils;
 
 GptParams::GptParams() : debug(false) {
   this->params = std::make_shared<struct gpt_params>();
