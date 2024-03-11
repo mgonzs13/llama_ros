@@ -65,7 +65,7 @@ private:
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
 
   void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const std::string &text);
+  void send_text(const struct completion_output &completion);
 };
 
 } // namespace llama_ros

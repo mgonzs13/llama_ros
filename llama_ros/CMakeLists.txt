@@ -7,6 +7,7 @@ endif()
 
 # cuBLAS
 # option(LLAMA_CUBLAS "llama: use cuBLAS" ON)
+# add_compile_definitions(GGML_USE_CUBLAS)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -36,6 +37,7 @@ target_link_libraries(llama_node llama common)
 ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs)
 
 add_executable(llava_node
+  src/llama.cpp 
   src/llava.cpp 
   src/schema_converter.cpp 
   src/gpt_params.cpp 

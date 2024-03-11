@@ -101,21 +101,37 @@ void LlavaNode::execute(
   auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
   std::string encoded_image = this->base64_encode(enc_msg, buf.size());
 
-  auto image_embed = this->llava->load_image(encoded_image);
-  if (!image_embed) {
-    this->goal_handle_->abort(result);
-    return;
-  }
-
   // update sampling params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
   this->gpt_params.update_sampling_params(sampling_config,
                                           this->llava->get_n_vocab(),
                                           this->llava->get_token_eos());
 
+  // load image
+  if (!this->llava->load_image(encoded_image)) {
+    this->goal_handle_->abort(result);
+    return;
+  }
+
   // call llava
-  result->response.text = this->llava->process_prompt(
-      image_embed, prompt, std::bind(&LlavaNode::send_text, this, _1));
+  this->llava->reset();
+  auto completion_results = this->llava->generate_response(
+      prompt, true, std::bind(&LlavaNode::send_text, this, _1));
+
+  for (auto completion : completion_results) {
+    result->response.text.append(this->llava->detokenize({completion.token}));
+    result->response.tokens.push_back(completion.token);
+
+    llama_msgs::msg::TokenProbArray probs_msg;
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llava->detokenize({prob.token});
+      probs_msg.data.push_back(aux);
+    }
+    result->response.probs.push_back(probs_msg);
+  }
 
   if (rclcpp::ok()) {
 
@@ -191,12 +207,23 @@ std::string LlavaNode::base64_encode(unsigned char const *bytes_to_encode,
   return ret;
 }
 
-void LlavaNode::send_text(const std::string &text) {
+void LlavaNode::send_text(const struct completion_output &completion) {
 
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
 
-    feedback->partial_response.text = text;
+    feedback->partial_response.text =
+        this->llava->detokenize({completion.token});
+    feedback->partial_response.token = completion.token;
+    feedback->partial_response.probs.chosen_token = completion.token;
+
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llava->detokenize({prob.token});
+      feedback->partial_response.probs.data.push_back(aux);
+    }
 
     this->goal_handle_->publish_feedback(feedback);
   }

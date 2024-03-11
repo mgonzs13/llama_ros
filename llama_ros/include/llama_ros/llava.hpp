@@ -34,6 +34,7 @@
 #include "common.h"
 #include "ggml.h"
 #include "llama.h"
+#include "llama_ros/llama.hpp"
 #include "llava.h"
 
 namespace llama_ros {
@@ -44,56 +45,29 @@ struct llava_context {
   struct llama_model *model = NULL;
 };
 
-class Llava {
-
-  using GenerateResponseCallback = std::function<void(std::string)>;
+class Llava : public Llama {
 
 public:
   Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
-        bool debug);
+        bool debug = false);
   ~Llava();
 
-  struct llava_context *llava_init(const gpt_params &params);
   void llava_free(struct llava_context *ctx_llava);
 
-  const struct llava_context *get_ctx() { return this->ctx_llava; }
-  const struct llama_model *get_llama_model() {
-    return llama_get_model(this->ctx_llava->ctx_llama);
-  }
-  int get_n_ctx() { return llama_n_ctx(this->ctx_llava->ctx_llama); }
-  int get_n_ctx_train() { return llama_n_ctx_train(this->get_llama_model()); }
-  int get_n_embd() { return llama_n_embd(this->get_llama_model()); }
-  int get_n_vocab() { return llama_n_vocab(this->get_llama_model()); }
-  bool is_embedding() { return this->params->embedding; }
-  bool should_add_bos_token() {
-    return llama_should_add_bos_token(this->get_llama_model());
-  }
-  llama_token get_token_eos() {
-    return llama_token_eos(this->get_llama_model());
-  }
-
-  struct llava_image_embed *load_image(std::string base64_str);
+  bool load_image(std::string base64_str);
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
-
-  void cancel();
-  std::string process_prompt(struct llava_image_embed *image_embed,
-                             const std::string &prompt,
-                             GenerateResponseCallback callback);
 
 protected:
   struct llava_context *ctx_llava;
 
-  bool eval_tokens(std::vector<llama_token> tokens, int n_batch, int *n_past);
-  bool eval_id(int id, int *n_past);
-  bool eval_string(const char *str, int n_batch, int *n_past, bool add_bos);
-  const char *sample(struct llama_sampling_context *ctx_sampling, int *n_past);
+  std::string system_prompt;
+  std::string user_prompt;
+  struct llava_image_embed *image_embed;
 
-private:
-  rclcpp::Logger logger;
-  std::shared_ptr<struct gpt_params> params;
-  bool debug;
-  bool canceled;
+  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
+  bool init_eval() override;
+  bool eval_string(std::string prompt);
 };
 
 } // namespace llama_ros

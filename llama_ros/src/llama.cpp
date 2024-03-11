@@ -41,7 +41,6 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
     print_build_info();
   }
 
-  // load the model
   llama_backend_init();
   llama_numa_init(this->params->numa);
 

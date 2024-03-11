@@ -53,10 +53,9 @@ enum stop_type {
 
 namespace llama_ros {
 
-class Llama {
+using GenerateResponseCallback = std::function<void(struct completion_output)>;
 
-  using GenerateResponseCallback =
-      std::function<void(struct completion_output)>;
+class Llama {
 
 public:
   Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
@@ -85,39 +84,41 @@ public:
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  struct llama_model *model;
+  rclcpp::Logger logger;
+  std::shared_ptr<struct gpt_params> params;
+
+  // model
   struct llama_context *ctx;
+  struct llama_model *model;
   struct llama_sampling_context *ctx_sampling;
 
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+  // aux
+  bool debug;
+  bool canceled;
+  std::vector<llama_token> prompt_tokens;
+  struct llama_batch batch;
+
+  // eval
+  int32_t n_past;
+  int32_t n_remain;
+  int32_t n_consumed;
+  int32_t ga_i;
+
+  virtual bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
             std::vector<std::string> stopping_words);
   stop_type
   find_stop_word(std::vector<struct completion_output> completion_result_list,
                  std::string stopping_word);
-  bool init_eval();
+  virtual bool init_eval();
   bool eval();
   std::vector<token_prob> get_probs();
   struct completion_output sample();
   void update_sampling_params(const struct llama_sampling_params &params);
 
 private:
-  rclcpp::Logger logger;
-  std::shared_ptr<struct gpt_params> params;
-  bool debug;
   Spinner spinner;
-
-  // aux
-  std::vector<llama_token> prompt_tokens;
-  struct llama_batch batch;
-
-  // eval
-  bool canceled;
-  int32_t n_past;
-  int32_t n_remain;
-  int32_t n_consumed;
-  int32_t ga_i;
 
   // lock
   std::recursive_mutex mutex;
