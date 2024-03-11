@@ -44,14 +44,11 @@ class LlavaClientNode(Node):
         self.cv_bridge = CvBridge()
 
         self.declare_parameter(
-            "prompt",
-            """You are an AI assistant that gives helpful, detailed, and polite answers to the human's questions
-<image>
-[INST] How many stars has the dragon ball of the image? [/INST]
-"""
-        )
-        self.prompt = self.get_parameter(
-            "prompt").get_parameter_value().string_value
+            "prompt", "Who is the character in the middle of the image?")
+        self.prompt = f"""A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
+USER:<image>
+{self.get_parameter("prompt").get_parameter_value().string_value}
+ASSISTANT:"""
 
         self.declare_parameter(
             "image_url", "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg")
