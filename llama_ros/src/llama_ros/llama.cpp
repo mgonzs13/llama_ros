@@ -47,6 +47,18 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(*this->params);
   this->ctx_sampling = nullptr;
 
+  if (this->model == NULL) {
+    RCLCPP_ERROR(this->logger, "Unable to load model");
+    return;
+  }
+
+  if (this->get_n_ctx() > this->get_n_ctx_train()) {
+    RCLCPP_WARN(this->logger,
+                "Model was trained on only %d context tokens (%d "
+                "specified)",
+                this->get_n_ctx_train(), this->get_n_ctx());
+  }
+
   // show system information
   RCLCPP_INFO(this->logger, "System_info: n_threads = %d / %d | %s",
               this->params->n_threads, std::thread::hardware_concurrency(),
