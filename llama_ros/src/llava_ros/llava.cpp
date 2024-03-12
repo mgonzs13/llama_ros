@@ -46,6 +46,7 @@ Llava::Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
   this->ctx_llava->ctx_clip = ctx_clip;
   this->ctx_llava->model = this->model;
 }
+
 Llava::~Llava() {
   if (this->ctx_llava->ctx_clip) {
     clip_free(this->ctx_llava->ctx_clip);

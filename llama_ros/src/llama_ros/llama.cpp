@@ -276,7 +276,7 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
-  if (prompt.size() <= 0) {
+  if (prompt.size() == 0) {
     return false;
   }
 
