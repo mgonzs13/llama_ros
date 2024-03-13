@@ -61,7 +61,6 @@ private:
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
   // methods
-  void load_params(struct gpt_params &params);
   void tokenize_service_callback(
       const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
       std::shared_ptr<llama_msgs::srv::Tokenize::Response> response);

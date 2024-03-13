@@ -67,7 +67,8 @@ public:
   std::string detokenize(const std::vector<llama_token> &tokens);
   void reset();
   void cancel();
-  std::vector<float> generate_embeddings(const std::string &input_prompt);
+  std::vector<float> generate_embeddings(const std::string &input_prompt,
+                                         bool normalize = true);
   std::vector<struct completion_output>
   generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
                     GenerateResponseCallback callbakc = nullptr);

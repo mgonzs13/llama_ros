@@ -1,3 +1,4 @@
-string prompt           # prompt
+string prompt                       # prompt
+bool normalize          true        # whether to normalize embeddings
 ---
-float32[] embeddings    # embeddings
+float32[] embeddings                # embeddings

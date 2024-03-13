@@ -138,7 +138,8 @@ void Llama::reset() {
 
 void Llama::cancel() { this->canceled = true; }
 
-std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
+std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
+                                              bool normalize) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
@@ -160,29 +161,57 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt) {
     return std::vector<float>(n_embd, 0.0f);
   }
 
-  int embd_n_past = 0;
-  int embd_n_eval = 0;
-  for (size_t i = 0; i < tokens.size(); i += this->params->n_batch) {
-
-    embd_n_eval = (int)tokens.size() - i;
-    if (embd_n_eval > this->params->n_batch) {
-      embd_n_eval = this->params->n_batch;
-    }
-
-    if (llama_decode(this->ctx, llama_batch_get_one(&tokens[i], embd_n_eval,
-                                                    embd_n_past, 1))) {
-      RCLCPP_ERROR(this->logger, "Failed to eval");
-      return std::vector<float>(n_embd, 0.0f);
-    }
-    embd_n_past += embd_n_eval;
+  if ((int)tokens.size() > this->params->n_batch) {
+    RCLCPP_WARN(this->logger, "Prompt too long %ld, batch size %d",
+                tokens.size(), this->params->n_batch);
+    tokens.resize(this->params->n_batch);
   }
 
-  const auto embeddings = llama_get_embeddings(this->ctx);
-  std::vector<float> embeddings_list(embeddings, embeddings + n_embd);
+  // llama eval
+  struct llama_batch batch = llama_batch_init(this->params->n_batch, 0, 1);
+  for (int i = 0; i < (int)tokens.size(); i++) {
+    llama_batch_add(batch, tokens[i], i, {1}, i == (int)tokens.size() - 1);
+  }
 
+  if (llama_decode(this->ctx, batch)) {
+    RCLCPP_ERROR(this->logger, "Failed to eval");
+    return std::vector<float>(n_embd, 0.0f);
+  }
+
+  // get embeddings
+  std::vector<float> embd_res(n_embd, 0.0f);
+
+  for (int i = 0; i < batch.n_tokens; ++i) {
+    if (!batch.logits[i]) {
+      continue;
+    }
+
+    const float *embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
+    if (embd == NULL) {
+      embd = llama_get_embeddings_ith(this->ctx, i);
+    }
+
+    if (embd == NULL) {
+      RCLCPP_ERROR(this->logger, "Failed to get embeddings");
+
+      continue;
+    }
+
+    if (normalize) {
+      llama_embd_normalize(embd, embd_res.data(), n_embd);
+
+    } else {
+      for (int i = 0; i < n_embd; i++) {
+        embd_res.data()[i] = embd[i];
+      }
+    }
+  }
+
+  // clear
   llama_kv_cache_seq_rm(this->ctx, 1, 0, -1);
+  llama_batch_free(batch);
 
-  return embeddings_list;
+  return embd_res;
 }
 
 std::vector<struct completion_output>

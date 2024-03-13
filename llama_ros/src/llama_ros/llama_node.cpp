@@ -77,7 +77,8 @@ void LlamaNode::generate_embeddings_service_callback(
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
   if (this->llama->is_embedding()) {
-    response->embeddings = this->llama->generate_embeddings(request->prompt);
+    response->embeddings =
+        this->llama->generate_embeddings(request->prompt, request->normalize);
   }
 }
 
