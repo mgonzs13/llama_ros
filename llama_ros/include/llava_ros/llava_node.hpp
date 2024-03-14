@@ -31,12 +31,12 @@
 
 #include "common.h"
 #include "llama_msgs/action/generate_response.hpp"
-#include "llama_utils/gpt_params.hpp"
+#include "llama_ros/llama_node.hpp"
 #include "llava_ros/llava.hpp"
 
 namespace llava_ros {
 
-class LlavaNode : public rclcpp::Node {
+class LlavaNode : public llama_ros::LlamaNode {
 
   using GenerateResponse = llama_msgs::action::GenerateResponse;
   using GoalHandleGenerateResponse =
@@ -45,27 +45,14 @@ class LlavaNode : public rclcpp::Node {
 public:
   LlavaNode();
 
-  std::shared_ptr<Llava> llava;
-  llama_utils::GptParams gpt_params;
-
   std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
                             bool url = false);
 
-private:
-  rclcpp_action::Server<GenerateResponse>::SharedPtr
-      generate_response_action_server_;
-  std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
+protected:
+  std::shared_ptr<Llava> llava;
 
-  rclcpp_action::GoalResponse
-  handle_goal(const rclcpp_action::GoalUUID &uuid,
-              std::shared_ptr<const GenerateResponse::Goal> goal);
-  rclcpp_action::CancelResponse
-  handle_cancel(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void handle_accepted(
-      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-
-  void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const struct completion_output &completion);
+  void execute(
+      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
 };
 
 } // namespace llava_ros

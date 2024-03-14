@@ -41,6 +41,7 @@ add_executable(llava_node
   src/llava_ros/llava.cpp 
   src/llama_utils/schema_converter.cpp 
   src/llama_utils/gpt_params.cpp 
+  src/llama_ros/llama_node.cpp 
   src/llava_ros/llava_node.cpp 
   src/llava_main.cpp
 )

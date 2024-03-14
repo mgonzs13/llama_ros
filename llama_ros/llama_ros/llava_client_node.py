@@ -45,10 +45,8 @@ class LlavaClientNode(Node):
 
         self.declare_parameter(
             "prompt", "Who is the character in the middle of the image?")
-        self.prompt = f"""A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
-USER:<image>
-{self.get_parameter("prompt").get_parameter_value().string_value}
-ASSISTANT:"""
+        self.prompt = self.get_parameter(
+            "prompt").get_parameter_value().string_value
 
         self.declare_parameter(
             "image_url", "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg")
@@ -85,7 +83,6 @@ ASSISTANT:"""
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
-        goal.reset = True
         goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
         goal.sampling_config.temp = 0.2
 

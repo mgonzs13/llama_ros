@@ -46,19 +46,24 @@ class LlamaNode : public rclcpp::Node {
       rclcpp_action::ServerGoalHandle<GenerateResponse>;
 
 public:
-  LlamaNode();
+  LlamaNode(bool load_llama = true);
 
-private:
+protected:
   std::shared_ptr<Llama> llama;
   llama_utils::GptParams gpt_params;
+  std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
+  virtual void
+  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
+  void send_text(const struct completion_output &completion);
+
+private:
   // ros2
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;
   rclcpp::Service<llama_msgs::srv::GenerateEmbeddings>::SharedPtr
       generate_embeddings_service_;
   rclcpp_action::Server<GenerateResponse>::SharedPtr
       generate_response_action_server_;
-  std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
   // methods
   void tokenize_service_callback(
@@ -76,9 +81,6 @@ private:
   handle_cancel(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
   void handle_accepted(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-
-  void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const struct completion_output &completion);
 };
 
 } // namespace llama_ros

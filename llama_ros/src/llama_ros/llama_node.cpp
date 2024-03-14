@@ -35,13 +35,13 @@ using namespace llama_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
+LlamaNode::LlamaNode(bool load_llama) : rclcpp::Node("llama_node") {
 
-  // load llama
-  this->gpt_params.load_params(this);
-  this->llama = std::make_shared<Llama>(this->get_logger(), gpt_params.params,
-                                        gpt_params.debug);
-  this->llama->generate_response(gpt_params.params->prompt, false, nullptr);
+  if (load_llama) {
+    this->llama = std::make_shared<Llama>(this->get_logger(),
+                                          this->gpt_params.load_params(this),
+                                          this->gpt_params.debug);
+  }
 
   // services
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
@@ -62,7 +62,7 @@ LlamaNode::LlamaNode() : rclcpp::Node("llama_node") {
           std::bind(&LlamaNode::handle_cancel, this, _1),
           std::bind(&LlamaNode::handle_accepted, this, _1));
 
-  RCLCPP_INFO(this->get_logger(), "Llama Node started");
+  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
 }
 
 void LlamaNode::tokenize_service_callback(
@@ -76,10 +76,8 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
-  if (this->llama->is_embedding()) {
-    response->embeddings =
-        this->llama->generate_embeddings(request->prompt, request->normalize);
-  }
+  response->embeddings =
+      this->llama->generate_embeddings(request->prompt, request->normalize);
 }
 
 rclcpp_action::GoalResponse

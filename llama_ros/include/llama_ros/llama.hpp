@@ -106,6 +106,7 @@ protected:
   int32_t n_consumed;
   int32_t ga_i;
 
+  void load_eval_system_prompt();
   virtual bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,

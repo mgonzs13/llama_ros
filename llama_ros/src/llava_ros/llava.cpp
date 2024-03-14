@@ -100,35 +100,15 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   return embed;
 }
 
-bool Llava::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
-
-  (void)add_pfx_sfx;
-
-  size_t image_pos = input_prompt.find("<image>");
-
-  this->system_prompt = input_prompt.substr(0, image_pos);
-  this->user_prompt =
-      input_prompt.substr(image_pos + std::string("<image>").length());
-
-  return true;
-}
-
-bool Llava::eval_string(std::string prompt) {
-
-  std::vector<llama_token> line_inp =
-      this->tokenize(prompt, this->should_add_bos_token(), true);
-  this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
-                             line_inp.end());
-  return llama_ros::Llama::init_eval();
-}
-
-bool Llava::eval_image(const struct llava_image_embed *image_embed) {
+bool Llava::eval_image() {
 
   int n_embd = this->get_n_embd();
+  bool succ = true;
 
-  for (int i = 0; i < image_embed->n_image_pos; i += this->params->n_batch) {
+  for (int i = 0; i < this->image_embed->n_image_pos;
+       i += this->params->n_batch) {
 
-    int n_eval = image_embed->n_image_pos - i;
+    int n_eval = this->image_embed->n_image_pos - i;
 
     if (n_eval > this->params->n_batch) {
       n_eval = this->params->n_batch;
@@ -137,7 +117,7 @@ bool Llava::eval_image(const struct llava_image_embed *image_embed) {
     llama_batch batch = {
         int32_t(n_eval),
         nullptr,
-        (image_embed->embed + i * n_embd),
+        (this->image_embed->embed + i * n_embd),
         nullptr,
         nullptr,
         nullptr,
@@ -154,31 +134,13 @@ bool Llava::eval_image(const struct llava_image_embed *image_embed) {
 
     if (llama_decode(this->ctx_llava->ctx_llama, batch)) {
       RCLCPP_ERROR(this->logger, "Failed in image eval");
-      return false;
+      succ = false;
+      break;
     }
 
     this->n_past += n_eval;
   }
 
-  return true;
-}
-
-bool Llava::init_eval() {
-
-  if (!this->eval_string(this->system_prompt)) {
-    return false;
-  }
-
-  if (this->image_embed != nullptr) {
-    RCLCPP_INFO(this->logger, "Evaluating the image");
-    if (!this->eval_image(this->image_embed)) {
-      return false;
-    }
-  }
-
-  if (!this->eval_string(this->user_prompt)) {
-    return false;
-  }
-
-  return true;
+  this->free_image();
+  return succ;
 }

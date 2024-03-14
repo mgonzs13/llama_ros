@@ -108,6 +108,10 @@ Llama::~Llama() {
   llama_backend_free();
 }
 
+void Llama::load_eval_system_prompt() {
+  this->generate_response(this->params->prompt, false, nullptr);
+}
+
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
                                          bool special) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
@@ -134,6 +138,8 @@ void Llama::reset() {
   this->ga_i = 0;
 
   this->prompt_tokens.clear();
+
+  this->load_eval_system_prompt();
 }
 
 void Llama::cancel() { this->canceled = true; }

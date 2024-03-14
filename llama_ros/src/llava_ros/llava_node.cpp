@@ -33,50 +33,12 @@ using namespace llava_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-LlavaNode::LlavaNode() : rclcpp::Node("llava_node") {
-
-  // load llama
-  gpt_params.load_params(this);
-  this->llava = std::make_shared<Llava>(this->get_logger(), gpt_params.params,
-                                        gpt_params.debug);
-
-  // generate response action server
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_ =
-      rclcpp_action::create_server<GenerateResponse>(
-          this, "generate_response",
-          std::bind(&LlavaNode::handle_goal, this, _1, _2),
-          std::bind(&LlavaNode::handle_cancel, this, _1),
-          std::bind(&LlavaNode::handle_accepted, this, _1));
-
-  RCLCPP_INFO(this->get_logger(), "Llava Node started");
-}
-
-rclcpp_action::GoalResponse
-LlavaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
-                       std::shared_ptr<const GenerateResponse::Goal> goal) {
-  (void)uuid;
-  (void)goal;
-
-  if (this->goal_handle_ != nullptr && this->goal_handle_->is_active()) {
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
-  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-}
-
-rclcpp_action::CancelResponse LlavaNode::handle_cancel(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  (void)goal_handle;
-  RCLCPP_INFO(this->get_logger(), "Received request to cancel Llava node");
-  this->llava->cancel();
-  return rclcpp_action::CancelResponse::ACCEPT;
-}
-
-void LlavaNode::handle_accepted(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  this->goal_handle_ = goal_handle;
-  std::thread{std::bind(&LlavaNode::execute, this, _1), goal_handle}.detach();
+LlavaNode::LlavaNode() : llama_ros::LlamaNode(false) {
+  this->llava = std::make_shared<Llava>(this->get_logger(),
+                                        this->gpt_params.load_params(this),
+                                        this->gpt_params.debug);
+  this->llama = std::dynamic_pointer_cast<llama_ros::Llama>(this->llava);
+  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
 }
 
 void LlavaNode::execute(
@@ -107,6 +69,8 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
+    RCLCPP_INFO(this->get_logger(), "Loading image");
+
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);
 
@@ -117,14 +81,20 @@ void LlavaNode::execute(
 
     if (!this->llava->load_image(encoded_image)) {
       this->goal_handle_->abort(result);
+      RCLCPP_INFO(this->get_logger(), "Failed to load image");
       return;
     }
-
-  } else {
-    this->llava->free_image();
   }
 
   // call llava
+  if (image_msg.data.size() > 0) {
+    RCLCPP_INFO(this->get_logger(), "Evaluating the image");
+    if (!this->llava->eval_image()) {
+      this->goal_handle_->abort(result);
+      return;
+    }
+  }
+
   auto completion_results = this->llava->generate_response(
       prompt, true, std::bind(&LlavaNode::send_text, this, _1));
 
@@ -215,26 +185,4 @@ std::string LlavaNode::base64_encode(unsigned char const *bytes_to_encode,
   }
 
   return ret;
-}
-
-void LlavaNode::send_text(const struct completion_output &completion) {
-
-  if (this->goal_handle_ != nullptr) {
-    auto feedback = std::make_shared<GenerateResponse::Feedback>();
-
-    feedback->partial_response.text =
-        this->llava->detokenize({completion.token});
-    feedback->partial_response.token = completion.token;
-    feedback->partial_response.probs.chosen_token = completion.token;
-
-    for (auto prob : completion.probs) {
-      llama_msgs::msg::TokenProb aux;
-      aux.token = prob.token;
-      aux.probability = prob.probability;
-      aux.token_text = this->llava->detokenize({prob.token});
-      feedback->partial_response.probs.data.push_back(aux);
-    }
-
-    this->goal_handle_->publish_feedback(feedback);
-  }
 }

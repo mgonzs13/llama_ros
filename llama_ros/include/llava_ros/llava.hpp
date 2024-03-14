@@ -52,11 +52,10 @@ public:
         bool debug = false);
   ~Llava();
 
-  void free_image();
-
   bool load_image(std::string base64_str);
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
+  bool eval_image();
 
 protected:
   struct llava_context *ctx_llava;
@@ -65,10 +64,8 @@ protected:
   std::string user_prompt;
   struct llava_image_embed *image_embed;
 
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
-  bool init_eval() override;
-  bool eval_string(std::string prompt);
-  bool eval_image(const struct llava_image_embed *image_embed);
+private:
+  void free_image();
 };
 
 } // namespace llava_ros

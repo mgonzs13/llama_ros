@@ -36,8 +36,8 @@ class GptParams {
 
 public:
   GptParams();
-  void load_params(rclcpp::Node *node);
-  void
+  std::shared_ptr<struct gpt_params> load_params(rclcpp::Node *node);
+  bool
   update_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
                          int n_vocab, llama_token token_eos);
 

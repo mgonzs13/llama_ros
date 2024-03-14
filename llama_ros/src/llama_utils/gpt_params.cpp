@@ -33,7 +33,7 @@ GptParams::GptParams() : debug(false) {
   this->params = std::make_shared<struct gpt_params>();
 }
 
-void GptParams::load_params(rclcpp::Node *node) {
+std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   std::string stop;
   std::string file_path;
@@ -46,7 +46,7 @@ void GptParams::load_params(rclcpp::Node *node) {
 
   std::vector<double> tensor_split;
 
-  // node params from llama.cpp common.h
+  // llama params
   node->declare_parameters<int32_t>("", {
                                             {"seed", -1},
                                             {"n_ctx", 512},
@@ -237,9 +237,11 @@ void GptParams::load_params(rclcpp::Node *node) {
       this->params->tensor_split[i] = 0.0f;
     }
   }
+
+  return this->params;
 }
 
-void GptParams::update_sampling_params(
+bool GptParams::update_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab,
     llama_token token_eos) {
 
@@ -297,4 +299,6 @@ void GptParams::update_sampling_params(
   if (params->ignore_eos) {
     this->params->sparams.logit_bias[token_eos] = -INFINITY;
   }
+
+  return true;
 }
