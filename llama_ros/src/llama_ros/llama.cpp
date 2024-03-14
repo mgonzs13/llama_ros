@@ -174,6 +174,11 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
     tokens.resize(this->params->n_batch);
   }
 
+  // add eos if not present
+  if (tokens.back() != this->get_token_eos()) {
+    tokens.push_back(this->get_token_eos());
+  }
+
   // llama eval
   struct llama_batch batch = llama_batch_init(this->params->n_batch, 0, 1);
   for (int i = 0; i < (int)tokens.size(); i++) {
