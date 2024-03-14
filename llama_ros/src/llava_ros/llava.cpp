@@ -148,22 +148,27 @@ bool Llava::eval_image() {
 bool Llava::init_eval() {
 
   // check if there is a prefix in the prompt_tokens
+  // only if there is an image to eval
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params->input_prefix,
       this->should_add_bos_token() && !this->prompt_tokens.size(), true);
 
   bool is_prefix = true;
 
-  if (inp_pfx.size() > this->prompt_tokens.size() - this->n_consumed) {
+  if (inp_pfx.size() > this->prompt_tokens.size() - this->n_consumed &&
+      this->image_embed != nullptr) {
     is_prefix = false;
 
   } else {
-    int j = 0;
-    for (int i = this->n_consumed; i < (int)this->prompt_tokens.size(); i++) {
-      if (this->prompt_tokens[i] != inp_pfx[j]) {
+    int j = this->n_consumed;
+    for (int i = 0; i < (int)inp_pfx.size(); i++) {
+
+      if (inp_pfx[i] != this->prompt_tokens[j]) {
         is_prefix = false;
         break;
       }
+
+      j++;
     }
   }
 
