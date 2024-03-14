@@ -7,7 +7,7 @@ using json = nlohmann::json;
 
 SchemaConverter::SchemaConverter(const std::vector<std::string> &prop_order) {
 
-  for (int i = 0; i < (int)prop_order.size(); ++i) {
+  for (size_t i = 0; i < prop_order.size(); ++i) {
     if (prop_order[i].size() > 0) {
       this->prop_order[prop_order[i]] = i;
     }
@@ -70,7 +70,7 @@ std::string SchemaConverter::visit(const json &schema,
 
     std::string rule = "\"{\" space";
 
-    for (int i = 0; i < (int)prop_pairs.size(); ++i) {
+    for (size_t i = 0; i < prop_pairs.size(); ++i) {
       std::string prop_rule_name =
           visit(prop_pairs[i].second, name.empty()
                                           ? prop_pairs[i].first

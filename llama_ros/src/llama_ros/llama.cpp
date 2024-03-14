@@ -184,8 +184,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
 
   // llama eval
   struct llama_batch batch = llama_batch_init(this->params->n_batch, 0, 1);
-  for (int i = 0; i < (int)tokens.size(); i++) {
-    llama_batch_add(batch, tokens[i], i, {1}, i == (int)tokens.size() - 1);
+  for (size_t i = 0; i < tokens.size(); i++) {
+    llama_batch_add(batch, tokens[i], i, {1}, i == tokens.size() - 1);
   }
 
   if (llama_decode(this->ctx, batch)) {
@@ -524,11 +524,11 @@ bool Llama::eval() {
     // evaluate tokens in batches
     // batch is typically prepared to fit within a batch
     // but not always
-    for (int32_t i = 0; i < (int32_t)this->batch_tokens.size();
+    for (size_t i = 0; i < this->batch_tokens.size();
          i += this->params->n_batch) {
 
-      const int32_t n_eval = std::min(this->params->n_batch,
-                                      (int32_t)(this->batch_tokens.size() - i));
+      int n_eval =
+          std::min(this->params->n_batch, (int)(this->batch_tokens.size() - i));
 
       if (this->debug) {
         this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");

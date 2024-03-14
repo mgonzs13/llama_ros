@@ -161,7 +161,7 @@ bool Llava::init_eval() {
 
   } else {
     int j = this->n_consumed;
-    for (int i = 0; i < (int)inp_pfx.size(); i++) {
+    for (size_t i = 0; i < inp_pfx.size(); i++) {
 
       if (inp_pfx[i] != this->prompt_tokens[j]) {
         is_prefix = false;
@@ -175,7 +175,7 @@ bool Llava::init_eval() {
   // eval the prefix before the image
   if (is_prefix) {
 
-    for (int i = 0; i < (int)inp_pfx.size(); i++) {
+    for (size_t i = 0; i < inp_pfx.size(); i++) {
       this->batch_tokens.push_back(inp_pfx[i]);
       this->n_consumed++;
     }
