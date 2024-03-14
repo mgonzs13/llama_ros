@@ -30,12 +30,13 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             use_llava=True,
+            embedding=False,
 
-            n_ctx=4096,
-            n_batch=8,
-            n_gpu_layers=0,
+            n_ctx=8192,
+            n_batch=512,
+            n_gpu_layers=33,
             n_threads=1,
-            n_predict=4096,
+            n_predict=8192,
 
             model_repo="cjpais/llava-1.6-mistral-7b-gguf",
             model_filename="llava-v1.6-mistral-7b.Q4_K_M.gguf",
@@ -43,8 +44,10 @@ def generate_launch_description():
             mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf",
             mmproj_filename="mmproj-model-f16.gguf",
 
-            # prefix="[INST] ",
-            # suffix="[/INST] ",
-            # stop="[INST] ",
+            prefix="[INST] ",
+            suffix="[/INST]",
+            stop="[INST] ",
+
+            file="mistral.txt"
         )
     ])
