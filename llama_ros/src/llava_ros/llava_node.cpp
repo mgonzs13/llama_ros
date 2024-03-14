@@ -45,26 +45,7 @@ void LlavaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
-
-  // get goal data
-  std::string prompt = goal_handle->get_goal()->prompt;
   auto image_msg = goal_handle->get_goal()->image;
-  bool reset = goal_handle->get_goal()->reset;
-
-  if (this->gpt_params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
-  }
-
-  // reset llama
-  if (reset) {
-    this->llava->reset();
-  }
-
-  // update sampling params
-  auto sampling_config = goal_handle->get_goal()->sampling_config;
-  this->gpt_params.update_sampling_params(sampling_config,
-                                          this->llava->get_n_vocab(),
-                                          this->llava->get_token_eos());
 
   // load image
   if (image_msg.data.size() > 0) {
@@ -86,43 +67,8 @@ void LlavaNode::execute(
     }
   }
 
-  // call llava
-  if (image_msg.data.size() > 0) {
-    RCLCPP_INFO(this->get_logger(), "Evaluating the image");
-    if (!this->llava->eval_image()) {
-      this->goal_handle_->abort(result);
-      return;
-    }
-  }
-
-  auto completion_results = this->llava->generate_response(
-      prompt, true, std::bind(&LlavaNode::send_text, this, _1));
-
-  for (auto completion : completion_results) {
-    result->response.text.append(this->llava->detokenize({completion.token}));
-    result->response.tokens.push_back(completion.token);
-
-    llama_msgs::msg::TokenProbArray probs_msg;
-    for (auto prob : completion.probs) {
-      llama_msgs::msg::TokenProb aux;
-      aux.token = prob.token;
-      aux.probability = prob.probability;
-      aux.token_text = this->llava->detokenize({prob.token});
-      probs_msg.data.push_back(aux);
-    }
-    result->response.probs.push_back(probs_msg);
-  }
-
-  if (rclcpp::ok()) {
-
-    if (this->goal_handle_->is_canceling()) {
-      this->goal_handle_->canceled(result);
-    } else {
-      this->goal_handle_->succeed(result);
-    }
-
-    this->goal_handle_ = nullptr;
-  }
+  // llama_node execute
+  llama_ros::LlamaNode::execute(goal_handle);
 }
 
 // https://renenyffenegger.ch/notes/development/Base64/Encoding-and-decoding-base-64-with-cpp/

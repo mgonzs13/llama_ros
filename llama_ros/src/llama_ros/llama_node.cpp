@@ -133,6 +133,7 @@ void LlamaNode::execute(
                                           this->llama->get_token_eos());
 
   // call llama
+  // TODO: abort if llama fails in loading prompt or eval
   auto completion_results = this->llama->generate_response(
       prompt, true, std::bind(&LlamaNode::send_text, this, _1));
 

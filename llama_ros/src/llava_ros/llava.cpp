@@ -73,7 +73,7 @@ bool Llava::load_image(std::string base64_str) {
 
   this->image_embed = this->base64_image_to_embed(base64_str);
 
-  if (!this->image_embed) {
+  if (this->image_embed == nullptr) {
     RCLCPP_ERROR(this->logger, "Can't load base64 image");
     return false;
   }
@@ -94,7 +94,7 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
 
   if (!embed) {
     RCLCPP_ERROR(this->logger, "Could not load image from base64 string");
-    return NULL;
+    return nullptr;
   }
 
   return embed;
@@ -143,4 +143,52 @@ bool Llava::eval_image() {
 
   this->free_image();
   return succ;
+}
+
+bool Llava::init_eval() {
+
+  // check if there is a prefix in the prompt_tokens
+  std::vector<llama_token> inp_pfx = this->tokenize(
+      this->params->input_prefix,
+      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
+
+  bool is_prefix = true;
+
+  if (inp_pfx.size() > this->prompt_tokens.size() - this->n_consumed) {
+    is_prefix = false;
+
+  } else {
+    int j = 0;
+    for (int i = this->n_consumed; i < (int)this->prompt_tokens.size(); i++) {
+      if (this->prompt_tokens[i] != inp_pfx[j]) {
+        is_prefix = false;
+        break;
+      }
+    }
+  }
+
+  // eval the prefix before the image
+  if (is_prefix) {
+
+    for (int i = 0; i < (int)inp_pfx.size(); i++) {
+      this->batch_tokens.push_back(inp_pfx[i]);
+      this->n_consumed++;
+    }
+
+    if (!this->eval()) {
+      return false;
+    }
+  }
+
+  // eval the image
+  if (this->image_embed != nullptr) {
+    RCLCPP_INFO(this->logger, "Evaluating the image");
+
+    if (!this->eval_image()) {
+      return false;
+    }
+  }
+
+  // eval the rest of the prompt
+  return llama_ros::Llama::init_eval();
 }
