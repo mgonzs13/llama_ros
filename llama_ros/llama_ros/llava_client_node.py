@@ -48,6 +48,10 @@ class LlavaClientNode(Node):
         self.prompt = self.get_parameter(
             "prompt").get_parameter_value().string_value
 
+        self.declare_parameter("use_image", True)
+        self.use_image = self.get_parameter(
+            "use_image").get_parameter_value().bool_value
+
         self.declare_parameter(
             "image_url", "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg")
         self.image = self.load_image_from_url(self.get_parameter(
@@ -83,7 +87,10 @@ class LlavaClientNode(Node):
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
-        goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
+
+        if self.use_image:
+            goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
+
         goal.sampling_config.temp = 0.2
 
         self._action_client.wait_for_server()
