@@ -75,6 +75,9 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
   this->n_consumed = 0;
   this->ga_i = 0;
 
+  // load system prompt
+  this->load_eval_system_prompt();
+
   // show info
   RCLCPP_INFO(this->logger,
               "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
