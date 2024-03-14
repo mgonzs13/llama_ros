@@ -121,7 +121,7 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 
 void Llama::reset() {
 
-  llama_kv_cache_seq_rm(this->ctx, -1, 0, -1);
+  llama_kv_cache_clear(this->ctx);
 
   if (this->ctx_sampling != nullptr) {
     llama_sampling_reset(this->ctx_sampling);
@@ -162,7 +162,8 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
   }
 
   if ((int)tokens.size() > this->params->n_batch) {
-    RCLCPP_WARN(this->logger, "Prompt too long %ld, batch size %d",
+    RCLCPP_WARN(this->logger,
+                "Prompt too long %ld, batch size %d, truncating...",
                 tokens.size(), this->params->n_batch);
     tokens.resize(this->params->n_batch);
   }
