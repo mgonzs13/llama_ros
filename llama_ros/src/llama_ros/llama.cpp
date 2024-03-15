@@ -147,18 +147,22 @@ void Llama::reset() {
 
 void Llama::cancel() { this->canceled = true; }
 
-std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
-                                              bool normalize) {
+embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
+                                            bool normalize) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   const int n_embd = this->get_n_embd();
 
+  embeddings_ouput output;
+  output.embeddings = std::vector<float>(n_embd, 0.0f);
+  output.n_tokens = 0;
+
   if (!this->is_embedding()) {
     RCLCPP_ERROR(
         this->logger,
         "Llama must be created with embedding=true to create embeddings");
-    return std::vector<float>(n_embd, 0.0f);
+    return output;
   }
 
   auto tokens =
@@ -167,7 +171,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
   if ((int)tokens.size() > this->get_n_ctx()) {
     RCLCPP_ERROR(this->logger, "Prompt too long %ld, context size is %d",
                  tokens.size(), this->get_n_ctx());
-    return std::vector<float>(n_embd, 0.0f);
+    return output;
   }
 
   if ((int)tokens.size() > this->params->n_batch) {
@@ -190,7 +194,7 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
 
   if (llama_decode(this->ctx, batch)) {
     RCLCPP_ERROR(this->logger, "Failed to eval");
-    return std::vector<float>(n_embd, 0.0f);
+    return output;
   }
 
   // get embeddings
@@ -226,16 +230,21 @@ std::vector<float> Llama::generate_embeddings(const std::string &input_prompt,
   llama_kv_cache_seq_rm(this->ctx, 1, 0, -1);
   llama_batch_free(batch);
 
-  return embd_res;
+  // result
+  output.embeddings = embd_res;
+  output.n_tokens = tokens.size();
+
+  return output;
 }
 
-std::vector<struct completion_output>
-Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
-                         GenerateResponseCallback callback) {
+response_output Llama::generate_response(const std::string &input_prompt,
+                                         bool add_pfx_sfx,
+                                         GenerateResponseCallback callback) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
+  struct response_output output;
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
@@ -249,7 +258,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   // load prompt
   if (!this->load_prompt(input_prompt, add_pfx_sfx)) {
-    return response;
+    output.stop = stop_type::ABORT;
+    return output;
   }
 
   // show sampling info
@@ -273,7 +283,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
   // initial eval
   if (!this->init_eval()) {
-    return response;
+    output.stop = stop_type::ABORT;
+    return output;
   }
 
   // generation loop
@@ -283,6 +294,11 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
         this->find_stop(completion_result_list, this->params->antiprompt);
 
     if (stopping == FULL_STOP) {
+      if (this->canceled) {
+        output.stop = stop_type::CANCEL;
+      } else {
+        output.stop = stop_type::FULL_STOP;
+      }
       break;
 
     } else if (stopping == PARTIAL_STOP) {
@@ -308,6 +324,7 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
 
     // next eval
     if (!this->eval()) {
+      output.stop = stop_type::ABORT;
       break;
     }
   }
@@ -318,7 +335,8 @@ Llama::generate_response(const std::string &input_prompt, bool add_pfx_sfx,
     llama_print_timings(this->ctx);
   }
 
-  return response;
+  output.completions = response;
+  return output;
 }
 
 bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {

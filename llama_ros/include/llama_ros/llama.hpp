@@ -49,6 +49,18 @@ enum stop_type {
   NO_STOP,
   FULL_STOP,
   PARTIAL_STOP,
+  CANCEL,
+  ABORT,
+};
+
+struct response_output {
+  std::vector<completion_output> completions;
+  stop_type stop;
+};
+
+struct embeddings_ouput {
+  std::vector<float> embeddings;
+  int32_t n_tokens;
 };
 
 namespace llama_ros {
@@ -65,11 +77,13 @@ public:
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
                                     bool special = false);
   std::string detokenize(const std::vector<llama_token> &tokens);
+
   void reset();
   void cancel();
-  std::vector<float> generate_embeddings(const std::string &input_prompt,
-                                         bool normalize = true);
-  std::vector<struct completion_output>
+
+  embeddings_ouput generate_embeddings(const std::string &input_prompt,
+                                       bool normalize = true);
+  response_output
   generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
                     GenerateResponseCallback callbakc = nullptr);
 
@@ -108,14 +122,17 @@ protected:
 
   void load_eval_system_prompt();
   bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
             std::vector<std::string> stopping_words);
   stop_type
   find_stop_word(std::vector<struct completion_output> completion_result_list,
                  std::string stopping_word);
+
   virtual bool init_eval();
   bool eval();
+
   std::vector<token_prob> get_probs();
   struct completion_output sample();
   void update_sampling_params(const struct llama_sampling_params &params);

@@ -76,8 +76,10 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
-  response->embeddings =
+  auto embeddings =
       this->llama->generate_embeddings(request->prompt, request->normalize);
+  response->embeddings = embeddings.embeddings;
+  response->n_tokens = embeddings.n_tokens;
 }
 
 rclcpp_action::GoalResponse
@@ -133,29 +135,36 @@ void LlamaNode::execute(
                                           this->llama->get_token_eos());
 
   // call llama
-  // TODO: abort if llama fails in loading prompt or eval
-  auto completion_results = this->llama->generate_response(
+  struct response_output output = this->llama->generate_response(
       prompt, true, std::bind(&LlamaNode::send_text, this, _1));
 
-  for (auto completion : completion_results) {
-    result->response.text.append(this->llama->detokenize({completion.token}));
-    result->response.tokens.push_back(completion.token);
+  if (output.stop == stop_type::FULL_STOP) {
+    auto completion_results = output.completions;
 
-    llama_msgs::msg::TokenProbArray probs_msg;
-    for (auto prob : completion.probs) {
-      llama_msgs::msg::TokenProb aux;
-      aux.token = prob.token;
-      aux.probability = prob.probability;
-      aux.token_text = this->llama->detokenize({prob.token});
-      probs_msg.data.push_back(aux);
+    for (auto completion : completion_results) {
+      result->response.text.append(this->llama->detokenize({completion.token}));
+      result->response.tokens.push_back(completion.token);
+
+      llama_msgs::msg::TokenProbArray probs_msg;
+      for (auto prob : completion.probs) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = prob.token;
+        aux.probability = prob.probability;
+        aux.token_text = this->llama->detokenize({prob.token});
+        probs_msg.data.push_back(aux);
+      }
+      result->response.probs.push_back(probs_msg);
     }
-    result->response.probs.push_back(probs_msg);
   }
 
   if (rclcpp::ok()) {
 
-    if (this->goal_handle_->is_canceling()) {
+    if (output.stop == stop_type::CANCEL) {
       this->goal_handle_->canceled(result);
+
+    } else if (output.stop == stop_type::ABORT) {
+      this->goal_handle_->abort(result);
+
     } else {
       this->goal_handle_->succeed(result);
     }
