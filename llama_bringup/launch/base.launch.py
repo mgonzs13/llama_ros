@@ -33,7 +33,8 @@ def generate_launch_description():
     params = {
         "seed": LaunchConfiguration("seed", default=-1),
         "n_ctx": LaunchConfiguration("n_ctx", default=512),
-        "n_batch": LaunchConfiguration("n_batch", default=8),
+        "n_batch": LaunchConfiguration("n_batch", default=2048),
+        "n_ubatch": LaunchConfiguration("n_batch", default=512),
 
         "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
         "split_mode": LaunchConfiguration("split_mode", default="layer"),

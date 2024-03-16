@@ -50,7 +50,8 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->declare_parameters<int32_t>("", {
                                             {"seed", -1},
                                             {"n_ctx", 512},
-                                            {"n_batch", 512},
+                                            {"n_batch", 2048},
+                                            {"n_ubatch", 512},
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
@@ -104,6 +105,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->get_parameter("seed", this->params->seed);
   node->get_parameter("n_ctx", this->params->n_ctx);
   node->get_parameter("n_batch", this->params->n_batch);
+  node->get_parameter("n_ubatch", this->params->n_ubatch);
 
   node->get_parameter("n_gpu_layers", this->params->n_gpu_layers);
   node->get_parameter("split_mode", split_mode);

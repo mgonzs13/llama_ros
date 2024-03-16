@@ -61,7 +61,8 @@ def create_llama_launch(
 
     seed: int = -1,
     n_ctx: int = 512,
-    n_batch: int = 8,
+    n_batch: int = 2048,
+    n_ubatch: int = 512,
 
     n_gpu_layers: int = 0,
     split_mode: str = "layer",
@@ -122,6 +123,7 @@ def create_llama_launch(
             "seed": str(seed),
             "n_ctx": str(n_ctx),
             "n_batch": str(n_batch),
+            "n_ubatch": str(n_ubatch),
 
             "n_gpu_layers": str(n_gpu_layers),
             "split_mode": split_mode,
