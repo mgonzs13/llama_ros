@@ -43,7 +43,7 @@ add_compile_definitions(GGML_USE_CUBLAS)
 
 First of all, you need to create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the [predefined launch files](llama_bringup/launch).
 
-### llama_ros
+#### llama_ros
 
 <details>
 <summary>Click to expand</summary>
@@ -81,7 +81,7 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 
 </details>
 
-### llava_ros
+#### llava_ros
 
 <details>
 <summary>Click to expand</summary>
@@ -125,11 +125,11 @@ $ ros2 launch llama_bringup llava.launch.py
 
 </details>
 
-## ROS 2 Clients
+### ROS 2 Clients
 
 Both llama_ros and llava_ros provide ROS 2 interfaces to access the main functionalities of the models. Here you have some examples of how to use them inside ROS 2 nodes. Moreover, take a look to the [llama_client_node.py](llama_ros/llama_ros/llama_client_node.py) and [llava_client_node.py](llama_ros/llama_ros/llava_client_node.py) examples.
 
-### Tokenize
+#### Tokenize
 
 <details>
 <summary>Click to expand</summary>
@@ -158,7 +158,7 @@ class ExampleNode(Node):
 
 </details>
 
-### Embeddings
+#### Embeddings
 
 <details>
 <summary>Click to expand</summary>
@@ -188,7 +188,7 @@ class ExampleNode(Node):
 
 </details>
 
-### Generate Response
+#### Generate Response
 
 <details>
 <summary>Click to expand</summary>
@@ -229,7 +229,7 @@ class ExampleNode(Node):
 
 </details>
 
-### Generate Response (llava)
+#### Generate Response (llava)
 
 <details>
 <summary>Click to expand</summary>
@@ -280,11 +280,11 @@ class ExampleNode(Node):
 
 </details>
 
-## LagnChain
+### LagnChain
 
 There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
-### llama_ros LLM (Chain)
+#### llama_ros LLM (Chain)
 
 <details>
 <summary>Click to expand</summary>
@@ -319,7 +319,7 @@ class ExampleNode(Node):
 
 </details>
 
-### llama_ros_embeddings (RAG)
+#### llama_ros_embeddings (RAG)
 
 <details>
 <summary>Click to expand</summary>
