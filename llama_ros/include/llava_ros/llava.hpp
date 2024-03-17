@@ -55,10 +55,12 @@ public:
   bool load_image(std::string base64_str);
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
-  bool eval_image();
-  bool eval_prompt();
 
 protected:
+  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
+  bool eval_image(struct llava_image_embed *image_embed);
+  bool eval_prompt();
+
   struct llava_context *ctx_llava;
 
   std::string system_prompt;

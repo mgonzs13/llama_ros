@@ -112,7 +112,6 @@ protected:
   bool canceled;
   llama_utils::Spinner spinner;
   std::vector<llama_token> prompt_tokens;
-  std::vector<llama_token> batch_tokens;
 
   // eval
   int32_t n_past;
@@ -120,7 +119,7 @@ protected:
   int32_t n_consumed;
   int32_t ga_i;
 
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+  virtual bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
 
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
@@ -131,8 +130,9 @@ protected:
 
   bool eval_system_prompt();
   virtual bool eval_prompt();
-  bool eval();
-  bool eval(std::vector<llama_token> batch_tokens);
+  bool eval_token(llama_token token);
+  bool eval(std::vector<llama_token> tokens);
+  bool eval(struct llama_batch batch);
 
   std::vector<token_prob> get_probs();
   struct completion_output sample();

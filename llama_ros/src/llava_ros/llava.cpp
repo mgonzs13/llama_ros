@@ -60,11 +60,17 @@ Llava::~Llava() {
   free(this->ctx_llava);
 }
 
-void Llava::free_image() {
-  if (this->image_embed != nullptr) {
-    llava_image_embed_free(this->image_embed);
-    this->image_embed = nullptr;
+/*
+*****************************
+*        LOAD IMAGE         *
+*****************************
+*/
+bool Llava::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
+  if (input_prompt.size() == 0 && this->image_embed != nullptr) {
+    return true;
   }
+
+  return Llama::load_prompt(input_prompt, add_pfx_sfx);
 }
 
 bool Llava::load_image(std::string base64_str) {
@@ -79,6 +85,13 @@ bool Llava::load_image(std::string base64_str) {
   }
 
   return true;
+}
+
+void Llava::free_image() {
+  if (this->image_embed != nullptr) {
+    llava_image_embed_free(this->image_embed);
+    this->image_embed = nullptr;
+  }
 }
 
 struct llava_image_embed *
@@ -100,15 +113,19 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   return embed;
 }
 
-bool Llava::eval_image() {
+/*
+*****************************
+*        EVAL IMAGE         *
+*****************************
+*/
+bool Llava::eval_image(struct llava_image_embed *image_embed) {
 
   int n_embd = this->get_n_embd();
   bool succ = true;
 
-  for (int i = 0; i < this->image_embed->n_image_pos;
-       i += this->params->n_batch) {
+  for (int i = 0; i < image_embed->n_image_pos; i += this->params->n_batch) {
 
-    int n_eval = this->image_embed->n_image_pos - i;
+    int n_eval = image_embed->n_image_pos - i;
 
     if (n_eval > this->params->n_batch) {
       n_eval = this->params->n_batch;
@@ -117,7 +134,7 @@ bool Llava::eval_image() {
     llama_batch batch = {
         int32_t(n_eval),
         nullptr,
-        (this->image_embed->embed + i * n_embd),
+        (image_embed->embed + i * n_embd),
         nullptr,
         nullptr,
         nullptr,
@@ -127,18 +144,11 @@ bool Llava::eval_image() {
         0,
     };
 
-    if (this->debug) {
-      this->spinner.spin("EVALUATING IMAGE " + std::to_string(n_eval) +
-                         " TOKENS");
-    }
-
-    if (llama_decode(this->ctx_llava->ctx_llama, batch)) {
+    if (this->eval(batch)) {
       RCLCPP_ERROR(this->logger, "Failed in image eval");
       succ = false;
       break;
     }
-
-    this->n_past += n_eval;
   }
 
   this->free_image();
@@ -174,13 +184,7 @@ bool Llava::eval_prompt() {
 
   // eval the prefix before the image
   if (is_prefix) {
-
-    for (size_t i = 0; i < inp_pfx.size(); i++) {
-      this->batch_tokens.push_back(inp_pfx[i]);
-      this->n_consumed++;
-    }
-
-    if (!this->eval()) {
+    if (!this->eval(inp_pfx)) {
       return false;
     }
   }
@@ -189,7 +193,7 @@ bool Llava::eval_prompt() {
   if (this->image_embed != nullptr) {
     RCLCPP_INFO(this->logger, "Evaluating the image");
 
-    if (!this->eval_image()) {
+    if (!this->eval_image(this->image_embed)) {
       return false;
     }
   }

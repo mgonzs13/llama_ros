@@ -328,11 +328,10 @@ response_output Llama::generate_response(const std::string &input_prompt,
     // sample next token
     completion_result = this->sample();
     completion_result_list.push_back(completion_result);
-    this->batch_tokens.push_back(completion_result.token);
     --this->n_remain;
 
     // next eval
-    if (!this->eval()) {
+    if (!this->eval_token(completion_result.token)) {
       output.stop = stop_type::ABORT;
       break;
     }
@@ -516,42 +515,59 @@ bool Llama::eval_system_prompt() {
 
 bool Llama::eval_prompt() {
 
+  std::vector<llama_token> batch;
+
   while (((int)this->prompt_tokens.size() > this->n_consumed)) {
 
-    int n = 0;
-
     while (((int)this->prompt_tokens.size() > this->n_consumed) &&
-           ((int)this->batch_tokens.size() < this->params->n_batch)) {
+           ((int)batch.size() < this->params->n_batch)) {
 
-      this->batch_tokens.push_back(this->prompt_tokens[this->n_consumed]);
+      batch.push_back(this->prompt_tokens[this->n_consumed]);
       llama_sampling_accept(this->ctx_sampling, this->ctx,
                             this->prompt_tokens[this->n_consumed], false);
-
       ++this->n_consumed;
-      ++n;
     }
 
-    if (!this->eval()) {
+    if (!this->eval(batch)) {
       return false;
     }
+
+    batch.clear();
   }
 
   return true;
 }
 
-bool Llama::eval() {
-  bool res = this->eval(this->batch_tokens);
-  this->batch_tokens.clear();
-  return res;
+bool Llama::eval_token(llama_token token) {
+  return this->eval(std::vector<llama_token>({token}));
 }
 
-bool Llama::eval(std::vector<llama_token> batch_tokens) {
+bool Llama::eval(std::vector<llama_token> tokens) {
 
-  if (batch_tokens.size() > 0) {
+  // create batch
+  llama_batch batch = {
+      int32_t(tokens.size()),
+      tokens.data(),
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      this->n_past,
+      1,
+      0,
+  };
+
+  return this->eval(batch);
+}
+
+bool Llama::eval(struct llama_batch batch) {
+
+  if (batch.n_tokens > 0) {
 
     // shift context
     if (this->params->grp_attn_n == 1) {
-      if (this->n_past + (int)batch_tokens.size() > this->get_n_ctx()) {
+      if (this->n_past + batch.n_tokens > this->get_n_ctx()) {
 
         const int n_left = this->n_past - this->params->n_keep;
         const int n_discard = n_left / 2;
@@ -587,17 +603,28 @@ bool Llama::eval(std::vector<llama_token> batch_tokens) {
     }
 
     // evaluate tokens in batches
-    for (size_t i = 0; i < batch_tokens.size(); i += this->params->n_batch) {
-      int n_eval =
-          std::min(this->params->n_batch, (int)(batch_tokens.size() - i));
+    for (int i = 0; i < batch.n_tokens; i += this->params->n_batch) {
+
+      int n_eval = std::min(this->params->n_batch, batch.n_tokens - i);
+
+      llama_batch batch_view = {
+          n_eval,
+          batch.embd == nullptr ? batch.token + i : nullptr,
+          batch.embd != nullptr ? batch.embd + i : nullptr,
+          batch.pos + i,
+          batch.n_seq_id + i,
+          batch.seq_id + i,
+          batch.logits + i,
+          this->n_past,
+          1,
+          0,
+      };
 
       if (this->debug) {
         this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
       }
 
-      if (llama_decode(this->ctx,
-                       llama_batch_get_one(&this->batch_tokens[i], n_eval,
-                                           this->n_past, 0))) {
+      if (llama_decode(this->ctx, batch_view)) {
         RCLCPP_ERROR(this->logger, "Failed to eval");
         return false;
       }
