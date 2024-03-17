@@ -61,7 +61,9 @@ Llama::Llama(std::shared_ptr<struct gpt_params> params, bool debug)
   this->reset();
 
   // show info
-  LLAMA_LOG_INFO("System_info: n_threads = %d / %d | %s",
+  LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
+                 LLAMA_COMMIT);
+  LLAMA_LOG_INFO("System info: n_threads = %d / %d | %s",
                  this->params->n_threads, std::thread::hardware_concurrency(),
                  llama_print_system_info());
 
@@ -259,14 +261,10 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
   // show sampling info
   if (this->debug) {
-    LLAMA_LOG_INFO("Sampling: temp = %f, "
-                   "top_k = %d, "
-                   "top_p = %f, "
-                   "penalty_last_n = %i, "
-                   "repeat_penalty = %f",
-                   params->sparams.temp, params->sparams.top_k,
-                   params->sparams.top_p, params->sparams.penalty_last_n,
-                   params->sparams.penalty_repeat);
+    LLAMA_LOG_INFO("Sampling params: \n%s\n",
+                   llama_sampling_print(this->params->sparams).c_str());
+    LLAMA_LOG_INFO("Sampling order: %s",
+                   llama_sampling_order_print(this->params->sparams).c_str());
   }
 
   LLAMA_LOG_INFO("Starting Response Generation");
