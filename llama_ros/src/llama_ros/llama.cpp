@@ -57,15 +57,14 @@ Llama::Llama(std::shared_ptr<struct gpt_params> params, bool debug)
                    this->get_n_ctx_train(), this->get_n_ctx());
   }
 
-  // show system information
-  LLAMA_LOG_INFO("System_info: n_threads = %d / %d | %s",
-                 this->params->n_threads, std::thread::hardware_concurrency(),
-                 llama_print_system_info());
-
   // set inital values
   this->reset();
 
   // show info
+  LLAMA_LOG_INFO("System_info: n_threads = %d / %d | %s",
+                 this->params->n_threads, std::thread::hardware_concurrency(),
+                 llama_print_system_info());
+
   LLAMA_LOG_INFO(
       "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
       this->get_n_ctx(), this->params->n_batch, this->params->n_predict,

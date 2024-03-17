@@ -38,9 +38,9 @@
 #define LLAMA_LOG_ERROR(text, ...)                                             \
   fprintf(stderr, "[ERROR] " text "\n", ##__VA_ARGS__)
 #define LLAMA_LOG_WARN(text, ...)                                              \
-  fprintf(stdout, "[WARN] " text "\n", ##__VA_ARGS__)
+  fprintf(stderr, "[WARN] " text "\n", ##__VA_ARGS__)
 #define LLAMA_LOG_INFO(text, ...)                                              \
-  fprintf(stdout, "[INFO] " text "\n", ##__VA_ARGS__)
+  fprintf(stderr, "[INFO] " text "\n", ##__VA_ARGS__)
 
 // llama structs
 struct token_prob {
