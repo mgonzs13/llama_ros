@@ -26,15 +26,23 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <vector>
 
 #include "common.h"
 #include "common/grammar-parser.h"
 #include "llama.h"
-#include "llama_ros/spinner.hpp"
+#include "llama_utils/spinner.hpp"
 
+// llama logs
+#define LLAMA_LOG_ERROR(text, ...)                                             \
+  fprintf(stderr, "[ERROR] " text "\n", ##__VA_ARGS__)
+#define LLAMA_LOG_WARN(text, ...)                                              \
+  fprintf(stderr, "[WARN] " text "\n", ##__VA_ARGS__)
+#define LLAMA_LOG_INFO(text, ...)                                              \
+  fprintf(stderr, "[INFO] " text "\n", ##__VA_ARGS__)
+
+// llama structs
 struct token_prob {
   llama_token token;
   float probability;
@@ -49,78 +57,96 @@ enum stop_type {
   NO_STOP,
   FULL_STOP,
   PARTIAL_STOP,
+  CANCEL,
+  ABORT,
+};
+
+struct response_output {
+  std::vector<completion_output> completions;
+  stop_type stop;
+};
+
+struct embeddings_ouput {
+  std::vector<float> embeddings;
+  int32_t n_tokens;
 };
 
 namespace llama_ros {
 
+using GenerateResponseCallback = std::function<void(struct completion_output)>;
+
 class Llama {
 
-  using GenerateResponseCallback =
-      std::function<void(struct completion_output)>;
-
 public:
-  Llama(rclcpp::Logger logger, const struct gpt_params &params, bool debug);
+  Llama(std::shared_ptr<struct gpt_params> params, bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
                                     bool special = false);
   std::string detokenize(const std::vector<llama_token> &tokens);
+
   void reset();
   void cancel();
-  std::vector<float> generate_embeddings(const std::string &input_prompt);
-  std::vector<struct completion_output>
-  generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
+
+  embeddings_ouput generate_embeddings(const std::string &input_prompt,
+                                       bool normalize = true);
+  response_output
+  generate_response(const std::string &input_prompt,
                     GenerateResponseCallback callbakc = nullptr);
 
   const struct llama_context *get_ctx() { return this->ctx; }
-  struct gpt_params &get_params() {
-    return this->params;
-  }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
-  bool is_embedding() { return this->params.embedding; }
+  bool is_embedding() { return this->params->embedding; }
   bool should_add_bos_token() {
     return llama_should_add_bos_token(this->model);
   }
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  struct llama_model *model;
+  std::shared_ptr<struct gpt_params> params;
+
+  // model
   struct llama_context *ctx;
+  struct llama_model *model;
   struct llama_sampling_context *ctx_sampling;
 
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+  // aux
+  bool debug;
+  bool canceled;
+  llama_utils::Spinner spinner;
+  std::vector<llama_token> prompt_tokens;
+
+  // eval
+  int32_t n_past;
+  int32_t n_remain;
+  int32_t n_consumed;
+  int32_t ga_i;
+
+  virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
+                           bool add_sfx);
+
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
             std::vector<std::string> stopping_words);
   stop_type
   find_stop_word(std::vector<struct completion_output> completion_result_list,
                  std::string stopping_word);
-  bool init_eval();
-  bool eval();
+
+  bool eval_system_prompt();
+  virtual bool eval_prompt();
+  bool eval_prompt(std::vector<llama_token> prompt_tokens);
+  bool eval_token(llama_token token);
+  bool eval(std::vector<llama_token> tokens);
+  bool eval(struct llama_batch batch);
+
   std::vector<token_prob> get_probs();
   struct completion_output sample();
   void update_sampling_params(const struct llama_sampling_params &params);
 
 private:
-  rclcpp::Logger logger;
-  struct gpt_params params;
-  bool debug;
-  Spinner spinner;
-
-  // aux
-  std::vector<llama_token> prompt_tokens;
-  struct llama_batch batch;
-
-  // eval
-  bool canceled;
-  int32_t n_past;
-  int32_t n_remain;
-  int32_t n_consumed;
-  int32_t ga_i;
-
   // lock
   std::recursive_mutex mutex;
 };

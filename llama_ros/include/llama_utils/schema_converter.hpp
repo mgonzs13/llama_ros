@@ -29,7 +29,7 @@
 
 using json = nlohmann::json;
 
-namespace llama_ros {
+namespace llama_utils {
 
 const std::string SPACE_RULE = "\" \"?";
 
@@ -67,6 +67,6 @@ private:
   std::string add_rule(const std::string &name, const std::string &rule);
 };
 
-} // namespace llama_ros
+} // namespace llama_utils
 
 #endif

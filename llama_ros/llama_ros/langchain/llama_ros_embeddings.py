@@ -26,6 +26,7 @@ from llama_msgs.srv import GenerateEmbeddings
 class LlamaROSEmbeddings(BaseModel, Embeddings):
 
     node: Node
+    normalize: bool = True
 
     generate_embeddings_srv_name: str = "/llama/generate_embeddings"
     generate_embeddings_srv_client: Client = None
@@ -49,6 +50,7 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
 
         req = GenerateEmbeddings.Request()
         req.prompt = text
+        req.normalize = self.normalize
 
         self.generate_embeddings_srv_client.wait_for_service()
         res = self.generate_embeddings_srv_client.call(req)

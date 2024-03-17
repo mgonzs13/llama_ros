@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2023  Miguel Ángel González Santamarta
+// Copyright (c) 2024  Miguel Ángel González Santamarta
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,35 +20,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_ROS__SPINNER_HPP
-#define LLAMA_ROS__SPINNER_HPP
+#ifndef LLAMA_ROS__LLAVA_NODE_HPP
+#define LLAMA_ROS__LLAVA_NODE_HPP
 
-#include <cstdio>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+
+#include <memory>
 #include <string>
 
-namespace llama_ros {
+#include "common.h"
+#include "llama_msgs/action/generate_response.hpp"
+#include "llama_ros/llama_node.hpp"
+#include "llava_ros/llava.hpp"
 
-class Spinner {
+namespace llava_ros {
+
+class LlavaNode : public llama_ros::LlamaNode {
+
+  using GenerateResponse = llama_msgs::action::GenerateResponse;
+  using GoalHandleGenerateResponse =
+      rclcpp_action::ServerGoalHandle<GenerateResponse>;
 
 public:
-  Spinner() {
-    this->spinner = "-\\|/";
-    this->index = 0;
-  }
+  LlavaNode();
 
-  void spin(std::string text) {
-    fprintf(stderr, "%c %s\n", spinner[index], text.c_str());
-    fflush(stderr);
-    fprintf(stderr, "\033[1A\033[2K");
-    index = (index + 1) % 4;
-  }
-  void spin() { this->spin(""); }
+  std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
+                            bool url = false);
 
-private:
-  const char *spinner;
-  int index = 0;
+protected:
+  std::shared_ptr<Llava> llava;
+
+  bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
+  void execute(
+      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
 };
 
-} // namespace llama_ros
+} // namespace llava_ros
 
 #endif

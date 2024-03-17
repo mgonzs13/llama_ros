@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TokenProb.msg"
@@ -20,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"
+  DEPENDENCIES sensor_msgs
 )
 
 ament_package()
