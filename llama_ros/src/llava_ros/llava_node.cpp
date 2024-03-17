@@ -34,8 +34,7 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 
 LlavaNode::LlavaNode() : llama_ros::LlamaNode(false) {
-  this->llava = std::make_shared<Llava>(this->get_logger(),
-                                        this->gpt_params.load_params(this),
+  this->llava = std::make_shared<Llava>(this->gpt_params.load_params(this),
                                         this->gpt_params.debug);
   this->llama = std::dynamic_pointer_cast<llama_ros::Llama>(this->llava);
   RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());

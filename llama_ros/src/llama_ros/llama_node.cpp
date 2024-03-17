@@ -38,8 +38,7 @@ using std::placeholders::_2;
 LlamaNode::LlamaNode(bool load_llama) : rclcpp::Node("llama_node") {
 
   if (load_llama) {
-    this->llama = std::make_shared<Llama>(this->get_logger(),
-                                          this->gpt_params.load_params(this),
+    this->llama = std::make_shared<Llama>(this->gpt_params.load_params(this),
                                           this->gpt_params.debug);
   }
 

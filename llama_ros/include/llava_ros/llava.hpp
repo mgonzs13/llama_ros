@@ -26,7 +26,6 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <vector>
 
@@ -48,8 +47,7 @@ struct llava_context {
 class Llava : public llama_ros::Llama {
 
 public:
-  Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
-        bool debug = false);
+  Llava(std::shared_ptr<struct gpt_params> params, bool debug = false);
   ~Llava();
 
   bool load_image(std::string base64_str);

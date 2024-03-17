@@ -26,7 +26,6 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <vector>
 
@@ -35,6 +34,15 @@
 #include "llama.h"
 #include "llama_utils/spinner.hpp"
 
+// llama logs
+#define LLAMA_LOG_ERROR(text, ...)                                             \
+  fprintf(stderr, "[ERROR] " text "\n", ##__VA_ARGS__)
+#define LLAMA_LOG_WARN(text, ...)                                              \
+  fprintf(stdout, "[WARN] " text "\n", ##__VA_ARGS__)
+#define LLAMA_LOG_INFO(text, ...)                                              \
+  fprintf(stdout, "[INFO] " text "\n", ##__VA_ARGS__)
+
+// llama structs
 struct token_prob {
   llama_token token;
   float probability;
@@ -70,8 +78,7 @@ using GenerateResponseCallback = std::function<void(struct completion_output)>;
 class Llama {
 
 public:
-  Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
-        bool debug);
+  Llama(std::shared_ptr<struct gpt_params> params, bool debug);
   ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -99,7 +106,6 @@ public:
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  rclcpp::Logger logger;
   std::shared_ptr<struct gpt_params> params;
 
   // model

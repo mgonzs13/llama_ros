@@ -30,9 +30,8 @@
 
 using namespace llava_ros;
 
-Llava::Llava(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
-             bool debug)
-    : llama_ros::Llama(logger, params, debug) {
+Llava::Llava(std::shared_ptr<struct gpt_params> params, bool debug)
+    : llama_ros::Llama(params, debug) {
 
   // load clip model
   const char *clip_path = this->params->mmproj.c_str();
@@ -117,7 +116,7 @@ bool Llava::load_image(std::string base64_str) {
   this->image_embed = this->base64_image_to_embed(base64_str);
 
   if (this->image_embed == nullptr) {
-    RCLCPP_ERROR(this->logger, "Can't load base64 image");
+    LLAMA_LOG_ERROR("Can't load base64 image");
     return false;
   }
 
@@ -143,7 +142,7 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
       img_bytes.size());
 
   if (!embed) {
-    RCLCPP_ERROR(this->logger, "Could not load image from base64 string");
+    LLAMA_LOG_ERROR("Could not load image from base64 string");
     return nullptr;
   }
 
@@ -182,7 +181,7 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
     };
 
     if (!this->eval(batch)) {
-      RCLCPP_ERROR(this->logger, "Failed in image eval");
+      LLAMA_LOG_ERROR("Failed in image eval");
       succ = false;
       break;
     }
@@ -207,7 +206,7 @@ bool Llava::eval_prompt() {
 
     // eval the image
     if (this->image_embed != nullptr) {
-      RCLCPP_INFO(this->logger, "Evaluating the image");
+      LLAMA_LOG_ERROR("Evaluating the image");
 
       if (!this->eval_image(this->image_embed)) {
         return false;
