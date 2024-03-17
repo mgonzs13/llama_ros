@@ -65,12 +65,49 @@ Llava::~Llava() {
 *        LOAD IMAGE         *
 *****************************
 */
-bool Llava::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
-  if (input_prompt.size() == 0 && this->image_embed != nullptr) {
-    return true;
-  }
+void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
+                        bool add_sfx) {
 
-  return Llama::load_prompt(input_prompt, add_pfx_sfx);
+  std::string prompt(input_prompt);
+  this->image_pose = -1;
+
+  // image
+  if (this->image_embed != nullptr) {
+
+    // search for <image>
+    size_t image_pos = prompt.find("<image>");
+
+    // empty prompt
+    if (prompt.size() == 0) {
+      prompt = "<image>";
+
+    } else if (prompt.size() > 0) {
+
+      // no <image>
+      if (image_pos == std::string::npos) {
+        prompt = "<image>\n" + prompt;
+        image_pos = 0;
+      }
+    }
+
+    // split prompt
+    std::string prompt_1 = prompt.substr(0, image_pos);
+    std::string prompt_2 =
+        prompt.substr(image_pos + std::string("<image>").length());
+
+    // load first part of the prompt
+    Llama::load_prompt(prompt_1, true, false);
+
+    // get image pose
+    this->image_pose = (int)this->prompt_tokens.size();
+
+    // load second part of the prompt
+    Llama::load_prompt(prompt_2, false, true);
+
+    // no image
+  } else if (this->image_embed == nullptr) {
+    Llama::load_prompt(input_prompt, add_pfx, add_sfx);
+  }
 }
 
 bool Llava::load_image(std::string base64_str) {
@@ -157,15 +194,34 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
 
 bool Llava::eval_prompt() {
 
-  // eval the image
-  if (this->image_embed != nullptr) {
-    RCLCPP_INFO(this->logger, "Evaluating the image");
+  if (this->image_pose >= 0) {
 
-    if (!this->eval_image(this->image_embed)) {
+    std::vector<llama_token> prompt_tokens_1(this->prompt_tokens.begin(),
+                                             this->prompt_tokens.begin() +
+                                                 this->image_pose);
+
+    // eval part of the prompt
+    if (!Llama::eval_prompt(prompt_tokens_1)) {
       return false;
     }
+
+    // eval the image
+    if (this->image_embed != nullptr) {
+      RCLCPP_INFO(this->logger, "Evaluating the image");
+
+      if (!this->eval_image(this->image_embed)) {
+        return false;
+      }
+    }
+
+    // eval the full prompt
+    if (!Llama::eval_prompt(this->prompt_tokens)) {
+      return false;
+    }
+
+  } else { // no image in the prompt
+    return llama_ros::Llama::eval_prompt();
   }
 
-  // eval the rest of the prompt
-  return llama_ros::Llama::eval_prompt();
+  return true;
 }

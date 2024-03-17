@@ -124,15 +124,25 @@ void LlamaNode::handle_accepted(
   std::thread{std::bind(&LlamaNode::execute, this, _1), goal_handle}.detach();
 }
 
+bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
+  return goal->prompt.size() == 0;
+}
+
 void LlamaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
 
   // get goal data
-  std::string prompt = goal_handle->get_goal()->prompt;
-  bool reset = goal_handle->get_goal()->reset;
-
-  auto result = std::make_shared<GenerateResponse::Result>();
   this->goal_handle_ = goal_handle;
+  auto goal = goal_handle->get_goal();
+  std::string prompt = goal->prompt;
+  bool reset = goal_handle->get_goal()->reset;
+  auto result = std::make_shared<GenerateResponse::Result>();
+
+  // check if goal is empty
+  if (this->goal_empty(goal)) {
+    this->goal_handle_->abort(result);
+    return;
+  }
 
   if (this->gpt_params.debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
@@ -143,7 +153,7 @@ void LlamaNode::execute(
     this->llama->reset();
   }
 
-  // update sampling params
+  // update sampling params of gpt_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
   this->gpt_params.update_sampling_params(sampling_config,
                                           this->llama->get_n_vocab(),
@@ -151,7 +161,7 @@ void LlamaNode::execute(
 
   // call llama
   struct response_output output = this->llama->generate_response(
-      prompt, true, std::bind(&LlamaNode::send_text, this, _1));
+      prompt, std::bind(&LlamaNode::send_text, this, _1));
 
   if (output.stop == stop_type::FULL_STOP) {
     auto completion_results = output.completions;

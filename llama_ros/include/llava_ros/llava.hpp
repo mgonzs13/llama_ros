@@ -57,7 +57,8 @@ public:
   base64_image_to_embed(const std::string &base64_str);
 
 protected:
-  bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx) override;
+  void load_prompt(const std::string &input_prompt, bool add_pfx,
+                   bool add_sfx) override;
   bool eval_image(struct llava_image_embed *image_embed);
   bool eval_prompt();
 
@@ -69,6 +70,7 @@ protected:
 
 private:
   void free_image();
+  int image_pose;
 };
 
 } // namespace llava_ros

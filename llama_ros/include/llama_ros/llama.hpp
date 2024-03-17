@@ -84,7 +84,7 @@ public:
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
   response_output
-  generate_response(const std::string &input_prompt, bool add_pfx_sfx = true,
+  generate_response(const std::string &input_prompt,
                     GenerateResponseCallback callbakc = nullptr);
 
   const struct llama_context *get_ctx() { return this->ctx; }
@@ -119,7 +119,8 @@ protected:
   int32_t n_consumed;
   int32_t ga_i;
 
-  virtual bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
+  virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
+                           bool add_sfx);
 
   stop_type
   find_stop(std::vector<struct completion_output> completion_result_list,
@@ -130,6 +131,7 @@ protected:
 
   bool eval_system_prompt();
   virtual bool eval_prompt();
+  bool eval_prompt(std::vector<llama_token> prompt_tokens);
   bool eval_token(llama_token token);
   bool eval(std::vector<llama_token> tokens);
   bool eval(struct llama_batch batch);

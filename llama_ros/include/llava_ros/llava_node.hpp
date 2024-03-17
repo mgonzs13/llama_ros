@@ -51,6 +51,7 @@ public:
 protected:
   std::shared_ptr<Llava> llava;
 
+  bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
   void execute(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
 };

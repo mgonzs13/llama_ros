@@ -53,6 +53,7 @@ protected:
   llama_utils::GptParams gpt_params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
+  virtual bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal);
   virtual void
   execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
   void send_text(const struct completion_output &completion);

@@ -41,6 +41,10 @@ LlavaNode::LlavaNode() : llama_ros::LlamaNode(false) {
   RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
 }
 
+bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
+  return goal->prompt.size() == 0 && goal->image.data.size() == 0;
+}
+
 void LlavaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
 

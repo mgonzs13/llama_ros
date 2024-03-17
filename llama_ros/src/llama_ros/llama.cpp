@@ -250,7 +250,6 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 *****************************
 */
 response_output Llama::generate_response(const std::string &input_prompt,
-                                         bool add_pfx_sfx,
                                          GenerateResponseCallback callback) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
@@ -265,10 +264,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   this->update_sampling_params(this->params->sparams);
 
   // load prompt
-  if (!this->load_prompt(input_prompt, add_pfx_sfx)) {
-    output.stop = stop_type::ABORT;
-    return output;
-  }
+  this->load_prompt(input_prompt, true, true);
 
   // show sampling info
   if (this->debug) {
@@ -351,7 +347,8 @@ response_output Llama::generate_response(const std::string &input_prompt,
 *        LOAD PROMPT        *
 *****************************
 */
-bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
+void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
+                        bool add_sfx) {
 
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params->input_prefix,
@@ -362,23 +359,16 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
-  if (prompt.size() == 0) {
-    return false;
-  }
-
-  if (!this->prompt_tokens.size() && !add_pfx_sfx) {
+  if (!this->prompt_tokens.size() && !add_pfx) {
     line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
   } else {
     line_inp = this->tokenize(prompt, false, false);
   }
 
   int prompt_size = this->prompt_tokens.size() + line_inp.size();
-  if (add_pfx_sfx && this->params->input_prefix.size()) {
-    prompt_size += inp_pfx.size() + inp_sfx.size();
-  }
 
   // insert prefix
-  if (add_pfx_sfx && this->params->input_prefix.size()) {
+  if (add_pfx && this->params->input_prefix.size()) {
 
     const int n_prev = 64;
     const std::string last_output =
@@ -392,6 +382,7 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
       this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
                                  inp_pfx.end());
+      prompt_size += inp_pfx.size();
     }
   }
 
@@ -399,13 +390,13 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
                              line_inp.end());
 
   // insert suffix
-  if (add_pfx_sfx && this->params->input_suffix.size()) {
+  if (add_sfx && this->params->input_suffix.size()) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
                                inp_sfx.end());
+    prompt_size += inp_sfx.size();
   }
 
   this->n_remain -= line_inp.size();
-  return true;
 }
 
 /*
@@ -499,9 +490,7 @@ bool Llama::eval_system_prompt() {
 
   if (this->params->prompt.size() > 0) {
     // load prompt
-    if (!this->load_prompt(this->params->prompt, false)) {
-      return false;
-    }
+    this->load_prompt(this->params->prompt, false, false);
 
     // eval prompt
     if (!this->eval_prompt()) {
@@ -512,18 +501,20 @@ bool Llama::eval_system_prompt() {
   return true;
 }
 
-bool Llama::eval_prompt() {
+bool Llama::eval_prompt() { return this->eval_prompt(this->prompt_tokens); }
+
+bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
 
   std::vector<llama_token> batch;
 
-  while (((int)this->prompt_tokens.size() > this->n_consumed)) {
+  while (((int)prompt_tokens.size() > this->n_consumed)) {
 
-    while (((int)this->prompt_tokens.size() > this->n_consumed) &&
+    while (((int)prompt_tokens.size() > this->n_consumed) &&
            ((int)batch.size() < this->params->n_batch)) {
 
-      batch.push_back(this->prompt_tokens[this->n_consumed]);
+      batch.push_back(prompt_tokens[this->n_consumed]);
       llama_sampling_accept(this->ctx_sampling, this->ctx,
-                            this->prompt_tokens[this->n_consumed], false);
+                            prompt_tokens[this->n_consumed], false);
       ++this->n_consumed;
     }
 
