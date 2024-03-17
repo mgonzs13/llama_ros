@@ -111,10 +111,12 @@ Llama::~Llama() {
   llama_backend_free();
 }
 
-void Llama::load_eval_system_prompt() {
-  this->generate_response(this->params->prompt, false, nullptr);
-}
-
+/*
+*****************************
+*          TOKENIZE         *
+*         DETOKENIZE        *
+*****************************
+*/
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
                                          bool special) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
@@ -126,6 +128,12 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   return llama_detokenize_bpe(this->ctx, tokens);
 }
 
+/*
+*****************************
+*           RESET           *
+*           CANCEL          *
+*****************************
+*/
 void Llama::reset() {
 
   llama_kv_cache_clear(this->ctx);
@@ -147,6 +155,15 @@ void Llama::reset() {
 
 void Llama::cancel() { this->canceled = true; }
 
+void Llama::load_eval_system_prompt() {
+  this->generate_response(this->params->prompt, false, nullptr);
+}
+
+/*
+*******************************
+*         EMBEDDINGS          *
+*******************************
+*/
 embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
                                             bool normalize) {
 
@@ -237,6 +254,11 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
   return output;
 }
 
+/*
+*****************************
+*     GENERATE RESPONSE     *
+*****************************
+*/
 response_output Llama::generate_response(const std::string &input_prompt,
                                          bool add_pfx_sfx,
                                          GenerateResponseCallback callback) {
@@ -339,6 +361,11 @@ response_output Llama::generate_response(const std::string &input_prompt,
   return output;
 }
 
+/*
+*****************************
+*        LOAD PROMPT        *
+*****************************
+*/
 bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
 
   std::vector<llama_token> inp_pfx = this->tokenize(
@@ -396,6 +423,11 @@ bool Llama::load_prompt(const std::string &input_prompt, bool add_pfx_sfx) {
   return true;
 }
 
+/*
+*****************************
+*           STOP            *
+*****************************
+*/
 stop_type
 Llama::find_stop(std::vector<struct completion_output> completion_result_list,
                  std::vector<std::string> stopping_words) {
@@ -473,6 +505,11 @@ stop_type Llama::find_stop_word(
   return NO_STOP;
 }
 
+/*
+*****************************
+*           EVAL            *
+*****************************
+*/
 bool Llama::init_eval() {
 
   while (((int)this->prompt_tokens.size() > this->n_consumed)) {
@@ -568,6 +605,11 @@ bool Llama::eval() {
   return true;
 }
 
+/*
+*****************************
+*          SAMPLE           *
+*****************************
+*/
 std::vector<token_prob> Llama::get_probs() {
   std::vector<token_prob> probs;
 

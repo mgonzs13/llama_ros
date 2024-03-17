@@ -65,6 +65,11 @@ LlamaNode::LlamaNode(bool load_llama) : rclcpp::Node("llama_node") {
   RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
 }
 
+/*
+*****************************
+*     TOKENIZE SERVICE      *
+*****************************
+*/
 void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
@@ -72,6 +77,11 @@ void LlamaNode::tokenize_service_callback(
   response->tokens = this->llama->tokenize(request->prompt, false);
 }
 
+/*
+*****************************
+*    EMBEEDINGS SERVICE     *
+*****************************
+*/
 void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
@@ -82,6 +92,11 @@ void LlamaNode::generate_embeddings_service_callback(
   response->n_tokens = embeddings.n_tokens;
 }
 
+/*
+*****************************
+*     GENERATE RESPONSE     *
+*****************************
+*/
 rclcpp_action::GoalResponse
 LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
                        std::shared_ptr<const GenerateResponse::Goal> goal) {
