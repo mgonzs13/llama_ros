@@ -39,7 +39,7 @@ add_compile_definitions(GGML_USE_CUBLAS)
 
 ## Usage
 
-## Launch Files
+### Launch Files
 
 First of all, you need to create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the [predefined launch files](llama_bringup/launch).
 
