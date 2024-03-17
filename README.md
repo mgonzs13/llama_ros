@@ -15,8 +15,8 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 ## Related Projects
 
-- [chatbot_ros](https://github.com/mgonzs13/chatbot_ros): a chatbot for ROS 2 using llama_ros and [whisper_ros](https://github.com/mgonzs13/whisper_ros/tree/main). The chatbot is controlled by a state machine created with [YASMIN](https://github.com/uleroboticsgroup/yasmin).
-- [explainable_ros](https://github.com/Dsobh/explainable_ROS): ROS 2 tool to explain the behavior of a robot. Using the integration of LangChain, logs are stored in a vector database. Then, RAG is applied to retrieve relevant logs for user questions that are answered with llama_ros.
+- [chatbot_ros](https://github.com/mgonzs13/chatbot_ros) &rarr; This chatbot, integrated into ROS 2, uses [whisper_ros](https://github.com/mgonzs13/whisper_ros/tree/main), to listen to people speech; and llama_ros, to generate responses. The chatbot is controlled by a state machine created with [YASMIN](https://github.com/uleroboticsgroup/yasmin).
+- [explainable_ros](https://github.com/Dsobh/explainable_ROS) &rarr; A ROS 2 tool to explain the behavior of a robot. Using the integration of LangChain, logs are stored in a vector database. Then, RAG is applied to retrieve relevant logs for user questions that are answered with llama_ros.
 
 ## Installation
 
@@ -41,7 +41,7 @@ add_compile_definitions(GGML_USE_CUBLAS)
 
 ## Launch Files
 
-First of all, you need create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and to configure it. Take a look to the following examples and the [predefined launch files](llama_bringup/launch).
+First of all, you need to create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the [predefined launch files](llama_bringup/launch).
 
 ### llama_ros
 
@@ -127,7 +127,7 @@ $ ros2 launch llama_bringup llava.launch.py
 
 ## ROS 2 Clients
 
-Both, llama_ros and llava_ros provide ROS 2 interfaces to access the main functionallities of the models. Here you have some examples of how to use them inside ROS 2 nodes. Moreover, take a look to the [llama_client_node.py](llama_ros/llama_ros/llama_client_node.py) and [llava_client_node.py](llama_ros/llama_ros/llava_client_node.py) examples.
+Both llama_ros and llava_ros provide ROS 2 interfaces to access the main functionalities of the models. Here you have some examples of how to use them inside ROS 2 nodes. Moreover, take a look to the [llama_client_node.py](llama_ros/llama_ros/llama_client_node.py) and [llava_client_node.py](llama_ros/llama_ros/llava_client_node.py) examples.
 
 ### Tokenize
 
@@ -248,7 +248,7 @@ class ExampleNode(Node):
     def __init__(self) -> None:
         super().__init__("example_node")
 
-        # create a cv bridge for the images
+        # create a cv bridge for the image
         self.cv_bridge = CvBridge()
 
         # create the client
@@ -278,11 +278,11 @@ class ExampleNode(Node):
         result: GenerateResponse.Result = get_result_future.result().result
 ```
 
-</details
+</details>
 
-## Lagnchain
+## LagnChain
 
-There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Here you have an example to use it.
+There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
 ### llama_ros LLM (Chain)
 
@@ -341,7 +341,7 @@ class ExampleNode(Node):
         db = Chroma(embedding_function=embeddings)
 
         # create the retriever
-        retriever = self.db.as_retriever(search_type="mmr", search_kwargs={"k": 5})
+        retriever = self.db.as_retriever(search_kwargs={"k": 5})
 
         # add your texts
         db.add_texts(texts=["your_texts"])
