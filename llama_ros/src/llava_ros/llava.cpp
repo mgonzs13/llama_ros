@@ -144,7 +144,7 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
         0,
     };
 
-    if (this->eval(batch)) {
+    if (!this->eval(batch)) {
       RCLCPP_ERROR(this->logger, "Failed in image eval");
       succ = false;
       break;
@@ -156,38 +156,6 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
 }
 
 bool Llava::eval_prompt() {
-
-  // check if there is a prefix in the prompt_tokens
-  // only if there is an image to eval
-  std::vector<llama_token> inp_pfx = this->tokenize(
-      this->params->input_prefix,
-      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
-
-  bool is_prefix = true;
-
-  if (inp_pfx.size() > this->prompt_tokens.size() - this->n_consumed &&
-      this->image_embed != nullptr) {
-    is_prefix = false;
-
-  } else {
-    int j = this->n_consumed;
-    for (size_t i = 0; i < inp_pfx.size(); i++) {
-
-      if (inp_pfx[i] != this->prompt_tokens[j]) {
-        is_prefix = false;
-        break;
-      }
-
-      j++;
-    }
-  }
-
-  // eval the prefix before the image
-  if (is_prefix) {
-    if (!this->eval(inp_pfx)) {
-      return false;
-    }
-  }
 
   // eval the image
   if (this->image_embed != nullptr) {

@@ -64,11 +64,6 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
               this->params->n_threads, std::thread::hardware_concurrency(),
               llama_print_system_info());
 
-  // number of tokens to keep when resetting context
-  if (this->params->n_keep == -1) {
-    this->params->n_keep = (int)this->prompt_tokens.size();
-  }
-
   this->canceled = false;
   this->n_past = 0;
   this->n_remain = this->params->n_predict;
@@ -78,6 +73,11 @@ Llama::Llama(rclcpp::Logger logger, std::shared_ptr<struct gpt_params> params,
   // load system prompt
   if (!this->eval_system_prompt()) {
     RCLCPP_ERROR(this->logger, "Failed to eval system prompt");
+  }
+
+  // number of tokens to keep when resetting context
+  if (this->params->n_keep < 0) {
+    this->params->n_keep = (int)this->prompt_tokens.size();
   }
 
   // show info
@@ -144,7 +144,6 @@ void Llama::reset() {
   this->ga_i = 0;
 
   this->prompt_tokens.clear();
-
   this->eval_system_prompt();
 }
 
