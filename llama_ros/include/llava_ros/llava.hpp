@@ -56,7 +56,7 @@ public:
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
   bool eval_image();
-  bool init_eval();
+  bool eval_prompt();
 
 protected:
   struct llava_context *ctx_llava;

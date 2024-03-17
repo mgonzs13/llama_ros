@@ -145,7 +145,7 @@ bool Llava::eval_image() {
   return succ;
 }
 
-bool Llava::init_eval() {
+bool Llava::eval_prompt() {
 
   // check if there is a prefix in the prompt_tokens
   // only if there is an image to eval
@@ -195,5 +195,5 @@ bool Llava::init_eval() {
   }
 
   // eval the rest of the prompt
-  return llama_ros::Llama::init_eval();
+  return llama_ros::Llama::eval_prompt();
 }

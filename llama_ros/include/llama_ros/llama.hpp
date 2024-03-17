@@ -120,7 +120,6 @@ protected:
   int32_t n_consumed;
   int32_t ga_i;
 
-  void load_eval_system_prompt();
   bool load_prompt(const std::string &input_prompt, bool add_pfx_sfx);
 
   stop_type
@@ -130,8 +129,10 @@ protected:
   find_stop_word(std::vector<struct completion_output> completion_result_list,
                  std::string stopping_word);
 
-  virtual bool init_eval();
+  bool eval_system_prompt();
+  virtual bool eval_prompt();
   bool eval();
+  bool eval(std::vector<llama_token> batch_tokens);
 
   std::vector<token_prob> get_probs();
   struct completion_output sample();
