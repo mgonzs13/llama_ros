@@ -10,7 +10,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 3. [Usage](#usage)
    - [Launch Files](#launch-files)
    - [ROS 2 Clients](#ros-2-clients)
-   - [Lagnchain](#lagnchain)
+   - [LangChain](#langchain)
 4. [Demos](#demos)
 
 ## Related Projects
@@ -280,7 +280,7 @@ class ExampleNode(Node):
 
 </details>
 
-### LagnChain
+### LangChain
 
 There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
