@@ -150,7 +150,7 @@ class LlamaROS(LLM):
         goal.sampling_config.samplers_sequence = self.samplers_sequence
 
         goal.sampling_config.grammar = self.grammar
-        goal.sampling_config.gramar_schema = self.grammar_schema
+        goal.sampling_config.grammar_schema = self.grammar_schema
         goal.sampling_config.prop_order = self.prop_order
 
         # send goal

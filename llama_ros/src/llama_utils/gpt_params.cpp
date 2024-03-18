@@ -276,10 +276,10 @@ bool GptParams::update_sampling_params(
   this->params->sparams.grammar = sampling_config.grammar;
 
   if (this->params->sparams.grammar.size() == 0 &&
-      sampling_config.gramar_schema.size() > 0) {
+      sampling_config.grammar_schema.size() > 0) {
 
     this->params->sparams.grammar = SchemaConverter::json_schema_to_gbnf(
-        sampling_config.gramar_schema, sampling_config.prop_order);
+        sampling_config.grammar_schema, sampling_config.prop_order);
   }
 
   // check penalty_last_n
