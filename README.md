@@ -284,7 +284,7 @@ class ExampleNode(Node):
 
 There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
-#### llama_ros LLM (Chain)
+#### llama_ros (Chain)
 
 <details>
 <summary>Click to expand</summary>
@@ -326,7 +326,7 @@ class ExampleNode(Node):
 
 ```python
 from simple_node import Node
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from llama_ros.langchain import LlamaROSEmbeddings
 
 
