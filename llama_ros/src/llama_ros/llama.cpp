@@ -201,6 +201,7 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
   std::vector<float> embd_res(n_embd, 0.0f);
 
   for (int i = 0; i < batch.n_tokens; ++i) {
+
     if (!batch.logits[i]) {
       continue;
     }
@@ -212,7 +213,6 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 
     if (embd == NULL) {
       LLAMA_LOG_ERROR("Failed to get embeddings");
-
       continue;
     }
 
