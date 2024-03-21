@@ -23,7 +23,8 @@
 #include <fstream>
 
 #include "common.h"
-#include "llama_utils/schema_converter.hpp"
+#include "json-schema-to-grammar.h"
+#include "json.hpp"
 
 #include "llama_utils/gpt_params.hpp"
 
@@ -278,8 +279,8 @@ bool GptParams::update_sampling_params(
   if (this->params->sparams.grammar.size() == 0 &&
       sampling_config.grammar_schema.size() > 0) {
 
-    this->params->sparams.grammar = SchemaConverter::json_schema_to_gbnf(
-        sampling_config.grammar_schema, sampling_config.prop_order);
+    this->params->sparams.grammar = json_schema_to_grammar(
+        nlohmann::json::parse(sampling_config.grammar_schema));
   }
 
   // check penalty_last_n
