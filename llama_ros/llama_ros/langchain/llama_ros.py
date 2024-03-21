@@ -71,7 +71,6 @@ class LlamaROS(LLM):
 
     grammar: str = ""
     grammar_schema: str = ""
-    prop_order: List[str] = []
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -151,7 +150,6 @@ class LlamaROS(LLM):
 
         goal.sampling_config.grammar = self.grammar
         goal.sampling_config.grammar_schema = self.grammar_schema
-        goal.sampling_config.prop_order = self.prop_order
 
         # send goal
         self.action_client.wait_for_server()
