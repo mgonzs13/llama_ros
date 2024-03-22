@@ -53,7 +53,9 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
-    RCLCPP_INFO(this->get_logger(), "Loading image");
+    if (this->gpt_params.debug) {
+      RCLCPP_INFO(this->get_logger(), "Loading image");
+    }
 
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);
