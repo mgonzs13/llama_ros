@@ -98,7 +98,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                          {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
-                                         {"cont_batching", false},
+                                         {"cont_batching", true},
                                          {"dump_kv_cache", false},
                                          {"no_kv_offload", false},
                                      });
@@ -280,7 +280,7 @@ bool GptParams::update_sampling_params(
       sampling_config.grammar_schema.size() > 0) {
 
     this->params->sparams.grammar = json_schema_to_grammar(
-        nlohmann::json::parse(sampling_config.grammar_schema));
+        nlohmann::ordered_json::parse(sampling_config.grammar_schema));
   }
 
   // check penalty_last_n
