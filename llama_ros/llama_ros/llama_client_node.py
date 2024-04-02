@@ -36,7 +36,7 @@ class LlamaClientNode(Node):
         super().__init__("llama_client_node")
 
         self.declare_parameter(
-            "prompt", "Do you know the city of León from Spain?\nCan you tell me a bit about its history?")
+            "prompt", "Do you know the city of León from Spain? Can you tell me a bit about its history?")
         self.prompt = self.get_parameter(
             "prompt").get_parameter_value().string_value
         self.prompt = self.prompt.replace("\\n", "\n")

@@ -32,16 +32,16 @@ def generate_launch_description():
             n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
-            n_threads=4,
+            n_threads=1,
             n_predict=2048,
 
             model_repo="TheBloke/phi-2-GGUF",
             model_filename="phi-2.Q4_K_M.gguf",
 
-            prefix="\n\nInstruction:\n",
-            suffix="\n\nOutput:\n",
-            stop="Instruction:\n",
+            prefix="\n\n### User:\n",
+            suffix="\n\n### Assistant:\n",
+            stop="### User:\n",
 
-            file="phi-2.txt"
+            file="user-assistant-hashes.txt"
         )
     ])

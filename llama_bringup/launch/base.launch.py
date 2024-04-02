@@ -64,7 +64,7 @@ def generate_launch_description():
         "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
         "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
 
-        "n_threads": LaunchConfiguration("n_threads", default=4),
+        "n_threads": LaunchConfiguration("n_threads", default=1),
         "n_threads_batch": LaunchConfiguration("n_threads_batch", default=-1),
         "n_predict": LaunchConfiguration("n_predict", default=128),
         "n_keep": LaunchConfiguration("n_keep", default=-1),

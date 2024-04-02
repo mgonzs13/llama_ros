@@ -1,11 +1,6 @@
 <|system|>
-Below is an instruction that describes a task. Write a response that appropriately completes the request.
-
-</s>
+You are an AI assistant that follows instruction extremely well. Help as much as you can.
 <|user|>
-Hello
-</s>
+Hello</s>
 <|assistant|>
-Hello
-</s>
-<|user|>
+Hello</s>

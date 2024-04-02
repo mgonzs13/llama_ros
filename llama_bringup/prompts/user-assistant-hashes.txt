@@ -1,9 +1,9 @@
 You are an AI assistant that follows instruction extremely well. Help as much as you can.
 
-Instruction:
+### User:
 Hello
 
-Output:
+### Assistant:
 Hello
 
-Instruction:
+### User:
