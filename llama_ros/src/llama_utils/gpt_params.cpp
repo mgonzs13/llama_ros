@@ -101,6 +101,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                          {"cont_batching", true},
                                          {"dump_kv_cache", false},
                                          {"no_kv_offload", false},
+                                         {"warmup", true},
                                      });
 
   node->get_parameter("seed", this->params->seed);
@@ -117,6 +118,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->get_parameter("logits_all", this->params->logits_all);
   node->get_parameter("use_mmap", this->params->use_mmap);
   node->get_parameter("use_mlock", this->params->use_mlock);
+  node->get_parameter("warmup", this->params->warmup);
 
   node->get_parameter("dump_kv_cache", this->params->dump_kv_cache);
   node->get_parameter("no_kv_offload", this->params->no_kv_offload);

@@ -58,6 +58,7 @@ def generate_launch_description():
         "logits_all": LaunchConfiguration("logits_all", default=False),
         "use_mmap": LaunchConfiguration("use_mmap", default=True),
         "use_mlock": LaunchConfiguration("use_mlock", default=False),
+        "warmup": LaunchConfiguration("warmup", default=True),
 
         "dump_kv_cache": LaunchConfiguration("dump_kv_cache", default=False),
         "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),

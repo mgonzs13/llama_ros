@@ -86,6 +86,7 @@ def create_llama_launch(
     logits_all: bool = False,
     use_mmap: bool = True,
     use_mlock: bool = False,
+    warmup: bool = True,
 
     dump_kv_cache: bool = False,
     no_kv_offload: bool = False,
@@ -146,6 +147,7 @@ def create_llama_launch(
             "logits_all": str(logits_all),
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
+            "warmup": str(warmup),
 
             "dump_kv_cache": str(dump_kv_cache),
             "no_kv_offload": str(no_kv_offload),
