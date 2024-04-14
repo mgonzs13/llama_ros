@@ -282,7 +282,7 @@ class ExampleNode(Node):
 
 ### LangChain
 
-There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/) based on the [simple_node](https://github.com/uleroboticsgroup/simple_node) pacakge. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
+There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/). Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
 #### llama_ros (Chain)
 
@@ -290,31 +290,31 @@ There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/)
 <summary>Click to expand</summary>
 
 ```python
-from simple_node import Node
+import rclpy
 from llama_ros.langchain import LlamaROS
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class ExampleNode(Node):
-    def __init__(self) -> None:
-        super().__init__("example_node")
+rclpy.init()
 
-        # create the llama_ros llm for langchain
-        llm = LlamaROS(node=self)
+# create the llama_ros llm for langchain
+llm = LlamaROS()
 
-        # create a prompt template
-        prompt_template = "tell me a joke about {topic}"
-        prompt = PromptTemplate(
-            input_variables=["topic"],
-            template=prompt_template
-        )
+# create a prompt template
+prompt_template = "tell me a joke about {topic}"
+prompt = PromptTemplate(
+    input_variables=["topic"],
+    template=prompt_template
+)
 
-        # create a chain with the llm and the prompt template
-        chain = prompt | model | StrOutputParser()
+# create a chain with the llm and the prompt template
+chain = prompt | model | StrOutputParser()
 
-        # run the chain
-        text = llm_chain.invoke({"topic": "bears"})
+# run the chain
+text = llm_chain.invoke({"topic": "bears"})
+
+rclpy.shutdown()
 ```
 
 </details>
@@ -325,29 +325,29 @@ class ExampleNode(Node):
 <summary>Click to expand</summary>
 
 ```python
-from simple_node import Node
+import rclpy
 from langchain_community.vectorstores import Chroma
 from llama_ros.langchain import LlamaROSEmbeddings
 
 
-class ExampleNode(Node):
-    def __init__(self) -> None:
-        super().__init__("example_node")
+rclpy.init()
 
-        # create the llama_ros embeddings for lanchain
-        embeddings = LlamaROSEmbeddings(node=self)
+# create the llama_ros embeddings for lanchain
+embeddings = LlamaROSEmbeddings()
 
-        # create a vector database and assign it
-        db = Chroma(embedding_function=embeddings)
+# create a vector database and assign it
+db = Chroma(embedding_function=embeddings)
 
-        # create the retriever
-        retriever = self.db.as_retriever(search_kwargs={"k": 5})
+# create the retriever
+retriever = self.db.as_retriever(search_kwargs={"k": 5})
 
-        # add your texts
-        db.add_texts(texts=["your_texts"])
+# add your texts
+db.add_texts(texts=["your_texts"])
 
-        # retrieve documents
-        docuemnts = self.retriever.get_relevant_documents("your_query")
+# retrieve documents
+docuemnts = self.retriever.get_relevant_documents("your_query")
+
+rclpy.shutdown()
 ```
 
 </details>

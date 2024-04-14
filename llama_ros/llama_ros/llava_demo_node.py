@@ -32,14 +32,14 @@ from cv_bridge import CvBridge
 
 import rclpy
 from rclpy.node import Node
-from rclpy.action import ActionClient
+from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
 
 
-class LlavaClientNode(Node):
+class LlavaDemoNode(Node):
 
     def __init__(self) -> None:
-        super().__init__("llava_client_node")
+        super().__init__("llava_demo_node")
 
         self.cv_bridge = CvBridge()
 
@@ -61,9 +61,7 @@ class LlavaClientNode(Node):
         self.initial_time = -1
         self.eval_time = -1
 
-        self._get_result_future = None
-        self._action_client = ActionClient(
-            self, GenerateResponse, "/llava/generate_response")
+        self._llama_client = LlamaClientNode.get_instance("llava")
 
     @staticmethod
     def load_image_from_url(url):
@@ -74,36 +72,26 @@ class LlavaClientNode(Node):
         img = cv2.imdecode(arr, -1)
         return img
 
-    def text_cb(self, msg) -> None:
+    def text_cb(self, feedback) -> None:
 
         if self.eval_time < 0:
             self.eval_time = time.time()
 
-        feedback: GenerateResponse.Feedback = msg.feedback
         self.tokens += 1
-        print(feedback.partial_response.text, end="", flush=True)
+        print(feedback.feedback.partial_response.text, end="", flush=True)
 
     def send_prompt(self) -> None:
 
         goal = GenerateResponse.Goal()
         goal.prompt = self.prompt
+        goal.sampling_config.temp = 0.2
+        goal.sampling_config.penalty_last_n = 8
 
         if self.use_image:
             goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
 
-        goal.sampling_config.temp = 0.2
-
-        self._action_client.wait_for_server()
-        send_goal_future = self._action_client.send_goal_async(
-            goal, feedback_callback=self.text_cb)
-
-        rclpy.spin_until_future_complete(self, send_goal_future)
-        get_result_future = send_goal_future.result().get_result_async()
-
         self.initial_time = time.time()
-
-        rclpy.spin_until_future_complete(self, get_result_future)
-        # result: GenerateResponse.Result = get_result_future.result().result
+        self._llama_client.generate_response(goal, self.text_cb)
 
         self.get_logger().info("END")
         end_time = time.time()
@@ -114,9 +102,8 @@ class LlavaClientNode(Node):
 
 
 def main():
-
     rclpy.init()
-    node = LlavaClientNode()
+    node = LlavaDemoNode()
     node.send_prompt()
     rclpy.shutdown()
 

@@ -59,15 +59,15 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
 install(PROGRAMS
-  llama_ros/llama_client_node.py
+  llama_ros/llama_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_client_node
+  RENAME llama_demo_node
 )
 
 install(PROGRAMS
-  llama_ros/llava_client_node.py
+  llama_ros/llava_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME llava_client_node
+  RENAME llava_demo_node
 )
 
 ament_python_install_package(${PROJECT_NAME})

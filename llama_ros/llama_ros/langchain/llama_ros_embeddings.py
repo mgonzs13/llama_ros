@@ -18,18 +18,15 @@ from typing import Dict, List
 from pydantic import BaseModel, Extra, root_validator
 from langchain_core.embeddings import Embeddings
 
-from simple_node import Node
-from rclpy.client import Client
 from llama_msgs.srv import GenerateEmbeddings
+from llama_ros.llama_client_node import LlamaClientNode
 
 
 class LlamaROSEmbeddings(BaseModel, Embeddings):
 
-    node: Node
+    namespace: str = "llama"
+    llama_client: LlamaClientNode = None
     normalize: bool = True
-
-    generate_embeddings_srv_name: str = "/llama/generate_embeddings"
-    generate_embeddings_srv_client: Client = None
 
     class Config:
         extra = Extra.forbid
@@ -37,25 +34,15 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-
-        node: Node = values["node"]
-
-        generate_embeddings_srv_name = values["generate_embeddings_srv_name"]
-        values["generate_embeddings_srv_client"] = node.create_client(
-            GenerateEmbeddings, generate_embeddings_srv_name)
-
+        values["llama_client"] = LlamaClientNode.get_instance(
+            values["namespace"])
         return values
 
     def __call_generate_embedding_srv(self, text: str) -> List[int]:
-
         req = GenerateEmbeddings.Request()
         req.prompt = text
         req.normalize = self.normalize
-
-        self.generate_embeddings_srv_client.wait_for_service()
-        res = self.generate_embeddings_srv_client.call(req)
-
-        return res.embeddings
+        return self.llama_client.generate_embeddings(req)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = [self.__call_generate_embedding_srv(

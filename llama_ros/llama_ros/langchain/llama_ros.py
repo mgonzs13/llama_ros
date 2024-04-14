@@ -14,16 +14,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from typing import Any, Dict, List, Optional
 from pydantic import root_validator
+from typing import Any, Dict, List, Optional
 
-from simple_node import Node
-from simple_node.actions.action_client import ActionClient
-from rclpy.client import Client
-
+from action_msgs.msg import GoalStatus
 from llama_msgs.msg import LogitBias
 from llama_msgs.action import GenerateResponse
 from llama_msgs.srv import Tokenize
+from llama_ros.llama_client_node import LlamaClientNode
 
 from langchain_core.language_models.llms import LLM
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -31,13 +29,8 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 
 class LlamaROS(LLM):
 
-    node: Node
-
-    action_name: str = "/llama/generate_response"
-    action_client: ActionClient = None
-
-    tokenize_srv_name: str = "/llama/tokenize"
-    tokenize_srv_client: Client = None
+    namespace: str = "llama"
+    llama_client: LlamaClientNode = None
 
     # sampling params
     n_prev: int = 64
@@ -74,17 +67,8 @@ class LlamaROS(LLM):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-
-        node: Node = values["node"]
-
-        action_name = values["action_name"]
-        values["action_client"] = node.create_action_client(
-            GenerateResponse, action_name)
-
-        tokenize_srv_name = values["tokenize_srv_name"]
-        values["tokenize_srv_client"] = node.create_client(
-            Tokenize, tokenize_srv_name)
-
+        values["llama_client"] = LlamaClientNode.get_instance(
+            values["namespace"])
         return values
 
     @property
@@ -92,15 +76,11 @@ class LlamaROS(LLM):
         return {}
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
-        return {**{"action_name": self.action_name}, **self._default_params}
-
-    @property
     def _llm_type(self) -> str:
         return "llamaros"
 
     def cancel(self) -> None:
-        self.action_client.cancel_goal()
+        self.llama_client.cancel_generate_text()
 
     def _call(
         self,
@@ -152,22 +132,15 @@ class LlamaROS(LLM):
         goal.sampling_config.grammar_schema = self.grammar_schema
 
         # send goal
-        self.action_client.wait_for_server()
-        self.action_client.send_goal(goal)
-        self.action_client.wait_for_result()
-        result: GenerateResponse.Result = self.action_client.get_result()
+        result, status = LlamaClientNode.get_instance(
+            self.namespace).generate_response(goal)
 
-        if self.action_client.is_canceled():
+        if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
         return result.response.text
 
     def get_num_tokens(self, text: str) -> int:
-
         req = Tokenize.Request()
         req.prompt = text
-
-        self.tokenize_srv_client.wait_for_service()
-        res = self.tokenize_srv_client.call(req)
-        tokens = res.tokens
-
+        tokens = self.llama_client.tokenize(req)
         return len(tokens)
