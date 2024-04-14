@@ -108,10 +108,6 @@ class LlamaClientNode(Node):
         self._action_done_event.clear()
         send_goal_future = self._action_client.send_goal_async(
             goal, feedback_callback=feedback_cb)
-
-        with self._goal_handle_lock:
-            self._goal_handle = send_goal_future.result()
-
         send_goal_future.add_done_callback(self._goal_response_callback)
 
         # Wait for action to be done
@@ -123,9 +119,11 @@ class LlamaClientNode(Node):
         return self._action_result, self._action_status
 
     def _goal_response_callback(self, future) -> None:
-        goal_handle = future.result()
-        get_result_future = goal_handle.get_result_async()
-        get_result_future.add_done_callback(self._get_result_callback)
+
+        with self._goal_handle_lock:
+            self._goal_handle = future.result()
+            get_result_future = self._goal_handle.get_result_async()
+            get_result_future.add_done_callback(self._get_result_callback)
 
     def _get_result_callback(self, future) -> None:
         self._action_result: GenerateResponse.Result = future.result().result
