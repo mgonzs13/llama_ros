@@ -42,7 +42,7 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
         req = GenerateEmbeddings.Request()
         req.prompt = text
         req.normalize = self.normalize
-        return self.llama_client.generate_embeddings(req)
+        return self.llama_client.generate_embeddings(req).embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = [self.__call_generate_embedding_srv(

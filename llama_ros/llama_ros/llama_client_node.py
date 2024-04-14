@@ -93,10 +93,10 @@ class LlamaClientNode(Node):
         self._spin_thread.start()
 
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
-        return self._tokenize_srv_client.call(req).tokens
+        return self._tokenize_srv_client.call(req)
 
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
-        return self._tokenize_srv_client.call(req).embeddings
+        return self._embeddings_srv_client.call(req)
 
     def generate_response(self, goal: GenerateResponse.Goal, feedback_cb: Callable = None) -> Tuple[GenerateResponse.Result | GoalStatus]:
 
