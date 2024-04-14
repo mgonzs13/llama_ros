@@ -47,6 +47,8 @@ class LlamaClientNode(Node):
     _tokenize_srv_client: Client = None
     _embeddings_srv_client: Client = None
 
+    _action_done_event: Event = Event()
+
     _action_result: GenerateResponse.Result
     _action_status: GoalStatus
     _goal_handle: ClientGoalHandle
@@ -55,7 +57,6 @@ class LlamaClientNode(Node):
     _callback_group: ReentrantCallbackGroup = ReentrantCallbackGroup()
     _executor: MultiThreadedExecutor = None
     _spin_thread: Thread = None
-    _action_done_event = Event()
 
     @staticmethod
     def get_instance(namespace: str = "llama") -> "LlamaClientNode":
