@@ -165,7 +165,11 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   // check threads number
   if (this->params->n_threads < 0) {
-    this->params->n_threads = std::thread::hardware_concurrency();
+    this->params->n_threads = get_math_cpu_count();
+  }
+
+  if (this->params->n_threads_batch < 0) {
+    this->params->n_threads_batch = get_math_cpu_count();
   }
 
   // lora_adapter

@@ -33,7 +33,7 @@ add_executable(llama_node
   src/llama_ros/llama_node.cpp 
   src/llama_main.cpp
 )
-target_link_libraries(llama_node PRIVATE common json-schema-to-grammar ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(llama_node PRIVATE common ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(llama_node PRIVATE llama)
 ament_target_dependencies(llama_node PUBLIC rclcpp rclcpp_action llama_msgs)
 
@@ -45,7 +45,7 @@ add_executable(llava_node
   src/llava_ros/llava_node.cpp 
   src/llava_main.cpp
 )
-target_link_libraries(llava_node PRIVATE common json-schema-to-grammar ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(llava_node PRIVATE common ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(llava_node PRIVATE PRIVATE llava llama)
 ament_target_dependencies(llava_node PUBLIC rclcpp rclcpp_action llama_msgs cv_bridge)
 
