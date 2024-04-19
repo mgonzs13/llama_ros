@@ -32,7 +32,7 @@ def generate_launch_description():
             n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
-            n_threads=4,
+            n_threads=1,
             n_predict=2048,
 
             model_repo="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
@@ -42,6 +42,6 @@ def generate_launch_description():
             suffix="<|eot_id|><|start_header_id|>assistant<|end_header_id|>",
             stop="<|eot_id|>",
 
-            file="ChatML.txt"
+            file="llama3.txt"
         )
     ])
