@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2023  Miguel Ángel González Santamarta
+# Copyright (c) 2024  Miguel Ángel González Santamarta
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,15 +32,15 @@ def generate_launch_description():
             n_ctx=2048,
             n_batch=8,
             n_gpu_layers=0,
-            n_threads=1,
+            n_threads=4,
             n_predict=2048,
 
-            model_repo="TheBloke/OpenHermes-2.5-neural-chat-v3-3-Slerp-GGUF",
-            model_filename="openhermes-2.5-neural-chat-v3-3-slerp.Q4_K_M.gguf",
+            model_repo="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
+            model_filename="Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
 
-            prefix="\n<|im_start|>user\n",
-            suffix="<|im_end|>\n<|im_start|>assistant\n",
-            stop="<|im_end|>",
+            prefix="\n<|start_header_id|>user<|end_header_id|>\n\n",
+            suffix="<|eot_id|><|start_header_id|>assistant<|end_header_id|>",
+            stop="<|eot_id|>",
 
             file="ChatML.txt"
         )
