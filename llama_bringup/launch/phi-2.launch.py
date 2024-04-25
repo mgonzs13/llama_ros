@@ -40,7 +40,7 @@ def generate_launch_description():
 
             prefix="\n\n### User:\n",
             suffix="\n\n### Assistant:\n",
-            stop="### User:\n",
+            stopping_words=["### User:\n"],
 
             system_prompt_type="user-assistant-hashes"
         )

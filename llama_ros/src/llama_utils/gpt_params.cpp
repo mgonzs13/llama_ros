@@ -36,7 +36,7 @@ GptParams::GptParams() : debug(false) {
 
 std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
-  std::string stop;
+  std::vector<std::string> stopping_words;
   std::string file_path;
   std::string lora_adapter;
 
@@ -80,8 +80,9 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                                 {"system_prompt_file", ""},
                                                 {"prefix", ""},
                                                 {"suffix", ""},
-                                                {"stop", ""},
                                             });
+  node->declare_parameter<std::vector<std::string>>(
+      "stopping_words", std::vector<std::string>({}));
   node->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
                                           {"rope_freq_scale", 0.0f},
@@ -157,7 +158,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   node->get_parameter("prefix", this->params->input_prefix);
   node->get_parameter("suffix", this->params->input_suffix);
-  node->get_parameter("stop", stop);
+  node->get_parameter("stopping_words", stopping_words);
 
   node->get_parameter("system_prompt", this->params->prompt);
   node->get_parameter("system_prompt_file", file_path);
@@ -178,8 +179,8 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
     this->params->use_mmap = false;
   }
 
-  // stop is the antiprompt
-  this->params->antiprompt.push_back(stop);
+  // stopping words are the antiprompt
+  this->params->antiprompt = stopping_words;
 
   // split mode
   if (split_mode == "none") {

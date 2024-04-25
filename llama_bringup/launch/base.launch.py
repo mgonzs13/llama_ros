@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 
+from typing import List
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -79,7 +80,7 @@ def generate_launch_description():
 
         "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
         "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
-        "stop": ParameterValue(LaunchConfiguration("stop", default=""), value_type=str),
+        "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[]), value_type=List[str]),
 
         "system_prompt": ParameterValue(LaunchConfiguration("system_prompt", default=""), value_type=str),
         "system_prompt_file": ParameterValue(LaunchConfiguration("system_prompt_file", default=""), value_type=str),

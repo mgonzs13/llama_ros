@@ -68,7 +68,7 @@ def generate_launch_description():
 
             prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
             suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
-            stop="### Instruction:\n", # stop sequence
+            stopping_words=["### Instruction:\n"], # stopping words
 
             system_prompt_type="alpaca" # system prompt type
         )
@@ -111,7 +111,7 @@ def generate_launch_description():
 
             prefix="[INST]", # prefix to add at the start of the prompt
             suffix="[/INST]", # suffix to add at the start of the prompt
-            stop="[INST]", # stop sequence
+            stopping_words=[]"[INST]"], # stopping words
 
             system_prompt_type="mistral" # system prompt type
         )

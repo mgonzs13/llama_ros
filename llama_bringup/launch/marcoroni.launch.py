@@ -40,7 +40,7 @@ def generate_launch_description():
 
             prefix="\n\n### Instruction:\n",
             suffix="\n\n### Response:\n",
-            stop="### Instruction:\n",
+            stopping_words=["### Instruction:\n"],
 
             system_prompt_type="alpaca"
         )

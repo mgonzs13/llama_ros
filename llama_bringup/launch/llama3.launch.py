@@ -40,7 +40,7 @@ def generate_launch_description():
 
             prefix="\n<|start_header_id|>user<|end_header_id|>\n\n",
             suffix="<|eot_id|><|start_header_id|>assistant<|end_header_id|>",
-            stop="<|eot_id|>",
+            stopping_words=["<|eot_id|>"],
 
             system_prompt_type="llama3"
         )
