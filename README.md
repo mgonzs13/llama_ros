@@ -70,7 +70,7 @@ def generate_launch_description():
             suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
             stop="### Instruction:\n", # stop sequence
 
-            file="alpaca.txt" # system prompt
+            system_prompt_type="alpaca" # system prompt type
         )
     ])
 ```
@@ -113,7 +113,7 @@ def generate_launch_description():
             suffix="[/INST]", # suffix to add at the start of the prompt
             stop="[INST]", # stop sequence
 
-            file="mistral.txt" # system prompt
+            system_prompt_type="mistral" # system prompt type
         )
     ])
 

@@ -81,8 +81,8 @@ def generate_launch_description():
         "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
         "stop": ParameterValue(LaunchConfiguration("stop", default=""), value_type=str),
 
-        "prompt": ParameterValue(LaunchConfiguration("prompt", default=""), value_type=str),
-        "file": LaunchConfiguration("file", default=""),
+        "system_prompt": ParameterValue(LaunchConfiguration("system_prompt", default=""), value_type=str),
+        "system_prompt_file": ParameterValue(LaunchConfiguration("system_prompt_file", default=""), value_type=str),
         "debug": LaunchConfiguration("debug", default=True),
     }
 

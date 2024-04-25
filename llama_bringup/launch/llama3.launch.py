@@ -42,6 +42,6 @@ def generate_launch_description():
             suffix="<|eot_id|><|start_header_id|>assistant<|end_header_id|>",
             stop="<|eot_id|>",
 
-            file="llama3.txt"
+            system_prompt_type="llama3"
         )
     ])

@@ -28,13 +28,6 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
-def get_base_launch_path() -> str:
-    return os.path.join(
-        get_package_share_directory("llama_bringup"),
-        "launch",
-        "base.launch.py")
-
-
 def download_model(repo: str, file: str) -> str:
 
     if repo and file:
@@ -46,11 +39,10 @@ def download_model(repo: str, file: str) -> str:
 def get_prompt_path(prompt_file_name: str) -> str:
 
     if prompt_file_name:
-
         return os.path.join(
             get_package_share_directory("llama_bringup"),
             "prompts",
-            prompt_file_name
+            f"{prompt_file_name}.txt"
         )
 
     return ""
@@ -98,12 +90,18 @@ def create_llama_launch(
     n_predict: int = 128,
     n_keep: int = -1,
 
+    model: str = "",
     model_repo: str = "",
     model_filename: str = "",
+
+    lora_base: str = "",
     lora_base_repo: str = "",
     lora_base_filename: str = "",
+
+    mmproj: str = "",
     mmproj_repo: str = "",
     mmproj_filename: str = "",
+
     numa: str = "none",
     pooling_type: str = "",
 
@@ -111,13 +109,32 @@ def create_llama_launch(
     suffix: str = "",
     stop: str = "",
 
-    prompt: str = "",
-    file: str = "",
+    system_prompt: str = "",
+    system_prompt_file: str = "",
+    system_prompt_type: str = "",
     debug: bool = True
 ) -> IncludeLaunchDescription:
 
+    if not system_prompt_file and system_prompt_type:
+        system_prompt_file = get_prompt_path(system_prompt_type)
+
+    if not model:
+        model = download_model(model_repo, model_filename)
+
+    if not lora_base:
+        lora_base = download_model(lora_base_repo, lora_base_filename)
+
+    if not mmproj:
+        mmproj = download_model(mmproj_repo, mmproj_filename)
+
     return IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(get_base_launch_path()),
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("llama_bringup"),
+                "launch",
+                "base.launch.py"
+            )
+        ),
         launch_arguments={
             "use_llava": str(use_llava),
 
@@ -159,9 +176,9 @@ def create_llama_launch(
             "n_predict": str(n_predict),
             "n_keep": str(n_keep),
 
-            "model": download_model(model_repo, model_filename),
-            "lora_base": download_model(lora_base_repo, lora_base_filename),
-            "mmproj": download_model(mmproj_repo, mmproj_filename),
+            "model": model,
+            "lora_base": lora_base,
+            "mmproj": mmproj,
             "numa": numa,
             "pooling_type": pooling_type,
 
@@ -169,8 +186,8 @@ def create_llama_launch(
             "suffix": suffix,
             "stop": stop,
 
-            "prompt": prompt,
-            "file": get_prompt_path(file),
+            "system_prompt": system_prompt,
+            "system_prompt_file": system_prompt_file,
             "debug": str(debug)
         }.items()
     )

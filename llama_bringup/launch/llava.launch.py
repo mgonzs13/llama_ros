@@ -48,6 +48,6 @@ def generate_launch_description():
             suffix="[/INST]",
             stop="[INST]",
 
-            file="mistral.txt"
+            system_prompt_type="mistral"
         )
     ])

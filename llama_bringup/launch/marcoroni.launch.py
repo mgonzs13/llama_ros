@@ -42,6 +42,6 @@ def generate_launch_description():
             suffix="\n\n### Response:\n",
             stop="### Instruction:\n",
 
-            file="alpaca.txt"
+            system_prompt_type="alpaca"
         )
     ])

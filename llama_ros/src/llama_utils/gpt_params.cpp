@@ -76,8 +76,8 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                                 {"pooling_type", ""},
                                                 {"cache_type_k", "f16"},
                                                 {"cache_type_v", "f16"},
-                                                {"prompt", ""},
-                                                {"file", ""},
+                                                {"system_prompt", ""},
+                                                {"system_prompt_file", ""},
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"stop", ""},
@@ -159,8 +159,8 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->get_parameter("suffix", this->params->input_suffix);
   node->get_parameter("stop", stop);
 
-  node->get_parameter("prompt", this->params->prompt);
-  node->get_parameter("file", file_path);
+  node->get_parameter("system_prompt", this->params->prompt);
+  node->get_parameter("system_prompt_file", file_path);
   node->get_parameter("debug", this->debug);
 
   // check threads number

@@ -42,6 +42,6 @@ def generate_launch_description():
             suffix="<|im_end|>\n<|im_start|>assistant\n",
             stop="<|im_end|>",
 
-            file="ChatML.txt"
+            system_prompt_type="ChatML"
         )
     ])
