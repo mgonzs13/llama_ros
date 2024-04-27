@@ -22,6 +22,7 @@
 
 
 import os
+from typing import List
 from ament_index_python.packages import get_package_share_directory
 from huggingface_hub import hf_hub_download
 from launch.actions import IncludeLaunchDescription
@@ -79,6 +80,7 @@ def create_llama_launch(
     use_mmap: bool = True,
     use_mlock: bool = False,
     warmup: bool = True,
+    check_tensors: bool = False,
 
     dump_kv_cache: bool = False,
     no_kv_offload: bool = False,
@@ -107,7 +109,7 @@ def create_llama_launch(
 
     prefix: str = "",
     suffix: str = "",
-    stop: str = "",
+    stopping_words: List[str] = [],
 
     system_prompt: str = "",
     system_prompt_file: str = "",
@@ -165,6 +167,7 @@ def create_llama_launch(
             "use_mmap": str(use_mmap),
             "use_mlock": str(use_mlock),
             "warmup": str(warmup),
+            "check_tensors": str(check_tensors),
 
             "dump_kv_cache": str(dump_kv_cache),
             "no_kv_offload": str(no_kv_offload),
@@ -184,7 +187,7 @@ def create_llama_launch(
 
             "prefix": prefix,
             "suffix": suffix,
-            "stop": stop,
+            "stopping_words": str(stopping_words),
 
             "system_prompt": system_prompt,
             "system_prompt_file": system_prompt_file,
