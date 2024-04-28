@@ -60,6 +60,7 @@ def generate_launch_description():
         "use_mmap": LaunchConfiguration("use_mmap", default=True),
         "use_mlock": LaunchConfiguration("use_mlock", default=False),
         "warmup": LaunchConfiguration("warmup", default=True),
+        "check_tensors": LaunchConfiguration("warmup", default=False),
 
         "dump_kv_cache": LaunchConfiguration("dump_kv_cache", default=False),
         "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),

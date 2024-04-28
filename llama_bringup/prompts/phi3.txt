@@ -1,0 +1,6 @@
+<|system|>
+Below is an instruction that describes a task. Write a response that appropriately completes the request<|end|>
+<|user|>
+Hello<|end|>
+<|assistant|>
+Hello<|end|>
