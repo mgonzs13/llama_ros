@@ -42,6 +42,7 @@ class LlamaROS(LLM):
     # sampling params
     n_prev: int = 64
     n_probs: int = 1
+    min_keep: int = 0
 
     ignore_eos: bool = False
     logit_bias: Dict[int, float] = {}
@@ -57,7 +58,7 @@ class LlamaROS(LLM):
     typical_p: float = 1.00
 
     penalty_last_n: int = 64
-    penalty_repeat: float = 1.10
+    penalty_repeat: float = 1.00
     penalty_freq: float = 0.00
     penalty_present: float = 0.00
 
@@ -65,12 +66,15 @@ class LlamaROS(LLM):
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
-    penalize_nl: bool = True
+    penalize_nl: bool = False
 
     samplers_sequence: str = "kfypmt"
 
     grammar: str = ""
     grammar_schema: str = ""
+
+    penalty_prompt_tokens: List[int] = []
+    use_penalty_prompt_tokens: bool = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -104,6 +108,7 @@ class LlamaROS(LLM):
         # sampling params
         goal.sampling_config.n_prev = self.n_prev
         goal.sampling_config.n_probs = self.n_probs
+        goal.sampling_config.min_keep = self.min_keep
 
         goal.sampling_config.ignore_eos = self.ignore_eos
         for key in self.logit_bias:
@@ -137,6 +142,9 @@ class LlamaROS(LLM):
 
         goal.sampling_config.grammar = self.grammar
         goal.sampling_config.grammar_schema = self.grammar_schema
+
+        goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
+        goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
 
         # send goal
         result, status = LlamaClientNode.get_instance(
