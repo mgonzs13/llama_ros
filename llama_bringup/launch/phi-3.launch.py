@@ -29,19 +29,19 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            n_ctx=4096,
-            n_batch=256,
-            n_gpu_layers=33,
+            n_ctx=2048,
+            n_batch=8,
+            n_gpu_layers=0,
             n_threads=1,
-            n_predict=-1,
+            n_predict=2048,
 
             model_repo="microsoft/Phi-3-mini-4k-instruct-gguf",
             model_filename="Phi-3-mini-4k-instruct-q4.gguf",
 
-            # prefix="<|user|>\n",
-            # suffix="<|assistant|>\n",
+            prefix="\n<|user|>\n",
+            suffix="<|end|>\n<|assistant|>\n",
             stopping_words=["<|end|>"],
 
-            # system_prompt_type="phi3"
+            system_prompt_type="phi3"
         )
     ])
