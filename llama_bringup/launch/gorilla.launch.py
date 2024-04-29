@@ -35,13 +35,13 @@ def generate_launch_description():
             n_threads=1,
             n_predict=2048,
 
-            model_repo="microsoft/Phi-3-mini-4k-instruct-gguf",
-            model_filename="Phi-3-mini-4k-instruct-q4.gguf",
+            model_repo="gorilla-llm/gorilla-openfunctions-v2-gguf",
+            model_filename="gorilla-openfunctions-v2-q4_K_M.gguf",
 
-            prefix="\n<|user|>\n",
-            suffix="<|end|>\n<|assistant|>\n",
-            stopping_words=["<|end|>"],
+            prefix="\n### Instruction: ",
+            suffix="\n### Response: ",
+            stopping_words=["### Instruction: "],
 
-            system_prompt_type="phi3"
+            system_prompt_type="gorilla"
         )
     ])
