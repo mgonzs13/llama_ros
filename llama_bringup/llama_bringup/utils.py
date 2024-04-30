@@ -81,6 +81,7 @@ def create_llama_launch(
     use_mlock: bool = False,
     warmup: bool = True,
     check_tensors: bool = False,
+    flash_attn: bool = False,
 
     dump_kv_cache: bool = False,
     no_kv_offload: bool = False,
@@ -168,6 +169,7 @@ def create_llama_launch(
             "use_mlock": str(use_mlock),
             "warmup": str(warmup),
             "check_tensors": str(check_tensors),
+            "flash_attn": str(flash_attn),
 
             "dump_kv_cache": str(dump_kv_cache),
             "no_kv_offload": str(no_kv_offload),

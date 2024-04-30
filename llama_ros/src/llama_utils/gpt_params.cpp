@@ -104,6 +104,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
+                                         {"flash_attn", false},
                                      });
 
   node->get_parameter("seed", this->params->seed);
@@ -122,6 +123,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->get_parameter("use_mlock", this->params->use_mlock);
   node->get_parameter("warmup", this->params->warmup);
   node->get_parameter("check_tensors", this->params->check_tensors);
+  node->get_parameter("flash_attn", this->params->flash_attn);
 
   node->get_parameter("dump_kv_cache", this->params->dump_kv_cache);
   node->get_parameter("no_kv_offload", this->params->no_kv_offload);
