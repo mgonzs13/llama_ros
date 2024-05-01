@@ -30,6 +30,15 @@
 
 using namespace llama_utils;
 
+void replace_all(std::string &input, const std::string &old_str,
+                 const std::string &new_str) {
+  size_t start_pos = 0;
+  while ((start_pos = input.find(old_str, start_pos)) != std::string::npos) {
+    input.replace(start_pos, old_str.length(), new_str);
+    start_pos += new_str.length();
+  }
+}
+
 GptParams::GptParams() : debug(false) {
   this->params = std::make_shared<struct gpt_params>();
 }
@@ -184,7 +193,10 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   }
 
   // stopping words are the antiprompt
-  this->params->antiprompt = stopping_words;
+  for (std::string word : stopping_words) {
+    replace_all(word, "\\n", "\n");
+    this->params->antiprompt.push_back(word);
+  }
 
   // split mode
   if (split_mode == "none") {
