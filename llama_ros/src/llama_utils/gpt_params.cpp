@@ -179,11 +179,11 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   // check threads number
   if (this->params->n_threads < 0) {
-    this->params->n_threads = get_math_cpu_count();
+    this->params->n_threads = cpu_get_num_math();
   }
 
   if (this->params->n_threads_batch < 0) {
-    this->params->n_threads_batch = get_math_cpu_count();
+    this->params->n_threads_batch = cpu_get_num_math();
   }
 
   // lora_adapter
@@ -296,7 +296,7 @@ bool GptParams::update_sampling_params(
   this->params->sparams.penalize_nl = sampling_config.penalize_nl;
 
   this->params->sparams.samplers_sequence =
-      sampler_types_from_chars(sampling_config.samplers_sequence);
+      llama_sampling_types_from_chars(sampling_config.samplers_sequence);
   this->params->sparams.grammar = sampling_config.grammar;
 
   if (this->params->sparams.grammar.size() == 0 &&
