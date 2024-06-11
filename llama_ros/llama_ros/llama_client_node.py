@@ -106,7 +106,7 @@ class LlamaClientNode(Node):
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
         return self._embeddings_srv_client.call(req)
 
-    def generate_response(self, goal: GenerateResponse.Goal, feedback_cb: Callable = None) -> Tuple[GenerateResponse.Result | GoalStatus]:
+    def generate_response(self, goal: GenerateResponse.Goal, feedback_cb: Callable = None) -> Tuple[GenerateResponse.Result, GoalStatus]:
 
         self._action_client.wait_for_server()
 
