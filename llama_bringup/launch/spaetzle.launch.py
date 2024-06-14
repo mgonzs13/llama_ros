@@ -35,8 +35,8 @@ def generate_launch_description():
             n_threads=1,
             n_predict=2048,
 
-            model_repo="remyxai/stablelm-zephyr-3B_localmentor",
-            model_filename="ggml-model-q4_k_m.gguf",
+            model_repo="cstr/Spaetzle-v60-7b-GGUF",
+            model_filename="Spaetzle-v60-7b-q4-k-m.gguf",
 
             prefix="\n<|im_start|>user\n",
             suffix="<|im_end|>\n<|im_start|>assistant\n",
