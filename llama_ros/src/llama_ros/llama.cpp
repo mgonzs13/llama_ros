@@ -449,26 +449,21 @@ stop_type Llama::find_stop_word(
     std::vector<struct completion_output> completion_result_list,
     std::string stopping_word) {
 
-  // check new token sequence size
-  if (completion_result_list.size() <= stopping_word.size() &&
-      completion_result_list.size() && stopping_word.size()) {
+  std::string completion_text = "";
+  for (auto c : completion_result_list) {
+    completion_text.append(this->detokenize({c.token}));
+  }
 
-    std::string completion_text = "";
-    for (auto c : completion_result_list) {
-      completion_text.append(this->detokenize({c.token}));
+  for (size_t i = 0; i < completion_text.size(); i++) {
+    if (completion_text.at(i) != stopping_word.at(i)) {
+      return NO_STOP;
     }
+  }
 
-    for (size_t i = 0; i < completion_text.size(); i++) {
-      if (completion_text.at(i) != stopping_word.at(i)) {
-        return NO_STOP;
-      }
-    }
-
-    if (completion_text.size() == stopping_word.size()) {
-      return FULL_STOP;
-    } else {
-      return PARTIAL_STOP;
-    }
+  if (completion_text.size() == stopping_word.size()) {
+    return FULL_STOP;
+  } else {
+    return PARTIAL_STOP;
   }
 
   return NO_STOP;
