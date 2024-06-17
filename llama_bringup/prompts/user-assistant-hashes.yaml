@@ -1,0 +1,14 @@
+prefix: "\n\n### User:\n"
+suffix: "\n\n### Assistant:\n"
+stopping_words: ["### User:\n"]
+
+system_prompt: |
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.
+
+  ### User:
+  Hello
+
+  ### Assistant:
+  Hello
+
+  ### User:

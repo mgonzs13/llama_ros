@@ -1,0 +1,11 @@
+prefix: "\n<|user|>\n"
+suffix: "<|end|>\n<|assistant|>\n"
+stopping_words: ["<|end|>"]
+
+system_prompt: |-
+  <|system|>
+  Below is an instruction that describes a task. Write a response that appropriately completes the request<|end|>
+  <|user|>
+  Hello<|end|>
+  <|assistant|>
+  Hello<|end|>

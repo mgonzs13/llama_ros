@@ -9,7 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(DIRECTORY
-  launch prompts
+  launch prompts params
   DESTINATION share/${PROJECT_NAME}/
 )
 

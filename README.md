@@ -45,6 +45,8 @@ First of all, you need to create a launch file to use llama_ros or llava_ros. Th
 
 #### llama_ros
 
+##### Python Launch
+
 <details>
 <summary>Click to expand</summary>
 
@@ -72,6 +74,38 @@ def generate_launch_description():
 
             system_prompt_type="alpaca" # system prompt type
         )
+    ])
+```
+
+```shell
+$ ros2 launch llama_bringup marcoroni.launch.py
+```
+
+</details>
+
+##### YAML Config
+
+<details>
+<summary>Click to expand</summary>
+
+```yaml
+n_ctx: 2048
+n_batch: 8
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+
+model_repo: "cstr/Spaetzle-v60-7b-GGUF"
+model_filename: "Spaetzle-v60-7b-q4-k-m.gguf"
+system_prompt_type: "ChatML"
+```
+
+```python
+def generate_launch_description():
+    return LaunchDescription([
+        create_llama_launch_from_yaml(os.path.join(
+            get_package_share_directory("llama_bringup"),
+            "params", "Spaetzle-v60-7b-GGUF.yaml"))
     ])
 ```
 

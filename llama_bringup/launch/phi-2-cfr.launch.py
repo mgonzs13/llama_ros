@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2024  Miguel Ángel González Santamarta
+# Copyright (c) 2023  Miguel Ángel González Santamarta
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,20 +29,14 @@ def generate_launch_description():
 
     return LaunchDescription([
         create_llama_launch(
-            use_llava=True,
-            embedding=False,
-
-            n_ctx=8192,
-            n_batch=512,
+            n_ctx=4096,
+            n_batch=256,
             n_gpu_layers=33,
             n_threads=1,
-            n_predict=8192,
+            n_predict=-1,
 
-            model_repo="cjpais/llava-1.6-mistral-7b-gguf",
-            model_filename="llava-v1.6-mistral-7b.Q4_K_M.gguf",
-
-            mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf",
-            mmproj_filename="mmproj-model-f16.gguf",
-            system_prompt_type="mistral"
+            model_repo="unileon-robotics/phi-2-lora-cfr",
+            model_filename="phi-2-cfr.Q6_K.gguf",
+            system_prompt_type="ChatML"
         )
     ])

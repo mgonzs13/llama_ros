@@ -37,11 +37,6 @@ def generate_launch_description():
 
             model_repo="TheBloke/OpenHermes-2.5-neural-chat-v3-3-Slerp-GGUF",
             model_filename="openhermes-2.5-neural-chat-v3-3-slerp.Q4_K_M.gguf",
-
-            prefix="\n<|im_start|>user\n",
-            suffix="<|im_end|>\n<|im_start|>assistant\n",
-            stopping_words=["<|im_end|>"],
-
             system_prompt_type="ChatML"
         )
     ])

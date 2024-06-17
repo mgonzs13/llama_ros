@@ -261,10 +261,15 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
   // show sampling info
   if (this->debug) {
-    LLAMA_LOG_INFO("Sampling params: \n%s\n",
+    LLAMA_LOG_INFO("Sampling params:\n%s\n",
                    llama_sampling_print(this->params->sparams).c_str());
     LLAMA_LOG_INFO("Sampling order: %s",
                    llama_sampling_order_print(this->params->sparams).c_str());
+  }
+
+  if (this->debug) {
+    LLAMA_LOG_INFO("Prompt tokens:\n%s",
+                   this->detokenize(this->prompt_tokens).c_str());
   }
 
   LLAMA_LOG_INFO("Starting Response Generation");

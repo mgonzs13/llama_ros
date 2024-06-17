@@ -1,0 +1,11 @@
+prefix: "\n<|user|>\n"
+suffix: "<|/s|>\n<|assistant|>\n"
+stopping_words: ["<|/s|>"]
+
+system_prompt: |-
+  <|system|>
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.
+  <|user|>
+  Hello</s>
+  <|assistant|>
+  Hello</s>

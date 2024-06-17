@@ -1,0 +1,12 @@
+prefix: "\n\n### Instruction:\n"
+suffix: "\n\n### Response:\n"
+stopping_words: ["### Instruction:\n"]
+
+system_prompt: |
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.
+
+  ### Instruction: Hello
+
+  ### Response: Hello
+
+  ### Instruction:

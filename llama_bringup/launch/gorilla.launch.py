@@ -37,11 +37,6 @@ def generate_launch_description():
 
             model_repo="gorilla-llm/gorilla-openfunctions-v2-gguf",
             model_filename="gorilla-openfunctions-v2-q4_K_M.gguf",
-
-            prefix="\n### Instruction: ",
-            suffix="\n### Response: ",
-            stopping_words=["### Instruction: "],
-
             system_prompt_type="gorilla"
         )
     ])
