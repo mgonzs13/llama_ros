@@ -66,10 +66,6 @@ def generate_launch_description():
             model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
             model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file in repo
 
-            prefix="\n\n### Instruction:\n", # prefix to add at the start of the prompt
-            suffix="\n\n### Response:\n", # suffix to add at the end of the prompt
-            stopping_words=["### Instruction:\n"], # stopping words
-
             system_prompt_type="alpaca" # system prompt type
         )
     ])
@@ -87,15 +83,16 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 <summary>Click to expand</summary>
 
 ```yaml
-n_ctx: 2048
-n_batch: 8
-n_gpu_layers: 0
-n_threads: 1
-n_predict: 2048
+n_ctx: 2048 # context of the LLM in tokens
+n_batch: 8 # batch size in tokens
+n_gpu_layers: 0 # layers to load in GPU
+n_threads: 1 # threads
+n_predict: 2048 # max tokens, -1 == inf
 
-model_repo: "cstr/Spaetzle-v60-7b-GGUF"
-model_filename: "Spaetzle-v60-7b-q4-k-m.gguf"
-system_prompt_type: "ChatML"
+model_repo: "cstr/Spaetzle-v60-7b-GGUF" # Hugging Face repo
+model_filename: "Spaetzle-v60-7b-q4-k-m.gguf" # model file in repo
+
+system_prompt_type: "ChatML" # system prompt type
 ```
 
 ```python
@@ -113,7 +110,7 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 
 </details>
 
-#### llava_ros
+#### llava_ros (Python Launch)
 
 <details>
 <summary>Click to expand</summary>
@@ -141,14 +138,48 @@ def generate_launch_description():
             mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf", # Hugging Face repo
             mmproj_filename="mmproj-model-f16.gguf", # mmproj file in repo
 
-            prefix="[INST]", # prefix to add at the start of the prompt
-            suffix="[/INST]", # suffix to add at the start of the prompt
-            stopping_words=[]"[INST]"], # stopping words
-
             system_prompt_type="mistral" # system prompt type
         )
     ])
+```
 
+```shell
+$ ros2 launch llama_bringup llava.launch.py
+```
+
+</details>
+
+#### llava_ros (YAML Config)
+
+<details>
+<summary>Click to expand</summary>
+
+```yaml
+use_llava: True # enable llava
+embedding: False # disable embeddings
+
+n_ctx: 8192 # context of the LLM in tokens use a huge context size to load images
+n_batch: 512 # batch size in tokens
+n_gpu_layers: 33 # layers to load in GPU
+n_threads: 1 # threads
+n_predict: 8192 # max tokens -1 : :  inf
+
+model_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
+model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf" # model file in repo
+
+mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
+mmproj_filename: "mmproj-model-f16.gguf" # mmproj file in repo
+
+system_prompt_type: "mistral" # system prompt type
+```
+
+```python
+def generate_launch_description():
+    return LaunchDescription([
+        create_llama_launch_from_yaml(os.path.join(
+            get_package_share_directory("llama_bringup"),
+            "params", "llava-1.6-mistral-7b-gguf.yaml"))
+    ])
 ```
 
 ```shell
