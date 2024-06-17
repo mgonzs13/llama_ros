@@ -43,6 +43,7 @@ def generate_launch_description():
 
             mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf",
             mmproj_filename="mmproj-model-f16.gguf",
+
             system_prompt_type="mistral"
         )
     ])

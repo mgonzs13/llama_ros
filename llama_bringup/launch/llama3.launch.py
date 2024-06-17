@@ -37,6 +37,7 @@ def generate_launch_description():
 
             model_repo="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
             model_filename="Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+
             system_prompt_type="llama3"
         )
     ])

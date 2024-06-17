@@ -6,4 +6,5 @@ n_predict: 2048
 
 model_repo: "cstr/Spaetzle-v60-7b-GGUF"
 model_filename: "Spaetzle-v60-7b-q4-k-m.gguf"
+
 system_prompt_type: "ChatML"

@@ -43,9 +43,7 @@ add_compile_definitions(GGML_USE_CUDA)
 
 First of all, you need to create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the [predefined launch files](llama_bringup/launch).
 
-#### llama_ros
-
-##### Python Launch
+#### llama_ros (Python Launch)
 
 <details>
 <summary>Click to expand</summary>
@@ -83,7 +81,7 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 
 </details>
 
-##### YAML Config
+#### llama_ros (YAML Config)
 
 <details>
 <summary>Click to expand</summary>

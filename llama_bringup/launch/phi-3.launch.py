@@ -37,6 +37,7 @@ def generate_launch_description():
 
             model_repo="microsoft/Phi-3-mini-4k-instruct-gguf",
             model_filename="Phi-3-mini-4k-instruct-q4.gguf",
+
             system_prompt_type="phi3"
         )
     ])
