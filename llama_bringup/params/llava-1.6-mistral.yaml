@@ -1,16 +1,16 @@
-use_llava: True # enable llava
-embedding: False # disable embeddings
+use_llava: True
+embedding: False
 
-n_ctx: 8192 # context of the LLM in tokens use a huge context size to load images
-n_batch: 512 # batch size in tokens
-n_gpu_layers: 33 # layers to load in GPU
-n_threads: 1 # threads
-n_predict: 8192 # max tokens -1 : :  inf
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 33
+n_threads: 1
+n_predict: 8192
 
-model_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
-model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf" # model file in repo
+model_repo: "cjpais/llava-1.6-mistral-7b-gguf"
+model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
 
-mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
-mmproj_filename: "mmproj-model-f16.gguf" # mmproj file in repo
+mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf"
+mmproj_filename: "mmproj-model-f16.gguf"
 
-system_prompt_type: "mistral" # system prompt type
+system_prompt_type: "Mistral"
