@@ -31,5 +31,5 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
             get_package_share_directory("llama_bringup"),
-            "params", "Spaetzle-v60-7b-GGUF.yaml"))
+            "params", "Spaetzle.yaml"))
     ])

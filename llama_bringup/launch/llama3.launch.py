@@ -21,23 +21,15 @@
 # SOFTWARE.
 
 
+import os
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch
+from llama_bringup.utils import create_llama_launch_from_yaml
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-
     return LaunchDescription([
-        create_llama_launch(
-            n_ctx=2048,
-            n_batch=8,
-            n_gpu_layers=0,
-            n_threads=1,
-            n_predict=2048,
-
-            model_repo="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
-            model_filename="Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
-
-            system_prompt_type="llama3"
-        )
+        create_llama_launch_from_yaml(os.path.join(
+            get_package_share_directory("llama_bringup"),
+            "params", "Llama-3.yaml"))
     ])
