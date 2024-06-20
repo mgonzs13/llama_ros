@@ -13,4 +13,4 @@ model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
 mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf"
 mmproj_filename: "mmproj-model-f16.gguf"
 
-system_prompt_type: "Mistral"
+system_prompt_type: "user-assistant-hashes"

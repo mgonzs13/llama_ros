@@ -1,0 +1,16 @@
+use_llava: True
+embedding: False
+
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 33
+n_threads: 1
+n_predict: 8192
+
+model_repo: "xtuner/llava-phi-3-mini-gguf"
+model_filename: "llava-phi-3-mini-int4.gguf"
+
+mmproj_repo: "xtuner/llava-phi-3-mini-gguf"
+mmproj_filename: "llava-phi-3-mini-mmproj-f16.gguf"
+
+system_prompt_type: "Phi-3"
