@@ -44,6 +44,7 @@ Llama::Llama(std::shared_ptr<struct gpt_params> params, bool debug)
   llama_numa_init(this->params->numa);
 
   std::tie(this->model, this->ctx) = llama_init_from_gpt_params(*this->params);
+  llama_set_embeddings(this->ctx, false);
   this->ctx_sampling = llama_sampling_init(this->params->sparams);
 
   if (this->model == NULL) {
@@ -166,6 +167,8 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
     return output;
   }
 
+  llama_set_embeddings(this->ctx, true);
+
   auto tokens =
       this->tokenize(input_prompt, this->should_add_bos_token(), false);
 
@@ -252,6 +255,8 @@ response_output Llama::generate_response(const std::string &input_prompt,
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
+
+  llama_set_embeddings(this->ctx, false);
 
   // load params
   this->update_sampling_params(this->params->sparams);
