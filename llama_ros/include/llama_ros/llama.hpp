@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "common.h"
-#include "common/grammar-parser.h"
+#include "grammar-parser.h"
 #include "llama.h"
 #include "llama_utils/spinner.hpp"
 
