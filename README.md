@@ -30,10 +30,10 @@ $ colcon build
 
 ### CUDA
 
-To run llama_ros with CUDA, you have to install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) and the following lines in the [CMakeLists.txt](llama_ros/CMakeLists.txt) of llama_ros package must be uncommented:
+To run llama_ros with CUDA, you have to install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) and set the environment variable `LLAMA_CUDA` to `on`:
 
-```
-set(GGML_CUDA ON)
+```shell
+export LLAMA_CUDA="on"
 ```
 
 ## Usage

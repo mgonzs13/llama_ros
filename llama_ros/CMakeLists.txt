@@ -6,9 +6,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # CUDA
-# set(GGML_CUDA ON)
-if (GGML_CUDA)
-  add_compile_definitions(GGML_USE_CUDA)
+if(DEFINED ENV{LLAMA_CUDA})
+    message(STATUS "LLAMA_CUDA")
+    string(TOLOWER "$ENV{LLAMA_CUDA}" LLAMA_CUDA)
+    if(LLAMA_CUDA STREQUAL "on")
+        message(STATUS "Compiling llama_ros with CUDA")
+        set(GGML_CUDA ON)
+        add_compile_definitions(GGML_USE_CUDA)
+    endif()
 endif()
 
 # find dependencies
