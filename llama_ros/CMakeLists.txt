@@ -6,8 +6,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # CUDA
-# option(LLAMA_CUDA "llama: use CUDA" ON)
-# add_compile_definitions(GGML_USE_CUDA)
+# set(GGML_CUDA ON)
+if (GGML_CUDA)
+  add_compile_definitions(GGML_USE_CUDA)
+endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
