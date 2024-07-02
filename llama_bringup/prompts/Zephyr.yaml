@@ -1,10 +1,10 @@
 prefix: "\n<|user|>\n"
-suffix: "<|/s|>\n<|assistant|>\n"
-stopping_words: ["<|/s|>"]
+suffix: "</s>\n<|assistant|>\n"
+stopping_words: ["</s>"]
 
 system_prompt: |-
   <|system|>
-  You are an AI assistant that follows instruction extremely well. Help as much as you can.
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.</s>
   <|user|>
   Hello</s>
   <|assistant|>
