@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2023  Miguel Ángel González Santamarta
+# Copyright (c) 2024  Miguel Ángel González Santamarta
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,5 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"),
-            "params", "Spaetzle.yaml"))
+            get_package_share_directory("llama_bringup"), "params", "Spaetzle.yaml"))
     ])

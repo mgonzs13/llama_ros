@@ -30,6 +30,5 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"),
-            "params", "Llama-3.yaml"))
+            get_package_share_directory("llama_bringup"), "params", "Llama-3.yaml"))
     ])
