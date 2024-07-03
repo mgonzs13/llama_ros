@@ -1,0 +1,11 @@
+prefix: "\n<|user|>\n"
+suffix: "<|endoftext|>\n<|assistant|>\n"
+stopping_words: ["<|endoftext|>"]
+
+system_prompt: |-
+  <|system|>
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.<|endoftext|>
+  <|user|>
+  Hello<|endoftext|>
+  <|assistant|>
+  Hello<|endoftext|>
