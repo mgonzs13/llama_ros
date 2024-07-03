@@ -21,6 +21,7 @@ setup(
         ],
         "llama_cli.verb": [
             "launch = llama_cli.verb.launch:LaunchVerb",
-        ]
+            "prompt = llama_cli.verb.prompt:PromptVerb",
+        ],
     }
 )

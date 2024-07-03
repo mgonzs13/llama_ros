@@ -10,6 +10,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 3. [Usage](#usage)
    - [Launch Files](#launch-files)
    - [ROS 2 Clients](#ros-2-clients)
+   - [llama_cli](#llama_cli)
    - [LangChain](#langchain)
 4. [Demos](#demos)
 
@@ -341,6 +342,26 @@ class ExampleNode(Node):
 ```
 
 </details>
+
+### llama_cli
+
+Commands are included in llama_ros to speed up the test of GGUF-based LLMs within the ROS 2 ecosystem. This way, the following commands are integrating into the ROS 2 commands:
+
+#### launch
+
+Using this command launch a LLM from a YAML file. The configuration of the YAML is used to launch the LLM in the same way as using a regular launch file. Here is an example of how to use it:
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/StableLM-Zephyr.yaml
+```
+
+#### prompt
+
+Using this command send a prompt to a launched LLM. The command uses a string, which is the prompt; and the temperature value. Here is an example of how to use it:
+
+```shell
+$ ros2 llama prompt "Do you know ROS 2?" -t 0.0
+```
 
 ### LangChain
 

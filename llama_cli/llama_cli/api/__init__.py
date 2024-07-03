@@ -25,6 +25,21 @@ from launch import LaunchService
 from launch import LaunchDescription
 from llama_bringup.utils import create_llama_launch_from_yaml
 
+import rclpy
+from argparse import ArgumentTypeError
+from llama_msgs.action import GenerateResponse
+from llama_ros.llama_client_node import LlamaClientNode
+
+
+def positive_float(inval):
+    try:
+        ret = float(inval)
+    except ValueError:
+        raise ArgumentTypeError("Expects a floating point number")
+    if ret < 0.0:
+        raise ArgumentTypeError("Value must be positive")
+    return ret
+
 
 def launch_llm(file_path: str) -> None:
     ld = LaunchDescription([
@@ -33,3 +48,17 @@ def launch_llm(file_path: str) -> None:
     ls = LaunchService()
     ls.include_launch_description(ld)
     ls.run()
+
+
+def prompt_llm(prompt: str, temp: float = 0.8) -> None:
+
+    def text_cb(feedback) -> None:
+        print(feedback.feedback.partial_response.text, end="", flush=True)
+
+    rclpy.init()
+    llama_client = LlamaClientNode()
+    goal = GenerateResponse.Goal()
+    goal.prompt = prompt
+    goal.sampling_config.temp = temp
+    llama_client.generate_response(goal, text_cb)
+    rclpy.shutdown()

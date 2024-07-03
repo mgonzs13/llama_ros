@@ -21,14 +21,18 @@
 # SOFTWARE.
 
 
-import os
-from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch_from_yaml
-from ament_index_python.packages import get_package_share_directory
+from ros2cli.verb import VerbExtension
+from llama_cli.api import prompt_llm, positive_float
 
 
-def generate_launch_description():
-    return LaunchDescription([
-        create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"), "params", "Llama-3.yaml"))
-    ])
+class PromptVerb(VerbExtension):
+
+    def add_arguments(self, parser, cli_name):
+        arg = parser.add_argument(
+            "prompt", help="prompt text for the LLM")
+        parser.add_argument(
+            "-t", "--temp", metavar="N", type=positive_float, default=0.8,
+            help="Temperature value (default: 0.8)")
+
+    def main(self, *, args):
+        prompt_llm(args.prompt, temp=args.temp)
