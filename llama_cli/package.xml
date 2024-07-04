@@ -8,6 +8,8 @@
   <license>MIT</license>
 
   <depend>ros2cli</depend>
+  <depend>llama_ros</depend>
+  <depend>llama_bringup</depend>
 
   <export>
     <build_type>ament_python</build_type>

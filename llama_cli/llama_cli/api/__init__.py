@@ -61,4 +61,5 @@ def prompt_llm(prompt: str, temp: float = 0.8) -> None:
     goal.prompt = prompt
     goal.sampling_config.temp = temp
     llama_client.generate_response(goal, text_cb)
+    print("")
     rclpy.shutdown()
