@@ -25,6 +25,7 @@ from launch import LaunchService
 from launch import LaunchDescription
 from llama_bringup.utils import create_llama_launch_from_yaml
 
+import os
 import rclpy
 from argparse import ArgumentTypeError
 from llama_msgs.action import GenerateResponse
@@ -42,6 +43,10 @@ def positive_float(inval):
 
 
 def launch_llm(file_path: str) -> None:
+    if not os.path.exists(file_path):
+        print(f"File '{file_path}' does not exists")
+        return
+
     ld = LaunchDescription([
         create_llama_launch_from_yaml(file_path)
     ])
