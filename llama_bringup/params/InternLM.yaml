@@ -1,0 +1,10 @@
+n_ctx: 2048
+n_batch: 8
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+
+model_repo: "internlm/internlm2_5-7b-chat-gguf"
+model_filename: "internlm2_5-7b-chat-q4_k_m.gguf"
+
+system_prompt_type: "ChatML"
