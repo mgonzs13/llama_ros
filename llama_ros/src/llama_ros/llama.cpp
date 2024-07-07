@@ -110,7 +110,14 @@ std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
-  return llama_detokenize_bpe(this->ctx, tokens);
+
+  std::string text;
+
+  for (llama_token t : tokens) {
+    text.append(llama_token_to_piece(this->ctx, t));
+  }
+
+  return text;
 }
 
 /*
