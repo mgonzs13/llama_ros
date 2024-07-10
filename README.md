@@ -92,20 +92,25 @@ n_predict: 2048 # max tokens, -1 == inf
 model_repo: "cstr/Spaetzle-v60-7b-GGUF" # Hugging Face repo
 model_filename: "Spaetzle-v60-7b-q4-k-m.gguf" # model file in repo
 
-system_prompt_type: "ChatML" # system prompt type
+system_prompt_type: "Alpaca" # system prompt type
 ```
 
 ```python
+import os
+from launch import LaunchDescription
+from llama_bringup.utils import create_llama_launch_from_yaml
+from ament_index_python.packages import get_package_share_directory
+
+
 def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"),
-            "params", "Spaetzle-v60-7b-GGUF.yaml"))
+            get_package_share_directory("llama_bringup"), "params", "Spaetzle.yaml"))
     ])
 ```
 
 ```shell
-$ ros2 launch llama_bringup marcoroni.launch.py
+$ ros2 launch llama_bringup spaetzle.launch.py
 ```
 
 </details>
