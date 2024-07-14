@@ -22,8 +22,8 @@
 
 
 import uuid
-from typing import Callable, Tuple
-from threading import Thread, RLock, Event
+from typing import Callable, Tuple, List, Union, Generator
+from threading import Thread, RLock, Condition
 
 from rclpy.node import Node
 from rclpy.client import Client
@@ -36,6 +36,7 @@ from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
 from llama_msgs.srv import GenerateEmbeddings
 from llama_msgs.action import GenerateResponse
+from llama_msgs.msg import PartialResponse
 
 
 class LlamaClientNode(Node):
@@ -47,11 +48,13 @@ class LlamaClientNode(Node):
     _tokenize_srv_client: Client = None
     _embeddings_srv_client: Client = None
 
-    _action_done_event: Event = Event()
+    _action_done: bool = False
+    _action_done_cond: Condition = Condition()
 
-    _action_result: GenerateResponse.Result
-    _action_status: GoalStatus
-    _goal_handle: ClientGoalHandle
+    _action_result: GenerateResponse.Result = None
+    _action_status: GoalStatus = GoalStatus.STATUS_UNKNOWN
+    _partial_results: List[PartialResponse] = []
+    _goal_handle: ClientGoalHandle = None
     _goal_handle_lock: RLock = RLock()
 
     _callback_group: ReentrantCallbackGroup = ReentrantCallbackGroup()
@@ -106,25 +109,47 @@ class LlamaClientNode(Node):
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
         return self._embeddings_srv_client.call(req)
 
-    def generate_response(self, goal: GenerateResponse.Goal, feedback_cb: Callable = None) -> Tuple[GenerateResponse.Result, GoalStatus]:
+    def generate_response(
+        self,
+        goal: GenerateResponse.Goal,
+        feedback_cb: Callable = None,
+        stream: bool = False
+    ) -> Union[Tuple[GenerateResponse.Result, GoalStatus], Generator[PartialResponse, None, None]]:
 
+        self._action_done = False
+        self._action_result = None
+        self._action_status = GoalStatus.STATUS_UNKNOWN
+        self._partial_results = []
         self._action_client.wait_for_server()
 
-        if feedback_cb is None:
+        if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback
 
-        self._action_done_event.clear()
         send_goal_future = self._action_client.send_goal_async(
             goal, feedback_callback=feedback_cb)
         send_goal_future.add_done_callback(self._goal_response_callback)
 
         # Wait for action to be done
-        self._action_done_event.wait()
+        def generator():
+            with self._action_done_cond:
+                while not self._action_done:
 
-        with self._goal_handle_lock:
-            self._goal_handle = None
+                    while self._partial_results:
+                        yield self._partial_results.pop(0)
 
-        return self._action_result, self._action_status
+                    self._action_done_cond.wait()
+
+            if self._partial_results:
+                yield from self._partial_results
+
+        if stream:
+            return generator()
+
+        else:
+            with self._action_done_cond:
+                while not self._action_done:
+                    self._action_done_cond.wait()
+            return self._action_result, self._action_status
 
     def _goal_response_callback(self, future) -> None:
 
@@ -134,12 +159,22 @@ class LlamaClientNode(Node):
             get_result_future.add_done_callback(self._get_result_callback)
 
     def _get_result_callback(self, future) -> None:
+
         self._action_result: GenerateResponse.Result = future.result().result
         self._action_status = future.result().status
-        self._action_done_event.set()
+
+        with self._action_done_cond:
+            self._action_done = True
+            self._action_done_cond.notify()
+
+        with self._goal_handle_lock:
+            self._goal_handle = None
 
     def _feedback_callback(self, feedback) -> None:
-        pass
+        self._partial_results.append(feedback.feedback.partial_response)
+
+        with self._action_done_cond:
+            self._action_done_cond.notify()
 
     def cancel_generate_text(self) -> None:
         with self._goal_handle_lock:

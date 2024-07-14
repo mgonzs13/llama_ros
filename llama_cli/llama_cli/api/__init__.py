@@ -55,17 +55,16 @@ def launch_llm(file_path: str) -> None:
     ls.run()
 
 
-def prompt_llm(prompt: str, temp: float = 0.8) -> None:
-
-    def text_cb(feedback) -> None:
-        print(feedback.feedback.partial_response.text, end="", flush=True)
+def prompt_llm(prompt: str, temp: float = 0.8, reset: bool = False) -> None:
 
     rclpy.init()
     llama_client = LlamaClientNode()
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
+    goal.reset = reset
     goal.sampling_config.temp = temp
-    response = llama_client.generate_response(goal, text_cb)[0].response.text
-    if not response.endswith("\n"):
-        print("")
+    for ele in llama_client.generate_response(goal, stream=True):
+        print(ele.text, flush=True, end="")
+    if not ele.text.endswith("\n"):
+        print()
     rclpy.shutdown()

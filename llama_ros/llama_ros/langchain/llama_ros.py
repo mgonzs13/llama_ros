@@ -22,7 +22,7 @@
 
 
 from pydantic import root_validator
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterator
 
 from action_msgs.msg import GoalStatus
 from llama_msgs.msg import LogitBias
@@ -30,6 +30,7 @@ from llama_msgs.action import GenerateResponse
 from llama_msgs.srv import Tokenize
 from llama_ros.llama_client_node import LlamaClientNode
 
+from langchain_core.outputs import GenerationChunk
 from langchain_core.language_models.llms import LLM
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 
@@ -93,14 +94,7 @@ class LlamaROS(LLM):
     def cancel(self) -> None:
         self.llama_client.cancel_generate_text()
 
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-
+    def _create_action_goal(self, prompt: str) -> GenerateResponse.Result:
         goal = GenerateResponse.Goal()
         goal.prompt = prompt
         goal.reset = True
@@ -146,13 +140,38 @@ class LlamaROS(LLM):
         goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
 
-        # send goal
+        return goal
+
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+
+        goal = self._create_action_goal(prompt)
+
         result, status = LlamaClientNode.get_instance(
             self.namespace).generate_response(goal)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
         return result.response.text
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+
+        goal = self._create_action_goal(prompt)
+
+        for pt in LlamaClientNode.get_instance(
+                self.namespace).generate_response(goal, stream=True):
+            yield GenerationChunk(text=pt.text)
 
     def get_num_tokens(self, text: str) -> int:
         req = Tokenize.Request()

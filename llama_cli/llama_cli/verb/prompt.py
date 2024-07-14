@@ -33,6 +33,11 @@ class PromptVerb(VerbExtension):
         parser.add_argument(
             "-t", "--temp", metavar="N", type=positive_float, default=0.8,
             help="Temperature value (default: 0.8)")
+        parser.add_argument(
+            "--reset",
+            "-r",
+            action="store_true",
+            help="Whether to reset the LLM and its context before prompting")
 
     def main(self, *, args):
-        prompt_llm(args.prompt, temp=args.temp)
+        prompt_llm(args.prompt, temp=args.temp, reset=args.reset)
