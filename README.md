@@ -397,10 +397,11 @@ prompt = PromptTemplate(
 )
 
 # create a chain with the llm and the prompt template
-chain = prompt | model | StrOutputParser()
+chain = prompt | llm | StrOutputParser()
 
 # run the chain
-text = llm_chain.invoke({"topic": "bears"})
+text = chain.invoke({"topic": "bears"})
+print(text)
 
 rclpy.shutdown()
 ```
@@ -427,13 +428,14 @@ embeddings = LlamaROSEmbeddings()
 db = Chroma(embedding_function=embeddings)
 
 # create the retriever
-retriever = self.db.as_retriever(search_kwargs={"k": 5})
+retriever = db.as_retriever(search_kwargs={"k": 5})
 
 # add your texts
 db.add_texts(texts=["your_texts"])
 
 # retrieve documents
-docuemnts = self.retriever.get_relevant_documents("your_query")
+docuemnts = retriever.get_relevant_documents("your_query")
+print(docuemnts)
 
 rclpy.shutdown()
 ```
