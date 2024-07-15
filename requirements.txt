@@ -1,3 +1,6 @@
+langchain-core==0.2.18
 langchain==0.2.7
+langchain-community==0.2.7
+pydantic==1.10.17
 huggingface-hub==0.23.4
 packaging==23.2
