@@ -444,6 +444,34 @@ rclpy.shutdown()
 
 </details>
 
+### llava_ros
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+from llama_ros.langchain import LlamaROS
+
+rclpy.init()
+
+# create the llama_ros llm for langchain
+llm = LlamaROS(namespace="llava")
+
+# bind the url_image
+llm = llm.bind(image_url=image_url).stream("Describe the image")
+image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+
+# run the llm
+for c in llm:
+    print(c, flush=True, end="")
+
+rclpy.shutdown()
+
+```
+
+</details>
+
 #### llama_ros_embeddings (RAG)
 
 <details>
