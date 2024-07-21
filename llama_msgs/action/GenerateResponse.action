@@ -1,5 +1,6 @@
 string prompt                       # prompt
 sensor_msgs/Image image             # image for VLMs
+string[] stop []                    # stop list
 bool reset false                    # whether to reset the context
 SamplingConfig sampling_config      # sampling config
 ---

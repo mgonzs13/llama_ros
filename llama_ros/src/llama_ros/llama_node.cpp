@@ -134,6 +134,7 @@ void LlamaNode::execute(
   this->goal_handle_ = goal_handle;
   auto goal = goal_handle->get_goal();
   std::string prompt = goal->prompt;
+  std::vector<std::string> stop = goal->stop;
   bool reset = goal_handle->get_goal()->reset;
   auto result = std::make_shared<GenerateResponse::Result>();
 

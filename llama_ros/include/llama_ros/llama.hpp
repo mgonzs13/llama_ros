@@ -90,9 +90,9 @@ public:
 
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
-  response_output
-  generate_response(const std::string &input_prompt,
-                    GenerateResponseCallback callbakc = nullptr);
+  response_output generate_response(const std::string &input_prompt,
+                                    GenerateResponseCallback callbakc = nullptr,
+                                    std::vector<std::string> stop = {});
 
   const struct llama_context *get_ctx() { return this->ctx; }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }

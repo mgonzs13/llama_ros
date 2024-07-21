@@ -253,7 +253,8 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 *****************************
 */
 response_output Llama::generate_response(const std::string &input_prompt,
-                                         GenerateResponseCallback callback) {
+                                         GenerateResponseCallback callback,
+                                         std::vector<std::string> stop) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
@@ -262,6 +263,12 @@ response_output Llama::generate_response(const std::string &input_prompt,
   struct completion_output completion_result;
   std::vector<struct completion_output> response;
   std::vector<struct completion_output> completion_result_list;
+
+  std::vector<std::string> stop_concat;
+  stop_concat.reserve(this->params->antiprompt.size() + stop.size());
+  stop_concat.insert(stop_concat.end(), this->params->antiprompt.begin(),
+                     this->params->antiprompt.end());
+  stop_concat.insert(stop_concat.end(), stop.begin(), stop.end());
 
   llama_set_embeddings(this->ctx, false);
 
@@ -299,8 +306,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   // generation loop
   while (this->n_remain != 0) {
 
-    stop_type stopping =
-        this->find_stop(completion_result_list, this->params->antiprompt);
+    stop_type stopping = this->find_stop(completion_result_list, stop_concat);
 
     if (stopping == FULL_STOP) {
       if (this->canceled) {
