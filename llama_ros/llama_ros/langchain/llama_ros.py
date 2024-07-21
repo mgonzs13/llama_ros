@@ -21,9 +21,13 @@
 # SOFTWARE.
 
 
+import cv2
+import numpy as np
+import urllib.request
 from pydantic import root_validator
 from typing import Any, Dict, List, Optional, Iterator
 
+from cv_bridge import CvBridge
 from action_msgs.msg import GoalStatus
 from llama_msgs.msg import LogitBias
 from llama_msgs.action import GenerateResponse
@@ -39,6 +43,7 @@ class LlamaROS(LLM):
 
     namespace: str = "llama"
     llama_client: LlamaClientNode = None
+    cv_bridge: CvBridge = CvBridge()
 
     # sampling params
     n_prev: int = 64
@@ -94,10 +99,33 @@ class LlamaROS(LLM):
     def cancel(self) -> None:
         self.llama_client.cancel_generate_text()
 
-    def _create_action_goal(self, prompt: str) -> GenerateResponse.Result:
+    def _create_action_goal(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        image_url: Optional[str] = None,
+        image: Optional[np.ndarray] = None,
+    ) -> GenerateResponse.Result:
+
         goal = GenerateResponse.Goal()
         goal.prompt = prompt
         goal.reset = True
+
+        # load image
+        if image_url or image:
+
+            if image_url and not image:
+                req = urllib.request.Request(
+                    image_url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req)
+                arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
+                image = cv2.imdecode(arr, -1)
+
+            goal.image = self.cv_bridge.cv2_to_imgmsg(image)
+
+        # add stop
+        if stop:
+            goal.stop = stop
 
         # sampling params
         goal.sampling_config.n_prev = self.n_prev
@@ -150,7 +178,7 @@ class LlamaROS(LLM):
         **kwargs: Any,
     ) -> str:
 
-        goal = self._create_action_goal(prompt)
+        goal = self._create_action_goal(prompt, stop, **kwargs)
 
         result, status = LlamaClientNode.get_instance(
             self.namespace).generate_response(goal)
@@ -167,10 +195,14 @@ class LlamaROS(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
 
-        goal = self._create_action_goal(prompt)
+        goal = self._create_action_goal(prompt, stop, **kwargs)
 
         for pt in LlamaClientNode.get_instance(
                 self.namespace).generate_response(goal, stream=True):
+
+            if run_manager:
+                run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)
+
             yield GenerationChunk(text=pt.text)
 
     def get_num_tokens(self, text: str) -> int:
