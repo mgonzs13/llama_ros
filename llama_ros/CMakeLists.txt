@@ -6,14 +6,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # CUDA
-if(DEFINED ENV{LLAMA_CUDA})
-    message(STATUS "LLAMA_CUDA")
-    string(TOLOWER "$ENV{LLAMA_CUDA}" LLAMA_CUDA)
-    if(LLAMA_CUDA STREQUAL "on")
-        message(STATUS "Compiling llama_ros with CUDA")
-        set(GGML_CUDA ON)
-        add_compile_definitions(GGML_USE_CUDA)
-    endif()
+if(GGML_CUDA)
+  add_compile_definitions(GGML_USE_CUDA)
 endif()
 
 # find dependencies
@@ -21,18 +15,15 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(llama_msgs REQUIRED)
+find_package(llama_cpp_vendor REQUIRED)
 
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 
-INCLUDE_DIRECTORIES(
+include_directories(
   include
   ${OpenCV_INCLUDE_DIRS}
 )
-
-add_subdirectory(llama_cpp)
-add_subdirectory(llama_cpp/examples/llava)
-
 
 add_executable(llama_node
   src/llama_ros/llama.cpp 
@@ -40,21 +31,21 @@ add_executable(llama_node
   src/llama_ros/llama_node.cpp 
   src/llama_main.cpp
 )
-target_link_libraries(llama_node PRIVATE common ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(llama_node PRIVATE llama)
-ament_target_dependencies(llama_node PUBLIC rclcpp rclcpp_action llama_msgs)
+target_link_libraries(llama_node llama_cpp_vendor::llama llama_cpp_vendor::common ${CMAKE_THREAD_LIBS_INIT})
+ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs llama_cpp_vendor)
 
 add_executable(llava_node
-  src/llama_ros/llama.cpp 
+  src/llama_ros/llama.cpp
   src/llava_ros/llava.cpp 
   src/llama_utils/gpt_params.cpp 
   src/llama_ros/llama_node.cpp 
   src/llava_ros/llava_node.cpp 
   src/llava_main.cpp
 )
-target_link_libraries(llava_node PRIVATE common ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(llava_node PRIVATE PRIVATE llava llama)
-ament_target_dependencies(llava_node PUBLIC rclcpp rclcpp_action llama_msgs cv_bridge)
+target_link_libraries(llava_node llama_cpp_vendor::llava llama_cpp_vendor::llama llama_cpp_vendor::common ${CMAKE_THREAD_LIBS_INIT})
+ament_target_dependencies(llava_node rclcpp rclcpp_action llama_msgs llama_cpp_vendor cv_bridge)
+
+ament_export_dependencies(llama_cpp_vendor)
 
 # INSTALL
 install(TARGETS
