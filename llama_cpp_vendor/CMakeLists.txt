@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b3428
+  GIT_TAG        b3436
 )
 
 FetchContent_MakeAvailable(llama)
@@ -34,6 +34,11 @@ target_include_directories(llava
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/examples/llava;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
     $<INSTALL_INTERFACE:include>
 )
+
+# CUDA
+if(GGML_CUDA)
+  add_compile_definitions(GGML_USE_CUDA)
+endif()
 
 # export
 file(GLOB COMMON_HEADERS ${llama_SOURCE_DIR}/common/*.h ${llama_SOURCE_DIR}/common/*.hpp  ${llama_SOURCE_DIR}/examples/llava/*.h)
