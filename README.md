@@ -21,17 +21,15 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 ## Installation
 
+To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit).
+
 ```shell
 $ cd ~/ros2_ws/src
 $ git clone https://github.com/mgonzs13/llama_ros.git
 $ pip3 install -r llama_ros/requirements.txt
 $ cd ~/ros2_ws
-$ colcon build --cmake-args -DGGML_CUDA=ON
+$ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 ```
-
-### CUDA
-
-To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you have to add `--cmake-args -DGGML_CUDA=ON` to colcon.
 
 ## Usage
 
