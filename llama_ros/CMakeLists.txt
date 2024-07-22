@@ -45,24 +45,13 @@ ament_export_dependencies(llama_cpp_vendor)
 # INSTALL
 install(TARGETS
   llama_node
-  DESTINATION lib/${PROJECT_NAME})
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(TARGETS
   llava_node
-  DESTINATION lib/${PROJECT_NAME})
-
-install(PROGRAMS
-  llama_ros/llama_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_demo_node
-)
-
-install(PROGRAMS
-  llama_ros/llava_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llava_demo_node
 )
 
 ament_python_install_package(${PROJECT_NAME})
-
 ament_package()

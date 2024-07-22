@@ -511,7 +511,7 @@ $ ros2 launch llama_bringup marcoroni.launch.py
 ```
 
 ```shell
-$ ros2 run llama_ros llama_demo_node --ros-args -p prompt:="your prompt"
+$ ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
 ```
 
 <!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
@@ -525,7 +525,7 @@ $ ros2 launch llama_bringup llava.launch.py
 ```
 
 ```shell
-$ ros2 run llama_ros llava_demo_node --ros-args -p prompt:="your prompt" -p image_url:="url of the image" -p use_image:="whether to send the image"
+$ ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p image_url:="url of the image" -p use_image:="whether to send the image"
 ```
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
