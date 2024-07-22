@@ -6,7 +6,6 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 1. [Related Projects](#related-projects)
 2. [Installation](#installation)
-   - [CUDA](#cuda)
 3. [Usage](#usage)
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
