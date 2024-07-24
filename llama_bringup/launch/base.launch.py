@@ -75,7 +75,6 @@ def generate_launch_description():
 
         "model": LaunchConfiguration("model", default=""),
         "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
-        "lora_base": LaunchConfiguration("lora_base", default=""),
         "mmproj": LaunchConfiguration("mmproj", default=""),
         "numa": LaunchConfiguration("numa", default="none"),
         "pooling_type": LaunchConfiguration("pooling_type", default=""),

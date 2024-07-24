@@ -77,7 +77,6 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->declare_parameters<std::string>("", {
                                                 {"model", ""},
                                                 {"lora_adapter", ""},
-                                                {"lora_base", ""},
                                                 {"mmproj", ""},
                                                 {"split_mode", "layer"},
                                                 {"rope_scaling_type", ""},
@@ -160,7 +159,6 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   node->get_parameter("model", this->params->model);
   node->get_parameter("lora_adapter", lora_adapter);
-  node->get_parameter("lora_base", this->params->lora_base);
   node->get_parameter("mmproj", this->params->mmproj);
   node->get_parameter("numa", numa);
   node->get_parameter("pooling_type", pooling_type);

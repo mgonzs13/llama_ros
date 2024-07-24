@@ -56,7 +56,7 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
     kwargs["stopping_words"] = kwargs.get("stopping_words", prompt_data[2])
     kwargs["system_prompt"] = kwargs.get("system_prompt", prompt_data[3])
 
-    for key in ["model", "lora_base", "mmproj"]:
+    for key in ["model", "lora_adapter", "mmproj"]:
         if not kwargs.get(key) and kwargs.get(f"{key}_repo") and kwargs.get(f"{key}_filename"):
             kwargs[key] = download_model(
                 kwargs[f"{key}_repo"], kwargs[f"{key}_filename"])
