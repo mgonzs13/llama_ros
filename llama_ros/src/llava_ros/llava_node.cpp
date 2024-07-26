@@ -20,7 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined(JAZZY)
+#include <cv_bridge/cv_bridge.hpp>
+#else
 #include <cv_bridge/cv_bridge.h>
+#endif
+
 #include <memory>
 #include <opencv2/opencv.hpp>
 #include <string>

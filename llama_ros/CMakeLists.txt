@@ -20,6 +20,27 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
+# ROS 2 distros
+if(NOT DEFINED ENV{ROS_DISTRO})
+  message(FATAL_ERROR "ROS_DISTRO is not defined." )
+endif()
+if("$ENV{ROS_DISTRO}" STREQUAL "foxy")
+  message(STATUS "Build for ROS2 Foxy")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFOXY")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "humble")
+  message(STATUS "Build for ROS2 Humble")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHUMBLE")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "iron")
+  message(STATUS "Build for ROS2 Iron")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIRON")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
+  message(STATUS "Build for ROS2 Jazzy")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DJAZZY")
+else()
+  message(FATAL_ERROR "Unsupported ROS Distribution: " "$ENV{ROS_DISTRO}")
+endif()
+
+# llama nodes
 add_executable(llama_node
   src/llama_ros/llama.cpp
   src/llama_utils/gpt_params.cpp
