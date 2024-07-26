@@ -15,6 +15,10 @@ setup(
     description="Cli package for llama_ros",
     license="MIT",
     tests_require=["pytest"],
+    data_files=[
+        ("share/llama_cli", ["package.xml"]),
+        ("share/ament_index/resource_index/packages", ["resource/llama_cli"]),
+    ],
     entry_points={
         "ros2cli.command": [
             "llama = llama_cli.command.llama:LlamaCommand",
