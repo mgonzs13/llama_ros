@@ -11,7 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(llama_msgs REQUIRED)
 find_package(llama_cpp_vendor REQUIRED)
-
+find_package(Threads REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 
@@ -21,15 +21,16 @@ include_directories(
 )
 
 add_executable(llama_node
-  src/llama_ros/llama.cpp 
-  src/llama_utils/gpt_params.cpp 
-  src/llama_ros/llama_node.cpp 
+  src/llama_ros/llama.cpp
+  src/llama_utils/gpt_params.cpp
+  src/llama_ros/llama_node.cpp
   src/llama_main.cpp
 )
 target_link_libraries(llama_node
   llama_cpp_vendor::llama
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  Threads::Threads
 )
 ament_target_dependencies(llama_node
   rclcpp
@@ -40,10 +41,10 @@ ament_target_dependencies(llama_node
 
 add_executable(llava_node
   src/llama_ros/llama.cpp
-  src/llava_ros/llava.cpp 
-  src/llama_utils/gpt_params.cpp 
-  src/llama_ros/llama_node.cpp 
-  src/llava_ros/llava_node.cpp 
+  src/llava_ros/llava.cpp
+  src/llama_utils/gpt_params.cpp
+  src/llama_ros/llama_node.cpp
+  src/llava_ros/llava_node.cpp
   src/llava_main.cpp
 )
 target_link_libraries(llava_node
@@ -51,8 +52,9 @@ target_link_libraries(llava_node
   llama_cpp_vendor::llava
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  Threads::Threads
 )
-ament_target_dependencies(llava_node 
+ament_target_dependencies(llava_node
   rclcpp
   rclcpp_action
   llama_msgs
