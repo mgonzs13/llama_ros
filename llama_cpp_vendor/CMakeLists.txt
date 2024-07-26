@@ -11,15 +11,15 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b3449
+  GIT_TAG        b3463
 )
 
 FetchContent_MakeAvailable(llama)
 
 # llama
 set_target_properties(
-  ggml build_info common llama PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include;${llama_SOURCE_DIR}/common>"
+  ggml build_info llama common PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/common>"
   CXX_STANDARD 11
 )
 
@@ -48,7 +48,7 @@ install(
 )
 
 install(
-  TARGETS ggml build_info common llama llava
+  TARGETS ggml build_info llama llava common
   EXPORT export_llama
   LIBRARY DESTINATION lib
   INCLUDES DESTINATION include

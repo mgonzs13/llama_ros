@@ -26,8 +26,17 @@ add_executable(llama_node
   src/llama_ros/llama_node.cpp 
   src/llama_main.cpp
 )
-target_link_libraries(llama_node llama_cpp_vendor::llama llama_cpp_vendor::common ${CMAKE_THREAD_LIBS_INIT})
-ament_target_dependencies(llama_node rclcpp rclcpp_action llama_msgs llama_cpp_vendor)
+target_link_libraries(llama_node
+  llama_cpp_vendor::llama
+  llama_cpp_vendor::common
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+ament_target_dependencies(llama_node
+  rclcpp
+  rclcpp_action
+  llama_msgs
+  llama_cpp_vendor
+)
 
 add_executable(llava_node
   src/llama_ros/llama.cpp
@@ -37,8 +46,19 @@ add_executable(llava_node
   src/llava_ros/llava_node.cpp 
   src/llava_main.cpp
 )
-target_link_libraries(llava_node llama_cpp_vendor::llava llama_cpp_vendor::llama llama_cpp_vendor::common ${CMAKE_THREAD_LIBS_INIT})
-ament_target_dependencies(llava_node rclcpp rclcpp_action llama_msgs llama_cpp_vendor cv_bridge)
+target_link_libraries(llava_node
+  llama_cpp_vendor::llama
+  llama_cpp_vendor::llava
+  llama_cpp_vendor::common
+  ${CMAKE_THREAD_LIBS_INIT}
+)
+ament_target_dependencies(llava_node 
+  rclcpp
+  rclcpp_action
+  llama_msgs
+  llama_cpp_vendor
+  cv_bridge
+)
 
 ament_export_dependencies(llama_cpp_vendor)
 

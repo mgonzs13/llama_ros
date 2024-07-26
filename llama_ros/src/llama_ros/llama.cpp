@@ -64,9 +64,7 @@ Llama::Llama(std::shared_ptr<struct gpt_params> params, bool debug)
   // show info
   LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
                  LLAMA_COMMIT);
-  LLAMA_LOG_INFO("System info: n_threads = %d / %d | %s",
-                 this->params->n_threads, std::thread::hardware_concurrency(),
-                 llama_print_system_info());
+  LLAMA_LOG_INFO("%s", gpt_params_get_system_info(*this->params).c_str());
 
   LLAMA_LOG_INFO(
       "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
