@@ -16,10 +16,18 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(llama)
 
+# ggml
+set_target_properties(
+  ggml PROPERTIES
+  OUTPUT_NAME "llama_ggml"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+  CXX_STANDARD 11
+)
+
 # llama
 set_target_properties(
-  ggml build_info llama common PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/common>"
+  build_info llama common PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/common>"
   CXX_STANDARD 11
 )
 
