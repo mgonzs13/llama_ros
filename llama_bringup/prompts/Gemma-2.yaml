@@ -1,0 +1,12 @@
+prefix: "<start_of_turn>user\n"
+suffix: "<end_of_turn>\n<start_of_turn>model\n"
+stopping_words: ["<end_of_turn>"]
+
+system_prompt: |+
+  Below is an instruction that describes a task. Write a response that appropriately completes the request
+
+  <start_of_turn>user
+  Hello<end_of_turn>
+  <start_of_turn>model
+  Hello<end_of_turn>
+
