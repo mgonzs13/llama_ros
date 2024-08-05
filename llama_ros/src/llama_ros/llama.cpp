@@ -43,7 +43,10 @@ Llama::Llama(std::shared_ptr<struct gpt_params> params, bool debug)
   llama_backend_init();
   llama_numa_init(this->params->numa);
 
-  std::tie(this->model, this->ctx) = llama_init_from_gpt_params(*this->params);
+  llama_init_result llama_init = llama_init_from_gpt_params(*this->params);
+  this->model = llama_init.model;
+  this->ctx = llama_init.context;
+
   llama_set_embeddings(this->ctx, false);
   this->ctx_sampling = llama_sampling_init(this->params->sparams);
 
