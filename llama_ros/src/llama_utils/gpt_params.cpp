@@ -45,16 +45,17 @@ GptParams::GptParams() : debug(false) {
 
 std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
-  std::vector<std::string> stopping_words;
   std::string file_path;
-  std::string lora_adapter;
+
+  std::vector<std::string> lora_adapters;
+  std::vector<double> lora_adapters_scales;
+  std::vector<std::string> stopping_words;
+  std::vector<double> tensor_split;
 
   std::string split_mode;
   std::string rope_scaling_type;
   std::string numa;
   std::string pooling_type;
-
-  std::vector<double> tensor_split;
 
   // llama params
   node->declare_parameters<int32_t>("", {
@@ -76,7 +77,6 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                         });
   node->declare_parameters<std::string>("", {
                                                 {"model", ""},
-                                                {"lora_adapter", ""},
                                                 {"mmproj", ""},
                                                 {"split_mode", "layer"},
                                                 {"rope_scaling_type", ""},
@@ -89,6 +89,10 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                             });
+  node->declare_parameter<std::vector<std::string>>(
+      "lora_adapters", std::vector<std::string>({}));
+  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
+                                               std::vector<double>({}));
   node->declare_parameter<std::vector<std::string>>(
       "stopping_words", std::vector<std::string>({}));
   node->declare_parameters<float>("", {
@@ -158,7 +162,8 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   node->get_parameter("yarn_orig_ctx", this->params->yarn_orig_ctx);
 
   node->get_parameter("model", this->params->model);
-  node->get_parameter("lora_adapter", lora_adapter);
+  node->get_parameter("lora_adapters", lora_adapters);
+  node->get_parameter("lora_adapters_scales", lora_adapters_scales);
   node->get_parameter("mmproj", this->params->mmproj);
   node->get_parameter("numa", numa);
   node->get_parameter("pooling_type", pooling_type);
@@ -184,14 +189,33 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
     this->params->n_threads_batch = cpu_get_num_math();
   }
 
-  // lora_adapter
-  if (lora_adapter.size()) {
-    this->params->lora_adapter.push_back({lora_adapter, 1.0f});
-    this->params->use_mmap = false;
+  // lora_adapters
+  if (lora_adapters.size()) {
+    if (lora_adapters.size() != lora_adapters_scales.size()) {
+      RCLCPP_ERROR(
+          node->get_logger(),
+          "lora_adapters and lora_adapters_scales must have the same size");
+    } else {
+
+      for (size_t i = 0; i < lora_adapters.size(); i++) {
+
+        if (lora_adapters.at(i).empty()) {
+          continue;
+        }
+
+        this->params->lora_adapters.push_back(
+            {lora_adapters.at(i), (float)lora_adapters_scales.at(i)});
+      }
+    }
   }
 
   // stopping words are the antiprompt
   for (std::string word : stopping_words) {
+
+    if (word.empty()) {
+      continue;
+    }
+
     replace_all(word, "\\n", "\n");
     this->params->antiprompt.push_back(word);
   }

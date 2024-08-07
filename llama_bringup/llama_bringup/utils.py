@@ -53,14 +53,37 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
         "system_prompt_type") else ("", "", [], "")
     kwargs["prefix"] = kwargs.get("prefix", prompt_data[0])
     kwargs["suffix"] = kwargs.get("suffix", prompt_data[1])
-    kwargs["stopping_words"] = kwargs.get("stopping_words", prompt_data[2])
     kwargs["system_prompt"] = kwargs.get("system_prompt", prompt_data[3])
 
-    for key in ["model", "lora_adapter", "mmproj"]:
+    # stopping_words
+    kwargs["stopping_words"] = kwargs.get("stopping_words", prompt_data[2])
+    if not kwargs["stopping_words"]:
+        kwargs["stopping_words"] = [""]
+
+    # load models
+    for key in ["model", "mmproj"]:
         if not kwargs.get(key) and kwargs.get(f"{key}_repo") and kwargs.get(f"{key}_filename"):
             kwargs[key] = download_model(
                 kwargs[f"{key}_repo"], kwargs[f"{key}_filename"])
 
+    # load lora adapters
+    lora_adapters = []
+    lora_adapters_scales = []
+
+    if "lora_adapters" in kwargs:
+        for i in range(kwargs["lora_adapters"]):
+            lora = kwargs["lora_adapters"][i]
+            lora_adapters.append(download_model(
+                lora["repo"], lora["filename"]))
+            lora_adapters_scales.append(lora["scale"])
+    else:
+        lora_adapters = [""]
+        lora_adapters_scales = [0.0]
+
+    kwargs["lora_adapters"] = lora_adapters
+    kwargs["lora_adapters_scales"] = lora_adapters_scales
+
+    # use llava
     if not kwargs.get("use_llava"):
         kwargs["use_llava"] = False
 

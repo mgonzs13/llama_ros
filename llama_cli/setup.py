@@ -6,7 +6,6 @@ setup(
     name="llama_cli",
     version="0.0.0",
     packages=find_packages(exclude=["test"]),
-    install_requires=["ros2cli"],
     zip_safe=True,
     author="Miguel Ángel González Santamarta",
     author_email="mgons@unileon.es",
@@ -14,7 +13,6 @@ setup(
     maintainer_email="mgons@unileon.es",
     description="Cli package for llama_ros",
     license="MIT",
-    tests_require=["pytest"],
     data_files=[
         ("share/llama_cli", ["package.xml"]),
         ("share/ament_index/resource_index/packages", ["resource/llama_cli"]),

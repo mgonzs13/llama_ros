@@ -74,14 +74,15 @@ def generate_launch_description():
         "n_keep": LaunchConfiguration("n_keep", default=-1),
 
         "model": LaunchConfiguration("model", default=""),
-        "lora_adapter": LaunchConfiguration("lora_adapter", default=""),
+        "lora_adapters": ParameterValue(LaunchConfiguration("lora_adapters", default=[""]), value_type=List[str]),
+        "lora_adapters_scales": ParameterValue(LaunchConfiguration("lora_adapters_scales", default=[0.0]), value_type=List[float]),
         "mmproj": LaunchConfiguration("mmproj", default=""),
         "numa": LaunchConfiguration("numa", default="none"),
         "pooling_type": LaunchConfiguration("pooling_type", default=""),
 
         "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
         "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
-        "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[]), value_type=List[str]),
+        "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[""]), value_type=List[str]),
 
         "system_prompt": ParameterValue(LaunchConfiguration("system_prompt", default=""), value_type=str),
         "system_prompt_file": ParameterValue(LaunchConfiguration("system_prompt_file", default=""), value_type=str),
