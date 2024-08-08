@@ -212,6 +212,9 @@ $ ros2 launch llama_bringup llava.launch.py
 
 You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3.
 
+<details>
+<summary>Click to expand</summary>
+
 ```yaml
 n_ctx: 2048
 n_batch: 8
@@ -232,6 +235,8 @@ lora_adapters:
 
 system_prompt_type: "Phi-3"
 ```
+
+</details>
 
 ### ROS 2 Clients
 
