@@ -9,6 +9,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 3. [Usage](#usage)
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
+   - [LoRA Adapters](#lora-adapters)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
 4. [Demos](#demos)
@@ -206,6 +207,31 @@ $ ros2 launch llama_bringup llava.launch.py
 ```
 
 </details>
+
+### LoRA Adapters
+
+You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3.
+
+```yaml
+n_ctx: 2048
+n_batch: 8
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+
+model_repo: "lmstudio-community/Phi-3.1-mini-4k-instruct-GGUF"
+model_filename: "Phi-3.1-mini-4k-instruct-Q4_K_M.gguf"
+
+lora_adapters:
+  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"
+    filename: "Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf"
+    scale: 0.5
+  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_summarization"
+    filename: "Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf"
+    scale: 0.5
+
+system_prompt_type: "Phi-3"
+```
 
 ### ROS 2 Clients
 

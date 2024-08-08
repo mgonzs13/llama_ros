@@ -1,0 +1,18 @@
+n_ctx: 2048
+n_batch: 8
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+
+model_repo: "lmstudio-community/Phi-3.1-mini-4k-instruct-GGUF"
+model_filename: "Phi-3.1-mini-4k-instruct-Q4_K_M.gguf"
+
+lora_adapters:
+  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"
+    filename: "Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf"
+    scale: 0.5
+  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_summarization"
+    filename: "Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf"
+    scale: 0.5
+
+system_prompt_type: "Phi-3"
