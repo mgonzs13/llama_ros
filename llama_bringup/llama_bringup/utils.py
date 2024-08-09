@@ -73,9 +73,22 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
     if "lora_adapters" in kwargs:
         for i in range(len(kwargs["lora_adapters"])):
             lora = kwargs["lora_adapters"][i]
-            lora_adapters.append(download_model(
-                lora["repo"], lora["filename"]))
+
+            if "repo" in lora and "filename" in lora:
+                lora_path = download_model(lora["repo"], lora["filename"])
+
+            elif "path" in lora:
+                lora_path = lora["path"]
+
+            else:
+                continue
+
+            if "scale" not in lora:
+                continue
+
+            lora_adapters.append(lora_path)
             lora_adapters_scales.append(lora["scale"])
+
     else:
         lora_adapters = [""]
         lora_adapters_scales = [0.0]
