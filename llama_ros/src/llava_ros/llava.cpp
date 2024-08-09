@@ -31,9 +31,8 @@
 using namespace llava_ros;
 
 Llava::Llava(std::shared_ptr<struct gpt_params> params,
-             std::string image_prefix, std::string image_suffix, bool debug)
-    : llama_ros::Llama(params, debug), image_prefix(image_prefix),
-      image_suffix(image_suffix) {
+             struct llava_params llava_params, bool debug)
+    : llama_ros::Llama(params, debug), llava_params(llava_params) {
 
   // load clip model
   const char *clip_path = this->params->mmproj.c_str();
@@ -75,27 +74,28 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
   // image
   if (this->image_embed != nullptr) {
 
-    // search for <image>
-    size_t image_pos = prompt.find("<image>");
+    // search for image_text
+    size_t image_pos = prompt.find(this->llava_params.image_text);
 
     // empty prompt
     if (prompt.size() == 0) {
-      prompt = "<image>";
+      prompt = this->llava_params.image_text;
 
     } else if (prompt.size() > 0) {
 
-      // no <image>
+      // no image_text
       if (image_pos == std::string::npos) {
-        prompt = "<image>\n" + prompt;
+        prompt = this->llava_params.image_text + "\n" + prompt;
         image_pos = 0;
       }
     }
 
     // split prompt
-    std::string prompt_1 = prompt.substr(0, image_pos) + this->image_prefix;
+    std::string prompt_1 =
+        prompt.substr(0, image_pos) + this->llava_params.image_prefix;
     std::string prompt_2 =
-        this->image_suffix +
-        prompt.substr(image_pos + std::string("<image>").length());
+        this->llava_params.image_suffix +
+        prompt.substr(image_pos + this->llava_params.image_text.length());
 
     // load first part of the prompt
     Llama::load_prompt(prompt_1, true, false);

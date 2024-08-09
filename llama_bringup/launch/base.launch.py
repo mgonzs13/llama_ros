@@ -83,6 +83,7 @@ def generate_launch_description():
         "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
         "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
         "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[""]), value_type=List[str]),
+        "image_text": ParameterValue(LaunchConfiguration("image_text", default="<image>"), value_type=str),
         "image_prefix": ParameterValue(LaunchConfiguration("image_prefix", default=""), value_type=str),
         "image_suffix": ParameterValue(LaunchConfiguration("image_suffix", default=""), value_type=str),
 

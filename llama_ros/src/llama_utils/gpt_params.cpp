@@ -90,6 +90,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
                                                 {"suffix", ""},
                                                 {"image_prefix", ""},
                                                 {"image_suffix", ""},
+                                                {"llava_params", "<image>"},
                                             });
   node->declare_parameter<std::vector<std::string>>(
       "lora_adapters", std::vector<std::string>({}));
@@ -176,9 +177,10 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
 
   node->get_parameter("prefix", this->params->input_prefix);
   node->get_parameter("suffix", this->params->input_suffix);
-  node->get_parameter("image_prefix", this->image_prefix);
-  node->get_parameter("image_suffix", this->image_suffix);
   node->get_parameter("stopping_words", stopping_words);
+  node->get_parameter("image_text", this->llava_params.image_text);
+  node->get_parameter("image_prefix", this->llava_params.image_prefix);
+  node->get_parameter("image_suffix", this->llava_params.image_suffix);
 
   node->get_parameter("system_prompt", this->params->prompt);
   node->get_parameter("system_prompt_file", file_path);
