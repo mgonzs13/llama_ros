@@ -42,6 +42,8 @@ public:
                          int n_vocab, llama_token token_eos);
 
   bool debug;
+  std::string image_prefix;
+  std::string image_suffix;
   std::shared_ptr<struct gpt_params> params;
 };
 } // namespace llama_utils

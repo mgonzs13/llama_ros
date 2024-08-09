@@ -30,8 +30,10 @@
 
 using namespace llava_ros;
 
-Llava::Llava(std::shared_ptr<struct gpt_params> params, bool debug)
-    : llama_ros::Llama(params, debug) {
+Llava::Llava(std::shared_ptr<struct gpt_params> params,
+             std::string image_prefix, std::string image_suffix, bool debug)
+    : llama_ros::Llama(params, debug), image_prefix(image_prefix),
+      image_suffix(image_suffix) {
 
   // load clip model
   const char *clip_path = this->params->mmproj.c_str();
@@ -90,8 +92,9 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
     }
 
     // split prompt
-    std::string prompt_1 = prompt.substr(0, image_pos);
+    std::string prompt_1 = prompt.substr(0, image_pos) + this->image_prefix;
     std::string prompt_2 =
+        this->image_suffix +
         prompt.substr(image_pos + std::string("<image>").length());
 
     // load first part of the prompt
