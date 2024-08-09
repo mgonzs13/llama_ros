@@ -31,6 +31,11 @@ from argparse import ArgumentTypeError
 from llama_msgs.action import GenerateResponse
 from llama_ros.llama_client_node import LlamaClientNode
 
+import cv2
+import numpy as np
+import urllib.request
+from cv_bridge import CvBridge
+
 
 def positive_float(inval):
     try:
@@ -55,14 +60,31 @@ def launch_llm(file_path: str) -> None:
     ls.run()
 
 
-def prompt_llm(prompt: str, temp: float = 0.8, reset: bool = False) -> None:
+def prompt_llm(prompt: str, temp: float = 0.8, image_url: str = "",
+               llava: bool = False,  reset: bool = False) -> None:
 
     rclpy.init()
-    llama_client = LlamaClientNode()
+
+    namespace = "llama"
+    if llava:
+        namespace = "llava"
+
+    llama_client = LlamaClientNode(namespace)
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
     goal.reset = reset
     goal.sampling_config.temp = temp
+
+    if image_url:
+        req = urllib.request.Request(
+            image_url, headers={"User-Agent": "Mozilla/5.0"})
+        response = urllib.request.urlopen(req)
+        arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
+        img = cv2.imdecode(arr, -1)
+
+        cv_bridge = CvBridge()
+        goal.image = cv_bridge.cv2_to_imgmsg(img)
+
     for ele in llama_client.generate_response(goal, stream=True):
         print(ele.text, flush=True, end="")
     if not ele.text.endswith("\n"):

@@ -48,7 +48,14 @@ $ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/StableLM-Zephyr
 
 #### prompt
 
-Using this command send a prompt to a launched LLM. The command uses a string, which is the prompt; and the temperature value (`-t`, `--temp`). You can also reset the LLM before prompting (`-r`, `--reset`). Here is an example of how to use it:
+Using this command send a prompt to a launched LLM. The command uses a string, which is the prompt and has the following arguments:
+
+- (`-t`, `--temp`): The temperature value
+- (`--iamge-url`): Image url to sent to a VLM
+- (`--llava`): Whether to prompt llava instead of llama
+- (`-r`, `--reset`): Whether to reset the LLM before prompting
+
+Here is an example of how to use it:
 
 ```shell
 $ ros2 llama prompt "Do you know ROS 2?" -t 0.0

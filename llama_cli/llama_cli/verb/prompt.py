@@ -31,13 +31,23 @@ class PromptVerb(VerbExtension):
         arg = parser.add_argument(
             "prompt", help="prompt text for the LLM")
         parser.add_argument(
-            "-t", "--temp", metavar="N", type=positive_float, default=0.8,
+            "-t", "--temp",
+            metavar="N", type=positive_float, default=0.8,
             help="Temperature value (default: 0.8)")
         parser.add_argument(
-            "--reset",
-            "-r",
+            "--image-url",
+            type=str, default="",
+            help="Image URL to sent to the VLM")
+        parser.add_argument(
+            "--llava",
+            action="store_true",
+            help="Whether to prompt llava instead of llama")
+        parser.add_argument(
+            "-r", "--reset",
             action="store_true",
             help="Whether to reset the LLM and its context before prompting")
 
     def main(self, *, args):
-        prompt_llm(args.prompt, temp=args.temp, reset=args.reset)
+        prompt_llm(args.prompt, temp=args.temp,
+                   image_url=args.image_url,
+                   llava=args.llava, reset=args.reset)
