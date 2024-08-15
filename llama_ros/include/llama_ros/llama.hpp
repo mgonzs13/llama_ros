@@ -100,9 +100,7 @@ public:
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
   bool is_embedding() { return this->params->embedding; }
-  bool should_add_bos_token() {
-    return llama_should_add_bos_token(this->model);
-  }
+  bool add_bos_token() { return llama_add_bos_token(this->model); }
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:

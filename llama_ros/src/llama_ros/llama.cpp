@@ -177,8 +177,7 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 
   llama_set_embeddings(this->ctx, true);
 
-  auto tokens =
-      this->tokenize(input_prompt, this->should_add_bos_token(), false);
+  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), false);
 
   if ((int)tokens.size() > this->get_n_ctx()) {
     LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),
@@ -364,7 +363,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params->input_prefix,
-      this->should_add_bos_token() && !this->prompt_tokens.size(), true);
+      this->add_bos_token() && !this->prompt_tokens.size(), true);
   std::vector<llama_token> inp_sfx =
       this->tokenize(this->params->input_suffix, false, true);
 
@@ -372,7 +371,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
   std::vector<llama_token> line_inp;
 
   if (!this->prompt_tokens.size() && !add_pfx) {
-    line_inp = this->tokenize(prompt, this->should_add_bos_token(), true);
+    line_inp = this->tokenize(prompt, this->add_bos_token(), true);
   } else {
     line_inp = this->tokenize(prompt, false, false);
   }
