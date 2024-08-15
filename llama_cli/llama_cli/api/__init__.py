@@ -60,16 +60,16 @@ def launch_llm(file_path: str) -> None:
     ls.run()
 
 
-def prompt_llm(prompt: str, temp: float = 0.8, image_url: str = "",
-               llava: bool = False,  reset: bool = False) -> None:
+def prompt_llm(
+    prompt: str,
+    temp: float = 0.8,
+    image_url: str = "",
+    reset: bool = False
+) -> None:
 
     rclpy.init()
 
-    namespace = "llama"
-    if llava:
-        namespace = "llava"
-
-    llama_client = LlamaClientNode(namespace)
+    llama_client = LlamaClientNode()
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
     goal.reset = reset
@@ -89,4 +89,5 @@ def prompt_llm(prompt: str, temp: float = 0.8, image_url: str = "",
         print(ele.text, flush=True, end="")
     if not ele.text.endswith("\n"):
         print()
+
     rclpy.shutdown()

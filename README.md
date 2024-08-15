@@ -52,7 +52,6 @@ Using this command send a prompt to a launched LLM. The command uses a string, w
 
 - (`-t`, `--temp`): The temperature value
 - (`--iamge-url`): Image url to sent to a VLM
-- (`--llava`): Whether to prompt llava instead of llama
 - (`-r`, `--reset`): Whether to reset the LLM before prompting
 
 Here is an example of how to use it:
@@ -488,7 +487,7 @@ from llama_ros.langchain import LlamaROS
 rclpy.init()
 
 # create the llama_ros llm for langchain
-llm = LlamaROS(namespace="llava")
+llm = LlamaROS()
 
 # bind the url_image
 llm = llm.bind(image_url=image_url).stream("Describe the image")

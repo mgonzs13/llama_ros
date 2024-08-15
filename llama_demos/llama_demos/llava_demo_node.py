@@ -61,7 +61,7 @@ class LlavaDemoNode(Node):
         self.initial_time = -1
         self.eval_time = -1
 
-        self._llama_client = LlamaClientNode.get_instance("llava")
+        self._llama_client = LlamaClientNode.get_instance()
 
     @staticmethod
     def load_image_from_url(url):

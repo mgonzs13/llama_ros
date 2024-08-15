@@ -39,15 +39,12 @@ class PromptVerb(VerbExtension):
             type=str, default="",
             help="Image URL to sent to the VLM")
         parser.add_argument(
-            "--llava",
-            action="store_true",
-            help="Whether to prompt llava instead of llama")
-        parser.add_argument(
             "-r", "--reset",
             action="store_true",
             help="Whether to reset the LLM and its context before prompting")
 
     def main(self, *, args):
-        prompt_llm(args.prompt, temp=args.temp,
+        prompt_llm(args.prompt,
+                   temp=args.temp,
                    image_url=args.image_url,
-                   llava=args.llava, reset=args.reset)
+                   reset=args.reset)

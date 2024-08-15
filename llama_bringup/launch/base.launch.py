@@ -107,7 +107,7 @@ def generate_launch_description():
             package="llama_ros",
             executable="llava_node",
             name="llava_node",
-            namespace="llava",
+            namespace="llama",
             parameters=[params],
             condition=IfCondition(PythonExpression(
                 [LaunchConfiguration("use_llava")]))
