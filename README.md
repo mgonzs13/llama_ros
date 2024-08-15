@@ -50,9 +50,9 @@ $ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/StableLM-Zephyr
 
 Using this command send a prompt to a launched LLM. The command uses a string, which is the prompt and has the following arguments:
 
-- (`-t`, `--temp`): The temperature value
-- (`--iamge-url`): Image url to sent to a VLM
 - (`-r`, `--reset`): Whether to reset the LLM before prompting
+- (`-t`, `--temp`): The temperature value
+- (`--image-url`): Image url to sent to a VLM
 
 Here is an example of how to use it:
 

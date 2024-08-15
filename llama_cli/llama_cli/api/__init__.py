@@ -60,15 +60,10 @@ def launch_llm(file_path: str) -> None:
     ls.run()
 
 
-def prompt_llm(
-    prompt: str,
-    temp: float = 0.8,
-    image_url: str = "",
-    reset: bool = False
-) -> None:
+def prompt_llm(prompt: str, reset: bool = False,
+               temp: float = 0.8, image_url: str = "") -> None:
 
     rclpy.init()
-
     llama_client = LlamaClientNode()
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
@@ -89,5 +84,4 @@ def prompt_llm(
         print(ele.text, flush=True, end="")
     if not ele.text.endswith("\n"):
         print()
-
     rclpy.shutdown()
