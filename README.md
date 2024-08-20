@@ -280,6 +280,8 @@ class ExampleNode(Node):
 <details>
 <summary>Click to expand</summary>
 
+_Remember to launch llama_ros with embedding set to true to be able of generating embeddings with your LLM._
+
 ```python
 from rclpy.node import Node
 from llama_msgs.srv import Embeddings
@@ -540,7 +542,7 @@ rclpy.shutdown()
 ### llama_ros
 
 ```shell
-$ ros2 launch llama_bringup marcoroni.launch.py
+$ ros2 launch llama_bringup spaetzle.launch.py
 ```
 
 ```shell
@@ -554,7 +556,7 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 ### llava_ros
 
 ```shell
-$ ros2 launch llama_bringup llava.launch.py
+$ ros2 launch llama_bringup minicpm-2.6.launch.py
 ```
 
 ```shell

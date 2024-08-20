@@ -67,6 +67,7 @@ LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
   }
 
   this->gpt_params->get_params();
+
   RCLCPP_INFO(get_logger(), "[%s] Configured", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
