@@ -1,5 +1,4 @@
 use_llava: True
-embedding: False
 
 n_ctx: 8192
 n_batch: 512

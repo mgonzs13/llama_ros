@@ -99,7 +99,7 @@ void GptParams::declare_params() {
       "tensor_split", std::vector<double>({0.0}));
   this->node->declare_parameters<bool>("", {
                                                {"debug", true},
-                                               {"embedding", true},
+                                               {"embedding", false},
                                                {"logits_all", false},
                                                {"use_mmap", true},
                                                {"use_mlock", false},

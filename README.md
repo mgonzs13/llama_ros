@@ -150,7 +150,6 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch(
             use_llava=True, # enable llava
-            embedding=False, # disable embeddings
 
             n_ctx=8192, # context of the LLM in tokens, use a huge context size to load images
             n_batch=512, # batch size in tokens
@@ -182,7 +181,6 @@ $ ros2 launch llama_bringup llava.launch.py
 
 ```yaml
 use_llava: True # enable llava
-embedding: False # disable embeddings
 
 n_ctx: 8192 # context of the LLM in tokens use a huge context size to load images
 n_batch: 512 # batch size in tokens
@@ -246,7 +244,7 @@ system_prompt_type: "Phi-3"
 
 ### ROS 2 Clients
 
-Both llama_ros and llava_ros provide ROS 2 interfaces to access the main functionalities of the models. Here you have some examples of how to use them inside ROS 2 nodes. Moreover, take a look to the [llama_client_node.py](llama_ros/llama_ros/llama_client_node.py) and [llava_client_node.py](llama_ros/llama_ros/llava_client_node.py) examples.
+Both llama_ros and llava_ros provide ROS 2 interfaces to access the main functionalities of the models. Here you have some examples of how to use them inside ROS 2 nodes. Moreover, take a look to the [llama_demo_node.py](llama_demos/llama_demos/llama_demo_node.py) and [llava_demo_node.py](llama_demos/llama_demos/llava_demo_node.py) demos.
 
 #### Tokenize
 

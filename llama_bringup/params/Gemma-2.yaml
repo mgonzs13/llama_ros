@@ -1,5 +1,3 @@
-embedding: False
-
 n_ctx: 2048
 n_batch: 8
 n_gpu_layers: 0
