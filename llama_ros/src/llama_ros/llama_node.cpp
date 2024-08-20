@@ -35,12 +35,51 @@ using namespace llama_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-LlamaNode::LlamaNode(bool load_llama) : rclcpp::Node("llama_node") {
+LlamaNode::LlamaNode()
+    : rclcpp_lifecycle::LifecycleNode("llama_node"), gpt_params(nullptr) {
+  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
+}
 
-  if (load_llama) {
-    this->llama = std::make_shared<Llama>(this->gpt_params.load_params(this),
-                                          this->gpt_params.debug);
+void LlamaNode::create_llama() {
+  this->llama = std::make_unique<Llama>(this->gpt_params->params,
+                                        this->gpt_params->debug);
+}
+
+void LlamaNode::destroy_llama() {
+  this->llama.reset();
+  this->llama = nullptr;
+}
+
+/*
+*****************************
+*         LIFECYCLE         *
+*****************************
+*/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
+
+  RCLCPP_INFO(get_logger(), "[%s] Configuring...", this->get_name());
+
+  if (this->gpt_params == nullptr) {
+    this->gpt_params =
+        std::make_unique<llama_utils::GptParams>(this->shared_from_this());
+    this->gpt_params->declare_params();
   }
+
+  this->gpt_params->get_params();
+  RCLCPP_INFO(get_logger(), "[%s] Configured", this->get_name());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+      CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
+
+  RCLCPP_INFO(get_logger(), "[%s] Activating...", this->get_name());
+
+  // create llama
+  this->create_llama();
 
   // services
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
@@ -61,7 +100,53 @@ LlamaNode::LlamaNode(bool load_llama) : rclcpp::Node("llama_node") {
           std::bind(&LlamaNode::handle_cancel, this, _1),
           std::bind(&LlamaNode::handle_accepted, this, _1));
 
-  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
+  RCLCPP_INFO(get_logger(), "[%s] Activated", this->get_name());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+      CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
+
+  RCLCPP_INFO(get_logger(), "[%s] Deactivating...", this->get_name());
+
+  this->destroy_llama();
+
+  this->tokenize_service_.reset();
+  this->tokenize_service_ = nullptr;
+
+  this->generate_embeddings_service_.reset();
+  this->generate_embeddings_service_ = nullptr;
+
+  this->goal_handle_ = nullptr;
+  this->generate_response_action_server_.reset();
+  this->generate_response_action_server_ = nullptr;
+
+  RCLCPP_INFO(get_logger(), "[%s] Deactivated", this->get_name());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+      CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LlamaNode::on_cleanup(const rclcpp_lifecycle::State &) {
+
+  RCLCPP_INFO(get_logger(), "[%s] Cleaning up...", this->get_name());
+  RCLCPP_INFO(get_logger(), "[%s] Cleaned up", this->get_name());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+      CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LlamaNode::on_shutdown(const rclcpp_lifecycle::State &) {
+
+  RCLCPP_INFO(get_logger(), "[%s] Shutting down...", this->get_name());
+  RCLCPP_INFO(get_logger(), "[%s] Shutted down", this->get_name());
+
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
+      CallbackReturn::SUCCESS;
 }
 
 /*
@@ -78,7 +163,7 @@ void LlamaNode::tokenize_service_callback(
 
 /*
 *****************************
-*    EMBEEDINGS SERVICE     *
+*    EMBEDDINGS SERVICE     *
 *****************************
 */
 void LlamaNode::generate_embeddings_service_callback(
@@ -144,7 +229,7 @@ void LlamaNode::execute(
     return;
   }
 
-  if (this->gpt_params.debug) {
+  if (this->gpt_params->debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 
@@ -155,9 +240,9 @@ void LlamaNode::execute(
 
   // update sampling params of gpt_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
-  this->gpt_params.update_sampling_params(sampling_config,
-                                          this->llama->get_n_vocab(),
-                                          this->llama->get_token_eos());
+  this->gpt_params->update_sampling_params(sampling_config,
+                                           this->llama->get_n_vocab(),
+                                           this->llama->get_token_eos());
 
   // call llama
   struct response_output output = this->llama->generate_response(

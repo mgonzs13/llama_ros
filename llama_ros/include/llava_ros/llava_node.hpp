@@ -49,8 +49,7 @@ public:
                             bool url = false);
 
 protected:
-  std::shared_ptr<Llava> llava;
-
+  void create_llama();
   bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
   void execute(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;

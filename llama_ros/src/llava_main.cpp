@@ -45,7 +45,15 @@ int main(int argc, char *argv[]) {
   sigaction(SIGINT, &sigint_action, NULL);
 
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<LlavaNode>());
+
+  auto node = std::make_shared<LlavaNode>();
+  node->configure();
+  node->activate();
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+  executor.spin();
+
   rclcpp::shutdown();
   return 0;
 }

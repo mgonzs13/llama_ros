@@ -273,7 +273,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   llama_set_embeddings(this->ctx, false);
 
   // load params
-  this->update_sampling_params(this->params->sparams);
+  this->update_sampling_context(this->params->sparams);
 
   // load prompt
   this->load_prompt(input_prompt, true, true);
@@ -671,7 +671,8 @@ struct completion_output Llama::sample() {
   return result;
 }
 
-void Llama::update_sampling_params(const struct llama_sampling_params &params) {
+void Llama::update_sampling_context(
+    const struct llama_sampling_params &params) {
 
   this->ctx_sampling->params = params;
 

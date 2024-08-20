@@ -39,12 +39,82 @@ void replace_all(std::string &input, const std::string &old_str,
   }
 }
 
-GptParams::GptParams() : debug(false) {
+GptParams::GptParams(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    : node(node), debug(false) {
   this->params = std::make_shared<struct gpt_params>();
 }
 
-std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
+void GptParams::declare_params() {
 
+  this->node->declare_parameters<int32_t>("", {
+                                                  {"seed", -1},
+                                                  {"n_ctx", 512},
+                                                  {"n_batch", 2048},
+                                                  {"n_ubatch", 512},
+                                                  {"n_gpu_layers", 0},
+                                                  {"main_gpu", 0},
+                                                  {"n_threads", 1},
+                                                  {"n_threads_batch", -1},
+                                                  {"n_predict", 128},
+                                                  {"n_keep", -1},
+                                                  {"grp_attn_n", 1},
+                                                  {"grp_attn_w", 512},
+                                                  {"n_parallel", 1},
+                                                  {"n_sequences", 1},
+                                                  {"yarn_orig_ctx", 0},
+                                              });
+  this->node->declare_parameters<std::string>("",
+                                              {
+                                                  {"model", ""},
+                                                  {"mmproj", ""},
+                                                  {"split_mode", "layer"},
+                                                  {"rope_scaling_type", ""},
+                                                  {"numa", "none"},
+                                                  {"pooling_type", ""},
+                                                  {"cache_type_k", "f16"},
+                                                  {"cache_type_v", "f16"},
+                                                  {"system_prompt", ""},
+                                                  {"system_prompt_file", ""},
+                                                  {"prefix", ""},
+                                                  {"suffix", ""},
+                                                  {"image_prefix", ""},
+                                                  {"image_suffix", ""},
+                                                  {"llava_params", "<image>"},
+                                              });
+  this->node->declare_parameter<std::vector<std::string>>(
+      "lora_adapters", std::vector<std::string>({}));
+  this->node->declare_parameter<std::vector<double>>("lora_adapters_scales",
+                                                     std::vector<double>({}));
+  this->node->declare_parameter<std::vector<std::string>>(
+      "stopping_words", std::vector<std::string>({}));
+  this->node->declare_parameters<float>("", {
+                                                {"rope_freq_base", 0.0f},
+                                                {"rope_freq_scale", 0.0f},
+                                                {"yarn_ext_factor", -1.0f},
+                                                {"yarn_attn_factor", 1.0f},
+                                                {"yarn_beta_fast", 32.0f},
+                                                {"yarn_beta_slow", 1.0f},
+                                            });
+  this->node->declare_parameter<std::vector<double>>(
+      "tensor_split", std::vector<double>({0.0}));
+  this->node->declare_parameters<bool>("", {
+                                               {"debug", true},
+                                               {"embedding", true},
+                                               {"logits_all", false},
+                                               {"use_mmap", true},
+                                               {"use_mlock", false},
+                                               {"cont_batching", true},
+                                               {"dump_kv_cache", false},
+                                               {"no_kv_offload", false},
+                                               {"warmup", true},
+                                               {"check_tensors", false},
+                                               {"flash_attn", false},
+                                           });
+}
+
+std::shared_ptr<struct gpt_params> GptParams::get_params() {
+
+  int32_t seed;
   std::string file_path;
 
   std::vector<std::string> lora_adapters;
@@ -57,134 +127,72 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   std::string numa;
   std::string pooling_type;
 
-  // llama params
-  node->declare_parameters<int32_t>("", {
-                                            {"seed", -1},
-                                            {"n_ctx", 512},
-                                            {"n_batch", 2048},
-                                            {"n_ubatch", 512},
-                                            {"n_gpu_layers", 0},
-                                            {"main_gpu", 0},
-                                            {"n_threads", 1},
-                                            {"n_threads_batch", -1},
-                                            {"n_predict", 128},
-                                            {"n_keep", -1},
-                                            {"grp_attn_n", 1},
-                                            {"grp_attn_w", 512},
-                                            {"n_parallel", 1},
-                                            {"n_sequences", 1},
-                                            {"yarn_orig_ctx", 0},
-                                        });
-  node->declare_parameters<std::string>("", {
-                                                {"model", ""},
-                                                {"mmproj", ""},
-                                                {"split_mode", "layer"},
-                                                {"rope_scaling_type", ""},
-                                                {"numa", "none"},
-                                                {"pooling_type", ""},
-                                                {"cache_type_k", "f16"},
-                                                {"cache_type_v", "f16"},
-                                                {"system_prompt", ""},
-                                                {"system_prompt_file", ""},
-                                                {"prefix", ""},
-                                                {"suffix", ""},
-                                                {"image_prefix", ""},
-                                                {"image_suffix", ""},
-                                                {"llava_params", "<image>"},
-                                            });
-  node->declare_parameter<std::vector<std::string>>(
-      "lora_adapters", std::vector<std::string>({}));
-  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
-                                               std::vector<double>({}));
-  node->declare_parameter<std::vector<std::string>>(
-      "stopping_words", std::vector<std::string>({}));
-  node->declare_parameters<float>("", {
-                                          {"rope_freq_base", 0.0f},
-                                          {"rope_freq_scale", 0.0f},
-                                          {"yarn_ext_factor", -1.0f},
-                                          {"yarn_attn_factor", 1.0f},
-                                          {"yarn_beta_fast", 32.0f},
-                                          {"yarn_beta_slow", 1.0f},
-                                      });
-  node->declare_parameter<std::vector<double>>("tensor_split",
-                                               std::vector<double>({0.0}));
-  node->declare_parameters<bool>("", {
-                                         {"debug", true},
-                                         {"embedding", true},
-                                         {"logits_all", false},
-                                         {"use_mmap", true},
-                                         {"use_mlock", false},
-                                         {"cont_batching", true},
-                                         {"dump_kv_cache", false},
-                                         {"no_kv_offload", false},
-                                         {"warmup", true},
-                                         {"check_tensors", false},
-                                         {"flash_attn", false},
-                                     });
+  this->node->get_parameter("seed", seed);
+  this->node->get_parameter("n_ctx", this->params->n_ctx);
+  this->node->get_parameter("n_batch", this->params->n_batch);
+  this->node->get_parameter("n_ubatch", this->params->n_ubatch);
 
-  node->get_parameter("seed", this->params->seed);
-  node->get_parameter("n_ctx", this->params->n_ctx);
-  node->get_parameter("n_batch", this->params->n_batch);
-  node->get_parameter("n_ubatch", this->params->n_ubatch);
+  this->node->get_parameter("n_gpu_layers", this->params->n_gpu_layers);
+  this->node->get_parameter("split_mode", split_mode);
+  this->node->get_parameter("main_gpu", this->params->main_gpu);
+  this->node->get_parameter("tensor_split", tensor_split);
 
-  node->get_parameter("n_gpu_layers", this->params->n_gpu_layers);
-  node->get_parameter("split_mode", split_mode);
-  node->get_parameter("main_gpu", this->params->main_gpu);
-  node->get_parameter("tensor_split", tensor_split);
+  this->node->get_parameter("embedding", this->params->embedding);
+  this->node->get_parameter("logits_all", this->params->logits_all);
+  this->node->get_parameter("use_mmap", this->params->use_mmap);
+  this->node->get_parameter("use_mlock", this->params->use_mlock);
+  this->node->get_parameter("warmup", this->params->warmup);
+  this->node->get_parameter("check_tensors", this->params->check_tensors);
+  this->node->get_parameter("flash_attn", this->params->flash_attn);
 
-  node->get_parameter("embedding", this->params->embedding);
-  node->get_parameter("logits_all", this->params->logits_all);
-  node->get_parameter("use_mmap", this->params->use_mmap);
-  node->get_parameter("use_mlock", this->params->use_mlock);
-  node->get_parameter("warmup", this->params->warmup);
-  node->get_parameter("check_tensors", this->params->check_tensors);
-  node->get_parameter("flash_attn", this->params->flash_attn);
+  this->node->get_parameter("dump_kv_cache", this->params->dump_kv_cache);
+  this->node->get_parameter("no_kv_offload", this->params->no_kv_offload);
+  this->node->get_parameter("cache_type_k", this->params->cache_type_k);
+  this->node->get_parameter("cache_type_v", this->params->cache_type_v);
 
-  node->get_parameter("dump_kv_cache", this->params->dump_kv_cache);
-  node->get_parameter("no_kv_offload", this->params->no_kv_offload);
-  node->get_parameter("cache_type_k", this->params->cache_type_k);
-  node->get_parameter("cache_type_v", this->params->cache_type_v);
+  this->node->get_parameter("n_threads", this->params->n_threads);
+  this->node->get_parameter("n_threads_batch", this->params->n_threads_batch);
+  this->node->get_parameter("n_predict", this->params->n_predict);
+  this->node->get_parameter("n_keep", this->params->n_keep);
+  this->node->get_parameter("n_batch", this->params->n_batch);
 
-  node->get_parameter("n_threads", this->params->n_threads);
-  node->get_parameter("n_threads_batch", this->params->n_threads_batch);
-  node->get_parameter("n_predict", this->params->n_predict);
-  node->get_parameter("n_keep", this->params->n_keep);
-  node->get_parameter("n_batch", this->params->n_batch);
+  this->node->get_parameter("grp_attn_n", this->params->grp_attn_n);
+  this->node->get_parameter("grp_attn_w", this->params->grp_attn_w);
 
-  node->get_parameter("grp_attn_n", this->params->grp_attn_n);
-  node->get_parameter("grp_attn_w", this->params->grp_attn_w);
+  this->node->get_parameter("rope_freq_base", this->params->rope_freq_base);
+  this->node->get_parameter("rope_freq_scale", this->params->rope_freq_scale);
+  this->node->get_parameter("rope_scaling_type", rope_scaling_type);
 
-  node->get_parameter("rope_freq_base", this->params->rope_freq_base);
-  node->get_parameter("rope_freq_scale", this->params->rope_freq_scale);
-  node->get_parameter("rope_scaling_type", rope_scaling_type);
+  this->node->get_parameter("yarn_ext_factor", this->params->yarn_ext_factor);
+  this->node->get_parameter("yarn_attn_factor", this->params->yarn_attn_factor);
+  this->node->get_parameter("yarn_beta_fast", this->params->yarn_beta_fast);
+  this->node->get_parameter("yarn_beta_slow", this->params->yarn_beta_slow);
+  this->node->get_parameter("yarn_orig_ctx", this->params->yarn_orig_ctx);
 
-  node->get_parameter("yarn_ext_factor", this->params->yarn_ext_factor);
-  node->get_parameter("yarn_attn_factor", this->params->yarn_attn_factor);
-  node->get_parameter("yarn_beta_fast", this->params->yarn_beta_fast);
-  node->get_parameter("yarn_beta_slow", this->params->yarn_beta_slow);
-  node->get_parameter("yarn_orig_ctx", this->params->yarn_orig_ctx);
+  this->node->get_parameter("model", this->params->model);
+  this->node->get_parameter("lora_adapters", lora_adapters);
+  this->node->get_parameter("lora_adapters_scales", lora_adapters_scales);
+  this->node->get_parameter("mmproj", this->params->mmproj);
+  this->node->get_parameter("numa", numa);
+  this->node->get_parameter("pooling_type", pooling_type);
 
-  node->get_parameter("model", this->params->model);
-  node->get_parameter("lora_adapters", lora_adapters);
-  node->get_parameter("lora_adapters_scales", lora_adapters_scales);
-  node->get_parameter("mmproj", this->params->mmproj);
-  node->get_parameter("numa", numa);
-  node->get_parameter("pooling_type", pooling_type);
+  this->node->get_parameter("n_parallel", this->params->n_parallel);
+  this->node->get_parameter("n_sequences", this->params->n_sequences);
+  this->node->get_parameter("cont_batching", this->params->cont_batching);
 
-  node->get_parameter("n_parallel", this->params->n_parallel);
-  node->get_parameter("n_sequences", this->params->n_sequences);
-  node->get_parameter("cont_batching", this->params->cont_batching);
+  this->node->get_parameter("prefix", this->params->input_prefix);
+  this->node->get_parameter("suffix", this->params->input_suffix);
+  this->node->get_parameter("stopping_words", stopping_words);
+  this->node->get_parameter("image_text", this->llava_params.image_text);
+  this->node->get_parameter("image_prefix", this->llava_params.image_prefix);
+  this->node->get_parameter("image_suffix", this->llava_params.image_suffix);
 
-  node->get_parameter("prefix", this->params->input_prefix);
-  node->get_parameter("suffix", this->params->input_suffix);
-  node->get_parameter("stopping_words", stopping_words);
-  node->get_parameter("image_text", this->llava_params.image_text);
-  node->get_parameter("image_prefix", this->llava_params.image_prefix);
-  node->get_parameter("image_suffix", this->llava_params.image_suffix);
+  this->node->get_parameter("system_prompt", this->params->prompt);
+  this->node->get_parameter("system_prompt_file", file_path);
+  this->node->get_parameter("debug", this->debug);
 
-  node->get_parameter("system_prompt", this->params->prompt);
-  node->get_parameter("system_prompt_file", file_path);
-  node->get_parameter("debug", this->debug);
+  // seed
+  this->params->seed = seed;
 
   // check threads number
   if (this->params->n_threads < 0) {
@@ -199,7 +207,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   if (lora_adapters.size()) {
     if (lora_adapters.size() != lora_adapters_scales.size()) {
       RCLCPP_ERROR(
-          node->get_logger(),
+          this->node->get_logger(),
           "lora_adapters and lora_adapters_scales must have the same size");
     } else {
 
@@ -274,7 +282,7 @@ std::shared_ptr<struct gpt_params> GptParams::load_params(rclcpp::Node *node) {
   if (!file_path.empty()) {
     std::ifstream file(file_path.c_str());
     if (!file) {
-      RCLCPP_ERROR(node->get_logger(), "Failed to open file %s",
+      RCLCPP_ERROR(this->node->get_logger(), "Failed to open file %s",
                    file_path.c_str());
     }
     std::copy(std::istreambuf_iterator<char>(file),

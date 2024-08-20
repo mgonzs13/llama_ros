@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(llama_msgs REQUIRED)
 find_package(llama_cpp_vendor REQUIRED)
 find_package(Threads REQUIRED)
@@ -56,6 +57,7 @@ target_link_libraries(llama_node
 ament_target_dependencies(llama_node
   rclcpp
   rclcpp_action
+  rclcpp_lifecycle
   llama_msgs
   llama_cpp_vendor
 )
@@ -78,6 +80,7 @@ target_link_libraries(llava_node
 ament_target_dependencies(llava_node
   rclcpp
   rclcpp_action
+  rclcpp_lifecycle
   llama_msgs
   llama_cpp_vendor
   cv_bridge

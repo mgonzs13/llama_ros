@@ -25,6 +25,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include <memory>
 #include <string>
@@ -39,19 +40,36 @@
 
 namespace llama_ros {
 
-class LlamaNode : public rclcpp::Node {
+using CallbackReturn =
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
+class LlamaNode : public rclcpp_lifecycle::LifecycleNode {
 
   using GenerateResponse = llama_msgs::action::GenerateResponse;
   using GoalHandleGenerateResponse =
       rclcpp_action::ServerGoalHandle<GenerateResponse>;
 
 public:
-  LlamaNode(bool load_llama = true);
+  LlamaNode();
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &);
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State &);
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State &);
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State &);
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_shutdown(const rclcpp_lifecycle::State &);
 
 protected:
-  std::shared_ptr<Llama> llama;
-  llama_utils::GptParams gpt_params;
+  std::unique_ptr<Llama> llama;
+  std::unique_ptr<llama_utils::GptParams> gpt_params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
+
+  virtual void create_llama();
+  void destroy_llama();
 
   virtual bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal);
   virtual void

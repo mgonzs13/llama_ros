@@ -38,12 +38,12 @@ using namespace llava_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-LlavaNode::LlavaNode() : llama_ros::LlamaNode(false) {
-  this->llava = std::make_shared<Llava>(this->gpt_params.load_params(this),
-                                        this->gpt_params.llava_params,
-                                        this->gpt_params.debug);
-  this->llama = std::dynamic_pointer_cast<llama_ros::Llama>(this->llava);
-  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
+LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
+
+void LlavaNode::create_llama() {
+  this->llama = std::make_unique<Llava>(this->gpt_params->params,
+                                        this->gpt_params->llava_params,
+                                        this->gpt_params->debug);
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -59,7 +59,7 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
-    if (this->gpt_params.debug) {
+    if (this->gpt_params->debug) {
       RCLCPP_INFO(this->get_logger(), "Loading image");
     }
 
@@ -71,7 +71,7 @@ void LlavaNode::execute(
     auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
     std::string encoded_image = this->base64_encode(enc_msg, buf.size());
 
-    if (!this->llava->load_image(encoded_image)) {
+    if (!static_cast<Llava *>(this->llama.get())->load_image(encoded_image)) {
       this->goal_handle_->abort(result);
       RCLCPP_INFO(this->get_logger(), "Failed to load image");
       return;

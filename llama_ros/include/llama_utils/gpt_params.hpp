@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include "common.h"
 #include "llama.h"
@@ -36,12 +37,17 @@ namespace llama_utils {
 class GptParams {
 
 public:
-  GptParams();
-  std::shared_ptr<struct gpt_params> load_params(rclcpp::Node *node);
+  GptParams(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
+
+  void declare_params();
+  std::shared_ptr<struct gpt_params> get_params();
   bool
   update_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
                          int n_vocab, llama_token token_eos);
 
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node;
+
+  // params
   bool debug;
   struct llava_ros::llava_params llava_params;
   std::shared_ptr<struct gpt_params> params;

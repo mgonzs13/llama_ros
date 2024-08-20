@@ -116,6 +116,7 @@ bool Llava::load_image(std::string base64_str) {
 
   this->free_image();
 
+  LLAMA_LOG_INFO("Converting base64 image to embeddings");
   this->image_embed = this->base64_image_to_embed(base64_str);
 
   if (this->image_embed == nullptr) {
