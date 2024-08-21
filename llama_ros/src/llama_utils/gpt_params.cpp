@@ -79,7 +79,7 @@ void GptParams::declare_params() {
                                                   {"suffix", ""},
                                                   {"image_prefix", ""},
                                                   {"image_suffix", ""},
-                                                  {"llava_params", "<image>"},
+                                                  {"image_text", "<image>"},
                                               });
   this->node->declare_parameter<std::vector<std::string>>(
       "lora_adapters", std::vector<std::string>({}));
@@ -183,9 +183,9 @@ std::shared_ptr<struct gpt_params> GptParams::get_params() {
   this->node->get_parameter("prefix", this->params->input_prefix);
   this->node->get_parameter("suffix", this->params->input_suffix);
   this->node->get_parameter("stopping_words", stopping_words);
-  this->node->get_parameter("image_text", this->llava_params.image_text);
   this->node->get_parameter("image_prefix", this->llava_params.image_prefix);
   this->node->get_parameter("image_suffix", this->llava_params.image_suffix);
+  this->node->get_parameter("image_text", this->llava_params.image_text);
 
   this->node->get_parameter("system_prompt", this->params->prompt);
   this->node->get_parameter("system_prompt_file", file_path);
@@ -358,7 +358,7 @@ bool GptParams::update_sampling_params(
   }
 
   // add llama_token_eos
-  if (params->ignore_eos) {
+  if (this->params->ignore_eos) {
     this->params->sparams.logit_bias[token_eos] = -INFINITY;
   }
 
