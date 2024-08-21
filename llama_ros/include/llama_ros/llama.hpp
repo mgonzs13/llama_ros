@@ -95,6 +95,7 @@ public:
                                     std::vector<std::string> stop = {});
 
   const struct llama_context *get_ctx() { return this->ctx; }
+  const struct llama_model *get_model() { return this->model; }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }

@@ -1,0 +1,3 @@
+Message[] messages           # List of chat messages
+---
+string formatted_prompt      # Prompt formatted by the model

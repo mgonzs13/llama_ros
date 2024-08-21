@@ -18,9 +18,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LogitBias.msg"
   "msg/LogitBiasArray.msg"
   "msg/SamplingConfig.msg"
+  "msg/Message.msg"
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"
+  "srv/ChatMessages.srv"
   DEPENDENCIES sensor_msgs
 )
 
