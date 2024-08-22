@@ -34,24 +34,22 @@
 
 namespace llama_utils {
 
-class GptParams {
-
-public:
-  GptParams(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
-
-  void declare_params();
-  std::shared_ptr<struct gpt_params> get_params();
-  bool
-  update_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
-                         int n_vocab, llama_token token_eos);
-
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node;
-
-  // params
+struct llama_params {
   bool debug;
+  struct gpt_params params;
   struct llava_ros::llava_params llava_params;
-  std::shared_ptr<struct gpt_params> params;
 };
+
+void declare_llama_params(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+
+struct llama_params
+get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+
+struct llama_sampling_params
+parse_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
+                      int n_vocab, llama_token token_eos);
+
 } // namespace llama_utils
 
 #endif

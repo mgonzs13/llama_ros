@@ -78,8 +78,8 @@ using GenerateResponseCallback = std::function<void(struct completion_output)>;
 class Llama {
 
 public:
-  Llama(std::shared_ptr<struct gpt_params> params, bool debug);
-  ~Llama();
+  Llama(const struct gpt_params &params, bool debug);
+  virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
                                     bool special = false);
@@ -91,6 +91,12 @@ public:
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
   response_output generate_response(const std::string &input_prompt,
+                                    struct llama_sampling_params sparams,
+                                    bool ignore_eos = false,
+                                    GenerateResponseCallback callbakc = nullptr,
+                                    std::vector<std::string> stop = {});
+  response_output generate_response(const std::string &input_prompt,
+                                    bool ignore_eos = false,
                                     GenerateResponseCallback callbakc = nullptr,
                                     std::vector<std::string> stop = {});
 
@@ -99,12 +105,12 @@ public:
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
-  bool is_embedding() { return this->params->embedding; }
+  bool is_embedding() { return this->params.embedding; }
   bool add_bos_token() { return llama_add_bos_token(this->model); }
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  std::shared_ptr<struct gpt_params> params;
+  struct gpt_params params;
 
   // model
   struct llama_context *ctx;

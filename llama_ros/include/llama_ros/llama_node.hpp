@@ -65,7 +65,8 @@ public:
 
 protected:
   std::unique_ptr<Llama> llama;
-  std::unique_ptr<llama_utils::GptParams> gpt_params;
+  bool params_declared;
+  struct llama_utils::llama_params params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
   virtual void create_llama();

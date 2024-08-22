@@ -44,17 +44,11 @@ struct llava_params {
   std::string image_suffix = "";
 };
 
-struct llava_context {
-  struct clip_ctx *ctx_clip = NULL;
-  struct llama_context *ctx_llama = NULL;
-  struct llama_model *model = NULL;
-};
-
 class Llava : public llama_ros::Llama {
 
 public:
-  Llava(std::shared_ptr<struct gpt_params> params,
-        struct llava_params llava_params, bool debug = false);
+  Llava(const struct gpt_params &params,
+        const struct llava_params &llava_params, bool debug = false);
   ~Llava();
 
   bool load_image(std::string base64_str);
@@ -68,7 +62,7 @@ protected:
   bool eval_prompt();
 
   struct llava_image_embed *image_embed;
-  struct llava_context *ctx_llava;
+  struct clip_ctx *ctx_clip;
   struct llava_params llava_params;
 
 private:

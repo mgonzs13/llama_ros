@@ -30,34 +30,19 @@
 
 using namespace llava_ros;
 
-Llava::Llava(std::shared_ptr<struct gpt_params> params,
-             struct llava_params llava_params, bool debug)
+Llava::Llava(const struct gpt_params &params,
+             const struct llava_params &llava_params, bool debug)
     : llama_ros::Llama(params, debug), llava_params(llava_params) {
 
   // load clip model
-  const char *clip_path = this->params->mmproj.c_str();
-  auto ctx_clip = clip_model_load(clip_path, 1);
+  const char *clip_path = this->params.mmproj.c_str();
+  this->ctx_clip = clip_model_load(clip_path, 1);
   this->image_embed = nullptr;
-
-  // create llava ctx
-  this->ctx_llava = (struct llava_context *)malloc(sizeof(llava_context));
-
-  this->ctx_llava->ctx_llama = this->ctx;
-  this->ctx_llava->ctx_clip = ctx_clip;
-  this->ctx_llava->model = this->model;
 }
 
 Llava::~Llava() {
-  if (this->ctx_llava->ctx_clip) {
-    clip_free(this->ctx_llava->ctx_clip);
-    this->ctx_llava->ctx_clip = NULL;
-  }
-
+  clip_free(this->ctx_clip);
   this->free_image();
-
-  this->llama_ros::Llama::~Llama();
-
-  free(this->ctx_llava);
 }
 
 /*
@@ -141,9 +126,9 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   auto img_bytes = std::vector<unsigned char>(required_bytes);
   base64::decode(base64_str.begin(), base64_str.end(), img_bytes.begin());
 
-  auto embed = llava_image_embed_make_with_bytes(
-      this->ctx_llava->ctx_clip, this->params->n_threads, img_bytes.data(),
-      img_bytes.size());
+  auto embed =
+      llava_image_embed_make_with_bytes(this->ctx_clip, this->params.n_threads,
+                                        img_bytes.data(), img_bytes.size());
 
   if (!embed) {
     LLAMA_LOG_ERROR("Could not load image from base64 string");
@@ -163,12 +148,12 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
   int n_embd = this->get_n_embd();
   bool succ = true;
 
-  for (int i = 0; i < image_embed->n_image_pos; i += this->params->n_batch) {
+  for (int i = 0; i < image_embed->n_image_pos; i += this->params.n_batch) {
 
     int n_eval = image_embed->n_image_pos - i;
 
-    if (n_eval > this->params->n_batch) {
-      n_eval = this->params->n_batch;
+    if (n_eval > this->params.n_batch) {
+      n_eval = this->params.n_batch;
     }
 
     llama_batch batch = {
