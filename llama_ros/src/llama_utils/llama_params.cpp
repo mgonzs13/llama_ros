@@ -26,7 +26,7 @@
 #include "json-schema-to-grammar.h"
 #include "json.hpp"
 
-#include "llama_utils/gpt_params.hpp"
+#include "llama_utils/llama_params.hpp"
 
 using namespace llama_utils;
 

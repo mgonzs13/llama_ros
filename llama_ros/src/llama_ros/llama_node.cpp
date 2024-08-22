@@ -30,7 +30,7 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
-#include "llama_utils/gpt_params.hpp"
+#include "llama_utils/llama_params.hpp"
 
 using namespace llama_ros;
 using std::placeholders::_1;

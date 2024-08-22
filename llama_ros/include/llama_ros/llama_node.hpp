@@ -36,7 +36,7 @@
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
 #include "llama_ros/llama.hpp"
-#include "llama_utils/gpt_params.hpp"
+#include "llama_utils/llama_params.hpp"
 
 namespace llama_ros {
 
