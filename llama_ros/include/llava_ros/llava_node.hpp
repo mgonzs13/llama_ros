@@ -49,7 +49,7 @@ public:
                             bool url = false);
 
 protected:
-  void create_llama();
+  void create_llama() override;
   bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
   void execute(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;

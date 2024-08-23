@@ -37,7 +37,7 @@
 #include "llama_msgs/srv/tokenize.hpp"
 #include "llama_msgs/srv/chat_messages.hpp"
 #include "llama_ros/llama.hpp"
-#include "llama_utils/gpt_params.hpp"
+#include "llama_utils/llama_params.hpp"
 
 namespace llama_ros {
 
@@ -66,7 +66,8 @@ public:
 
 protected:
   std::unique_ptr<Llama> llama;
-  std::unique_ptr<llama_utils::GptParams> gpt_params;
+  bool params_declared;
+  struct llama_utils::llama_params params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
   virtual void create_llama();

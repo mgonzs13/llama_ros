@@ -30,19 +30,18 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
+#include "llama_utils/llama_params.hpp"
 
 using namespace llama_ros;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
 LlamaNode::LlamaNode()
-    : rclcpp_lifecycle::LifecycleNode("llama_node"), gpt_params(nullptr) {
-  RCLCPP_INFO(this->get_logger(), "%s started", this->get_name());
-}
+    : rclcpp_lifecycle::LifecycleNode("llama_node"), params_declared(false) {}
 
 void LlamaNode::create_llama() {
-  this->llama = std::make_unique<Llama>(this->gpt_params->params,
-                                        this->gpt_params->debug);
+  this->llama =
+      std::make_unique<Llama>(this->params.params, this->params.debug);
 }
 
 void LlamaNode::destroy_llama() {
@@ -60,14 +59,12 @@ LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
 
   RCLCPP_INFO(get_logger(), "[%s] Configuring...", this->get_name());
 
-  if (this->gpt_params == nullptr) {
-    this->gpt_params =
-        std::make_unique<llama_utils::GptParams>(this->shared_from_this());
-    this->gpt_params->declare_params();
+  if (!this->params_declared) {
+    this->params_declared = true;
+    llama_utils::declare_llama_params(this->shared_from_this());
   }
 
-  this->gpt_params->get_params();
-
+  this->params = llama_utils::get_llama_params(this->shared_from_this());
   RCLCPP_INFO(get_logger(), "[%s] Configured", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
@@ -260,7 +257,7 @@ void LlamaNode::execute(
     return;
   }
 
-  if (this->gpt_params->debug) {
+  if (this->params.debug) {
     RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
   }
 
@@ -271,13 +268,14 @@ void LlamaNode::execute(
 
   // update sampling params of gpt_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
-  this->gpt_params->update_sampling_params(sampling_config,
-                                           this->llama->get_n_vocab(),
-                                           this->llama->get_token_eos());
+  auto sparams = llama_utils::parse_sampling_params(
+      sampling_config, this->llama->get_n_vocab(),
+      this->llama->get_token_eos());
 
   // call llama
   struct response_output output = this->llama->generate_response(
-      prompt, std::bind(&LlamaNode::send_text, this, _1));
+      prompt, sparams, sampling_config.ignore_eos,
+      std::bind(&LlamaNode::send_text, this, _1));
 
   if (output.stop == stop_type::FULL_STOP) {
     auto completion_results = output.completions;
