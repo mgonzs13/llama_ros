@@ -88,8 +88,8 @@ public:
   void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<llama_chat_msg> chat_msgs) {
-    return llama_chat_apply_template(this->get_model(), "", chat_msgs, true);
+  std::string format_chat_prompt(std::vector<llama_chat_msg> chat_msgs, bool add_ass) {
+    return llama_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
   }
 
   embeddings_ouput generate_embeddings(const std::string &input_prompt,

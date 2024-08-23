@@ -202,7 +202,7 @@ void LlamaNode::format_chat_service_callback(
     converted_messages.push_back(aux);
   }
 
-  std::string formatted_chat = this->llama->format_chat_prompt(converted_messages);
+  std::string formatted_chat = this->llama->format_chat_prompt(converted_messages, request->add_ass);
 
   response->formatted_prompt = formatted_chat;
 }

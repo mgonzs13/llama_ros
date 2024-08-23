@@ -1,3 +1,4 @@
 from llama_ros.langchain.llama_ros import LlamaROS
+from llama_ros.langchain.chat_formatted_llama_ros import FormatttedChatLlamaROS
 from llama_ros.langchain.chat_prompt_formatter import ChatPromptFormatter
 from llama_ros.langchain.llama_ros_embeddings import LlamaROSEmbeddings
