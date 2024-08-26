@@ -50,7 +50,7 @@ void llama_utils::declare_llama_params(
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
-                                            {"n_threads_batch", -1},
+                                            {"n_threads_batch", 1},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
                                             {"grp_attn_n", 1},
