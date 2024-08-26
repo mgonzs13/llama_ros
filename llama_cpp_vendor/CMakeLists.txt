@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b3617
+  GIT_TAG        b3623
 )
 
 FetchContent_MakeAvailable(llama)
