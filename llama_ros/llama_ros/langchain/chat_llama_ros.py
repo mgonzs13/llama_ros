@@ -29,7 +29,7 @@ import numpy as np
 from llama_ros.langchain import LlamaROSCommon
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.msg import Message
-from llama_msgs.srv import ChatMessages
+from llama_msgs.srv import FormatChatMessages
 from action_msgs.msg import GoalStatus
 
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -47,8 +47,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _messages_to_chat_messages(self, messages: List[BaseMessage]) -> tuple[ChatMessages.Request, Optional[str], Optional[np.ndarray]]:
-        chat_messages = ChatMessages.Request()
+    def _messages_to_chat_messages(self, messages: List[BaseMessage]) -> tuple[FormatChatMessages.Request, Optional[str], Optional[np.ndarray]]:
+        chat_messages = FormatChatMessages.Request()
         image_url = None
         image = None
 

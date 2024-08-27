@@ -23,7 +23,7 @@
 
 
 from langchain_core.runnables import chain
-from llama_msgs.srv import ChatMessages
+from llama_msgs.srv import FormatChatMessages
 from llama_msgs.msg import Message
 from llama_ros.llama_client_node import LlamaClientNode
 
@@ -40,6 +40,6 @@ def ChatPromptFormatter(messages):
         output_msgs.append(new_msg)
 
     response = client.format_chat_prompt(
-        ChatMessages.Request(messages=output_msgs))
+        FormatChatMessages.Request(messages=output_msgs))
 
     return response.formatted_prompt

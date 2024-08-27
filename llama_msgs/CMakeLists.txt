@@ -22,7 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"
-  "srv/ChatMessages.srv"
+  "srv/FormatChatMessages.srv"
   DEPENDENCIES sensor_msgs
 )
 
