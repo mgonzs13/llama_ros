@@ -88,6 +88,10 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
           "generate_embeddings",
           std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
                     _2));
+  this->format_chat_service_ =
+      this->create_service<llama_msgs::srv::ChatMessages>(
+          "format_chat_prompt",
+          std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
 
   // generate response action server
   this->goal_handle_ = nullptr;
@@ -116,6 +120,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->generate_embeddings_service_.reset();
   this->generate_embeddings_service_ = nullptr;
+
+  this->format_chat_service_.reset();
+  this->format_chat_service_ = nullptr;
 
   this->goal_handle_ = nullptr;
   this->generate_response_action_server_.reset();
@@ -172,6 +179,30 @@ void LlamaNode::generate_embeddings_service_callback(
       this->llama->generate_embeddings(request->prompt, request->normalize);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
+}
+
+/*
+*****************************
+*    FORMAT CHAT SERVICE     *
+*****************************
+*/
+void LlamaNode::format_chat_service_callback(
+    const std::shared_ptr<llama_msgs::srv::ChatMessages::Request> request,
+    std::shared_ptr<llama_msgs::srv::ChatMessages::Response> response) {
+
+  std::vector<llama_chat_msg> converted_messages;
+  for (auto message : request->messages) {
+    llama_chat_msg aux;
+    aux.role = message.role.c_str();
+    aux.content = message.content.c_str();
+
+    converted_messages.push_back(aux);
+  }
+
+  std::string formatted_chat =
+      this->llama->format_chat_prompt(converted_messages, request->add_ass);
+
+  response->formatted_prompt = formatted_chat;
 }
 
 /*

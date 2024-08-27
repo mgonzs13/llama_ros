@@ -88,6 +88,11 @@ public:
   void reset();
   void cancel();
 
+  std::string format_chat_prompt(std::vector<llama_chat_msg> chat_msgs,
+                                 bool add_ass) {
+    return llama_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
+  }
+
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
   response_output generate_response(const std::string &input_prompt,
@@ -101,6 +106,7 @@ public:
                                     std::vector<std::string> stop = {});
 
   const struct llama_context *get_ctx() { return this->ctx; }
+  const struct llama_model *get_model() { return this->model; }
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }

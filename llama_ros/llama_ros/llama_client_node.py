@@ -35,6 +35,7 @@ from rclpy.executors import MultiThreadedExecutor
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
 from llama_msgs.srv import GenerateEmbeddings
+from llama_msgs.srv import ChatMessages
 from llama_msgs.action import GenerateResponse
 from llama_msgs.msg import PartialResponse
 
@@ -97,6 +98,12 @@ class LlamaClientNode(Node):
             callback_group=self._callback_group
         )
 
+        self._format_chat_srv_client = self.create_client(
+            ChatMessages,
+            "format_chat_prompt",
+            callback_group=self._callback_group
+        )
+
         # executor
         self._executor = MultiThreadedExecutor()
         self._executor.add_node(self)
@@ -104,10 +111,16 @@ class LlamaClientNode(Node):
         self._spin_thread.start()
 
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
+        self._tokenize_srv_client.wait_for_service()
         return self._tokenize_srv_client.call(req)
 
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
+        self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
+    
+    def format_chat_prompt(self, req: ChatMessages.Request) -> ChatMessages.Response:
+        self._format_chat_srv_client.wait_for_service()
+        return self._format_chat_srv_client.call(req)
 
     def generate_response(
         self,

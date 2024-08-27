@@ -20,5 +20,11 @@ install(PROGRAMS
   RENAME llava_demo_node
 )
 
+install(PROGRAMS
+  llama_demos/chatllama_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME chatllama_demo_node
+)
+
 ament_python_install_package(${PROJECT_NAME})
 ament_package()
