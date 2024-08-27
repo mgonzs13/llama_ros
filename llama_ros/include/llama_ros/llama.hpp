@@ -48,6 +48,12 @@ struct token_prob {
   float probability;
 };
 
+struct lora {
+  int id;
+  std::string path;
+  float scale;
+};
+
 struct completion_output {
   std::vector<token_prob> probs;
   llama_token token;
@@ -88,10 +94,10 @@ public:
   void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<llama_chat_msg> chat_msgs,
-                                 bool add_ass) {
-    return llama_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
-  }
+  std::string format_chat_prompt(std::vector<struct llama_chat_msg> chat_msgs,
+                                 bool add_ass);
+  std::vector<struct lora> list_loras();
+  void update_loras(std::vector<struct lora> loras);
 
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
@@ -121,6 +127,7 @@ protected:
   // model
   struct llama_context *ctx;
   struct llama_model *model;
+  std::vector<struct llama_lora_adapter_container> lora_adapters;
   struct llama_sampling_context *ctx_sampling;
 
   // aux

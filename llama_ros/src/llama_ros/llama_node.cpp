@@ -27,6 +27,7 @@
 
 #include "common.h"
 #include "llama.h"
+#include "llama_msgs/msg/lo_ra.hpp"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
@@ -92,6 +93,13 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
       this->create_service<llama_msgs::srv::FormatChatMessages>(
           "format_chat_prompt",
           std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
+  this->list_loras_service_ = this->create_service<llama_msgs::srv::ListLoRAs>(
+      "list_loras",
+      std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
+  this->update_loras_service_ =
+      this->create_service<llama_msgs::srv::UpdateLoRAs>(
+          "update_loras",
+          std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
 
   // generate response action server
   this->goal_handle_ = nullptr;
@@ -183,7 +191,7 @@ void LlamaNode::generate_embeddings_service_callback(
 
 /*
 *****************************
-*    FORMAT CHAT SERVICE     *
+*    FORMAT CHAT SERVICE    *
 *****************************
 */
 void LlamaNode::format_chat_service_callback(
@@ -203,6 +211,51 @@ void LlamaNode::format_chat_service_callback(
       this->llama->format_chat_prompt(converted_messages, request->add_ass);
 
   response->formatted_prompt = formatted_chat;
+}
+
+/*
+*******************************
+*            LORAS            *
+*******************************
+*/
+void LlamaNode::list_loras_service_callback(
+    const std::shared_ptr<llama_msgs::srv::ListLoRAs::Request> request,
+    std::shared_ptr<llama_msgs::srv::ListLoRAs::Response> response) {
+
+  (void)request;
+
+  auto loras = this->llama->list_loras();
+
+  for (auto lora : loras) {
+
+    llama_msgs::msg::LoRA lora_msg;
+    lora_msg.id = lora.id;
+    lora_msg.path = lora.path;
+    lora_msg.scale = lora.scale;
+
+    response->loras.push_back(lora_msg);
+  }
+}
+
+void LlamaNode::update_loras_service_callback(
+    const std::shared_ptr<llama_msgs::srv::UpdateLoRAs::Request> request,
+    std::shared_ptr<llama_msgs::srv::UpdateLoRAs::Response> response) {
+
+  (void)response;
+
+  std::vector<struct lora> loras;
+
+  for (auto lora_msg : request->loras) {
+
+    struct lora lora_aux;
+    lora_aux.id = lora_msg.id;
+    lora_aux.path = lora_msg.path;
+    lora_aux.scale = lora_msg.scale;
+
+    loras.push_back(lora_aux);
+  }
+
+  this->llama->update_loras(loras);
 }
 
 /*

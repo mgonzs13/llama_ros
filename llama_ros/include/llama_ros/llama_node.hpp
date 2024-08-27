@@ -35,7 +35,9 @@
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/srv/format_chat_messages.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
+#include "llama_msgs/srv/list_lo_r_as.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
+#include "llama_msgs/srv/update_lo_r_as.hpp"
 #include "llama_ros/llama.hpp"
 #include "llama_utils/llama_params.hpp"
 
@@ -85,6 +87,9 @@ private:
       generate_embeddings_service_;
   rclcpp::Service<llama_msgs::srv::FormatChatMessages>::SharedPtr
       format_chat_service_;
+  rclcpp::Service<llama_msgs::srv::ListLoRAs>::SharedPtr list_loras_service_;
+  rclcpp::Service<llama_msgs::srv::UpdateLoRAs>::SharedPtr
+      update_loras_service_;
   rclcpp_action::Server<GenerateResponse>::SharedPtr
       generate_response_action_server_;
 
@@ -100,6 +105,12 @@ private:
       const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request>
           request,
       std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response);
+  void list_loras_service_callback(
+      const std::shared_ptr<llama_msgs::srv::ListLoRAs::Request> request,
+      std::shared_ptr<llama_msgs::srv::ListLoRAs::Response> response);
+  void update_loras_service_callback(
+      const std::shared_ptr<llama_msgs::srv::UpdateLoRAs::Request> request,
+      std::shared_ptr<llama_msgs::srv::UpdateLoRAs::Response> response);
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,

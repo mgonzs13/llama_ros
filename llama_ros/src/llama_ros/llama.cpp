@@ -43,9 +43,11 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  llama_init_result llama_init = llama_init_from_gpt_params(this->params);
+  struct llama_init_result llama_init =
+      llama_init_from_gpt_params(this->params);
   this->model = llama_init.model;
   this->ctx = llama_init.context;
+  this->lora_adapters = llama_init.lora_adapters;
 
   llama_set_embeddings(this->ctx, false);
   this->ctx_sampling = llama_sampling_init(this->params.sparams);
@@ -99,30 +101,6 @@ Llama::~Llama() {
 
 /*
 *****************************
-*          TOKENIZE         *
-*         DETOKENIZE        *
-*****************************
-*/
-std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
-                                         bool special) {
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
-  return llama_tokenize(this->ctx, text, add_bos, special);
-}
-
-std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
-
-  std::string text;
-
-  for (llama_token t : tokens) {
-    text.append(llama_token_to_piece(this->ctx, t));
-  }
-
-  return text;
-}
-
-/*
-*****************************
 *           RESET           *
 *           CANCEL          *
 *****************************
@@ -149,6 +127,30 @@ void Llama::reset() {
   if (this->params.n_keep < 0) {
     this->params.n_keep = (int)this->prompt_tokens.size();
   }
+}
+
+/*
+*****************************
+*          TOKENIZE         *
+*         DETOKENIZE        *
+*****************************
+*/
+std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
+                                         bool special) {
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+  return llama_tokenize(this->ctx, text, add_bos, special);
+}
+
+std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+
+  std::string text;
+
+  for (llama_token t : tokens) {
+    text.append(llama_token_to_piece(this->ctx, t));
+  }
+
+  return text;
 }
 
 void Llama::cancel() { this->canceled = true; }
@@ -245,6 +247,62 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
   output.n_tokens = tokens.size();
 
   return output;
+}
+
+/*
+*****************************
+*    FORMAT CHAT SERVICE    *
+*****************************
+*/
+std::string
+Llama::format_chat_prompt(std::vector<struct llama_chat_msg> chat_msgs,
+                          bool add_ass) {
+  return llama_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
+}
+
+/*
+*******************************
+*            LORAS            *
+*******************************
+*/
+std::vector<struct lora> Llama::list_loras() {
+
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+
+  std::vector<struct lora> loras;
+
+  for (size_t i = 0; i < this->lora_adapters.size(); ++i) {
+    auto &lora_i = this->lora_adapters[i];
+
+    struct lora lora_aux;
+    lora_aux.id = i;
+    lora_aux.path = lora_i.path;
+    lora_aux.scale = lora_i.scale;
+
+    loras.push_back(lora_aux);
+  }
+
+  return loras;
+}
+
+void Llama::update_loras(std::vector<struct lora> loras) {
+
+  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+
+  for (auto lora : loras) {
+    if (lora.id >= 0 && lora.id <= (int)this->lora_adapters.size()) {
+
+      LLAMA_LOG_INFO("Updating LoRA (%d: '%s') from %f to %f", lora.id,
+                     this->lora_adapters[lora.id].path.c_str(),
+                     this->lora_adapters[lora.id].scale, lora.scale);
+      this->lora_adapters[lora.id].scale = lora.scale;
+
+    } else {
+      LLAMA_LOG_ERROR("Invalid LoRA id: %d", lora.id);
+    }
+  }
+
+  llama_lora_adapters_apply(this->ctx, this->lora_adapters);
 }
 
 /*
