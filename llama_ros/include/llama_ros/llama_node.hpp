@@ -33,9 +33,9 @@
 #include "common.h"
 #include "llama.h"
 #include "llama_msgs/action/generate_response.hpp"
+#include "llama_msgs/srv/chat_messages.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
-#include "llama_msgs/srv/chat_messages.hpp"
 #include "llama_ros/llama.hpp"
 #include "llama_utils/llama_params.hpp"
 
@@ -83,7 +83,8 @@ private:
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;
   rclcpp::Service<llama_msgs::srv::GenerateEmbeddings>::SharedPtr
       generate_embeddings_service_;
-  rclcpp::Service<llama_msgs::srv::ChatMessages>::SharedPtr format_chat_service_;
+  rclcpp::Service<llama_msgs::srv::ChatMessages>::SharedPtr
+      format_chat_service_;
   rclcpp_action::Server<GenerateResponse>::SharedPtr
       generate_response_action_server_;
 
@@ -96,8 +97,8 @@ private:
           request,
       std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response);
   void format_chat_service_callback(
-        const std::shared_ptr<llama_msgs::srv::ChatMessages::Request> request,
-        std::shared_ptr<llama_msgs::srv::ChatMessages::Response> response);
+      const std::shared_ptr<llama_msgs::srv::ChatMessages::Request> request,
+      std::shared_ptr<llama_msgs::srv::ChatMessages::Response> response);
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,

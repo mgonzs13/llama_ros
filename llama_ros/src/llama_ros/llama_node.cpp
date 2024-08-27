@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "llama.h"
 #include "common.h"
+#include "llama.h"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
@@ -88,10 +88,10 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
           "generate_embeddings",
           std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
                     _2));
-  this->format_chat_service_ = this->create_service<llama_msgs::srv::ChatMessages>(
+  this->format_chat_service_ =
+      this->create_service<llama_msgs::srv::ChatMessages>(
           "format_chat_prompt",
-          std::bind(&LlamaNode::format_chat_service_callback, this, _1,
-                    _2));
+          std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
 
   // generate response action server
   this->goal_handle_ = nullptr;
@@ -199,7 +199,8 @@ void LlamaNode::format_chat_service_callback(
     converted_messages.push_back(aux);
   }
 
-  std::string formatted_chat = this->llama->format_chat_prompt(converted_messages, request->add_ass);
+  std::string formatted_chat =
+      this->llama->format_chat_prompt(converted_messages, request->add_ass);
 
   response->formatted_prompt = formatted_chat;
 }
