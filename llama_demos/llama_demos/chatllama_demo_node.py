@@ -74,7 +74,7 @@ class ChatLlamaDemoNode(Node):
                 SystemMessage(
                     "You are a IA that just answer with a single word."),
                 HumanMessage(content=[
-                    {"type": "text", "text": "<image>\nWhat is the character in the middle of the image?"},
+                    {"type": "text", "text": "<image>\nWho is the character in the middle of the image?"},
                     {"type": "image_url", "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}
                 ])
             ]

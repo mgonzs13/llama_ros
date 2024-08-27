@@ -432,17 +432,16 @@ stop_type
 Llama::find_stop(std::vector<struct completion_output> completion_result_list,
                  std::vector<std::string> stopping_words) {
 
-  // check if stop appears at the end of the output
+  // check if stopping word appear at the end of the output
   const int n_prev = 32;
   const std::string last_output =
       llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
 
-  if (this->params.antiprompt.at(0).size() &&
-      last_output.find(
-          this->params.antiprompt.at(0).c_str(),
-          last_output.length() - this->params.antiprompt.at(0).length(),
-          this->params.antiprompt.at(0).length()) != std::string::npos) {
-    return FULL_STOP;
+  for (auto w : stopping_words) {
+    if (last_output.find(w.c_str(), last_output.length() - w.length(),
+                         w.length()) != std::string::npos) {
+      return FULL_STOP;
+    }
   }
 
   // eos
