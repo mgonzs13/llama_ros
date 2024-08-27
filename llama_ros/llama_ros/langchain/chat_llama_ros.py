@@ -61,11 +61,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     Message(role=role, content=message.content))
             else:
                 for single_content in message.content:
-                    if single_content['type'] == 'text':
+                    if type(single_content) == str:
+                        chat_messages.messages.append(
+                            Message(role=role, content=single_content))
+                    elif single_content['type'] == 'text':
                         chat_messages.messages.append(
                             Message(role=role, content=single_content['text']))
                     elif single_content['type'] == 'image_url':
-                        image_text = single_content['image_url']['url']
+                        image_text = single_content['image_url']
                         if 'data:image' in image_text:
                             image_data = image_text.split(',')[1]
                             cv2_image = cv2.imdecode(
@@ -75,9 +78,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             image = self.cv_bridge.cv2_to_imgmsg(cv2_image)
                         else:
                             image_url = image_text
-                    else:
-                        chat_messages.messages.append(
-                            Message(role=role, content=str(single_content)))
 
         return chat_messages, image_url, image
 
