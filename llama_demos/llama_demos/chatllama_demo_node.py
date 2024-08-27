@@ -72,9 +72,9 @@ class ChatLlamaDemoNode(Node):
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(
-                    "You are a IA that just asnwer with a single word."),
+                    "You are a IA that just answer with a single word."),
                 HumanMessage(content=[
-                    {"type": "text", "text": "<image>What is the character in the middle of the image?"},
+                    {"type": "text", "text": "<image>\nWhat is the character in the middle of the image?"},
                     {"type": "image_url", "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}
                 ])
             ]
