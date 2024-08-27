@@ -2,6 +2,7 @@
 
 # MIT License
 
+# Copyright (c) 2024  Alejandro González Cantón
 # Copyright (c) 2024  Miguel Ángel González Santamarta
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -70,7 +71,8 @@ class ChatLlamaDemoNode(Node):
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                SystemMessage("You are a IA that just asnwer with a single word."),
+                SystemMessage(
+                    "You are a IA that just asnwer with a single word."),
                 HumanMessage(content=[
                     {"type": "text", "text": "<image>What is the character in the middle of the image?"},
                     {"type": "image_url", "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}
@@ -81,7 +83,7 @@ class ChatLlamaDemoNode(Node):
         self.chain = self.prompt | self.chat | StrOutputParser()
 
         self.initial_time = time.time()
-        
+
         self.response = self.chain.invoke({})
         self.get_logger().info(self.response)
 

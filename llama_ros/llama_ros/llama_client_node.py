@@ -117,7 +117,7 @@ class LlamaClientNode(Node):
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
-    
+
     def format_chat_prompt(self, req: ChatMessages.Request) -> ChatMessages.Response:
         self._format_chat_srv_client.wait_for_service()
         return self._format_chat_srv_client.call(req)

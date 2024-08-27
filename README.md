@@ -564,3 +564,13 @@ $ ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p im
 ```
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
+
+### chatllama
+
+```shell
+$ ros2 launch llama_bringup minicpm-2.6.launch.py
+```
+
+```shell
+$ ros2 run llama_demos chatllama_demo_node
+```
