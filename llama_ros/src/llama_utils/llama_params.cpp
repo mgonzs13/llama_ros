@@ -215,8 +215,21 @@ struct llama_params llama_utils::get_llama_params(
           continue;
         }
 
-        params.params.lora_adapters.push_back(
-            {lora_adapters.at(i), (float)lora_adapters_scales.at(i)});
+        float scale = (float)lora_adapters_scales.at(i);
+
+        if (scale < 0.0) {
+          RCLCPP_WARN(node->get_logger(),
+                      "Scale %f cannot be lower than 0.0, setting it to 0.0",
+                      scale);
+          scale = 0.0;
+        } else if (scale > 1.0) {
+          RCLCPP_WARN(node->get_logger(),
+                      "Scale %f cannot be greater than 1.0, setting it to 1.0",
+                      scale);
+          scale = 1.0;
+        }
+
+        params.params.lora_adapters.push_back({lora_adapters.at(i), scale});
       }
     }
   }

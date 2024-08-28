@@ -295,7 +295,20 @@ void Llama::update_loras(std::vector<struct lora> loras) {
       LLAMA_LOG_INFO("Updating LoRA (%d: '%s') from %f to %f", lora.id,
                      this->lora_adapters[lora.id].path.c_str(),
                      this->lora_adapters[lora.id].scale, lora.scale);
-      this->lora_adapters[lora.id].scale = lora.scale;
+
+      float scale = lora.scale;
+
+      if (scale < 0.0) {
+        LLAMA_LOG_WARN("Scale %f cannot be lower than 0.0, setting it to 0.0",
+                       scale);
+        scale = 0.0;
+      } else if (scale > 1.0) {
+        LLAMA_LOG_WARN("Scale %f cannot be greater than 1.0, setting it to 1.0",
+                       scale);
+        scale = 1.0;
+      }
+
+      this->lora_adapters[lora.id].scale = scale;
 
     } else {
       LLAMA_LOG_ERROR("Invalid LoRA id: %d", lora.id);
