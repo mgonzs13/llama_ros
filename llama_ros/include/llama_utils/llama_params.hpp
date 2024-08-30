@@ -46,6 +46,8 @@ void declare_llama_params(
 struct llama_params
 get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
+enum ggml_sched_priority parse_priority(std::string priority);
+
 struct llama_sampling_params
 parse_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
                       int n_vocab, llama_token token_eos);

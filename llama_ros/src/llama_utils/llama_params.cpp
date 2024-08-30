@@ -50,7 +50,9 @@ void llama_utils::declare_llama_params(
                                             {"n_gpu_layers", 0},
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
+                                            {"poll", 50},
                                             {"n_threads_batch", 1},
+                                            {"poll_batch", 50},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
                                             {"grp_attn_n", 1},
@@ -62,6 +64,12 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<std::string>("", {
                                                 {"model", ""},
                                                 {"mmproj", ""},
+                                                {"cpu_mask", ""},
+                                                {"cpu_range", ""},
+                                                {"cpu_mask_batch", ""},
+                                                {"cpu_range_batch", ""},
+                                                {"priority", "normal"},
+                                                {"priority_batch", "normal"},
                                                 {"split_mode", "layer"},
                                                 {"rope_scaling_type", ""},
                                                 {"numa", "none"},
@@ -104,6 +112,8 @@ void llama_utils::declare_llama_params(
                                          {"warmup", true},
                                          {"check_tensors", false},
                                          {"flash_attn", false},
+                                         {"strict_cpu", false},
+                                         {"strict_cpu_batch", false},
                                      });
 }
 
@@ -111,17 +121,27 @@ struct llama_params llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   int32_t seed;
-  std::string file_path;
+  int32_t poll;
+  int32_t poll_batch;
 
   std::vector<std::string> lora_adapters;
   std::vector<double> lora_adapters_scales;
   std::vector<std::string> stopping_words;
   std::vector<double> tensor_split;
 
+  std::string cpu_mask;
+  std::string cpu_range;
+  std::string cpu_mask_batch;
+  std::string cpu_range_batch;
+
+  std::string priority;
+  std::string priority_batch;
   std::string split_mode;
   std::string rope_scaling_type;
   std::string numa;
   std::string pooling_type;
+
+  std::string file_path;
 
   struct llama_params params;
 
@@ -148,8 +168,22 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("cache_type_k", params.params.cache_type_k);
   node->get_parameter("cache_type_v", params.params.cache_type_v);
 
-  node->get_parameter("n_threads", params.params.n_threads);
-  node->get_parameter("n_threads_batch", params.params.n_threads_batch);
+  node->get_parameter("n_threads", params.params.cpuparams.n_threads);
+  node->get_parameter("cpu_mask", cpu_mask);
+  node->get_parameter("cpu_range", cpu_range);
+  node->get_parameter("priority", priority);
+  node->get_parameter("strict_cpu", params.params.cpuparams.strict_cpu);
+  node->get_parameter("poll", poll);
+
+  node->get_parameter("n_threads_batch",
+                      params.params.cpuparams_batch.n_threads);
+  node->get_parameter("cpu_mask_batch", cpu_mask_batch);
+  node->get_parameter("cpu_range_batch", cpu_range_batch);
+  node->get_parameter("priority_batch", priority_batch);
+  node->get_parameter("strict_cpu_batch",
+                      params.params.cpuparams_batch.strict_cpu);
+  node->get_parameter("poll_batch", poll_batch);
+
   node->get_parameter("n_predict", params.params.n_predict);
   node->get_parameter("n_keep", params.params.n_keep);
   node->get_parameter("n_batch", params.params.n_batch);
@@ -193,12 +227,12 @@ struct llama_params llama_utils::get_llama_params(
   params.params.seed = seed;
 
   // check threads number
-  if (params.params.n_threads < 0) {
-    params.params.n_threads = cpu_get_num_math();
+  if (params.params.cpuparams.n_threads < 0) {
+    params.params.cpuparams.n_threads = cpu_get_num_math();
   }
 
-  if (params.params.n_threads_batch < 0) {
-    params.params.n_threads_batch = cpu_get_num_math();
+  if (params.params.cpuparams_batch.n_threads < 0) {
+    params.params.cpuparams_batch.n_threads = cpu_get_num_math();
   }
 
   // lora_adapters
@@ -253,6 +287,35 @@ struct llama_params llama_utils::get_llama_params(
   } else if (split_mode == "row") {
     params.params.split_mode = LLAMA_SPLIT_MODE_ROW;
   }
+
+  // cpu mask
+  if (!cpu_mask.empty()) {
+    params.params.cpuparams.mask_valid = true;
+    parse_cpu_mask(cpu_mask, params.params.cpuparams.cpumask);
+  }
+
+  if (!cpu_range.empty()) {
+    params.params.cpuparams.mask_valid = true;
+    parse_cpu_mask(cpu_range, params.params.cpuparams.cpumask);
+  }
+
+  if (!cpu_mask_batch.empty()) {
+    params.params.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(cpu_mask_batch, params.params.cpuparams_batch.cpumask);
+  }
+
+  if (!cpu_range_batch.empty()) {
+    params.params.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(cpu_range_batch, params.params.cpuparams_batch.cpumask);
+  }
+
+  // cpu priority
+  params.params.cpuparams.priority = parse_priority(priority);
+  params.params.cpuparams_batch.priority = parse_priority(priority_batch);
+
+  // cpu poll
+  params.params.cpuparams.poll = poll;
+  params.params.cpuparams_batch.poll = poll_batch;
 
   // rope_scaling_type
   if (rope_scaling_type == "none") {
@@ -312,6 +375,20 @@ struct llama_params llama_utils::get_llama_params(
   }
 
   return params;
+}
+
+enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
+  if (priority == "normal") {
+    return GGML_SCHED_PRIO_NORMAL;
+  } else if (priority == "medium") {
+    return GGML_SCHED_PRIO_MEDIUM;
+  } else if (priority == "high") {
+    return GGML_SCHED_PRIO_HIGH;
+  } else if (priority == "realtime") {
+    return GGML_SCHED_PRIO_REALTIME;
+  }
+
+  return GGML_SCHED_PRIO_NORMAL;
 }
 
 struct llama_sampling_params llama_utils::parse_sampling_params(
