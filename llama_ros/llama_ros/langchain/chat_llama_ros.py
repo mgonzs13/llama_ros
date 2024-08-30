@@ -69,14 +69,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         chat_messages.messages.append(
                             Message(role=role, content=single_content['text']))
                     elif single_content['type'] == 'image_url':
-                        image_text = single_content['image_url']
+                        image_text = single_content['image_url']['url']
                         if 'data:image' in image_text:
-                            image_data = image_text.split(',')[1]
-                            cv2_image = cv2.imdecode(
-                                np.frombuffer(base64.b64decode(
-                                    image_data), np.uint8), cv2.IMREAD_COLOR
-                            )
-                            image = self.cv_bridge.cv2_to_imgmsg(cv2_image)
+                            image_data = image_text.split(',')[-1]
+                            decoded_image = base64.b64decode(image_data)
+                            np_image = np.frombuffer(decoded_image, np.uint8)
+                            image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
                         else:
                             image_url = image_text
 

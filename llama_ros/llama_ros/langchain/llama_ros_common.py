@@ -30,7 +30,6 @@ import urllib.request
 import cv2
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import BaseMessage
 
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
@@ -107,9 +106,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.reset = True
 
         # load image
-        if image_url or image:
+        if image_url or image is not None:
 
-            if image_url and not image:
+            if image_url and image is None:
                 req = urllib.request.Request(
                     image_url, headers={"User-Agent": "Mozilla/5.0"})
                 response = urllib.request.urlopen(req)
