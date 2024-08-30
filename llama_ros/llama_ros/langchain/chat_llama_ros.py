@@ -126,7 +126,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_messages).formatted_prompt
 
         goal_action = self._create_action_goal(
-            formatted_prompt, stop, image_url, image ** kwargs)
+            formatted_prompt, stop, image_url, image, **kwargs)
 
         for pt in LlamaClientNode.get_instance(
                 self.namespace).generate_response(goal_action, stream=True):
