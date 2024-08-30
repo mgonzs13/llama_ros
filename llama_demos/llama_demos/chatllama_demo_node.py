@@ -25,18 +25,14 @@
 
 
 import time
-import cv2
-import numpy as np
-import urllib.request
-
 from cv_bridge import CvBridge
 
 import rclpy
 from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_ros.langchain import ChatLlamaROS
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
@@ -53,15 +49,6 @@ class ChatLlamaDemoNode(Node):
 
         self._llama_client = LlamaClientNode.get_instance()
 
-    @staticmethod
-    def load_image_from_url(url):
-        req = urllib.request.Request(
-            url, headers={"User-Agent": "Mozilla/5.0"})
-        response = urllib.request.urlopen(req)
-        arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-        img = cv2.imdecode(arr, -1)
-        return img
-
     def send_prompt(self) -> None:
 
         self.chat = ChatLlamaROS(
@@ -69,25 +56,33 @@ class ChatLlamaDemoNode(Node):
             penalty_last_n=8,
         )
 
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessage(
-                    "You are a IA that just answer with a single word."),
-                HumanMessage(content=[
-                    {"type": "text", "text": "<image>\nWho is the character in the middle of the image?"},
-                    {"type": "image_url", "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}
-                ])
-            ]
-        )
+        self.prompt = ChatPromptTemplate.from_messages([
+            SystemMessage(
+                "You are a IA that just asnwer with a single word."),
+            HumanMessagePromptTemplate.from_template(template=[
+                {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
+                {"type": "image_url", "image_url": "{image_url}"}
+            ])
+        ])
 
         self.chain = self.prompt | self.chat | StrOutputParser()
 
         self.initial_time = time.time()
 
-        self.response = self.chain.invoke({})
-        self.get_logger().info(self.response)
+        for text in self.chain.stream({"image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}):
+            self.tokens += 1
+            print(text, end="", flush=True)
+            if self.eval_time < 0:
+                self.eval_time = time.time()
 
+        print("", end="\n", flush=True)
         self.get_logger().info("END")
+
+        end_time = time.time()
+        self.get_logger().info(
+            f"Time to eval: {self.eval_time - self.initial_time} s")
+        self.get_logger().info(
+            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s")
 
 
 def main():
