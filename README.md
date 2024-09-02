@@ -227,8 +227,8 @@ n_gpu_layers: 0
 n_threads: 1
 n_predict: 2048
 
-model_repo: "lmstudio-community/Phi-3.1-mini-4k-instruct-GGUF"
-model_filename: "Phi-3.1-mini-4k-instruct-Q4_K_M.gguf"
+model_repo: "bartowski/Phi-3.5-mini-instruct-GGUF"
+model_filename: "Phi-3.5-mini-instruct-Q4_K_M.gguf"
 
 lora_adapters:
   - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"

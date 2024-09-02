@@ -80,8 +80,10 @@ def prompt_llm(prompt: str, reset: bool = False,
         cv_bridge = CvBridge()
         goal.image = cv_bridge.cv2_to_imgmsg(img)
 
+    last_t = ""
     for ele in llama_client.generate_response(goal, stream=True):
+        last_t = ele.text
         print(ele.text, flush=True, end="")
-    if not ele.text.endswith("\n"):
+    if not last_t.endswith("\n"):
         print()
     rclpy.shutdown()

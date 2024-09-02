@@ -126,9 +126,9 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
   auto img_bytes = std::vector<unsigned char>(required_bytes);
   base64::decode(base64_str.begin(), base64_str.end(), img_bytes.begin());
 
-  auto embed =
-      llava_image_embed_make_with_bytes(this->ctx_clip, this->params.n_threads,
-                                        img_bytes.data(), img_bytes.size());
+  auto embed = llava_image_embed_make_with_bytes(
+      this->ctx_clip, this->params.cpuparams.n_threads, img_bytes.data(),
+      img_bytes.size());
 
   if (!embed) {
     LLAMA_LOG_ERROR("Could not load image from base64 string");

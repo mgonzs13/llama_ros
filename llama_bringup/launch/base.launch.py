@@ -69,7 +69,19 @@ def generate_launch_description():
         "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
 
         "n_threads": LaunchConfiguration("n_threads", default=1),
+        "cpu_mask": LaunchConfiguration("cpu_mask", default=""),
+        "cpu_range": LaunchConfiguration("cpu_range", default=""),
+        "priority": LaunchConfiguration("priority", default="normal"),
+        "strict_cpu": LaunchConfiguration("strict_cpu", default=False),
+        "poll": LaunchConfiguration("poll", default=50),
+
         "n_threads_batch": LaunchConfiguration("n_threads_batch", default=1),
+        "cpu_mask_batch": LaunchConfiguration("cpu_mask_batch", default=""),
+        "cpu_range_batch": LaunchConfiguration("cpu_range_batch", default=""),
+        "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
+        "strict_cpu_batch": LaunchConfiguration("strict_cpu_batch", default=False),
+        "poll_batch": LaunchConfiguration("poll_batch", default=50),
+
         "n_predict": LaunchConfiguration("n_predict", default=128),
         "n_keep": LaunchConfiguration("n_keep", default=-1),
 

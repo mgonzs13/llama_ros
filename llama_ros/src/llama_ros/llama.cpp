@@ -388,9 +388,11 @@ response_output Llama::generate_response(const std::string &input_prompt,
   }
 
   // generation loop
-  while (this->n_remain != 0) {
+  stop_type stopping = NO_STOP;
 
-    stop_type stopping = this->find_stop(completion_result_list, stop_concat);
+  while (stopping != FULL_STOP) {
+
+    stopping = this->find_stop(completion_result_list, stop_concat);
 
     if (stopping == FULL_STOP) {
       if (this->canceled) {
@@ -398,6 +400,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
       } else {
         output.stop = stop_type::FULL_STOP;
       }
+
       break;
 
     } else if (stopping == PARTIAL_STOP) {
@@ -528,7 +531,6 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
 
   // respect the maximum number of tokens
   if (this->n_remain <= 0 && this->params.n_predict != -1) {
-    this->n_remain = this->params.n_predict;
     return FULL_STOP;
   }
 
