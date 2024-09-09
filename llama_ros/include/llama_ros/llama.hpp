@@ -135,7 +135,6 @@ protected:
 
   // eval
   int32_t n_past;
-  int32_t n_remain;
   int32_t n_consumed;
   int32_t ga_i;
 

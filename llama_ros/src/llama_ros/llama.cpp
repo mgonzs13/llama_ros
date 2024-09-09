@@ -118,7 +118,6 @@ void Llama::reset() {
 
   this->canceled = false;
   this->n_past = 0;
-  this->n_remain = this->params.n_predict;
   this->n_consumed = 0;
   this->ga_i = 0;
 
@@ -376,9 +375,8 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
   // show sampling info
   if (this->debug) {
-    LLAMA_LOG_INFO("Sampling params:\n%s\n",
-                   this->params.sparams.print().c_str());
-    LLAMA_LOG_INFO("Sampler constr: \n%s",
+    LLAMA_LOG_INFO("Sampler params: %s", this->params.sparams.print().c_str());
+    LLAMA_LOG_INFO("Sampler constr: %s",
                    gpt_sampler_print(this->sampler).c_str());
 
     LLAMA_LOG_INFO("Prompt tokens:\n%s",
@@ -427,7 +425,6 @@ response_output Llama::generate_response(const std::string &input_prompt,
     // sample next token
     completion_result = this->sample();
     completion_result_list.push_back(completion_result);
-    --this->n_remain;
 
     // next eval
     if (!this->eval_token(completion_result.token)) {
@@ -469,8 +466,6 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
     line_inp = this->tokenize(prompt, false, false);
   }
 
-  int prompt_size = this->prompt_tokens.size() + line_inp.size();
-
   // insert prefix
   if (add_pfx && this->params.input_prefix.size()) {
 
@@ -486,7 +481,6 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 
       this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
                                  inp_pfx.end());
-      prompt_size += inp_pfx.size();
     }
   }
 
@@ -497,10 +491,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
   if (add_sfx && this->params.input_suffix.size()) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
                                inp_sfx.end());
-    prompt_size += inp_sfx.size();
   }
-
-  this->n_remain -= line_inp.size();
 }
 
 /*
@@ -536,7 +527,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   }
 
   // respect the maximum number of tokens
-  if (this->n_remain <= 0 && this->params.n_predict != -1) {
+  if (this->n_past > this->params.n_predict && this->params.n_predict != -1) {
     return FULL_STOP;
   }
 
@@ -544,6 +535,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
     return FULL_STOP;
   }
 
+  // search for stopping words
   for (auto w : stopping_words) {
     stop_type s = this->find_stop_word(completion_result_list, w);
     if (s != NO_STOP) {
