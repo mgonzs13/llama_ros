@@ -511,27 +511,32 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   for (auto w : stopping_words) {
     if (last_output.find(w.c_str(), last_output.length() - w.length(),
                          w.length()) != std::string::npos) {
+      LLAMA_LOG_INFO("Stopping word %s found at the end of text", w.c_str());
       return FULL_STOP;
     }
   }
 
   // eos
   if (llama_token_is_eog(this->model, gpt_sampler_last(this->sampler))) {
+    LLAMA_LOG_INFO("Stopping with EOS");
     return FULL_STOP;
   }
 
   // action server is canceled
   if (this->canceled) {
-    LLAMA_LOG_INFO("Canceling llama.cpp");
+    LLAMA_LOG_INFO("Canceling llama_ros");
     return FULL_STOP;
   }
 
   // respect the maximum number of tokens
   if (this->n_past > this->params.n_predict && this->params.n_predict != -1) {
+    LLAMA_LOG_INFO("Maximun number of tokens reached %d",
+                   this->params.n_predict);
     return FULL_STOP;
   }
 
   if (this->n_past > this->get_n_ctx() && this->params.n_predict == -2) {
+    LLAMA_LOG_INFO("Maximun number of tokens reached %d", this->get_n_ctx());
     return FULL_STOP;
   }
 
@@ -539,6 +544,11 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   for (auto w : stopping_words) {
     stop_type s = this->find_stop_word(completion_result_list, w);
     if (s != NO_STOP) {
+
+      if (s == FULL_STOP) {
+        LLAMA_LOG_INFO("Stopping word %s found at the end of text", w.c_str());
+      }
+
       return s;
     }
   }
