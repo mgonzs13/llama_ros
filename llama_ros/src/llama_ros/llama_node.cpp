@@ -322,14 +322,12 @@ void LlamaNode::execute(
 
   // update sampling params of gpt_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
-  auto sparams = llama_utils::parse_sampling_params(
-      sampling_config, this->llama->get_n_vocab(),
-      this->llama->get_token_eos());
+  auto sparams = llama_utils::parse_sampling_params(sampling_config,
+                                                    this->llama->get_n_vocab());
 
   // call llama
   struct response_output output = this->llama->generate_response(
-      prompt, sparams, sampling_config.ignore_eos,
-      std::bind(&LlamaNode::send_text, this, _1));
+      prompt, sparams, std::bind(&LlamaNode::send_text, this, _1));
 
   if (output.stop == stop_type::FULL_STOP) {
     auto completion_results = output.completions;

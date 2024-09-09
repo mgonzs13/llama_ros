@@ -50,7 +50,7 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   this->lora_adapters = llama_init.lora_adapters;
 
   llama_set_embeddings(this->ctx, false);
-  this->ctx_sampling = llama_sampling_init(this->params.sparams);
+  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
 
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
@@ -93,9 +93,12 @@ Llama::Llama(const struct gpt_params &params, bool debug)
 }
 
 Llama::~Llama() {
-  llama_sampling_free(this->ctx_sampling);
   llama_free(this->ctx);
   llama_free_model(this->model);
+
+  if (this->sampler != nullptr) {
+    gpt_sampler_free(this->sampler);
+  }
   llama_backend_free();
 }
 
@@ -108,7 +111,10 @@ Llama::~Llama() {
 void Llama::reset() {
 
   llama_kv_cache_clear(this->ctx);
-  llama_sampling_reset(this->ctx_sampling);
+
+  if (this->sampler != nullptr) {
+    gpt_sampler_reset(this->sampler);
+  }
 
   this->canceled = false;
   this->n_past = 0;
@@ -324,17 +330,14 @@ void Llama::update_loras(std::vector<struct lora> loras) {
 *****************************
 */
 response_output Llama::generate_response(const std::string &input_prompt,
-                                         bool ignore_eos,
                                          GenerateResponseCallback callback,
                                          std::vector<std::string> stop) {
-  struct llama_sampling_params sparams;
-  return this->generate_response(input_prompt, sparams, ignore_eos, callback,
-                                 stop);
+  struct gpt_sampler_params sparams;
+  return this->generate_response(input_prompt, sparams, callback, stop);
 }
 
 response_output Llama::generate_response(const std::string &input_prompt,
-                                         struct llama_sampling_params sparams,
-                                         bool ignore_eos,
+                                         struct gpt_sampler_params sparams,
                                          GenerateResponseCallback callback,
                                          std::vector<std::string> stop) {
 
@@ -354,10 +357,19 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
   llama_set_embeddings(this->ctx, false);
 
-  // load params
+  // create sampler
   this->params.sparams = sparams;
-  this->params.ignore_eos = ignore_eos;
-  this->update_sampling_context(this->params.sparams);
+
+  if (this->sampler != nullptr) {
+    gpt_sampler_free(this->sampler);
+  }
+
+  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
+
+  if (this->sampler == nullptr) {
+    output.stop = stop_type::ABORT;
+    return output;
+  }
 
   // load prompt
   this->load_prompt(input_prompt, true, true);
@@ -365,21 +377,15 @@ response_output Llama::generate_response(const std::string &input_prompt,
   // show sampling info
   if (this->debug) {
     LLAMA_LOG_INFO("Sampling params:\n%s\n",
-                   llama_sampling_print(this->params.sparams).c_str());
-    LLAMA_LOG_INFO("Sampling order: %s",
-                   llama_sampling_order_print(this->params.sparams).c_str());
-  }
+                   this->params.sparams.print().c_str());
+    LLAMA_LOG_INFO("Sampler constr: \n%s",
+                   gpt_sampler_print(this->sampler).c_str());
 
-  if (this->debug) {
     LLAMA_LOG_INFO("Prompt tokens:\n%s",
                    this->detokenize(this->prompt_tokens).c_str());
   }
 
   LLAMA_LOG_INFO("Starting Response Generation");
-
-  if (this->debug) {
-    llama_reset_timings(this->ctx);
-  }
 
   // eval prompt
   if (!this->eval_prompt()) {
@@ -433,7 +439,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   LLAMA_LOG_INFO("Finish Response Generation");
 
   if (this->debug) {
-    llama_print_timings(this->ctx);
+    gpt_perf_print(this->ctx, this->sampler);
   }
 
   output.completions = response;
@@ -470,7 +476,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 
     const int n_prev = 64;
     const std::string last_output =
-        llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+        gpt_sampler_prev_str(this->sampler, this->ctx, n_prev);
 
     // check if prefix is already added
     if (last_output.find(
@@ -509,7 +515,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   // check if stopping word appear at the end of the output
   const int n_prev = 32;
   const std::string last_output =
-      llama_sampling_prev_str(this->ctx_sampling, this->ctx, n_prev);
+      gpt_sampler_prev_str(this->sampler, this->ctx, n_prev);
 
   for (auto w : stopping_words) {
     if (last_output.find(w.c_str(), last_output.length() - w.length(),
@@ -519,7 +525,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   }
 
   // eos
-  if (llama_sampling_last(this->ctx_sampling) == this->get_token_eos()) {
+  if (llama_token_is_eog(this->model, gpt_sampler_last(this->sampler))) {
     return FULL_STOP;
   }
 
@@ -604,8 +610,7 @@ bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
            ((int)batch.size() < this->params.n_batch)) {
 
       batch.push_back(prompt_tokens[this->n_consumed]);
-      llama_sampling_accept(this->ctx_sampling, this->ctx,
-                            prompt_tokens[this->n_consumed], false);
+      gpt_sampler_accept(this->sampler, prompt_tokens[this->n_consumed], false);
       ++this->n_consumed;
     }
 
@@ -725,17 +730,19 @@ bool Llama::eval(struct llama_batch batch) {
 std::vector<token_prob> Llama::get_probs() {
   std::vector<token_prob> probs;
 
-  llama_token_data_array cur_p = {this->ctx_sampling->cur.data(),
-                                  this->ctx_sampling->cur.size(), false};
+  const auto *cur_p = gpt_sampler_get_candidates(this->sampler);
 
   const int32_t n_probs = this->params.sparams.n_probs;
-  if (this->params.sparams.temp <= 0 && n_probs > 0) {
-    // For llama_sample_token_greedy we need to sort candidates
-    llama_sample_softmax(this->ctx, &cur_p);
+
+  for (int i = 0; i < n_probs; ++i) {
+    probs.push_back({
+        cur_p->data[i].id,
+        (size_t)i >= cur_p->size ? 0.0f : cur_p->data[i].p,
+    });
   }
 
-  for (size_t i = 0; i < std::min(cur_p.size, (size_t)n_probs); ++i) {
-    probs.push_back({cur_p.data[i].id, cur_p.data[i].p});
+  for (size_t i = 0; i < std::min(cur_p->size, (size_t)n_probs); ++i) {
+    probs.push_back({cur_p->data[i].id, cur_p->data[i].p});
   }
 
   return probs;
@@ -744,8 +751,8 @@ std::vector<token_prob> Llama::get_probs() {
 struct completion_output Llama::sample() {
 
   // sample token
-  llama_token id = llama_sampling_sample(this->ctx_sampling, this->ctx, NULL);
-  llama_sampling_accept(this->ctx_sampling, this->ctx, id, true);
+  llama_token id = gpt_sampler_sample(this->sampler, this->ctx, -1);
+  gpt_sampler_accept(this->sampler, id, true);
 
   // create output
   struct completion_output result;
@@ -754,35 +761,4 @@ struct completion_output Llama::sample() {
 
   // return result
   return result;
-}
-
-void Llama::update_sampling_context(
-    const struct llama_sampling_params &params) {
-
-  this->ctx_sampling->params = params;
-
-  // reload grammar
-  if (this->ctx_sampling->grammar != nullptr) {
-    llama_grammar_free(this->ctx_sampling->grammar);
-  }
-  this->ctx_sampling->grammar = nullptr;
-
-  // if there is a grammar, parse it
-  if (!params.grammar.empty()) {
-    this->ctx_sampling->parsed_grammar =
-        grammar_parser::parse(params.grammar.c_str());
-
-    // will be empty (default) if there are parse errors
-    if (this->ctx_sampling->parsed_grammar.rules.empty()) {
-      LLAMA_LOG_ERROR("Failed to parse grammar");
-      return;
-    }
-
-    std::vector<const llama_grammar_element *> grammar_rules(
-        this->ctx_sampling->parsed_grammar.c_rules());
-
-    this->ctx_sampling->grammar = llama_grammar_init(
-        grammar_rules.data(), grammar_rules.size(),
-        this->ctx_sampling->parsed_grammar.symbol_ids.at("root"));
-  }
 }

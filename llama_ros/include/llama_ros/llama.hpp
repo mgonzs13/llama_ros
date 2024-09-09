@@ -30,7 +30,6 @@
 #include <vector>
 
 #include "common.h"
-#include "grammar-parser.h"
 #include "llama.h"
 #include "llama_utils/spinner.hpp"
 
@@ -102,12 +101,10 @@ public:
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
   response_output generate_response(const std::string &input_prompt,
-                                    struct llama_sampling_params sparams,
-                                    bool ignore_eos = false,
+                                    struct gpt_sampler_params sparams,
                                     GenerateResponseCallback callbakc = nullptr,
                                     std::vector<std::string> stop = {});
   response_output generate_response(const std::string &input_prompt,
-                                    bool ignore_eos = false,
                                     GenerateResponseCallback callbakc = nullptr,
                                     std::vector<std::string> stop = {});
 
@@ -128,7 +125,7 @@ protected:
   struct llama_context *ctx;
   struct llama_model *model;
   std::vector<struct llama_lora_adapter_container> lora_adapters;
-  struct llama_sampling_context *ctx_sampling;
+  struct gpt_sampler *sampler;
 
   // aux
   bool debug;
@@ -161,7 +158,6 @@ protected:
 
   std::vector<token_prob> get_probs();
   struct completion_output sample();
-  void update_sampling_context(const struct llama_sampling_params &params);
 
 private:
   // lock
