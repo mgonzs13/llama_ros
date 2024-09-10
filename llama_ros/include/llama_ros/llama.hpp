@@ -32,6 +32,7 @@
 #include "common.h"
 #include "llama.h"
 #include "llama_utils/spinner.hpp"
+#include "sampling.h"
 
 // llama logs
 #define LLAMA_LOG_ERROR(text, ...)                                             \

@@ -156,7 +156,7 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
       n_eval = this->params.n_batch;
     }
 
-    llama_batch batch = {
+    struct llama_batch batch = {
         int32_t(n_eval),
         nullptr,
         (image_embed->embed + i * n_embd),

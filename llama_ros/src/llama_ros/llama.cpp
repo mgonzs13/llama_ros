@@ -27,6 +27,7 @@
 
 #include "common.h"
 #include "llama_ros/llama.hpp"
+#include "sampling.h"
 
 using namespace llama_ros;
 
@@ -633,7 +634,7 @@ bool Llama::eval_token(llama_token token) {
 bool Llama::eval(std::vector<llama_token> tokens) {
 
   // create batch
-  llama_batch batch = {
+  struct llama_batch batch = {
       int32_t(tokens.size()),
       tokens.data(),
       nullptr,
@@ -695,7 +696,7 @@ bool Llama::eval(struct llama_batch batch) {
 
       int n_eval = std::min(this->params.n_batch, batch.n_tokens - i);
 
-      llama_batch batch_view = {
+      struct llama_batch batch_view = {
           n_eval,
           batch.embd == nullptr ? batch.token + i : nullptr,
           batch.embd != nullptr ? batch.embd + i : nullptr,

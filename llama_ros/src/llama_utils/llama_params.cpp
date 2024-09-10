@@ -224,7 +224,11 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("debug", params.debug);
 
   // seed
-  params.params.sparams.seed = seed;
+  if (seed < 0) {
+    params.params.sparams.seed = LLAMA_DEFAULT_SEED;
+  } else {
+    params.params.sparams.seed = seed;
+  }
 
   // check threads number
   if (params.params.cpuparams.n_threads < 0) {
