@@ -744,10 +744,6 @@ std::vector<token_prob> Llama::get_probs() {
     });
   }
 
-  for (size_t i = 0; i < std::min(cur_p->size, (size_t)n_probs); ++i) {
-    probs.push_back({cur_p->data[i].id, cur_p->data[i].p});
-  }
-
   return probs;
 }
 
