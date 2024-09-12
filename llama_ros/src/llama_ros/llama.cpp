@@ -41,6 +41,7 @@ Llama::Llama(const struct gpt_params &params, bool debug)
     print_build_info();
   }
 
+  // load model
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
@@ -50,14 +51,53 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   this->ctx = llama_init.context;
   this->lora_adapters = llama_init.lora_adapters;
 
-  llama_set_embeddings(this->ctx, false);
-  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
-
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
     return;
   }
 
+  llama_set_embeddings(this->ctx, false);
+
+  // init threadpool
+  LLAMA_LOG_INFO("llama threadpool init = n_threads = %d",
+                 this->params.cpuparams.n_threads);
+
+  struct ggml_threadpool_params tpp_batch =
+      ggml_threadpool_params_from_cpu_params(this->params.cpuparams_batch);
+  struct ggml_threadpool_params tpp =
+      ggml_threadpool_params_from_cpu_params(this->params.cpuparams);
+
+  set_process_priority(this->params.cpuparams.priority);
+
+  this->threadpool_batch = NULL;
+  if (!ggml_threadpool_params_match(&tpp, &tpp_batch)) {
+    this->threadpool_batch = ggml_threadpool_new(&tpp_batch);
+    if (!this->threadpool_batch) {
+      LLAMA_LOG_ERROR("Failed to create batch threadpool: n_threads %d",
+                      tpp_batch.n_threads);
+      return;
+    }
+
+    // Start the non-batch threadpool in the paused state
+    tpp.paused = true;
+  }
+
+  this->threadpool = ggml_threadpool_new(&tpp);
+  if (!this->threadpool) {
+    LLAMA_LOG_ERROR("Failed to create threadpool: n_threads %d", tpp.n_threads);
+    return;
+  }
+
+  llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
+
+  // create the sampler
+  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
+  if (!this->sampler) {
+    LLAMA_LOG_ERROR("Failed to initialize sampling subsystem");
+    return;
+  }
+
+  // check ctx size
   if (this->get_n_ctx() > this->get_n_ctx_train()) {
     LLAMA_LOG_WARN("Model was trained on only %d context tokens (%d "
                    "specified)",
@@ -101,6 +141,9 @@ Llama::~Llama() {
     gpt_sampler_free(this->sampler);
   }
   llama_backend_free();
+
+  ggml_threadpool_free(this->threadpool);
+  ggml_threadpool_free(this->threadpool_batch);
 }
 
 /*

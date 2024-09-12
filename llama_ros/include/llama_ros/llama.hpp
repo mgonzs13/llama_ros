@@ -127,6 +127,8 @@ protected:
   struct llama_model *model;
   std::vector<struct llama_lora_adapter_container> lora_adapters;
   struct gpt_sampler *sampler;
+  struct ggml_threadpool *threadpool;
+  struct ggml_threadpool *threadpool_batch;
 
   // aux
   bool debug;
