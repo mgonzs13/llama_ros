@@ -34,9 +34,6 @@ using namespace llama_ros;
 Llama::Llama(const struct gpt_params &params, bool debug)
     : params(params), debug(debug) {
 
-  // disable llama.cpp logs
-  log_disable();
-
   if (this->debug) {
     print_build_info();
   }
