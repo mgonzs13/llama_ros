@@ -628,9 +628,9 @@ stop_type Llama::find_stop_word(
 */
 bool Llama::eval_system_prompt() {
 
-  if (this->params.prompt.size() > 0) {
+  if (this->params.system_prompt.size() > 0) {
     // load prompt
-    this->load_prompt(this->params.prompt, false, false);
+    this->load_prompt(this->params.system_prompt, false, false);
 
     // eval prompt
     if (!this->eval_prompt()) {
