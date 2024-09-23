@@ -219,12 +219,16 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("image_suffix", params.llava_params.image_suffix);
   node->get_parameter("image_text", params.llava_params.image_text);
 
-  node->get_parameter("system_prompt", params.params.prompt);
+  node->get_parameter("system_prompt", params.params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
   node->get_parameter("debug", params.debug);
 
   // seed
-  params.params.seed = seed;
+  if (seed < 0) {
+    params.params.sparams.seed = LLAMA_DEFAULT_SEED;
+  } else {
+    params.params.sparams.seed = seed;
+  }
 
   // check threads number
   if (params.params.cpuparams.n_threads < 0) {
@@ -361,7 +365,7 @@ struct llama_params llama_utils::get_llama_params(
     }
     std::copy(std::istreambuf_iterator<char>(file),
               std::istreambuf_iterator<char>(),
-              back_inserter(params.params.prompt));
+              back_inserter(params.params.system_prompt));
   }
 
   // split tensors
@@ -391,11 +395,10 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
   return GGML_SCHED_PRIO_NORMAL;
 }
 
-struct llama_sampling_params llama_utils::parse_sampling_params(
-    const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab,
-    llama_token token_eos) {
+struct gpt_sampler_params llama_utils::parse_sampling_params(
+    const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct llama_sampling_params sparams;
+  struct gpt_sampler_params sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
@@ -406,7 +409,7 @@ struct llama_sampling_params llama_utils::parse_sampling_params(
   sparams.top_p = sampling_config.top_p;
   sparams.min_p = sampling_config.min_p;
   sparams.tfs_z = sampling_config.tfs_z;
-  sparams.typical_p = sampling_config.typical_p;
+  sparams.typ_p = sampling_config.typical_p;
 
   sparams.penalty_last_n = sampling_config.penalty_last_n;
   sparams.penalty_repeat = sampling_config.penalty_repeat;
@@ -419,8 +422,8 @@ struct llama_sampling_params llama_utils::parse_sampling_params(
 
   sparams.penalize_nl = sampling_config.penalize_nl;
 
-  sparams.samplers_sequence =
-      llama_sampling_types_from_chars(sampling_config.samplers_sequence);
+  sparams.samplers =
+      gpt_sampler_types_from_chars(sampling_config.samplers_sequence);
   sparams.grammar = sampling_config.grammar;
 
   if (sparams.grammar.size() == 0 &&
@@ -439,12 +442,7 @@ struct llama_sampling_params llama_utils::parse_sampling_params(
 
   // add logit bias
   for (auto logit_bias : sampling_config.logit_bias.data) {
-    sparams.logit_bias[logit_bias.token] = logit_bias.bias;
-  }
-
-  // add llama_token_eos
-  if (sampling_config.ignore_eos) {
-    sparams.logit_bias[token_eos] = -INFINITY;
+    sparams.logit_bias.push_back({logit_bias.token, logit_bias.bias});
   }
 
   return sparams;
