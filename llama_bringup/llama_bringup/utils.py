@@ -45,7 +45,14 @@ def download_model(repo: str, file: str) -> str:
             hf_hub_download(repo_id=repo, filename=shard_file,
                             force_download=False)
 
-    return hf_hub_download(repo_id=repo, filename=file, force_download=False) if repo and file else ""
+        # return first shard
+        return hf_hub_download(
+            repo_id=repo,
+            filename=f"{base_name}-00001-of-{total_shards:05d}.gguf",
+            force_download=False
+        )
+
+    return hf_hub_download(repo_id=repo, filename=file, force_download=False)
 
 
 def load_prompt_type(prompt_file_name: str) -> Tuple:
