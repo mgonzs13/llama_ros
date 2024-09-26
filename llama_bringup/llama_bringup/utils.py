@@ -22,6 +22,7 @@
 
 
 import os
+import re
 import yaml
 from typing import Tuple
 from huggingface_hub import hf_hub_download
@@ -31,6 +32,19 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def download_model(repo: str, file: str) -> str:
+
+    match = re.search(r'-(\d+)-of-(\d+)\.gguf', file)
+
+    if match:
+        total_shards = int(match.group(2))
+        base_name = file[:match.start()]
+
+        # download shards
+        for i in range(1, total_shards + 1):
+            shard_file = f"{base_name}-{i:05d}-of-{total_shards:05d}.gguf"
+            hf_hub_download(repo_id=repo, filename=shard_file,
+                            force_download=False)
+
     return hf_hub_download(repo_id=repo, filename=file, force_download=False) if repo and file else ""
 
 
