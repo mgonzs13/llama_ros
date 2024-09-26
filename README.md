@@ -136,6 +136,30 @@ $ ros2 launch llama_bringup spaetzle.launch.py
 
 </details>
 
+#### llama_ros (YAML Config + model shards)
+
+<details>
+<summary>Click to expand</summary>
+
+```yaml
+n_ctx: 2048 # context of the LLM in tokens
+n_batch: 8 # batch size in tokens
+n_gpu_layers: 0 # layers to load in GPU
+n_threads: 1 # threads
+n_predict: 2048 # max tokens, -1 == inf
+
+model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF" # Hugging Face repo
+model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf" # model shard file in repo
+
+system_prompt_type: "ChatML" # system prompt type
+```
+
+```shell
+$ ros2 llama launch Qwen2.yaml
+```
+
+</details>
+
 #### llava_ros (Python Launch)
 
 <details>
