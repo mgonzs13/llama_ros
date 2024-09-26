@@ -538,6 +538,50 @@ rclpy.shutdown()
 
 </details>
 
+#### chat_llama_ros
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+from llama_ros.langchain import ChatLlamaROS
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+
+rclpy.init()
+
+# create chat
+chat = ChatLlamaROS(
+    temp=0.2,
+    penalty_last_n=8,
+)
+
+# create prompt template with messages
+prompt = ChatPromptTemplate.from_messages([
+    SystemMessage("You are a IA that just asnwer with a single word."),
+    HumanMessagePromptTemplate.from_template(template=[
+        {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
+        {"type": "image_url", "image_url": "{image_url}"}
+    ])
+])
+
+# create the chain
+chain = prompt | chat | StrOutputParser()
+
+# stream and print the LLM output
+for text in self.chain.stream({"image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}):
+    print(text, end="", flush=True)
+
+print("", end="\n", flush=True)
+
+rclpy.shutdown()
+```
+
+</details>
+
 ## Demos
 
 ### llama_ros

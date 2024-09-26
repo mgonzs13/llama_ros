@@ -29,7 +29,6 @@ from cv_bridge import CvBridge
 
 import rclpy
 from rclpy.node import Node
-from llama_ros.llama_client_node import LlamaClientNode
 from llama_ros.langchain import ChatLlamaROS
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -46,8 +45,6 @@ class ChatLlamaDemoNode(Node):
         self.tokens = 0
         self.initial_time = -1
         self.eval_time = -1
-
-        self._llama_client = LlamaClientNode.get_instance()
 
     def send_prompt(self) -> None:
 
