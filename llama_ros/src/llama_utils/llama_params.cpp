@@ -107,7 +107,6 @@ void llama_utils::declare_llama_params(
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"cont_batching", true},
-                                         {"dump_kv_cache", false},
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
@@ -163,7 +162,6 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("check_tensors", params.params.check_tensors);
   node->get_parameter("flash_attn", params.params.flash_attn);
 
-  node->get_parameter("dump_kv_cache", params.params.dump_kv_cache);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
   node->get_parameter("cache_type_k", params.params.cache_type_k);
   node->get_parameter("cache_type_v", params.params.cache_type_v);

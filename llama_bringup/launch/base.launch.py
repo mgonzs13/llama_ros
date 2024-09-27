@@ -63,7 +63,6 @@ def generate_launch_description():
         "check_tensors": LaunchConfiguration("check_tensors", default=False),
         "flash_attn": LaunchConfiguration("flash_attn", default=False),
 
-        "dump_kv_cache": LaunchConfiguration("dump_kv_cache", default=False),
         "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
         "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
         "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
