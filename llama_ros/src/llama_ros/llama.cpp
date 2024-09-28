@@ -225,7 +225,7 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 
   llama_set_embeddings(this->ctx, true);
 
-  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), false);
+  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
 
   if ((int)tokens.size() > this->get_n_ctx()) {
     LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),

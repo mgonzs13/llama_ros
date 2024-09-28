@@ -341,6 +341,8 @@ struct llama_params llama_utils::get_llama_params(
     params.params.numa = GGML_NUMA_STRATEGY_NUMACTL;
   } else if (numa == "mirror") {
     params.params.numa = GGML_NUMA_STRATEGY_MIRROR;
+  } else if (numa == "count") {
+    params.params.numa = GGML_NUMA_STRATEGY_COUNT;
   }
 
   // pooling
@@ -350,6 +352,8 @@ struct llama_params llama_utils::get_llama_params(
     params.params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
   } else if (pooling_type == "cls") {
     params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
+  } else if (pooling_type == "last") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
   } else {
     params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
   }
