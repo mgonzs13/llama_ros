@@ -20,19 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <signal.h>
-#include <unistd.h>
-
 #include <memory>
+#include <signal.h>
 #include <vector>
 
 #include "llama_ros/llama_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace llama_ros;
 
 void sigint_handler(int signo) {
   if (signo == SIGINT) {
-    _exit(130);
+    rclcpp::shutdown();
   }
 }
 
@@ -52,8 +51,11 @@ int main(int argc, char *argv[]) {
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
+
   executor.spin();
 
-  rclcpp::shutdown();
+  executor.remove_node(node->get_node_base_interface());
+  node.reset();
+
   return 0;
 }
