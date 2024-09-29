@@ -622,6 +622,16 @@ $ ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
 
+### llama_rerank
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranked.yaml
+```
+
+```shell
+$ ros2 run llama_demos llama_rerank_node
+```
+
 ### llava_ros
 
 ```shell

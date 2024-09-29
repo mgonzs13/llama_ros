@@ -36,6 +36,7 @@
 #include "llama_msgs/srv/format_chat_messages.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/list_lo_r_as.hpp"
+#include "llama_msgs/srv/rerank_documents.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
 #include "llama_msgs/srv/update_lo_r_as.hpp"
 #include "llama_ros/llama.hpp"
@@ -85,6 +86,8 @@ private:
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;
   rclcpp::Service<llama_msgs::srv::GenerateEmbeddings>::SharedPtr
       generate_embeddings_service_;
+  rclcpp::Service<llama_msgs::srv::RerankDocuments>::SharedPtr
+      rerank_documents_service_;
   rclcpp::Service<llama_msgs::srv::FormatChatMessages>::SharedPtr
       format_chat_service_;
   rclcpp::Service<llama_msgs::srv::ListLoRAs>::SharedPtr list_loras_service_;
@@ -101,6 +104,9 @@ private:
       const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request>
           request,
       std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response);
+  void rerank_documents_service_callback(
+      const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
+      std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response);
   void format_chat_service_callback(
       const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request>
           request,

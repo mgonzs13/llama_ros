@@ -103,6 +103,7 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<bool>("", {
                                          {"debug", true},
                                          {"embedding", false},
+                                         {"reranking", false},
                                          {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
@@ -155,6 +156,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("tensor_split", tensor_split);
 
   node->get_parameter("embedding", params.params.embedding);
+  node->get_parameter("reranking", params.params.reranking);
   node->get_parameter("logits_all", params.params.logits_all);
   node->get_parameter("use_mmap", params.params.use_mmap);
   node->get_parameter("use_mlock", params.params.use_mlock);
@@ -318,6 +320,11 @@ struct llama_params llama_utils::get_llama_params(
   // cpu poll
   params.params.cpuparams.poll = poll;
   params.params.cpuparams_batch.poll = poll_batch;
+
+  // rerank
+  if (params.params.reranking) {
+    params.params.embedding = true;
+  }
 
   // rope_scaling_type
   if (rope_scaling_type == "none") {

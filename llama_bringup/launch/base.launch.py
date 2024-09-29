@@ -56,6 +56,7 @@ def generate_launch_description():
         "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
 
         "embedding": LaunchConfiguration("embedding", default=False),
+        "reranking": LaunchConfiguration("reranking", default=True),
         "logits_all": LaunchConfiguration("logits_all", default=False),
         "use_mmap": LaunchConfiguration("use_mmap", default=True),
         "use_mlock": LaunchConfiguration("use_mlock", default=False),

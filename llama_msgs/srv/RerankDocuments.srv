@@ -1,0 +1,4 @@
+string query                # query to calculate score
+string[] documents          # whether to normalize embeddings
+---
+Rank[] ranks                # documents ranked with score 

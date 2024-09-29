@@ -99,8 +99,17 @@ public:
   std::vector<struct lora> list_loras();
   void update_loras(std::vector<struct lora> loras);
 
+  std::vector<llama_token>
+  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                  bool add_eos = true);
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
                                        bool normalize = true);
+  embeddings_ouput generate_embeddings(const std::vector<llama_token> &tokens,
+                                       bool normalize = true);
+  float rank_document(const std::string &query, const std::string &document);
+  std::vector<float> rank_documents(const std::string &query,
+                                    const std::vector<std::string> &documents);
+
   response_output generate_response(const std::string &input_prompt,
                                     struct gpt_sampler_params sparams,
                                     GenerateResponseCallback callbakc = nullptr,

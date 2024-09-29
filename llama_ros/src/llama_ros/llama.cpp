@@ -206,9 +206,9 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
-                                            bool normalize) {
-
+embeddings_ouput
+Llama::generate_embeddings(const std::vector<llama_token> &tokens,
+                           bool normalize) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   const int n_embd = this->get_n_embd();
@@ -225,23 +225,10 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
 
   llama_set_embeddings(this->ctx, true);
 
-  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
-
   if ((int)tokens.size() > this->get_n_ctx()) {
     LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),
                     this->get_n_ctx());
     return output;
-  }
-
-  if ((int)tokens.size() > this->params.n_batch) {
-    LLAMA_LOG_WARN("Prompt too long %ld, batch size %d, truncating...",
-                   tokens.size(), this->params.n_batch);
-    tokens.resize(this->params.n_batch);
-  }
-
-  // add eos if not present
-  if (tokens.back() != this->get_token_eos()) {
-    tokens.push_back(this->get_token_eos());
   }
 
   // llama eval
@@ -293,6 +280,69 @@ embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
   output.n_tokens = tokens.size();
 
   return output;
+}
+
+embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
+                                            bool normalize) {
+
+  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
+  tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
+
+  return this->generate_embeddings(tokens, normalize);
+}
+
+std::vector<llama_token>
+Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                       bool add_eos) {
+
+  std::vector<llama_token> new_tokens = tokens;
+
+  if ((int)tokens.size() > limit_size) {
+    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
+                   tokens.size(), limit_size);
+    new_tokens.resize(limit_size);
+  }
+
+  // add eos if not present
+  if (add_eos && tokens.back() != this->get_token_eos()) {
+    new_tokens.push_back(this->get_token_eos());
+  }
+
+  return new_tokens;
+}
+
+/*
+*****************************
+*         RERANKING         *
+*****************************
+*/
+float Llama::rank_document(const std::string &query,
+                           const std::string &document) {
+
+  std::vector<llama_token> tokens;
+
+  auto part1 = this->tokenize(query, true, true);
+  part1 = this->truncate_tokens(part1, (int)(this->params.n_batch / 2), true);
+  tokens.insert(tokens.end(), part1.begin(), part1.end());
+
+  auto part2 = this->tokenize(document, true, true);
+  part2 = this->truncate_tokens(part2, (int)(this->params.n_batch / 2), true);
+  tokens.insert(tokens.end(), part2.begin(), part2.end());
+
+  return this->generate_embeddings(tokens, false).embeddings.at(0);
+}
+
+std::vector<float>
+Llama::rank_documents(const std::string &query,
+                      const std::vector<std::string> &documents) {
+
+  std::vector<float> scores;
+
+  for (std::string doc : documents) {
+    scores.push_back(this->rank_document(query, doc));
+  }
+
+  return scores;
 }
 
 /*

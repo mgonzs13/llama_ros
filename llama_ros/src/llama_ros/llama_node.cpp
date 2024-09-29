@@ -28,6 +28,7 @@
 #include "common.h"
 #include "llama.h"
 #include "llama_msgs/msg/lo_ra.hpp"
+#include "llama_msgs/msg/rank.hpp"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
@@ -89,6 +90,11 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
           "generate_embeddings",
           std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
                     _2));
+  this->rerank_documents_service_ =
+      this->create_service<llama_msgs::srv::RerankDocuments>(
+          "rerank_documents",
+          std::bind(&LlamaNode::rerank_documents_service_callback, this, _1,
+                    _2));
   this->format_chat_service_ =
       this->create_service<llama_msgs::srv::FormatChatMessages>(
           "format_chat_prompt",
@@ -128,6 +134,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->generate_embeddings_service_.reset();
   this->generate_embeddings_service_ = nullptr;
+
+  this->rerank_documents_service_.reset();
+  this->rerank_documents_service_ = nullptr;
 
   this->format_chat_service_.reset();
   this->format_chat_service_ = nullptr;
@@ -187,6 +196,37 @@ void LlamaNode::generate_embeddings_service_callback(
       this->llama->generate_embeddings(request->prompt, request->normalize);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
+}
+
+/*
+*****************************
+*         RERANKING         *
+*****************************
+*/
+void LlamaNode::rerank_documents_service_callback(
+    const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
+    std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
+
+  auto scores = this->llama->rank_documents(request->query, request->documents);
+
+  std::vector<size_t> indices(scores.size());
+  for (size_t i = 0; i < indices.size(); ++i) {
+    indices[i] = i;
+  }
+
+  // sort the indices based on the scores
+  std::sort(indices.begin(), indices.end(), [&scores](size_t i1, size_t i2) {
+    return scores[i1] > scores[i2];
+  });
+
+  // create new ranks
+  for (size_t i = 0; i < indices.size(); ++i) {
+    llama_msgs::msg::Rank rank;
+    rank.rank = i;
+    rank.score = scores.at(indices[i]);
+    rank.document = request->documents.at(indices[i]);
+    response->ranks.push_back(rank);
+  }
 }
 
 /*

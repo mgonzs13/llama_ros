@@ -35,6 +35,7 @@ from rclpy.executors import MultiThreadedExecutor
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
 from llama_msgs.srv import GenerateEmbeddings
+from llama_msgs.srv import RerankDocuments
 from llama_msgs.srv import FormatChatMessages
 from llama_msgs.action import GenerateResponse
 from llama_msgs.msg import PartialResponse
@@ -98,6 +99,12 @@ class LlamaClientNode(Node):
             callback_group=self._callback_group
         )
 
+        self._rerank_srv_client = self.create_client(
+            RerankDocuments,
+            "rerank_documents",
+            callback_group=self._callback_group
+        )
+
         self._format_chat_srv_client = self.create_client(
             FormatChatMessages,
             "format_chat_prompt",
@@ -117,6 +124,10 @@ class LlamaClientNode(Node):
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
+
+    def rerank_documents(self, req: RerankDocuments.Request) -> RerankDocuments.Response:
+        self._rerank_srv_client.wait_for_service()
+        return self._rerank_srv_client.call(req)
 
     def format_chat_prompt(self, req: FormatChatMessages.Request) -> FormatChatMessages.Response:
         self._format_chat_srv_client.wait_for_service()
