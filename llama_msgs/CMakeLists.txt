@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"
+  "srv/Detokenize.srv"
   "srv/FormatChatMessages.srv"
   "srv/ListLoRAs.srv"
   "srv/UpdateLoRAs.srv"

@@ -80,6 +80,6 @@ class LlamaROS(LLM, LlamaROSCommon):
 
     def get_num_tokens(self, text: str) -> int:
         req = Tokenize.Request()
-        req.prompt = text
+        req.text = text
         tokens = self.llama_client.tokenize(req).tokens
         return len(tokens)

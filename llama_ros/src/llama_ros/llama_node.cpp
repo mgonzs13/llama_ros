@@ -85,6 +85,10 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
       "tokenize",
       std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
+  this->detokenize_service_ = this->create_service<llama_msgs::srv::Detokenize>(
+      "detokenize",
+      std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
+
   this->generate_embeddings_service_ =
       this->create_service<llama_msgs::srv::GenerateEmbeddings>(
           "generate_embeddings",
@@ -99,6 +103,7 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
       this->create_service<llama_msgs::srv::FormatChatMessages>(
           "format_chat_prompt",
           std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
+
   this->list_loras_service_ = this->create_service<llama_msgs::srv::ListLoRAs>(
       "list_loras",
       std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
@@ -131,6 +136,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->tokenize_service_.reset();
   this->tokenize_service_ = nullptr;
+
+  this->detokenize_service_.reset();
+  this->detokenize_service_ = nullptr;
 
   this->generate_embeddings_service_.reset();
   this->generate_embeddings_service_ = nullptr;
@@ -180,7 +188,19 @@ void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
-  response->tokens = this->llama->tokenize(request->prompt, false);
+  response->tokens = this->llama->tokenize(request->text, false);
+}
+
+void LlamaNode::detokenize_service_callback(
+    const std::shared_ptr<llama_msgs::srv::Detokenize::Request> request,
+    std::shared_ptr<llama_msgs::srv::Detokenize::Response> response) {
+
+  std::vector<llama_token> tokens;
+  for (auto t : request->tokens) {
+    tokens.push_back(t);
+  }
+
+  response->text = this->llama->detokenize(tokens);
 }
 
 /*

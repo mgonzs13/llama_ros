@@ -290,7 +290,7 @@ class ExampleNode(Node):
 
         # create the request
         req = Tokenize.Request()
-        req.prompt = "Example text"
+        req.text = "Example text"
 
         # call the tokenize service
         self.srv_client.wait_for_service()

@@ -53,8 +53,6 @@ Llama::Llama(const struct gpt_params &params, bool debug)
     return;
   }
 
-  llama_set_embeddings(this->ctx, false);
-
   // init threadpool
   LLAMA_LOG_INFO("llama threadpool init = n_threads = %d",
                  this->params.cpuparams.n_threads);
@@ -219,11 +217,9 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
 
   if (!this->is_embedding()) {
     LLAMA_LOG_ERROR(
-        "Llama must be created with embedding=true to create embeddings");
+        "Llama must be created with embedding enable to create embeddings");
     return output;
   }
-
-  llama_set_embeddings(this->ctx, true);
 
   if ((int)tokens.size() > this->get_n_ctx()) {
     LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),
@@ -319,6 +315,12 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 float Llama::rank_document(const std::string &query,
                            const std::string &document) {
 
+  if (!this->is_reranking()) {
+    LLAMA_LOG_ERROR(
+        "Llama must be created with reranking enable to make rerank");
+    return 0.0;
+  }
+
   std::vector<llama_token> tokens;
 
   auto part1 = this->tokenize(query, true, true);
@@ -335,6 +337,12 @@ float Llama::rank_document(const std::string &query,
 std::vector<float>
 Llama::rank_documents(const std::string &query,
                       const std::vector<std::string> &documents) {
+
+  if (!this->is_reranking()) {
+    LLAMA_LOG_ERROR(
+        "Llama must be created with reranking enable to make rerank");
+    return {0.0};
+  }
 
   std::vector<float> scores;
 
@@ -444,8 +452,6 @@ response_output Llama::generate_response(const std::string &input_prompt,
   stop_concat.insert(stop_concat.end(), this->params.antiprompt.begin(),
                      this->params.antiprompt.end());
   stop_concat.insert(stop_concat.end(), stop.begin(), stop.end());
-
-  llama_set_embeddings(this->ctx, false);
 
   // create sampler
   this->params.sparams = sparams;
