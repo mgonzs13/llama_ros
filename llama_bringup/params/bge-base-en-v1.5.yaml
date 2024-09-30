@@ -1,0 +1,9 @@
+n_ctx: 2048
+n_batch: 1024
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+embedding: true
+
+model_repo: "CompendiumLabs/bge-base-en-v1.5-gguf"
+model_filename: "bge-base-en-v1.5-f16.gguf"

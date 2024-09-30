@@ -237,7 +237,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   // llama eval
   struct llama_batch batch = llama_batch_init(this->params.n_batch, 0, 1);
   for (size_t i = 0; i < tokens.size(); i++) {
-    llama_batch_add(batch, tokens[i], i, {1}, i == tokens.size() - 1);
+    llama_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
   }
 
   if (llama_decode(this->ctx, batch)) {
@@ -275,7 +275,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   }
 
   // clear
-  llama_kv_cache_seq_rm(this->ctx, 1, 0, -1);
+  llama_kv_cache_seq_rm(this->ctx, 0, 0, -1);
   llama_batch_free(batch);
 
   // result

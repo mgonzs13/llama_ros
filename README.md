@@ -654,7 +654,7 @@ rclpy.shutdown()
 
 ## Demos
 
-### llama_ros
+### LLM Demo
 
 ```shell
 $ ros2 launch llama_bringup spaetzle.launch.py
@@ -668,7 +668,17 @@ $ ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
 
-### llama_rerank
+### Embeddings Generation Demo
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/bge-base-en-v1.5.yaml
+```
+
+```shell
+$ ros2 run llama_demos llama_embeddings_demo_node
+```
+
+### Reranking Demo
 
 ```shell
 $ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranker.yaml
@@ -680,7 +690,7 @@ $ ros2 run llama_demos llama_rerank_demo_node
 
 https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 
-### llava_ros
+### VLM Demo
 
 ```shell
 $ ros2 launch llama_bringup minicpm-2.6.launch.py
@@ -692,7 +702,7 @@ $ ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p im
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
 
-### chatllama
+### Chat Template Demo
 
 ```shell
 $ ros2 launch llama_bringup minicpm-2.6.launch.py
