@@ -34,7 +34,7 @@ from llama_msgs.srv import RerankDocuments
 from llama_ros.llama_client_node import LlamaClientNode
 
 
-class LlamaReranker(BaseDocumentCompressor):
+class LlamaROSReranker(BaseDocumentCompressor):
 
     top_n: int = 3
 

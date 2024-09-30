@@ -569,7 +569,7 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from llama_ros.langchain import LlamaReranker
+from llama_ros.langchain import LlamaROSReranker
 from llama_ros.langchain import LlamaROSEmbeddings
 
 from langchain_community.vectorstores import FAISS
@@ -589,7 +589,7 @@ embeddings = LlamaROSEmbeddings()
 retriever = FAISS.from_documents(
     texts, embeddings).as_retriever(search_kwargs={"k": 20})
 
-compressor = LlamaReranker()
+compressor = LlamaROSReranker()
 compression_retriever = ContextualCompressionRetriever(
     base_compressor=compressor, base_retriever=retriever
 )
