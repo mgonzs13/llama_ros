@@ -130,15 +130,22 @@ Llama::Llama(const struct gpt_params &params, bool debug)
 
 Llama::~Llama() {
   llama_free(this->ctx);
+  this->ctx = nullptr;
+
   llama_free_model(this->model);
+  this->model = nullptr;
 
   if (this->sampler != nullptr) {
     gpt_sampler_free(this->sampler);
+    this->sampler = nullptr;
   }
   llama_backend_free();
 
   ggml_threadpool_free(this->threadpool);
+  this->threadpool = nullptr;
+
   ggml_threadpool_free(this->threadpool_batch);
+  this->threadpool_batch = nullptr;
 }
 
 /*

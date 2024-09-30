@@ -81,7 +81,7 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
-  // services
+  // tokenize services
   this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
       "tokenize",
       std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
@@ -89,37 +89,50 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
       "detokenize",
       std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
 
-  this->generate_embeddings_service_ =
-      this->create_service<llama_msgs::srv::GenerateEmbeddings>(
-          "generate_embeddings",
-          std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
-                    _2));
-  this->rerank_documents_service_ =
-      this->create_service<llama_msgs::srv::RerankDocuments>(
-          "rerank_documents",
-          std::bind(&LlamaNode::rerank_documents_service_callback, this, _1,
-                    _2));
-  this->format_chat_service_ =
-      this->create_service<llama_msgs::srv::FormatChatMessages>(
-          "format_chat_prompt",
-          std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
+  // embeddings service
+  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->generate_embeddings_service_ =
+        this->create_service<llama_msgs::srv::GenerateEmbeddings>(
+            "generate_embeddings",
+            std::bind(&LlamaNode::generate_embeddings_service_callback, this,
+                      _1, _2));
+  }
 
-  this->list_loras_service_ = this->create_service<llama_msgs::srv::ListLoRAs>(
-      "list_loras",
-      std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
-  this->update_loras_service_ =
-      this->create_service<llama_msgs::srv::UpdateLoRAs>(
-          "update_loras",
-          std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
+  // rerank service
+  if (this->llama->is_reranking()) {
+    this->rerank_documents_service_ =
+        this->create_service<llama_msgs::srv::RerankDocuments>(
+            "rerank_documents",
+            std::bind(&LlamaNode::rerank_documents_service_callback, this, _1,
+                      _2));
+  }
 
-  // generate response action server
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_ =
-      rclcpp_action::create_server<GenerateResponse>(
-          this, "generate_response",
-          std::bind(&LlamaNode::handle_goal, this, _1, _2),
-          std::bind(&LlamaNode::handle_cancel, this, _1),
-          std::bind(&LlamaNode::handle_accepted, this, _1));
+  // completion services and action
+  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+
+    this->format_chat_service_ =
+        this->create_service<llama_msgs::srv::FormatChatMessages>(
+            "format_chat_prompt",
+            std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
+
+    this->list_loras_service_ =
+        this->create_service<llama_msgs::srv::ListLoRAs>(
+            "list_loras",
+            std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
+    this->update_loras_service_ =
+        this->create_service<llama_msgs::srv::UpdateLoRAs>(
+            "update_loras",
+            std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
+
+    // generate response action server
+    this->goal_handle_ = nullptr;
+    this->generate_response_action_server_ =
+        rclcpp_action::create_server<GenerateResponse>(
+            this, "generate_response",
+            std::bind(&LlamaNode::handle_goal, this, _1, _2),
+            std::bind(&LlamaNode::handle_cancel, this, _1),
+            std::bind(&LlamaNode::handle_accepted, this, _1));
+  }
 
   RCLCPP_INFO(get_logger(), "[%s] Activated", this->get_name());
 
@@ -140,18 +153,30 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
   this->detokenize_service_.reset();
   this->detokenize_service_ = nullptr;
 
-  this->generate_embeddings_service_.reset();
-  this->generate_embeddings_service_ = nullptr;
+  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->generate_embeddings_service_.reset();
+    this->generate_embeddings_service_ = nullptr;
+  }
 
-  this->rerank_documents_service_.reset();
-  this->rerank_documents_service_ = nullptr;
+  if (this->llama->is_reranking()) {
+    this->rerank_documents_service_.reset();
+    this->rerank_documents_service_ = nullptr;
+  }
 
-  this->format_chat_service_.reset();
-  this->format_chat_service_ = nullptr;
+  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->format_chat_service_.reset();
+    this->format_chat_service_ = nullptr;
 
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_.reset();
-  this->generate_response_action_server_ = nullptr;
+    this->list_loras_service_.reset();
+    this->list_loras_service_ = nullptr;
+
+    this->update_loras_service_.reset();
+    this->update_loras_service_ = nullptr;
+
+    this->goal_handle_ = nullptr;
+    this->generate_response_action_server_.reset();
+    this->generate_response_action_server_ = nullptr;
+  }
 
   RCLCPP_INFO(get_logger(), "[%s] Deactivated", this->get_name());
 
