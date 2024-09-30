@@ -625,12 +625,14 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 ### llama_rerank
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranked.yaml
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranker.yaml
 ```
 
 ```shell
 $ ros2 run llama_demos llama_rerank_node
 ```
+
+https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 
 ### llava_ros
 
