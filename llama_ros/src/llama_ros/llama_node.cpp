@@ -214,17 +214,12 @@ void LlamaNode::rerank_documents_service_callback(
     indices[i] = i;
   }
 
-  // sort the indices based on the scores
-  std::sort(indices.begin(), indices.end(), [&scores](size_t i1, size_t i2) {
-    return scores[i1] > scores[i2];
-  });
-
   // create new ranks
-  for (size_t i = 0; i < indices.size(); ++i) {
+  for (size_t i = 0; i < scores.size(); ++i) {
     llama_msgs::msg::Rank rank;
     rank.rank = i;
-    rank.score = scores.at(indices[i]);
-    rank.document = request->documents.at(indices[i]);
+    rank.score = scores.at(i);
+    rank.document = request->documents.at(i);
     response->ranks.push_back(rank);
   }
 }
