@@ -30,10 +30,10 @@ from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.srv import RerankDocuments
 
 
-class LlamaRerankNode(Node):
+class LlamaRerankDemoNode(Node):
 
     def __init__(self) -> None:
-        super().__init__("llama_rerank_node")
+        super().__init__("llama_rerank_demo_node")
 
         self._llama_client = LlamaClientNode.get_instance()
 
@@ -62,7 +62,7 @@ class LlamaRerankNode(Node):
 
 def main():
     rclpy.init()
-    node = LlamaRerankNode()
+    node = LlamaRerankDemoNode()
     node.send_rerank()
     rclpy.shutdown()
 

@@ -15,9 +15,9 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
-  llama_demos/llama_rerank_node.py
+  llama_demos/llama_rerank_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_rerank_node
+  RENAME llama_rerank_demo_node
 )
 
 install(PROGRAMS

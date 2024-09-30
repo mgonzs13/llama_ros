@@ -675,7 +675,7 @@ $ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranker.y
 ```
 
 ```shell
-$ ros2 run llama_demos llama_rerank_node
+$ ros2 run llama_demos llama_rerank_demo_node
 ```
 
 https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
