@@ -562,6 +562,52 @@ rclpy.shutdown()
 
 </details>
 
+#### llama_ros renranker
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+from llama_ros.langchain import LlamaReranker
+from llama_ros.langchain import LlamaROSEmbeddings
+
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.retrievers import ContextualCompressionRetriever
+
+
+rclpy.init()
+
+documents = TextLoader("../state_of_the_union.txt",).load()
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500, chunk_overlap=100)
+texts = text_splitter.split_documents(documents)
+
+embeddings = LlamaROSEmbeddings()
+retriever = FAISS.from_documents(
+    texts, embeddings).as_retriever(search_kwargs={"k": 20})
+
+compressor = LlamaReranker()
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor, base_retriever=retriever
+)
+
+compressed_docs = compression_retriever.invoke(
+    "What did the president say about Ketanji Jackson Brown"
+)
+
+for doc in compressed_docs:
+    print("-" * 50)
+    print(doc.page_content)
+    print("\n")
+
+rclpy.shutdown()
+```
+
+</details>
+
 #### chat_llama_ros
 
 <details>

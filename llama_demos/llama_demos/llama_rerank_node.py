@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 
+import operator
 import rclpy
 from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode
@@ -47,11 +48,16 @@ class LlamaRerankNode(Node):
             "Paris, capitale de la France, est une grande ville européenne et un centre mondial de l'art, de la mode, de la gastronomie et de la culture. Son paysage urbain du XIXe siècle est traversé par de larges boulevards et la Seine."
         ]
 
-        res = self._llama_client.rerank_documents(rerank_req)
+        ranks = self._llama_client.rerank_documents(rerank_req).ranks
+        scores = [r.score for r in ranks]
 
-        for rank in res.ranks:
+        docs_with_scores = list(zip(ranks, scores))
+        result = sorted(docs_with_scores,
+                        key=operator.itemgetter(1), reverse=True)
+
+        for i in range(len(result)):
             self.get_logger().info(
-                f"{rank.rank} ({rank.score}): {rank.document}")
+                f"{i} ({result[i][0].score}): {result[i][0].document}")
 
 
 def main():
