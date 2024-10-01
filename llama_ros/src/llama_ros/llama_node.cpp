@@ -251,21 +251,8 @@ void LlamaNode::rerank_documents_service_callback(
     const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
 
-  auto scores = this->llama->rank_documents(request->query, request->documents);
-
-  std::vector<size_t> indices(scores.size());
-  for (size_t i = 0; i < indices.size(); ++i) {
-    indices[i] = i;
-  }
-
-  // create new ranks
-  for (size_t i = 0; i < scores.size(); ++i) {
-    llama_msgs::msg::Rank rank;
-    rank.rank = i;
-    rank.score = scores.at(i);
-    rank.document = request->documents.at(i);
-    response->ranks.push_back(rank);
-  }
+  response->scores =
+      this->llama->rank_documents(request->query, request->documents);
 }
 
 /*

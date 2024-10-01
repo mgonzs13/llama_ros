@@ -31,7 +31,6 @@ from llama_ros.llama_client_node import LlamaClientNode
 
 class LlamaROSEmbeddings(BaseModel, Embeddings):
 
-    namespace: str = "llama"
     llama_client: LlamaClientNode = None
     normalize: bool = True
 
@@ -41,8 +40,7 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["llama_client"] = LlamaClientNode.get_instance(
-            values["namespace"])
+        values["llama_client"] = LlamaClientNode.get_instance()
         return values
 
     def __call_generate_embedding_srv(self, text: str) -> List[int]:

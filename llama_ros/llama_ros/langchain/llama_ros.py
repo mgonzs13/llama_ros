@@ -53,8 +53,7 @@ class LlamaROS(LLM, LlamaROSCommon):
 
         goal = self._create_action_goal(prompt, stop, **kwargs)
 
-        result, status = LlamaClientNode.get_instance(
-            self.namespace).generate_response(goal)
+        result, status = LlamaClientNode.get_instance().generate_response(goal)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
@@ -70,8 +69,7 @@ class LlamaROS(LLM, LlamaROSCommon):
 
         goal = self._create_action_goal(prompt, stop, **kwargs)
 
-        for pt in LlamaClientNode.get_instance(
-                self.namespace).generate_response(goal, stream=True):
+        for pt in LlamaClientNode.get_instance().generate_response(goal, stream=True):
 
             if run_manager:
                 run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)

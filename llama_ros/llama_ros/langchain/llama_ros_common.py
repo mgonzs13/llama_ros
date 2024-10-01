@@ -38,7 +38,6 @@ from llama_msgs.msg import LogitBias
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
 
-    namespace: str = "llama"
     llama_client: LlamaClientNode = None
     cv_bridge: CvBridge = CvBridge()
 
@@ -86,8 +85,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        values["llama_client"] = LlamaClientNode.get_instance(
-            values["namespace"])
+        values["llama_client"] = LlamaClientNode.get_instance()
         return values
 
     def cancel(self) -> None:

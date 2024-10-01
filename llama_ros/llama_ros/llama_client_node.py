@@ -34,6 +34,7 @@ from rclpy.executors import MultiThreadedExecutor
 
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
+from llama_msgs.srv import Detokenize
 from llama_msgs.srv import GenerateEmbeddings
 from llama_msgs.srv import RerankDocuments
 from llama_msgs.srv import FormatChatMessages
@@ -64,11 +65,11 @@ class LlamaClientNode(Node):
     _spin_thread: Thread = None
 
     @staticmethod
-    def get_instance(namespace: str = "llama") -> "LlamaClientNode":
+    def get_instance() -> "LlamaClientNode":
 
         with LlamaClientNode._lock:
             if LlamaClientNode._instance == None:
-                LlamaClientNode._instance = LlamaClientNode(namespace)
+                LlamaClientNode._instance = LlamaClientNode()
 
             return LlamaClientNode._instance
 
@@ -90,6 +91,12 @@ class LlamaClientNode(Node):
         self._tokenize_srv_client = self.create_client(
             Tokenize,
             "tokenize",
+            callback_group=self._callback_group
+        )
+
+        self._detokenize_srv_client = self.create_client(
+            Detokenize,
+            "detokenize",
             callback_group=self._callback_group
         )
 
@@ -120,6 +127,10 @@ class LlamaClientNode(Node):
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
         self._tokenize_srv_client.wait_for_service()
         return self._tokenize_srv_client.call(req)
+
+    def detokenize(self, req: Detokenize.Request) -> Detokenize.Response:
+        self._detokenize_srv_client.wait_for_service()
+        return self._detokenize_srv_client.call(req)
 
     def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
         self._embeddings_srv_client.wait_for_service()

@@ -47,7 +47,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _messages_to_chat_messages(self, messages: List[BaseMessage]) -> tuple[FormatChatMessages.Request, Optional[str], Optional[np.ndarray]]:
+    def _messages_to_chat_messages(
+        self,
+        messages: List[BaseMessage]
+    ) -> tuple[FormatChatMessages.Request, Optional[str], Optional[np.ndarray]]:
+
         chat_messages = FormatChatMessages.Request()
         image_url = None
         image = None
@@ -86,9 +90,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-
     ) -> str:
-        llama_client = self.llama_client.get_instance(self.namespace)
+
+        llama_client = self.llama_client.get_instance()
 
         chat_messages, image_url, image = self._messages_to_chat_messages(
             messages)
@@ -98,8 +102,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs)
 
-        result, status = LlamaClientNode.get_instance(
-            self.namespace).generate_response(goal_action)
+        result, status = LlamaClientNode.get_instance().generate_response(goal_action)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
@@ -114,9 +117,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-
     ) -> Iterator[ChatGenerationChunk]:
-        llama_client = self.llama_client.get_instance(self.namespace)
+
+        llama_client = self.llama_client.get_instance()
 
         chat_messages, image_url, image = self._messages_to_chat_messages(
             messages)
@@ -126,8 +129,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs)
 
-        for pt in LlamaClientNode.get_instance(
-                self.namespace).generate_response(goal_action, stream=True):
+        for pt in LlamaClientNode.get_instance().generate_response(goal_action, stream=True):
 
             if run_manager:
                 run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)
