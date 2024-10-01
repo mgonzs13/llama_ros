@@ -22,7 +22,7 @@
 
 
 from typing import Dict, List
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, model_validator
 from langchain_core.embeddings import Embeddings
 
 from llama_msgs.srv import GenerateEmbeddings
@@ -35,10 +35,10 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
     normalize: bool = True
 
     class Config:
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["llama_client"] = LlamaClientNode.get_instance()
         return values

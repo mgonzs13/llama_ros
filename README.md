@@ -535,7 +535,7 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from llama_ros.langchain import LlamaROSEmbeddings
 
 
@@ -554,7 +554,7 @@ retriever = db.as_retriever(search_kwargs={"k": 5})
 db.add_texts(texts=["your_texts"])
 
 # retrieve documents
-docuemnts = retriever.get_relevant_documents("your_query")
+docuemnts = retriever.invoke("your_query")
 print(docuemnts)
 
 rclpy.shutdown()
@@ -580,20 +580,26 @@ from langchain.retrievers import ContextualCompressionRetriever
 
 rclpy.init()
 
+# load the documents
 documents = TextLoader("../state_of_the_union.txt",).load()
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500, chunk_overlap=100)
 texts = text_splitter.split_documents(documents)
 
+# create the llama_ros embeddings
 embeddings = LlamaROSEmbeddings()
+
+# create the VD and the retriever
 retriever = FAISS.from_documents(
     texts, embeddings).as_retriever(search_kwargs={"k": 20})
 
+# create the compressor using the llama_ros reranker
 compressor = LlamaROSReranker()
 compression_retriever = ContextualCompressionRetriever(
     base_compressor=compressor, base_retriever=retriever
 )
 
+# retrieve the documents
 compressed_docs = compression_retriever.invoke(
     "What did the president say about Ketanji Jackson Brown"
 )

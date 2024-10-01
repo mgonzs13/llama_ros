@@ -21,15 +21,10 @@
 # SOFTWARE.
 
 
-from __future__ import annotations
-
 import operator
 from typing import Optional, Sequence
-
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-
 from llama_msgs.srv import RerankDocuments
 from llama_ros.llama_client_node import LlamaClientNode
 
@@ -39,7 +34,6 @@ class LlamaROSReranker(BaseDocumentCompressor):
     top_n: int = 3
 
     class Config:
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
     def compress_documents(

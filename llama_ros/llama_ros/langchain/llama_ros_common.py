@@ -23,7 +23,7 @@
 
 from abc import ABC
 from typing import List, Optional, Dict
-from pydantic import root_validator
+from pydantic import model_validator
 from cv_bridge import CvBridge
 import numpy as np
 import urllib.request
@@ -83,7 +83,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["llama_client"] = LlamaClientNode.get_instance()
         return values
