@@ -81,14 +81,6 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
-  // tokenize services
-  this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
-      "tokenize",
-      std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
-  this->detokenize_service_ = this->create_service<llama_msgs::srv::Detokenize>(
-      "detokenize",
-      std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
-
   // embeddings service
   if (this->llama->is_embedding() && !this->llama->is_reranking()) {
     this->generate_embeddings_service_ =
@@ -109,6 +101,13 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
 
   // completion services and action
   if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
+        "tokenize",
+        std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
+    this->detokenize_service_ =
+        this->create_service<llama_msgs::srv::Detokenize>(
+            "detokenize",
+            std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
 
     this->format_chat_service_ =
         this->create_service<llama_msgs::srv::FormatChatMessages>(
@@ -147,12 +146,6 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->destroy_llama();
 
-  this->tokenize_service_.reset();
-  this->tokenize_service_ = nullptr;
-
-  this->detokenize_service_.reset();
-  this->detokenize_service_ = nullptr;
-
   if (this->llama->is_embedding() && !this->llama->is_reranking()) {
     this->generate_embeddings_service_.reset();
     this->generate_embeddings_service_ = nullptr;
@@ -164,6 +157,12 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
   }
 
   if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->tokenize_service_.reset();
+    this->tokenize_service_ = nullptr;
+
+    this->detokenize_service_.reset();
+    this->detokenize_service_ = nullptr;
+
     this->format_chat_service_.reset();
     this->format_chat_service_ = nullptr;
 
