@@ -22,8 +22,9 @@
 
 
 from typing import List
-from launch import LaunchDescription
+from launch import LaunchDescription, LaunchContext
 from launch_ros.actions import Node
+from launch.actions import OpaqueFunction, DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.conditions import IfCondition, UnlessCondition
@@ -31,91 +32,100 @@ from launch.conditions import IfCondition, UnlessCondition
 
 def generate_launch_description():
 
-    params = {
-        "seed": LaunchConfiguration("seed", default=-1),
-        "n_ctx": LaunchConfiguration("n_ctx", default=512),
-        "n_batch": LaunchConfiguration("n_batch", default=2048),
-        "n_ubatch": LaunchConfiguration("n_batch", default=512),
+    def run_llama(context: LaunchContext, embedding, reranking):
+        embedding = eval(context.perform_substitution(embedding))
+        reranking = eval(context.perform_substitution(reranking))
 
-        "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
-        "split_mode": LaunchConfiguration("split_mode", default="layer"),
-        "main_gpu": LaunchConfiguration("main_gpu", default=0),
-        "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
+        params = {
+            "seed": LaunchConfiguration("seed", default=-1),
+            "n_ctx": LaunchConfiguration("n_ctx", default=512),
+            "n_batch": LaunchConfiguration("n_batch", default=2048),
+            "n_ubatch": LaunchConfiguration("n_batch", default=512),
 
-        "grp_attn_n": LaunchConfiguration("grp_attn_n", default=1),
-        "grp_attn_w": LaunchConfiguration("grp_attn_w", default=512),
+            "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
+            "split_mode": LaunchConfiguration("split_mode", default="layer"),
+            "main_gpu": LaunchConfiguration("main_gpu", default=0),
+            "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
 
-        "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
-        "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
-        "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=""),
+            "grp_attn_n": LaunchConfiguration("grp_attn_n", default=1),
+            "grp_attn_w": LaunchConfiguration("grp_attn_w", default=512),
 
-        "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
-        "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
-        "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=32.0),
-        "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
-        "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
+            "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
+            "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
+            "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=""),
 
-        "embedding": LaunchConfiguration("embedding", default=False),
-        "reranking": LaunchConfiguration("reranking", default=False),
-        "logits_all": LaunchConfiguration("logits_all", default=False),
-        "use_mmap": LaunchConfiguration("use_mmap", default=True),
-        "use_mlock": LaunchConfiguration("use_mlock", default=False),
-        "warmup": LaunchConfiguration("warmup", default=True),
-        "check_tensors": LaunchConfiguration("check_tensors", default=False),
-        "flash_attn": LaunchConfiguration("flash_attn", default=False),
+            "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
+            "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
+            "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=32.0),
+            "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
+            "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
 
-        "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
-        "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
-        "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
+            "embedding": embedding,
+            "reranking": reranking,
+            "logits_all": LaunchConfiguration("logits_all", default=False),
+            "use_mmap": LaunchConfiguration("use_mmap", default=True),
+            "use_mlock": LaunchConfiguration("use_mlock", default=False),
+            "warmup": LaunchConfiguration("warmup", default=True),
+            "check_tensors": LaunchConfiguration("check_tensors", default=False),
+            "flash_attn": LaunchConfiguration("flash_attn", default=False),
 
-        "n_threads": LaunchConfiguration("n_threads", default=1),
-        "cpu_mask": LaunchConfiguration("cpu_mask", default=""),
-        "cpu_range": LaunchConfiguration("cpu_range", default=""),
-        "priority": LaunchConfiguration("priority", default="normal"),
-        "strict_cpu": LaunchConfiguration("strict_cpu", default=False),
-        "poll": LaunchConfiguration("poll", default=50),
+            "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
+            "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
+            "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
 
-        "n_threads_batch": LaunchConfiguration("n_threads_batch", default=1),
-        "cpu_mask_batch": LaunchConfiguration("cpu_mask_batch", default=""),
-        "cpu_range_batch": LaunchConfiguration("cpu_range_batch", default=""),
-        "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
-        "strict_cpu_batch": LaunchConfiguration("strict_cpu_batch", default=False),
-        "poll_batch": LaunchConfiguration("poll_batch", default=50),
+            "n_threads": LaunchConfiguration("n_threads", default=1),
+            "cpu_mask": LaunchConfiguration("cpu_mask", default=""),
+            "cpu_range": LaunchConfiguration("cpu_range", default=""),
+            "priority": LaunchConfiguration("priority", default="normal"),
+            "strict_cpu": LaunchConfiguration("strict_cpu", default=False),
+            "poll": LaunchConfiguration("poll", default=50),
 
-        "n_predict": LaunchConfiguration("n_predict", default=128),
-        "n_keep": LaunchConfiguration("n_keep", default=-1),
+            "n_threads_batch": LaunchConfiguration("n_threads_batch", default=1),
+            "cpu_mask_batch": LaunchConfiguration("cpu_mask_batch", default=""),
+            "cpu_range_batch": LaunchConfiguration("cpu_range_batch", default=""),
+            "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
+            "strict_cpu_batch": LaunchConfiguration("strict_cpu_batch", default=False),
+            "poll_batch": LaunchConfiguration("poll_batch", default=50),
 
-        "model": LaunchConfiguration("model", default=""),
-        "lora_adapters": ParameterValue(LaunchConfiguration("lora_adapters", default=[""]), value_type=List[str]),
-        "lora_adapters_scales": ParameterValue(LaunchConfiguration("lora_adapters_scales", default=[0.0]), value_type=List[float]),
-        "mmproj": LaunchConfiguration("mmproj", default=""),
-        "numa": LaunchConfiguration("numa", default="none"),
-        "pooling_type": LaunchConfiguration("pooling_type", default=""),
+            "n_predict": LaunchConfiguration("n_predict", default=128),
+            "n_keep": LaunchConfiguration("n_keep", default=-1),
 
-        "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
-        "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
-        "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[""]), value_type=List[str]),
-        "image_prefix": ParameterValue(LaunchConfiguration("image_prefix", default=""), value_type=str),
-        "image_suffix": ParameterValue(LaunchConfiguration("image_suffix", default=""), value_type=str),
-        "image_text": ParameterValue(LaunchConfiguration("image_text", default="<image>"), value_type=str),
+            "model": LaunchConfiguration("model", default=""),
+            "lora_adapters": ParameterValue(LaunchConfiguration("lora_adapters", default=[""]), value_type=List[str]),
+            "lora_adapters_scales": ParameterValue(LaunchConfiguration("lora_adapters_scales", default=[0.0]), value_type=List[float]),
+            "mmproj": LaunchConfiguration("mmproj", default=""),
+            "numa": LaunchConfiguration("numa", default="none"),
+            "pooling_type": LaunchConfiguration("pooling_type", default=""),
 
-        "system_prompt": ParameterValue(LaunchConfiguration("system_prompt", default=""), value_type=str),
-        "system_prompt_file": ParameterValue(LaunchConfiguration("system_prompt_file", default=""), value_type=str),
-        "debug": LaunchConfiguration("debug", default=True),
-    }
+            "prefix": ParameterValue(LaunchConfiguration("prefix", default=""), value_type=str),
+            "suffix": ParameterValue(LaunchConfiguration("suffix", default=""), value_type=str),
+            "stopping_words": ParameterValue(LaunchConfiguration("stopping_words", default=[""]), value_type=List[str]),
+            "image_prefix": ParameterValue(LaunchConfiguration("image_prefix", default=""), value_type=str),
+            "image_suffix": ParameterValue(LaunchConfiguration("image_suffix", default=""), value_type=str),
+            "image_text": ParameterValue(LaunchConfiguration("image_text", default="<image>"), value_type=str),
 
-    return LaunchDescription([
-        Node(
+            "system_prompt": ParameterValue(LaunchConfiguration("system_prompt", default=""), value_type=str),
+            "system_prompt_file": ParameterValue(LaunchConfiguration("system_prompt_file", default=""), value_type=str),
+            "debug": LaunchConfiguration("debug", default=True),
+        }
+
+        # get llama node name
+        llama_node_name = "llama_node"
+
+        if embedding and not reranking:
+            llama_node_name = "llama_embedding_node"
+        elif reranking:
+            llama_node_name = "llama_reranking_node"
+
+        return Node(
             package="llama_ros",
             executable="llama_node",
-            name="llama_node",
+            name=llama_node_name,
             namespace="llama",
             parameters=[params],
             condition=UnlessCondition(PythonExpression(
                 [LaunchConfiguration("use_llava")]))
-        ),
-
-        Node(
+        ), Node(
             package="llama_ros",
             executable="llava_node",
             name="llava_node",
@@ -123,5 +133,22 @@ def generate_launch_description():
             parameters=[params],
             condition=IfCondition(PythonExpression(
                 [LaunchConfiguration("use_llava")]))
-        ),
+        )
+
+    embedding = LaunchConfiguration("embedding")
+    embedding_cmd = DeclareLaunchArgument(
+        "embedding",
+        default_value="False",
+        description="Whether the model is an embedding model")
+
+    reranking = LaunchConfiguration("reranking")
+    reranking_cmd = DeclareLaunchArgument(
+        "reranking",
+        default_value="False",
+        description="Whether the model is an reranking model")
+
+    return LaunchDescription([
+        embedding_cmd,
+        reranking_cmd,
+        OpaqueFunction(function=run_llama, args=[embedding, reranking])
     ])
