@@ -20,7 +20,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SamplingConfig.msg"
   "msg/Message.msg"
   "msg/LoRA.msg"
-  "msg/Rank.msg"
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"

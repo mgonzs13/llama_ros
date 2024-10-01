@@ -48,16 +48,13 @@ class LlamaRerankDemoNode(Node):
             "Paris, capitale de la France, est une grande ville européenne et un centre mondial de l'art, de la mode, de la gastronomie et de la culture. Son paysage urbain du XIXe siècle est traversé par de larges boulevards et la Seine."
         ]
 
-        ranks = self._llama_client.rerank_documents(rerank_req).ranks
-        scores = [r.score for r in ranks]
-
-        docs_with_scores = list(zip(ranks, scores))
-        result = sorted(docs_with_scores,
-                        key=operator.itemgetter(1), reverse=True)
+        scores = self._llama_client.rerank_documents(rerank_req).scores
+        scored_docs = list(zip(rerank_req.documents, scores))
+        result = sorted(scored_docs, key=operator.itemgetter(1), reverse=True)
 
         for i in range(len(result)):
             self.get_logger().info(
-                f"{i} ({result[i][0].score}): {result[i][0].document}")
+                f"{i} ({result[i][1]}): {result[i][0]}")
 
 
 def main():

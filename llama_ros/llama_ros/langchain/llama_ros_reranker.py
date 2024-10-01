@@ -55,10 +55,7 @@ class LlamaROSReranker(BaseDocumentCompressor):
         for doc in documents:
             req.documents.append(doc.page_content)
 
-        ranks = LlamaClientNode.get_instance().rerank_documents(req).ranks
-        scores = [r.score for r in ranks]
-
-        docs_with_scores = list(zip(documents, scores))
-        result = sorted(docs_with_scores,
-                        key=operator.itemgetter(1), reverse=True)
+        scores = LlamaClientNode.get_instance().rerank_documents(req).scores
+        scored_docs = list(zip(documents, scores))
+        result = sorted(scored_docs, key=operator.itemgetter(1), reverse=True)
         return [doc for doc, _ in result[: self.top_n]]
