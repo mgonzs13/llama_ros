@@ -44,7 +44,7 @@ class LlamaDemoNode(Node):
         self.initial_time = -1
         self.eval_time = -1
 
-        self._llama_client = LlamaClientNode.get_instance("llama")
+        self._llama_client = LlamaClientNode.get_instance()
 
     def text_cb(self, feedback) -> None:
 

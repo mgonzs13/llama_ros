@@ -30,7 +30,7 @@ from llama_ros.llama_client_node import LlamaClientNode
 
 @chain
 def ChatPromptFormatter(messages):
-    client = LlamaClientNode.get_instance('llama')
+    client = LlamaClientNode.get_instance()
     output_msgs = []
 
     for msg in messages.messages:
