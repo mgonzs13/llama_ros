@@ -1,0 +1,12 @@
+prefix: "\nUSER: "
+suffix: "\nASSISTANT: "
+stopping_words: ["USER: "]
+
+system_prompt: |-
+  SYSTEM: You are an AI assistant that follows instruction extremely well. Help as much as you can.
+
+  USER: Hello
+
+  ASSISTANT: Hello
+
+  USER:
