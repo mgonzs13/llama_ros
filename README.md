@@ -562,7 +562,7 @@ rclpy.shutdown()
 
 </details>
 
-#### llama_ros renranker
+#### llama_ros (Renranker)
 
 <details>
 <summary>Click to expand</summary>
@@ -608,6 +608,73 @@ for doc in compressed_docs:
     print("-" * 50)
     print(doc.page_content)
     print("\n")
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### llama_ros (LLM + RAG + Reranker)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import bs4
+import rclpy
+from langchain import hub
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from llama_ros.langchain import LlamaROS, LlamaROSEmbeddings, LlamaROSReranker
+from langchain.retrievers import ContextualCompressionRetriever
+
+
+rclpy.init()
+
+# load, chunk and index the contents of the blog
+loader = WebBaseLoader(
+    web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
+    bs_kwargs=dict(
+        parse_only=bs4.SoupStrainer(
+            class_=("post-content", "post-title", "post-header")
+        )
+    ),
+)
+docs = loader.load()
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=200)
+splits = text_splitter.split_documents(docs)
+vectorstore = Chroma.from_documents(
+    documents=splits, embedding=LlamaROSEmbeddings())
+
+# retrieve and generate using the relevant snippets of the blog
+retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
+prompt = hub.pull("rlm/rag-prompt")
+
+compressor = LlamaROSReranker(top_n=5)
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor, base_retriever=retriever
+)
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+# create and use the chain
+rag_chain = (
+    {"context": compression_retriever | format_docs,
+        "question": RunnablePassthrough()}
+    | prompt
+    | LlamaROS(temp=0.0)
+    | StrOutputParser()
+)
+
+print(rag_chain.invoke("What is Task Decomposition?"))
 
 rclpy.shutdown()
 ```
