@@ -294,8 +294,35 @@ class ExampleNode(Node):
 
         # call the tokenize service
         self.srv_client.wait_for_service()
-        res = self.srv_client.call(req)
-        tokens = res.tokens
+        tokens = self.srv_client.call(req).tokens
+```
+
+</details>
+
+#### Detokenize
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+from rclpy.node import Node
+from llama_msgs.srv import Detokenize
+
+
+class ExampleNode(Node):
+    def __init__(self) -> None:
+        super().__init__("example_node")
+
+        # create the client
+        self.srv_client = self.create_client(Detokenize, "/llama/detokenize")
+
+        # create the request
+        req = Detokenize.Request()
+        req.tokens = [123, 123]
+
+        # call the tokenize service
+        self.srv_client.wait_for_service()
+        text = self.srv_client.call(req).text
 ```
 
 </details>
@@ -326,8 +353,7 @@ class ExampleNode(Node):
 
         # call the embedding service
         self.srv_client.wait_for_service()
-        res = self.srv_client.call(req)
-        embeddings = res.embeddings
+        embeddings = self.srv_client.call(req).embeddings
 ```
 
 </details>
@@ -541,7 +567,7 @@ from llama_ros.langchain import LlamaROSEmbeddings
 
 rclpy.init()
 
-# create the llama_ros embeddings for lanchain
+# create the llama_ros embeddings for langchain
 embeddings = LlamaROSEmbeddings()
 
 # create a vector database and assign it
@@ -554,8 +580,8 @@ retriever = db.as_retriever(search_kwargs={"k": 5})
 db.add_texts(texts=["your_texts"])
 
 # retrieve documents
-docuemnts = retriever.invoke("your_query")
-print(docuemnts)
+documents = retriever.invoke("your_query")
+print(documents)
 
 rclpy.shutdown()
 ```
