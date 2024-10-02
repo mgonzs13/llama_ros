@@ -751,6 +751,8 @@ $ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/bge-base-en-v1.
 $ ros2 run llama_demos llama_embeddings_demo_node
 ```
 
+https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
+
 ### Reranking Demo
 
 ```shell
