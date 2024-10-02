@@ -28,7 +28,6 @@
 #include "common.h"
 #include "llama.h"
 #include "llama_msgs/msg/lo_ra.hpp"
-#include "llama_msgs/msg/rank.hpp"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
