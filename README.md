@@ -87,7 +87,7 @@ def generate_launch_description():
             model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
             model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file in repo
 
-            system_prompt_type="alpaca" # system prompt type
+            system_prompt_type="Alpaca" # system prompt type
         )
     ])
 ```
@@ -187,7 +187,7 @@ def generate_launch_description():
             mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf", # Hugging Face repo
             mmproj_filename="mmproj-model-f16.gguf", # mmproj file in repo
 
-            system_prompt_type="mistral" # system prompt type
+            system_prompt_type="Mistral" # system prompt type
         )
     ])
 ```
@@ -704,7 +704,7 @@ chat = ChatLlamaROS(
 
 # create prompt template with messages
 prompt = ChatPromptTemplate.from_messages([
-    SystemMessage("You are a IA that just asnwer with a single word."),
+    SystemMessage("You are a IA that just answer with a single word."),
     HumanMessagePromptTemplate.from_template(template=[
         {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
         {"type": "image_url", "image_url": "{image_url}"}
