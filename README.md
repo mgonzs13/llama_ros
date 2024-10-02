@@ -43,7 +43,7 @@ Commands are included in llama_ros to speed up the test of GGUF-based LLMs withi
 Using this command launch a LLM from a YAML file. The configuration of the YAML is used to launch the LLM in the same way as using a regular launch file. Here is an example of how to use it:
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/StableLM-Zephyr.yaml
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml
 ```
 
 #### prompt
@@ -126,7 +126,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"), "params", "Spaetzle.yaml"))
+            get_package_share_directory("llama_bringup"), "models", "Spaetzle.yaml"))
     ])
 ```
 
@@ -226,7 +226,7 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
             get_package_share_directory("llama_bringup"),
-            "params", "llava-1.6-mistral-7b-gguf.yaml"))
+            "models", "llava-1.6-mistral-7b-gguf.yaml"))
     ])
 ```
 
@@ -744,7 +744,7 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 ### Embeddings Generation Demo
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/bge-base-en-v1.5.yaml
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
 ```
 
 ```shell
@@ -756,7 +756,7 @@ https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
 ### Reranking Demo
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/jina-reranker.yaml
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
 ```
 
 ```shell
