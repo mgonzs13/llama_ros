@@ -235,10 +235,18 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Generating embeddings");
+  }
+
   auto embeddings =
       this->llama->generate_embeddings(request->prompt, request->normalize);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
+
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Embeddings generated");
+  }
 }
 
 /*
@@ -250,8 +258,16 @@ void LlamaNode::rerank_documents_service_callback(
     const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
 
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Reranking documents...");
+  }
+
   response->scores =
       this->llama->rank_documents(request->query, request->documents);
+
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Reranking finished");
+  }
 }
 
 /*
