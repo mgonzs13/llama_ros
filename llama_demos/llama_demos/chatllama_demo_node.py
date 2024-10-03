@@ -40,6 +40,11 @@ class ChatLlamaDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
+        self.declare_parameter(
+            "prompt", "Who is the character in the middle of the image?")
+        self.prompt = self.get_parameter(
+            "prompt").get_parameter_value().string_value
+
         self.cv_bridge = CvBridge()
 
         self.tokens = 0
@@ -57,7 +62,7 @@ class ChatLlamaDemoNode(Node):
             SystemMessage(
                 "You are a IA that just answer with a single word."),
             HumanMessagePromptTemplate.from_template(template=[
-                {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
+                {"type": "text", "text": f"<image>{self.prompt}"},
                 {"type": "image_url", "image_url": "{image_url}"}
             ])
         ])

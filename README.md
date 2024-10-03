@@ -806,11 +806,75 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-76
 ### Chat Template Demo
 
 ```shell
-$ ros2 launch llama_bringup minicpm-2.6.launch.py
+$ ros2 llama launch MiniCPM-2.6.yaml
 ```
+
+<details>
+<summary>Click to expand MiniCPM-2.6</summary>
+
+```yaml
+use_llava: True
+
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 20
+n_threads: 1
+n_predict: 8192
+
+image_prefix: "<image>"
+image_suffix: "</image>"
+
+model_repo: "openbmb/MiniCPM-V-2_6-gguf"
+model_filename: "ggml-model-Q4_K_M.gguf"
+
+mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
+mmproj_filename: "mmproj-model-f16.gguf"
+
+stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 $ ros2 run llama_demos chatllama_demo_node
 ```
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+
+#### Full Demo (LLM + chat template + RAG + Reranking + Stream)
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+```
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+```
+
+```shell
+$ ros2 llama launch Llama-3.yaml
+```
+
+<details>
+<summary>Click to expand Llama-3.yaml</summary>
+
+```yaml
+n_ctx: 4096
+n_batch: 256
+n_gpu_layers: 33
+n_threads: -1
+n_predict: -1
+
+model_repo: "lmstudio-community/Llama-3.2-1B-Instruct-GGUF"
+model_filename: "Llama-3.2-1B-Instruct-Q8_0.gguf"
+
+stopping_words: ["<|eot_id|>"]
+```
+
+</details>
+
+```shell
+$ ros2 run llama_demos llama_rag_demo_node
+```
+
+https://github.com/user-attachments/assets/e968a76b-7586-43c2-b49a-ea8948971ae4
