@@ -61,18 +61,20 @@ retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
 # create prompt
 prompt = ChatPromptTemplate.from_messages([
     SystemMessage("You are an AI assistant that answer questions."),
-    HumanMessagePromptTemplate.from_template("{question}")
+    HumanMessagePromptTemplate.from_template(
+        "Taking into account the followin context:\n{context}\nAnswer this question: {question}"
+    )
 ])
 
 # create rerank compression retriever
-compressor = LlamaROSReranker(top_n=5)
+compressor = LlamaROSReranker(top_n=3)
 compression_retriever = ContextualCompressionRetriever(
     base_compressor=compressor, base_retriever=retriever
 )
 
 
 def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    return "\n\n\t- ".join(doc.page_content for doc in docs)
 
 
 # create and use the chain
