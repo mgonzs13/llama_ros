@@ -877,4 +877,4 @@ stopping_words: ["<|eot_id|>"]
 $ ros2 run llama_demos llama_rag_demo_node
 ```
 
-https://github.com/user-attachments/assets/e968a76b-7586-43c2-b49a-ea8948971ae4
+https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6
