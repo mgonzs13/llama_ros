@@ -404,10 +404,10 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
   return GGML_SCHED_PRIO_NORMAL;
 }
 
-struct gpt_sampler_params llama_utils::parse_sampling_params(
+struct common_sampler_params llama_utils::parse_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct gpt_sampler_params sparams;
+  struct common_sampler_params sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
@@ -432,7 +432,7 @@ struct gpt_sampler_params llama_utils::parse_sampling_params(
   sparams.penalize_nl = sampling_config.penalize_nl;
 
   sparams.samplers =
-      gpt_sampler_types_from_chars(sampling_config.samplers_sequence);
+      common_sampler_types_from_chars(sampling_config.samplers_sequence);
   sparams.grammar = sampling_config.grammar;
 
   if (sparams.grammar.size() == 0 &&

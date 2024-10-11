@@ -279,9 +279,9 @@ void LlamaNode::format_chat_service_callback(
     const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request> request,
     std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response) {
 
-  std::vector<struct llama_chat_msg> converted_messages;
+  std::vector<struct common_chat_msg> converted_messages;
   for (auto message : request->messages) {
-    struct llama_chat_msg aux;
+    struct common_chat_msg aux;
     aux.role = message.role.c_str();
     aux.content = message.content.c_str();
 
@@ -401,7 +401,7 @@ void LlamaNode::execute(
     this->llama->reset();
   }
 
-  // update sampling params of gpt_params
+  // update sampling params of common_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
   auto sparams = llama_utils::parse_sampling_params(sampling_config,
                                                     this->llama->get_n_vocab());

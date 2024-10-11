@@ -47,7 +47,7 @@ struct llava_params {
 class Llava : public llama_ros::Llama {
 
 public:
-  Llava(const struct gpt_params &params,
+  Llava(const struct common_params &params,
         const struct llava_params &llava_params, bool debug = false);
   ~Llava();
 

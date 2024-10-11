@@ -84,7 +84,7 @@ using GenerateResponseCallback = std::function<void(struct completion_output)>;
 class Llama {
 
 public:
-  Llama(const struct gpt_params &params, bool debug);
+  Llama(const struct common_params &params, bool debug);
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -94,7 +94,7 @@ public:
   void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<struct llama_chat_msg> chat_msgs,
+  std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
                                  bool add_ass);
   std::vector<struct lora> list_loras();
   void update_loras(std::vector<struct lora> loras);
@@ -111,7 +111,7 @@ public:
                                     const std::vector<std::string> &documents);
 
   response_output generate_response(const std::string &input_prompt,
-                                    struct gpt_sampler_params sparams,
+                                    struct common_sampler_params sparams,
                                     GenerateResponseCallback callbakc = nullptr,
                                     std::vector<std::string> stop = {});
   response_output generate_response(const std::string &input_prompt,
@@ -130,13 +130,13 @@ public:
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  struct gpt_params params;
+  struct common_params params;
 
   // model
   struct llama_context *ctx;
   struct llama_model *model;
-  std::vector<struct llama_lora_adapter_container> lora_adapters;
-  struct gpt_sampler *sampler;
+  std::vector<struct common_lora_adapter_container> lora_adapters;
+  struct common_sampler *sampler;
   struct ggml_threadpool *threadpool;
   struct ggml_threadpool *threadpool_batch;
 

@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_ROS__GPT_PARAMS_HPP
-#define LLAMA_ROS__GPT_PARAMS_HPP
+#ifndef LLAMA_ROS__common_params_HPP
+#define LLAMA_ROS__common_params_HPP
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
@@ -36,7 +36,7 @@ namespace llama_utils {
 
 struct llama_params {
   bool debug;
-  struct gpt_params params;
+  struct common_params params;
   struct llava_ros::llava_params llava_params;
 };
 
@@ -48,7 +48,7 @@ get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
 enum ggml_sched_priority parse_priority(std::string priority);
 
-struct gpt_sampler_params
+struct common_sampler_params
 parse_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
                       int n_vocab);
 

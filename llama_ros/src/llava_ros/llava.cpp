@@ -30,7 +30,7 @@
 
 using namespace llava_ros;
 
-Llava::Llava(const struct gpt_params &params,
+Llava::Llava(const struct common_params &params,
              const struct llava_params &llava_params, bool debug)
     : llama_ros::Llama(params, debug), llava_params(llava_params) {
 

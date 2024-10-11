@@ -31,7 +31,7 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const struct gpt_params &params, bool debug)
+Llama::Llama(const struct common_params &params, bool debug)
     : params(params), debug(debug) {
 
   if (this->debug) {
@@ -42,8 +42,7 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  struct llama_init_result llama_init =
-      llama_init_from_gpt_params(this->params);
+  struct common_init_result llama_init = common_init_from_params(this->params);
   this->model = llama_init.model;
   this->ctx = llama_init.context;
   this->lora_adapters = llama_init.lora_adapters;
@@ -86,7 +85,7 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
 
   // create the sampler
-  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sparams);
   if (!this->sampler) {
     LLAMA_LOG_ERROR("Failed to initialize sampling subsystem");
     return;
@@ -105,7 +104,7 @@ Llama::Llama(const struct gpt_params &params, bool debug)
   // show info
   LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
                  LLAMA_COMMIT);
-  LLAMA_LOG_INFO("%s", gpt_params_get_system_info(this->params).c_str());
+  LLAMA_LOG_INFO("%s", common_params_get_system_info(this->params).c_str());
 
   LLAMA_LOG_INFO(
       "Generate: n_ctx = %d, n_batch = %d, n_predict = %d, n_keep = %d",
@@ -136,7 +135,7 @@ Llama::~Llama() {
   this->model = nullptr;
 
   if (this->sampler != nullptr) {
-    gpt_sampler_free(this->sampler);
+    common_sampler_free(this->sampler);
     this->sampler = nullptr;
   }
   llama_backend_free();
@@ -159,7 +158,7 @@ void Llama::reset() {
   llama_kv_cache_clear(this->ctx);
 
   if (this->sampler != nullptr) {
-    gpt_sampler_reset(this->sampler);
+    common_sampler_reset(this->sampler);
   }
 
   this->canceled = false;
@@ -189,7 +188,7 @@ void Llama::reset() {
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
                                          bool special) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
-  return llama_tokenize(this->ctx, text, add_bos, special);
+  return common_tokenize(this->ctx, text, add_bos, special);
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
@@ -198,7 +197,7 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   std::string text;
 
   for (llama_token t : tokens) {
-    text.append(llama_token_to_piece(this->ctx, t));
+    text.append(common_token_to_piece(this->ctx, t));
   }
 
   return text;
@@ -237,7 +236,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   // llama eval
   struct llama_batch batch = llama_batch_init(this->params.n_batch, 0, 1);
   for (size_t i = 0; i < tokens.size(); i++) {
-    llama_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
+    common_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
   }
 
   if (llama_decode(this->ctx, batch)) {
@@ -265,7 +264,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
     }
 
     if (normalize) {
-      llama_embd_normalize(embd, embd_res.data(), n_embd);
+      common_embd_normalize(embd, embd_res.data(), n_embd);
 
     } else {
       for (int i = 0; i < n_embd; i++) {
@@ -366,9 +365,9 @@ Llama::rank_documents(const std::string &query,
 *****************************
 */
 std::string
-Llama::format_chat_prompt(std::vector<struct llama_chat_msg> chat_msgs,
+Llama::format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
                           bool add_ass) {
-  return llama_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
+  return common_chat_apply_template(this->get_model(), "", chat_msgs, add_ass);
 }
 
 /*
@@ -426,7 +425,7 @@ void Llama::update_loras(std::vector<struct lora> loras) {
     }
   }
 
-  llama_lora_adapters_apply(this->ctx, this->lora_adapters);
+  common_lora_adapters_apply(this->ctx, this->lora_adapters);
 }
 
 /*
@@ -437,12 +436,12 @@ void Llama::update_loras(std::vector<struct lora> loras) {
 response_output Llama::generate_response(const std::string &input_prompt,
                                          GenerateResponseCallback callback,
                                          std::vector<std::string> stop) {
-  struct gpt_sampler_params sparams;
+  struct common_sampler_params sparams;
   return this->generate_response(input_prompt, sparams, callback, stop);
 }
 
 response_output Llama::generate_response(const std::string &input_prompt,
-                                         struct gpt_sampler_params sparams,
+                                         struct common_sampler_params sparams,
                                          GenerateResponseCallback callback,
                                          std::vector<std::string> stop) {
 
@@ -464,10 +463,10 @@ response_output Llama::generate_response(const std::string &input_prompt,
   this->params.sparams = sparams;
 
   if (this->sampler != nullptr) {
-    gpt_sampler_free(this->sampler);
+    common_sampler_free(this->sampler);
   }
 
-  this->sampler = gpt_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sparams);
 
   if (this->sampler == nullptr) {
     output.stop = stop_type::ABORT;
@@ -481,7 +480,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   if (this->debug) {
     LLAMA_LOG_INFO("Sampler params: %s", this->params.sparams.print().c_str());
     LLAMA_LOG_INFO("Sampler constr: %s",
-                   gpt_sampler_print(this->sampler).c_str());
+                   common_sampler_print(this->sampler).c_str());
 
     LLAMA_LOG_INFO("Prompt tokens:\n%s",
                    this->detokenize(this->prompt_tokens).c_str());
@@ -540,7 +539,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   LLAMA_LOG_INFO("Finish Response Generation");
 
   if (this->debug) {
-    gpt_perf_print(this->ctx, this->sampler);
+    common_perf_print(this->ctx, this->sampler);
   }
 
   output.completions = response;
@@ -575,7 +574,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 
     const int n_prev = 64;
     const std::string last_output =
-        gpt_sampler_prev_str(this->sampler, this->ctx, n_prev);
+        common_sampler_prev_str(this->sampler, this->ctx, n_prev);
 
     // check if prefix is already added
     if (last_output.find(
@@ -610,7 +609,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   // check if stopping word appear at the end of the output
   const int n_prev = 32;
   const std::string last_output =
-      gpt_sampler_prev_str(this->sampler, this->ctx, n_prev);
+      common_sampler_prev_str(this->sampler, this->ctx, n_prev);
 
   for (auto w : stopping_words) {
     if (last_output.find(w.c_str(), last_output.length() - w.length(),
@@ -621,7 +620,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   }
 
   // eos
-  if (llama_token_is_eog(this->model, gpt_sampler_last(this->sampler))) {
+  if (llama_token_is_eog(this->model, common_sampler_last(this->sampler))) {
     LLAMA_LOG_INFO("Stopping with EOS");
     return FULL_STOP;
   }
@@ -716,7 +715,8 @@ bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
            ((int)batch.size() < this->params.n_batch)) {
 
       batch.push_back(prompt_tokens[this->n_consumed]);
-      gpt_sampler_accept(this->sampler, prompt_tokens[this->n_consumed], false);
+      common_sampler_accept(this->sampler, prompt_tokens[this->n_consumed],
+                            false);
       ++this->n_consumed;
     }
 
@@ -836,7 +836,7 @@ bool Llama::eval(struct llama_batch batch) {
 std::vector<token_prob> Llama::get_probs() {
   std::vector<token_prob> probs;
 
-  const auto *cur_p = gpt_sampler_get_candidates(this->sampler);
+  const auto *cur_p = common_sampler_get_candidates(this->sampler);
 
   const int32_t n_probs = this->params.sparams.n_probs;
 
@@ -853,8 +853,8 @@ std::vector<token_prob> Llama::get_probs() {
 struct completion_output Llama::sample() {
 
   // sample token
-  llama_token id = gpt_sampler_sample(this->sampler, this->ctx, -1);
-  gpt_sampler_accept(this->sampler, id, true);
+  llama_token id = common_sampler_sample(this->sampler, this->ctx, -1);
+  common_sampler_accept(this->sampler, id, true);
 
   // create output
   struct completion_output result;
