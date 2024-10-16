@@ -219,7 +219,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("image_suffix", params.llava_params.image_suffix);
   node->get_parameter("image_text", params.llava_params.image_text);
 
-  node->get_parameter("system_prompt", params.params.system_prompt);
+  node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
   node->get_parameter("debug", params.debug);
 
@@ -374,7 +374,7 @@ struct llama_params llama_utils::get_llama_params(
     }
     std::copy(std::istreambuf_iterator<char>(file),
               std::istreambuf_iterator<char>(),
-              back_inserter(params.params.system_prompt));
+              back_inserter(params.system_prompt));
   }
 
   // split tensors

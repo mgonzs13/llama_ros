@@ -11,6 +11,8 @@ float32 dynatemp_exponent           1.0         # controls how entropy maps to t
 
 int32 top_k                         40          # top-k sampling (0.0 = disabled)
 float32 top_p                       0.95        # top-p sampling (1.0 = disabled)
+float32 xtc_probability             0.00        # xtc sampling (0.0 = disable)
+float32 xtc_threshold               0.10        # xtc sampling threshold (> 0.5 disables XTC)
 float32 min_p                       0.05        # min-p sampling (0.0 = disabled)
 float32 tfs_z                       1.00        # tail free sampling, parameter z (1.0 = disabled)
 float32 typical_p                   1.00        # locally typical sampling, parameter p (1.0 = disabled)
@@ -26,7 +28,7 @@ float32 mirostat_tau                5.0         # Mirostat target entropy, param
 
 bool penalize_nl                    false       # consider newlines as a repeatable token
 
-string samplers_sequence            "kfypmt"    # TOP_K, TFS_Z, TYPICAL_P, TOP_P, MIN_P, TEMP
+string samplers_sequence            "kfypmxt"   # TOP_K, TFS_Z, TYPICAL_P, TOP_P, MIN_P, XTC, TEMP
 
 string grammar                      ""          # optional BNF-like grammar to constrain sampling
 string grammar_schema               ""          # grammar schema that defines a JSON BNF grammar

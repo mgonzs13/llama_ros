@@ -31,8 +31,10 @@
 using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params,
-             const struct llava_params &llava_params, bool debug)
-    : llama_ros::Llama(params, debug), llava_params(llava_params) {
+             const struct llava_params &llava_params, std::string system_prompt,
+             bool debug)
+    : llama_ros::Llama(params, system_prompt, debug),
+      llava_params(llava_params) {
 
   // load clip model
   const char *clip_path = this->params.mmproj.c_str();

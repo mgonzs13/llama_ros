@@ -84,7 +84,8 @@ using GenerateResponseCallback = std::function<void(struct completion_output)>;
 class Llama {
 
 public:
-  Llama(const struct common_params &params, bool debug);
+  Llama(const struct common_params &params, std::string system_prompt = "",
+        bool debug = false);
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -141,6 +142,7 @@ protected:
   struct ggml_threadpool *threadpool_batch;
 
   // aux
+  std::string system_prompt;
   bool debug;
   bool canceled;
   llama_utils::Spinner spinner;

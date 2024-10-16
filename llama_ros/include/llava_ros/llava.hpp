@@ -48,7 +48,8 @@ class Llava : public llama_ros::Llama {
 
 public:
   Llava(const struct common_params &params,
-        const struct llava_params &llava_params, bool debug = false);
+        const struct llava_params &llava_params, std::string system_prompt = "",
+        bool debug = false);
   ~Llava();
 
   bool load_image(std::string base64_str);

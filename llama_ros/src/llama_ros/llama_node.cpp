@@ -41,8 +41,8 @@ LlamaNode::LlamaNode()
     : rclcpp_lifecycle::LifecycleNode("llama_node"), params_declared(false) {}
 
 void LlamaNode::create_llama() {
-  this->llama =
-      std::make_unique<Llama>(this->params.params, this->params.debug);
+  this->llama = std::make_unique<Llama>(
+      this->params.params, this->params.system_prompt, this->params.debug);
 }
 
 void LlamaNode::destroy_llama() {

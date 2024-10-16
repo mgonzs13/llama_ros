@@ -31,8 +31,9 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const struct common_params &params, bool debug)
-    : params(params), debug(debug) {
+Llama::Llama(const struct common_params &params, std::string system_prompt,
+             bool debug)
+    : params(params), system_prompt(system_prompt), debug(debug) {
 
   if (this->debug) {
     print_build_info();
@@ -690,9 +691,9 @@ stop_type Llama::find_stop_word(
 */
 bool Llama::eval_system_prompt() {
 
-  if (this->params.system_prompt.size() > 0) {
+  if (this->system_prompt.size() > 0) {
     // load prompt
-    this->load_prompt(this->params.system_prompt, false, false);
+    this->load_prompt(this->system_prompt, false, false);
 
     // eval prompt
     if (!this->eval_prompt()) {
