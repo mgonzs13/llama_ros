@@ -13,9 +13,10 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
   GIT_TAG        b3933
 )
-FetchContent_MakeAvailable(llama)
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
+
+FetchContent_MakeAvailable(llama)
 
 # ggml
 set_target_properties(
