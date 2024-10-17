@@ -11,10 +11,11 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b3923
+  GIT_TAG        b3933
 )
-
 FetchContent_MakeAvailable(llama)
+
+option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
 
 # ggml
 set_target_properties(
