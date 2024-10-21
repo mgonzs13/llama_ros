@@ -746,9 +746,6 @@ bool Llama::eval(std::vector<llama_token> tokens) {
       nullptr,
       nullptr,
       nullptr,
-      this->n_past,
-      1,
-      0,
   };
 
   return this->eval(batch);
@@ -808,9 +805,6 @@ bool Llama::eval(struct llama_batch batch) {
           batch.n_seq_id + i,
           batch.seq_id + i,
           batch.logits + i,
-          this->n_past,
-          1,
-          0,
       };
 
       if (this->debug) {
