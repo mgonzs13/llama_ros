@@ -240,7 +240,7 @@ void LlamaNode::generate_embeddings_service_callback(
   }
 
   auto embeddings =
-      this->llama->generate_embeddings(request->prompt, request->normalize);
+      this->llama->generate_embeddings(request->prompt, request->normalization);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
 

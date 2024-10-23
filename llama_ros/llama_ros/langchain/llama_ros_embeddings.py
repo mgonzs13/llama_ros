@@ -32,7 +32,7 @@ from llama_ros.llama_client_node import LlamaClientNode
 class LlamaROSEmbeddings(BaseModel, Embeddings):
 
     llama_client: LlamaClientNode = None
-    normalize: bool = True
+    normalization: int = 2
 
     class Config:
         arbitrary_types_allowed = True
@@ -46,7 +46,7 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
     def __call_generate_embedding_srv(self, text: str) -> List[int]:
         req = GenerateEmbeddings.Request()
         req.prompt = text
-        req.normalize = self.normalize
+        req.normalization = self.normalization
         return self.llama_client.generate_embeddings(req).embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

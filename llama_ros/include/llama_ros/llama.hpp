@@ -104,9 +104,9 @@ public:
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
                   bool add_eos = true);
   embeddings_ouput generate_embeddings(const std::string &input_prompt,
-                                       bool normalize = true);
+                                       int normalization = 2);
   embeddings_ouput generate_embeddings(const std::vector<llama_token> &tokens,
-                                       bool normalize = true);
+                                       int normalization = 2);
   float rank_document(const std::string &query, const std::string &document);
   std::vector<float> rank_documents(const std::string &query,
                                     const std::vector<std::string> &documents);

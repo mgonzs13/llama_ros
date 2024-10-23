@@ -213,7 +213,7 @@ void Llama::cancel() { this->canceled = true; }
 */
 embeddings_ouput
 Llama::generate_embeddings(const std::vector<llama_token> &tokens,
-                           bool normalize) {
+                           int normalization) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   const int n_embd = this->get_n_embd();
@@ -264,14 +264,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
       continue;
     }
 
-    if (normalize) {
-      common_embd_normalize(embd, embd_res.data(), n_embd);
-
-    } else {
-      for (int i = 0; i < n_embd; i++) {
-        embd_res.data()[i] = embd[i];
-      }
-    }
+    common_embd_normalize(embd, embd_res.data(), n_embd, normalization);
   }
 
   // clear
@@ -286,12 +279,12 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
 }
 
 embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
-                                            bool normalize) {
+                                            int normalization) {
 
   auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
   tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
 
-  return this->generate_embeddings(tokens, normalize);
+  return this->generate_embeddings(tokens, normalization);
 }
 
 std::vector<llama_token>
