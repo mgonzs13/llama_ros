@@ -6,13 +6,14 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 1. [Related Projects](#related-projects)
 2. [Installation](#installation)
-3. [Usage](#usage)
+3. [Docker](#docker)
+4. [Usage](#usage)
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
    - [LoRA Adapters](#lora-adapters)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
-4. [Demos](#demos)
+5. [Demos](#demos)
 
 ## Related Projects
 
@@ -30,6 +31,20 @@ $ pip3 install -r llama_ros/requirements.txt
 $ cd ~/ros2_ws
 $ rosdep install --from-paths src --ignore-src -r -y
 $ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
+```
+
+## Docker
+
+Build the yolo_ros docker:
+
+```shell
+$ docker build . -t llama_ros
+```
+
+Running the docker container:
+
+```shell
+$ docker run -it --rm llama_ros
 ```
 
 ## Usage
