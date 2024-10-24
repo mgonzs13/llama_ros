@@ -48,8 +48,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return "chatllamaros"
 
     def _messages_to_chat_messages(
-        self,
-        messages: List[BaseMessage]
+        self, messages: List[BaseMessage]
     ) -> tuple[FormatChatMessages.Request, Optional[str], Optional[np.ndarray]]:
 
         chat_messages = FormatChatMessages.Request()
@@ -63,15 +62,18 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
             if type(message.content) == str:
                 chat_messages.messages.append(
-                    Message(role=role, content=message.content))
+                    Message(role=role, content=message.content)
+                )
             else:
                 for single_content in message.content:
                     if type(single_content) == str:
                         chat_messages.messages.append(
-                            Message(role=role, content=single_content))
+                            Message(role=role, content=single_content)
+                        )
                     elif single_content["type"] == "text":
                         chat_messages.messages.append(
-                            Message(role=role, content=single_content["text"]))
+                            Message(role=role, content=single_content["text"])
+                        )
                     elif single_content["type"] == "image_url":
                         image_text = single_content["image_url"]["url"]
                         if "data:image" in image_text:
@@ -94,21 +96,21 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         llama_client = self.llama_client.get_instance()
 
-        chat_messages, image_url, image = self._messages_to_chat_messages(
-            messages)
+        chat_messages, image_url, image = self._messages_to_chat_messages(messages)
         formatted_prompt = llama_client.format_chat_prompt(
-            chat_messages).formatted_prompt
+            chat_messages
+        ).formatted_prompt
 
         goal_action = self._create_action_goal(
-            formatted_prompt, stop, image_url, image, **kwargs)
+            formatted_prompt, stop, image_url, image, **kwargs
+        )
 
         result, status = LlamaClientNode.get_instance().generate_response(goal_action)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
 
-        generation = ChatGeneration(
-            message=AIMessage(content=result.response.text))
+        generation = ChatGeneration(message=AIMessage(content=result.response.text))
         return ChatResult(generations=[generation])
 
     def _stream(
@@ -121,17 +123,23 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         llama_client = self.llama_client.get_instance()
 
-        chat_messages, image_url, image = self._messages_to_chat_messages(
-            messages)
+        chat_messages, image_url, image = self._messages_to_chat_messages(messages)
         formatted_prompt = llama_client.format_chat_prompt(
-            chat_messages).formatted_prompt
+            chat_messages
+        ).formatted_prompt
 
         goal_action = self._create_action_goal(
-            formatted_prompt, stop, image_url, image, **kwargs)
+            formatted_prompt, stop, image_url, image, **kwargs
+        )
 
-        for pt in LlamaClientNode.get_instance().generate_response(goal_action, stream=True):
+        for pt in LlamaClientNode.get_instance().generate_response(
+            goal_action, stream=True
+        ):
 
             if run_manager:
-                run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)
+                run_manager.on_llm_new_token(
+                    pt.text,
+                    verbose=self.verbose,
+                )
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=pt.text))

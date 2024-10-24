@@ -109,7 +109,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
             if image_url and image is None:
                 req = urllib.request.Request(
-                    image_url, headers={"User-Agent": "Mozilla/5.0"})
+                    image_url, headers={"User-Agent": "Mozilla/5.0"}
+                )
                 response = urllib.request.urlopen(req)
                 arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
                 image = cv2.imdecode(arr, -1)

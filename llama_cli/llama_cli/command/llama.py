@@ -29,8 +29,9 @@ class LlamaCommand(CommandExtension):
 
     def add_arguments(self, parser, cli_name):
         self._subparser = parser
-        add_subparsers_on_demand(parser, cli_name, "_verb",
-                                 "llama_cli.verb", required=False)
+        add_subparsers_on_demand(
+            parser, cli_name, "_verb", "llama_cli.verb", required=False
+        )
 
     def main(self, *, parser, args):
         if not hasattr(args, "_verb"):

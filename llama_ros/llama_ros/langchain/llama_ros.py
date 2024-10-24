@@ -72,7 +72,10 @@ class LlamaROS(LLM, LlamaROSCommon):
         for pt in LlamaClientNode.get_instance().generate_response(goal, stream=True):
 
             if run_manager:
-                run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)
+                run_manager.on_llm_new_token(
+                    pt.text,
+                    verbose=self.verbose,
+                )
 
             yield GenerationChunk(text=pt.text)
 

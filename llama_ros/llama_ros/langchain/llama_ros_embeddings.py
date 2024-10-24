@@ -50,8 +50,7 @@ class LlamaROSEmbeddings(BaseModel, Embeddings):
         return self.llama_client.generate_embeddings(req).embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings = [self.__call_generate_embedding_srv(
-            text) for text in texts]
+        embeddings = [self.__call_generate_embedding_srv(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:

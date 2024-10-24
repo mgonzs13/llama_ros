@@ -49,22 +49,22 @@ loader = WebBaseLoader(
 )
 docs = loader.load()
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 splits = text_splitter.split_documents(docs)
-vectorstore = Chroma.from_documents(
-    documents=splits, embedding=LlamaROSEmbeddings())
+vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())
 
 # retrieve and generate using the relevant snippets of the blog
 retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
 
 # create prompt
-prompt = ChatPromptTemplate.from_messages([
-    SystemMessage("You are an AI assistant that answer questions."),
-    HumanMessagePromptTemplate.from_template(
-        "Taking into account the followin context:\n{context}\nAnswer this question: {question}"
-    )
-])
+prompt = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage("You are an AI assistant that answer questions."),
+        HumanMessagePromptTemplate.from_template(
+            "Taking into account the followin context:\n{context}\nAnswer this question: {question}"
+        ),
+    ]
+)
 
 # create rerank compression retriever
 compressor = LlamaROSReranker(top_n=3)
@@ -79,8 +79,7 @@ def format_docs(docs):
 
 # create and use the chain
 rag_chain = (
-    {"context": compression_retriever | format_docs,
-        "question": RunnablePassthrough()}
+    {"context": compression_retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
     | ChatLlamaROS(temp=0.2)
     | StrOutputParser()

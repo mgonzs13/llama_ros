@@ -1,10 +1,9 @@
-
 from setuptools import setup
 from setuptools import find_packages
 
 setup(
     name="llama_cli",
-    version="0.0.0",
+    version="4.0.5",
     packages=find_packages(exclude=["test"]),
     zip_safe=True,
     author="Miguel Ángel González Santamarta",
@@ -25,5 +24,5 @@ setup(
             "launch = llama_cli.verb.launch:LaunchVerb",
             "prompt = llama_cli.verb.prompt:PromptVerb",
         ],
-    }
+    },
 )

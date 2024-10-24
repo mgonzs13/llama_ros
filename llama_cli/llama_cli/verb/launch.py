@@ -28,8 +28,7 @@ from llama_cli.api import launch_llm
 class LaunchVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
-        arg = parser.add_argument(
-            "file_path", help="path to the YAML of the LLM")
+        arg = parser.add_argument("file_path", help="path to the YAML of the LLM")
 
     def main(self, *, args):
         launch_llm(args.file_path)

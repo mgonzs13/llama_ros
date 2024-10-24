@@ -36,9 +36,9 @@ class LlamaEmbeddinsDemoNode(Node):
         super().__init__("llama_embeddings_demo_node")
 
         self.declare_parameter(
-            "prompt", "This is the test to create embeddings using llama_ros")
-        self.prompt = self.get_parameter(
-            "prompt").get_parameter_value().string_value
+            "prompt", "This is the test to create embeddings using llama_ros"
+        )
+        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self._llama_client = LlamaClientNode.get_instance()
 
