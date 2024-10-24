@@ -22,7 +22,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 ## Installation
 
-To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit).
+To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you can compile llama_ros with `--cmake-args -DGGML_CUDA=ON` to enable CUDA support.
 
 ```shell
 $ cd ~/ros2_ws/src
@@ -35,10 +35,10 @@ $ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 
 ## Docker
 
-Build the yolo_ros docker. You can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`).
+Build the llama_ros docker. Additionally, you can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`). Remember that you have to use `DOCKER_BUILDKIT=0` to compile llama_ros with CUDA when building the image.
 
 ```shell
-$ DOCKER_BUILDKIT=0 docker build -t llama_ros USE_CUDA=1 CUDA_VERSION=12-6 .
+$ DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
 ```
 
 Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.

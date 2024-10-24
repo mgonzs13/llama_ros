@@ -22,14 +22,12 @@ ARG USE_CUDA
 ARG CUDA_VERSION=12-6
 
 RUN if [ "$USE_CUDA" = "1" ]; then \
-    echo "Installing CUDA version $CUDA_VERSION..."; \
     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb && \
-    dpkg -i cuda-keyring_1.1-1_all.deb; \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm cuda-keyring_1.1-1_all.deb; \
     apt-get update && apt-get install -y cuda-toolkit-$CUDA_VERSION; \
     echo "export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}" >> ~/.bashrc; \
     echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" >> ~/.bashrc; \
-    else \
-    echo "Skipping CUDA installation, using regular GCC"; \
     fi
 
 # Colcon the ws
