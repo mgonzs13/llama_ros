@@ -35,16 +35,16 @@ $ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 
 ## Docker
 
-Build the yolo_ros docker:
+Build the yolo_ros docker. You can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`).
 
 ```shell
-$ docker build . -t llama_ros
+$ DOCKER_BUILDKIT=0 docker build -t llama_ros USE_CUDA=1 CUDA_VERSION=12-6 .
 ```
 
-Running the docker container:
+Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.
 
 ```shell
-$ docker run -it --rm llama_ros
+$ docker run -it --rm --gpus all llama_ros
 ```
 
 ## Usage
