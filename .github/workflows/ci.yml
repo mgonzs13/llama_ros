@@ -1,4 +1,4 @@
-name: Python CI with Docker and Formatting Check
+name: CI with Formatting Check and Docker
 
 on: [push, pull_request]
 
@@ -23,7 +23,7 @@ jobs:
       - name: Clang Formatter
         uses: jidicula/clang-format-action@v4.13.0
         with:
-          clang-format-version: "13"
+          clang-format-version: "14"
           check-path: "."
           fallback-style: "Mozilla"
 
