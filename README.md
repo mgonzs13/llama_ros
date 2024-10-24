@@ -35,7 +35,7 @@ $ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 
 ## Docker
 
-Build the llama_ros docker. Additionally, you can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`). Remember that you have to use `DOCKER_BUILDKIT=0` to compile llama_ros with CUDA when building the image.
+Build the llama_ros docker. Additionally, you can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`). To build using CUDA you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [configure the default runtime to NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/1.12.1/user-guide.html#daemon-configuration-file). Remember that you have to use `DOCKER_BUILDKIT=0` to compile llama_ros with CUDA when building the image.
 
 ```shell
 $ DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
