@@ -56,6 +56,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     top_k: int = 40
     top_p: float = 0.95
     min_p: float = 0.05
+    xtc_probability: float = 0.0
+    xtc_threshold: float = 0.1
     tfs_z: float = 1.00
     typical_p: float = 1.00
 
@@ -64,13 +66,19 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     penalty_freq: float = 0.00
     penalty_present: float = 0.00
 
+    dry_multiplier: float = 0.0
+    dry_base: float = 1.75
+    dry_allowed_length: int = 2
+    dry_penalty_last_n: int = -1
+    dry_sequence_breakers: List[str] = ["\\n", ":", "\\\"", "*"]
+
     mirostat: int = 0
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
     penalize_nl: bool = False
 
-    samplers_sequence: str = "kfypmt"
+    samplers_sequence: str = "dkfypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
@@ -140,6 +148,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.top_k = self.top_k
         goal.sampling_config.top_p = self.top_p
         goal.sampling_config.min_p = self.min_p
+        goal.sampling_config.xtc_probability = self.xtc_probability
+        goal.sampling_config.xtc_threshold = self.xtc_threshold
         goal.sampling_config.tfs_z = self.tfs_z
         goal.sampling_config.typical_p = self.typical_p
 
@@ -147,6 +157,12 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.penalty_repeat = self.penalty_repeat
         goal.sampling_config.penalty_freq = self.penalty_freq
         goal.sampling_config.penalty_present = self.penalty_present
+
+        goal.sampling_config.dry_multiplier = self.dry_multiplier
+        goal.sampling_config.dry_base = self.dry_base
+        goal.sampling_config.dry_allowed_length = self.dry_allowed_length
+        goal.sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
+        goal.sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
 
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta
