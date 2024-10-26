@@ -70,7 +70,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     dry_base: float = 1.75
     dry_allowed_length: int = 2
     dry_penalty_last_n: int = -1
-    dry_sequence_breakers: List[str] = ["\\n", ":", "\\\"", "*"]
+    dry_sequence_breakers: List[str] = ["\\n", ":", '\\"', "*"]
 
     mirostat: int = 0
     mirostat_eta: float = 0.10
