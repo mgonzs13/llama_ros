@@ -61,7 +61,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessage("You are an AI assistant that answer questions."),
         HumanMessagePromptTemplate.from_template(
-            "Taking into account the followin context:\n{context}\nAnswer this question: {question}"
+            "Taking into account the followin context:{context}\n\nAnswer this question: {question}"
         ),
     ]
 )
@@ -74,7 +74,12 @@ compression_retriever = ContextualCompressionRetriever(
 
 
 def format_docs(docs):
-    return "\n\n\t- ".join(doc.page_content for doc in docs)
+    formated_docs = ""
+
+    for d in docs:
+        formated_docs += f"\n\n\t- {d.page_content}"
+
+    return formated_docs
 
 
 # create and use the chain
