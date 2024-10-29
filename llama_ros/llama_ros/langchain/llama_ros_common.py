@@ -78,7 +78,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     penalize_nl: bool = False
 
-    samplers_sequence: str = "dkfypmxt"
+    samplers_sequence: str = "dkypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
