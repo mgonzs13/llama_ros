@@ -58,7 +58,6 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     min_p: float = 0.05
     xtc_probability: float = 0.0
     xtc_threshold: float = 0.1
-    tfs_z: float = 1.00
     typical_p: float = 1.00
 
     penalty_last_n: int = 64
@@ -150,7 +149,6 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.min_p = self.min_p
         goal.sampling_config.xtc_probability = self.xtc_probability
         goal.sampling_config.xtc_threshold = self.xtc_threshold
-        goal.sampling_config.tfs_z = self.tfs_z
         goal.sampling_config.typical_p = self.typical_p
 
         goal.sampling_config.penalty_last_n = self.penalty_last_n

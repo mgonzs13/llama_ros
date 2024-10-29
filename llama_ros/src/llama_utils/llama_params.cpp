@@ -417,7 +417,6 @@ struct common_sampler_params llama_utils::parse_sampling_params(
   sparams.top_k = sampling_config.top_k;
   sparams.top_p = sampling_config.top_p;
   sparams.min_p = sampling_config.min_p;
-  sparams.tfs_z = sampling_config.tfs_z;
   sparams.typ_p = sampling_config.typical_p;
 
   sparams.penalty_last_n = sampling_config.penalty_last_n;
