@@ -44,5 +44,7 @@ int main(int argc, char *argv[]) {
   executor.remove_node(node->get_node_base_interface());
   node.reset();
 
+  rclcpp::shutdown();
+
   return 0;
 }
