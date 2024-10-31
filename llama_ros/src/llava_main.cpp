@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include <memory>
-#include <signal.h>
 #include <vector>
 
 #include "llava_ros/llava_node.hpp"
@@ -29,19 +28,7 @@
 
 using namespace llava_ros;
 
-void sigint_handler(int signo) {
-  if (signo == SIGINT) {
-    rclcpp::shutdown();
-  }
-}
-
 int main(int argc, char *argv[]) {
-
-  struct sigaction sigint_action;
-  sigint_action.sa_handler = sigint_handler;
-  sigemptyset(&sigint_action.sa_mask);
-  sigint_action.sa_flags = 0;
-  sigaction(SIGINT, &sigint_action, NULL);
 
   rclcpp::init(argc, argv);
 
