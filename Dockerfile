@@ -14,8 +14,9 @@ RUN apt-get update \
     wget \
     python3 \
     python3-pip
-RUN pip3 install -r src/requirements.txt --break-system-packages
 RUN rosdep install --from-paths src --ignore-src -r -y
+RUN python3 -m pip install pip==24.3
+RUN pip3 install -r src/requirements.txt --break-system-packages
 
 # Install CUDA nvcc
 ARG USE_CUDA
