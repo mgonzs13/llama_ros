@@ -4,4 +4,3 @@ langchain-community==0.3.1
 langchain-chroma==0.1.4
 pydantic==2.9.2
 huggingface-hub==0.23.4
-packaging==23.2
