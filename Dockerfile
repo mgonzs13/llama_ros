@@ -14,7 +14,7 @@ RUN apt-get update \
     wget \
     python3 \
     python3-pip
-RUN pip3 install -r src/requirements.txt
+RUN pip3 install -r src/requirements.txt --break-system-packages
 RUN rosdep install --from-paths src --ignore-src -r -y
 
 # Install CUDA nvcc

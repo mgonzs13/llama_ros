@@ -26,20 +26,20 @@ jobs:
           clangFormatVersion: 14
           source: "."
 
-  foxy_docker_build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # foxy_docker_build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker
-        uses: docker/build-push-action@v6
-        with:
-          build-args: ROS_DISTRO=foxy
-          push: false
+  #     - name: Build Docker
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         build-args: ROS_DISTRO=foxy
+  #         push: false
 
   humble_docker_build:
     runs-on: ubuntu-latest
