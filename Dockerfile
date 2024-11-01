@@ -15,7 +15,11 @@ RUN apt-get update \
     python3 \
     python3-pip
 RUN rosdep install --from-paths src --ignore-src -r -y
-RUN pip3 install -r src/requirements.txt --break-system-packages
+RUN if [ "$ROS_DISTRO" = "jazzy" ]; then \
+    pip3 install -r src/requirements.txt --break-system-packages; \
+    else \
+    pip3 install -r src/requirements.txt; \
+    fi
 
 # Install CUDA nvcc
 ARG USE_CUDA
