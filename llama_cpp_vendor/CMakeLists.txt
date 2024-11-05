@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b4011
+  GIT_TAG        b4033
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
@@ -29,7 +29,7 @@ set_target_properties(
 # llama
 set_target_properties(
   build_info llama common PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/src;${llama_SOURCE_DIR}/common>"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/src;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/>"
   CXX_STANDARD 11
 )
 
@@ -51,7 +51,12 @@ if(GGML_CUDA)
 endif()
 
 # export
-file(GLOB COMMON_HEADERS ${llama_SOURCE_DIR}/common/*.h ${llama_SOURCE_DIR}/common/*.hpp  ${llama_SOURCE_DIR}/examples/llava/*.h)
+file(GLOB COMMON_HEADERS 
+  ${llama_SOURCE_DIR}/ggml/include/*
+  ${llama_SOURCE_DIR}/common/*.h
+  ${llama_SOURCE_DIR}/common/*.hpp
+  ${llama_SOURCE_DIR}/examples/llava/*.h
+)
 install(
   FILES ${COMMON_HEADERS}
   DESTINATION include
