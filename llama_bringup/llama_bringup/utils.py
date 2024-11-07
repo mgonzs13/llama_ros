@@ -98,9 +98,7 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
             and kwargs.get(f"{key}_repo")
             and kwargs.get(f"{key}_filename")
         ):
-            kwargs[key] = download_model(
-                kwargs[f"{key}_repo"], kwargs[f"{key}_filename"]
-            )
+            kwargs[key] = download_model(kwargs[f"{key}_repo"], kwargs[f"{key}_filename"])
 
     # load lora adapters
     lora_adapters = []
