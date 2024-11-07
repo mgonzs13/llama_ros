@@ -1,0 +1,25 @@
+name: Doxygen Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  doxygen_generation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Doxygen for C++
+        uses: mattnotmitt/doxygen-action@edge
+        with:
+          doxyfile-path: ".github/Doxyfile"
+
+      - name: Deploy Doxygen page
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: docs
