@@ -49,9 +49,7 @@ class LlavaDemoNode(Node):
         self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.declare_parameter("use_image", True)
-        self.use_image = (
-            self.get_parameter("use_image").get_parameter_value().bool_value
-        )
+        self.use_image = self.get_parameter("use_image").get_parameter_value().bool_value
 
         self.declare_parameter(
             "image_url",

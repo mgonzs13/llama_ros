@@ -61,9 +61,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 role = "user"
 
             if type(message.content) == str:
-                chat_messages.messages.append(
-                    Message(role=role, content=message.content)
-                )
+                chat_messages.messages.append(Message(role=role, content=message.content))
             else:
                 for single_content in message.content:
                     if type(single_content) == str:
@@ -97,9 +95,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         llama_client = self.llama_client.get_instance()
 
         chat_messages, image_url, image = self._messages_to_chat_messages(messages)
-        formatted_prompt = llama_client.format_chat_prompt(
-            chat_messages
-        ).formatted_prompt
+        formatted_prompt = llama_client.format_chat_prompt(chat_messages).formatted_prompt
 
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs
@@ -124,9 +120,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         llama_client = self.llama_client.get_instance()
 
         chat_messages, image_url, image = self._messages_to_chat_messages(messages)
-        formatted_prompt = llama_client.format_chat_prompt(
-            chat_messages
-        ).formatted_prompt
+        formatted_prompt = llama_client.format_chat_prompt(chat_messages).formatted_prompt
 
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs

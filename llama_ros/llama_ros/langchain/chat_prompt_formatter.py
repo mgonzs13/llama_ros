@@ -39,8 +39,6 @@ def ChatPromptFormatter(messages):
         new_msg.content = msg.content
         output_msgs.append(new_msg)
 
-    response = client.format_chat_prompt(
-        FormatChatMessages.Request(messages=output_msgs)
-    )
+    response = client.format_chat_prompt(FormatChatMessages.Request(messages=output_msgs))
 
     return response.formatted_prompt
