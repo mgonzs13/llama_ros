@@ -97,6 +97,7 @@ void llama_utils::declare_llama_params(
                                           {"yarn_attn_factor", 1.0f},
                                           {"yarn_beta_fast", 32.0f},
                                           {"yarn_beta_slow", 1.0f},
+                                          {"defrag_thold", 0.1f},
                                       });
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
@@ -200,6 +201,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("yarn_beta_fast", params.params.yarn_beta_fast);
   node->get_parameter("yarn_beta_slow", params.params.yarn_beta_slow);
   node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
+  node->get_parameter("defrag_thold", params.parmas.defrag_thold);
 
   node->get_parameter("model", params.params.model);
   node->get_parameter("lora_adapters", lora_adapters);
