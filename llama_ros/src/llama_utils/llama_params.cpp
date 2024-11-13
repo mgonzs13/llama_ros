@@ -201,7 +201,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("yarn_beta_fast", params.params.yarn_beta_fast);
   node->get_parameter("yarn_beta_slow", params.params.yarn_beta_slow);
   node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
-  node->get_parameter("defrag_thold", params.parmas.defrag_thold);
+  node->get_parameter("defrag_thold", params.params.defrag_thold);
 
   node->get_parameter("model", params.params.model);
   node->get_parameter("lora_adapters", lora_adapters);
