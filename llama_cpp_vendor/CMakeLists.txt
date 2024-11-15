@@ -26,6 +26,34 @@ set_target_properties(
   CXX_STANDARD 11
 )
 
+set_target_properties(
+  ggml-base PROPERTIES
+  OUTPUT_NAME "llama_ggml_base"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+  CXX_STANDARD 11
+)
+
+set_target_properties(
+  ggml-cpu PROPERTIES
+  OUTPUT_NAME "llama_ggml_cpu"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+  CXX_STANDARD 11
+)
+
+set_target_properties(
+  ggml-amx PROPERTIES
+  OUTPUT_NAME "llama_ggml_amx"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+  CXX_STANDARD 11
+)
+
+set_target_properties(
+  ggml-cuda PROPERTIES
+  OUTPUT_NAME "llama_ggml_cuda"
+  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+  CXX_STANDARD 11
+)
+
 # llama
 set_target_properties(
   build_info llama common PROPERTIES
@@ -63,7 +91,16 @@ install(
 )
 
 install(
-  TARGETS ggml build_info llama llava common
+  TARGETS 
+    ggml 
+    ggml-base 
+    ggml-cpu 
+    ggml-amx 
+    ggml-cuda 
+    build_info 
+    common
+    llama 
+    llava 
   EXPORT export_llama
   LIBRARY DESTINATION lib
   INCLUDES DESTINATION include
