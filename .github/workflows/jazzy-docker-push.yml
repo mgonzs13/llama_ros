@@ -1,4 +1,4 @@
-name: Humble Docker Push
+name: Jazzy Docker Push
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  humble_docker_push:
+  jazzy_docker_push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,6 +24,6 @@ jobs:
       - name: Build and push docker
         uses: docker/build-push-action@v6
         with:
-          build-args: ROS_DISTRO=humble
+          build-args: ROS_DISTRO=jazzy
           push: true
-          tags: mgons/llama_ros:humble
+          tags: mgons/llama_ros:jazzy
