@@ -101,11 +101,18 @@ Collaboration diagram for llama_ros::Metadata::TokenizerInfo:</div>
 <div class="dyncontent">
 <div class="center"><img src="structllama__ros_1_1Metadata_1_1TokenizerInfo__coll__graph.png" border="0" usemap="#allama__ros_1_1Metadata_1_1TokenizerInfo_coll__map" alt="Collaboration graph"/></div>
 <map name="allama__ros_1_1Metadata_1_1TokenizerInfo_coll__map" id="allama__ros_1_1Metadata_1_1TokenizerInfo_coll__map">
-<area shape="rect" title=" " alt="" coords="5,199,143,240"/>
-<area shape="rect" title=" " alt="" coords="35,95,113,121"/>
-<area shape="poly" title=" " alt="" coords="77,137,77,199,71,199,71,137"/>
-<area shape="rect" title=" " alt="" coords="12,5,136,46"/>
-<area shape="poly" title=" " alt="" coords="77,61,77,95,71,95,71,61"/>
+<area shape="rect" title=" " alt="" coords="277,307,414,348"/>
+<area shape="rect" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" title=" " alt="" coords="59,135,51,174,53,194,60,213,80,237,105,257,132,274,161,288,221,307,277,318,276,323,220,313,159,293,129,279,101,262,77,241,56,215,47,196,46,174,54,134"/>
+<area shape="rect" title=" " alt="" coords="155,186,315,212"/>
+<area shape="poly" title=" " alt="" coords="104,126,214,183,211,188,102,131"/>
+<area shape="rect" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+<area shape="poly" title=" " alt="" coords="246,225,259,254,278,281,307,304,304,309,274,285,255,256,241,228"/>
+<area shape="rect" title=" " alt="" coords="339,186,467,212"/>
+<area shape="poly" title=" " alt="" coords="394,227,357,308,352,305,389,225"/>
+<area shape="rect" title=" " alt="" coords="491,186,608,212"/>
+<area shape="poly" title=" " alt="" coords="524,223,434,285,389,309,387,304,431,281,521,219"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -113,12 +120,26 @@ Collaboration diagram for llama_ros::Metadata::TokenizerInfo:</div>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a8f965e0caf0e1fef376565ff0e2a716d" id="r_a8f965e0caf0e1fef376565ff0e2a716d"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8f965e0caf0e1fef376565ff0e2a716d">model</a></td></tr>
 <tr class="separator:a8f965e0caf0e1fef376565ff0e2a716d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c3629291ffd613d4e21f12aaf7f8539" id="r_a5c3629291ffd613d4e21f12aaf7f8539"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5c3629291ffd613d4e21f12aaf7f8539">eos_token_id</a></td></tr>
-<tr class="separator:a5c3629291ffd613d4e21f12aaf7f8539"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50956c93dccd3a566f0fe65daf8d1e3d" id="r_a50956c93dccd3a566f0fe65daf8d1e3d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a50956c93dccd3a566f0fe65daf8d1e3d">padding_token_id</a></td></tr>
-<tr class="separator:a50956c93dccd3a566f0fe65daf8d1e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa61f47c8a579b0bc9f23d1408941b278" id="r_aa61f47c8a579b0bc9f23d1408941b278"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa61f47c8a579b0bc9f23d1408941b278">tokens</a></td></tr>
+<tr class="separator:aa61f47c8a579b0bc9f23d1408941b278"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dbfe3c923a0ddc50b83713b01f3a250" id="r_a4dbfe3c923a0ddc50b83713b01f3a250"><td class="memItemLeft" align="right" valign="top">std::vector&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4dbfe3c923a0ddc50b83713b01f3a250">scores</a></td></tr>
+<tr class="separator:a4dbfe3c923a0ddc50b83713b01f3a250"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad46e0aaf56d35bf4744f84565e248611" id="r_ad46e0aaf56d35bf4744f84565e248611"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad46e0aaf56d35bf4744f84565e248611">token_type</a></td></tr>
+<tr class="separator:ad46e0aaf56d35bf4744f84565e248611"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f900d3ce772774fe7ae4cef66dfd311" id="r_a8f900d3ce772774fe7ae4cef66dfd311"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8f900d3ce772774fe7ae4cef66dfd311">merges</a></td></tr>
+<tr class="separator:a8f900d3ce772774fe7ae4cef66dfd311"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad41c0e41ec2dc35eefd735fce43ccbf2" id="r_ad41c0e41ec2dc35eefd735fce43ccbf2"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad41c0e41ec2dc35eefd735fce43ccbf2">added_tokens</a></td></tr>
+<tr class="separator:ad41c0e41ec2dc35eefd735fce43ccbf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a862ebcb9cd80b9e0bf756095758c287f" id="r_a862ebcb9cd80b9e0bf756095758c287f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a862ebcb9cd80b9e0bf756095758c287f">bos_token_id</a></td></tr>
 <tr class="separator:a862ebcb9cd80b9e0bf756095758c287f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c3629291ffd613d4e21f12aaf7f8539" id="r_a5c3629291ffd613d4e21f12aaf7f8539"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5c3629291ffd613d4e21f12aaf7f8539">eos_token_id</a></td></tr>
+<tr class="separator:a5c3629291ffd613d4e21f12aaf7f8539"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5158e8e278cea8c8983221c1e4f2a5c" id="r_ad5158e8e278cea8c8983221c1e4f2a5c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad5158e8e278cea8c8983221c1e4f2a5c">unknown_token_id</a></td></tr>
+<tr class="separator:ad5158e8e278cea8c8983221c1e4f2a5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50956c93dccd3a566f0fe65daf8d1e3d" id="r_a50956c93dccd3a566f0fe65daf8d1e3d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a50956c93dccd3a566f0fe65daf8d1e3d">padding_token_id</a></td></tr>
+<tr class="separator:a50956c93dccd3a566f0fe65daf8d1e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71bd6bf30095b8c4b80e8d1e04a08ff5" id="r_a71bd6bf30095b8c4b80e8d1e04a08ff5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a71bd6bf30095b8c4b80e8d1e04a08ff5">separator_token_id</a></td></tr>
+<tr class="separator:a71bd6bf30095b8c4b80e8d1e04a08ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2270886a223bdcdbc3273c63c359d044" id="r_a2270886a223bdcdbc3273c63c359d044"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2270886a223bdcdbc3273c63c359d044">add_bos_token</a></td></tr>
 <tr class="separator:a2270886a223bdcdbc3273c63c359d044"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae71224ead4a22316134d9122c280b792" id="r_ae71224ead4a22316134d9122c280b792"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae71224ead4a22316134d9122c280b792">chat_template</a></td></tr>
@@ -133,6 +154,20 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">bool llama_ros::Metadata::TokenizerInfo::add_bos_token</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad41c0e41ec2dc35eefd735fce43ccbf2" name="ad41c0e41ec2dc35eefd735fce43ccbf2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad41c0e41ec2dc35eefd735fce43ccbf2">&#9670;&#160;</a></span>added_tokens</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::string&gt; llama_ros::Metadata::TokenizerInfo::added_tokens</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -181,6 +216,20 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a8f900d3ce772774fe7ae4cef66dfd311" name="a8f900d3ce772774fe7ae4cef66dfd311"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f900d3ce772774fe7ae4cef66dfd311">&#9670;&#160;</a></span>merges</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::string&gt; llama_ros::Metadata::TokenizerInfo::merges</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a8f965e0caf0e1fef376565ff0e2a716d" name="a8f965e0caf0e1fef376565ff0e2a716d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8f965e0caf0e1fef376565ff0e2a716d">&#9670;&#160;</a></span>model</h2>
 
@@ -203,6 +252,76 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">int llama_ros::Metadata::TokenizerInfo::padding_token_id</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4dbfe3c923a0ddc50b83713b01f3a250" name="a4dbfe3c923a0ddc50b83713b01f3a250"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4dbfe3c923a0ddc50b83713b01f3a250">&#9670;&#160;</a></span>scores</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;float&gt; llama_ros::Metadata::TokenizerInfo::scores</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a71bd6bf30095b8c4b80e8d1e04a08ff5" name="a71bd6bf30095b8c4b80e8d1e04a08ff5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a71bd6bf30095b8c4b80e8d1e04a08ff5">&#9670;&#160;</a></span>separator_token_id</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llama_ros::Metadata::TokenizerInfo::separator_token_id</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad46e0aaf56d35bf4744f84565e248611" name="ad46e0aaf56d35bf4744f84565e248611"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad46e0aaf56d35bf4744f84565e248611">&#9670;&#160;</a></span>token_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;int&gt; llama_ros::Metadata::TokenizerInfo::token_type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa61f47c8a579b0bc9f23d1408941b278" name="aa61f47c8a579b0bc9f23d1408941b278"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa61f47c8a579b0bc9f23d1408941b278">&#9670;&#160;</a></span>tokens</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::string&gt; llama_ros::Metadata::TokenizerInfo::tokens</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad5158e8e278cea8c8983221c1e4f2a5c" name="ad5158e8e278cea8c8983221c1e4f2a5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5158e8e278cea8c8983221c1e4f2a5c">&#9670;&#160;</a></span>unknown_token_id</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int llama_ros::Metadata::TokenizerInfo::unknown_token_id</td>
         </tr>
       </table>
 </div><div class="memdoc">

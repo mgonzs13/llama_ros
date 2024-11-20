@@ -5,5 +5,6 @@ var searchData=
   ['base64_5fencode_2',['base64_encode',['../classllava__ros_1_1LlavaNode.html#afbaaad12f3a156fb2306dc012d5434ac',1,'llava_ros::LlavaNode']]],
   ['base64_5fimage_5fto_5fembed_3',['base64_image_to_embed',['../classllava__ros_1_1Llava.html#ad5a902e782e913a8409d0f482ac46451',1,'llava_ros::Llava']]],
   ['basename_4',['basename',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a4c1816ec2c463866c3bc6292c5db7c47',1,'llama_ros::Metadata::GeneralInfo']]],
-  ['bos_5ftoken_5fid_5',['bos_token_id',['../structllama__ros_1_1Metadata_1_1TokenizerInfo.html#a862ebcb9cd80b9e0bf756095758c287f',1,'llama_ros::Metadata::TokenizerInfo']]]
+  ['block_5fcount_5',['block_count',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#ae5c78323992d399ab40d1fdd7b2eda75',1,'llama_ros::Metadata::ModelInfo']]],
+  ['bos_5ftoken_5fid_6',['bos_token_id',['../structllama__ros_1_1Metadata_1_1TokenizerInfo.html#a862ebcb9cd80b9e0bf756095758c287f',1,'llama_ros::Metadata::TokenizerInfo']]]
 ];

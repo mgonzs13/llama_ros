@@ -1,7 +1,14 @@
 <map id="llama_ros::Metadata::TokenizerInfo" name="llama_ros::Metadata::TokenizerInfo">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,199,143,240"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="35,95,113,121"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,137,77,199,71,199,71,137"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="12,5,136,46"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="77,61,77,95,71,95,71,61"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="277,307,414,348"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="59,135,51,174,53,194,60,213,80,237,105,257,132,274,161,288,221,307,277,318,276,323,220,313,159,293,129,279,101,262,77,241,56,215,47,196,46,174,54,134"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="155,186,315,212"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="104,126,214,183,211,188,102,131"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="246,225,259,254,278,281,307,304,304,309,274,285,255,256,241,228"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="339,186,467,212"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="394,227,357,308,352,305,389,225"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="491,186,608,212"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="524,223,434,285,389,309,387,304,431,281,521,219"/>
 </map>
