@@ -166,8 +166,8 @@ public:
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
 
-  std::string get_metada(const std::string &key, size_t size);
-  struct Metadata get_metada();
+  std::string get_metadata(const std::string &key, size_t size);
+  struct Metadata get_metadata();
 
   bool is_embedding() { return this->params.embedding; }
   bool is_reranking() { return this->params.reranking; }

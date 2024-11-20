@@ -153,7 +153,7 @@ Llama::~Llama() {
 *          METADATA         *
 *****************************
 */
-std::string Llama::get_metada(const std::string &key, size_t size) {
+std::string Llama::get_metadata(const std::string &key, size_t size) {
 
   std::vector<char> buffer(size, 0);
   std::string metada_str;
@@ -192,7 +192,7 @@ std::vector<std::string> string_to_vector(const std::string &string) {
   return result;
 }
 
-struct Metadata Llama::get_metada() {
+struct Metadata Llama::get_metadata() {
 
   std::map<std::string, std::string> gguf_types = {
       {"", ""},
@@ -218,56 +218,57 @@ struct Metadata Llama::get_metada() {
   struct Metadata metada;
 
   // read general info
-  metada.general.architecture = this->get_metada("general.architecture", 32);
-  metada.general.description = this->get_metada("general.description", 512);
+  metada.general.architecture = this->get_metadata("general.architecture", 32);
+  metada.general.description = this->get_metadata("general.description", 512);
 
-  metada.general.name = this->get_metada("general.name", 32);
-  metada.general.basename = this->get_metada("general.basename", 32);
-  metada.general.size_label = this->get_metada("general.size_label", 32);
+  metada.general.name = this->get_metadata("general.name", 32);
+  metada.general.basename = this->get_metadata("general.basename", 32);
+  metada.general.size_label = this->get_metadata("general.size_label", 32);
 
-  std::string file_type = this->get_metada("general.file_type", 32);
+  std::string file_type = this->get_metadata("general.file_type", 32);
   if (gguf_types.find(file_type) == gguf_types.end()) {
     metada.general.file_type = gguf_types.at(file_type.c_str());
   }
 
-  metada.general.license = this->get_metada("general.license", 32);
-  metada.general.license_link = this->get_metada("general.license.link", 32);
-  metada.general.url = this->get_metada("general.url", 128);
-  metada.general.repo_url = this->get_metada("general.repo_url", 128);
+  metada.general.license = this->get_metadata("general.license", 32);
+  metada.general.license_link = this->get_metadata("general.license.link", 32);
+  metada.general.url = this->get_metadata("general.url", 128);
+  metada.general.repo_url = this->get_metadata("general.repo_url", 128);
 
-  metada.general.tags = string_to_vector(this->get_metada("general.tags", 32));
+  metada.general.tags =
+      string_to_vector(this->get_metadata("general.tags", 32));
   metada.general.languages =
-      string_to_vector(this->get_metada("general.languages", 32));
+      string_to_vector(this->get_metadata("general.languages", 32));
 
-  metada.general.quantized_by = this->get_metada("quantized_by", 32);
+  metada.general.quantized_by = this->get_metadata("quantized_by", 32);
 
   std::string quantization_version =
-      this->get_metada("general.quantization_version", 4);
+      this->get_metadata("general.quantization_version", 4);
   metada.general.quantization_version =
       !quantization_version.empty() ? std::stoi(quantization_version) : -1;
 
   // // read tokenizer info
-  metada.tokenizer.model = this->get_metada("tokenizer.ggml.model", 32);
+  metada.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
 
   std::string eos_token_id =
-      this->get_metada("tokenizer.ggml.eos_token_id", 16);
+      this->get_metadata("tokenizer.ggml.eos_token_id", 16);
   metada.tokenizer.eos_token_id =
       !eos_token_id.empty() ? std::stoi(eos_token_id) : -1;
 
   std::string padding_token_id =
-      this->get_metada("tokenizer.ggml.padding_token_id", 16);
+      this->get_metadata("tokenizer.ggml.padding_token_id", 16);
   metada.tokenizer.padding_token_id =
       !padding_token_id.empty() ? std::stoi(padding_token_id) : -1;
 
   std::string bos_token_id =
-      this->get_metada("tokenizer.ggml.bos_token_id", 16);
+      this->get_metadata("tokenizer.ggml.bos_token_id", 16);
   metada.tokenizer.bos_token_id =
       !bos_token_id.empty() ? std::stoi(bos_token_id) : -1;
 
   metada.tokenizer.add_bos_token =
-      this->get_metada("tokenizer.ggml.add_bos_token", 8) == "true";
+      this->get_metadata("tokenizer.ggml.add_bos_token", 8) == "true";
   metada.tokenizer.chat_template =
-      this->get_metada("tokenizer.chat_template", 2048);
+      this->get_metadata("tokenizer.chat_template", 2048);
 
   return metada;
 }
