@@ -226,27 +226,67 @@ void LlamaNode::get_metadata_service_callback(
 
   llama_msgs::msg::Metadata metadata_msgs;
 
+  // general
   metadata_msgs.general.architecture = metadata.general.architecture;
-  metadata_msgs.general.description = metadata.general.description;
-  metadata_msgs.general.name = metadata.general.name;
-  metadata_msgs.general.basename = metadata.general.basename;
-  metadata_msgs.general.size_label = metadata.general.size_label;
-  metadata_msgs.general.file_type = metadata.general.file_type;
-  metadata_msgs.general.license = metadata.general.license;
-  metadata_msgs.general.license_link = metadata.general.license_link;
-  metadata_msgs.general.url = metadata.general.url;
-  metadata_msgs.general.repo_url = metadata.general.repo_url;
-  metadata_msgs.general.tags = metadata.general.tags;
-  metadata_msgs.general.languages = metadata.general.languages;
-  metadata_msgs.general.quantized_by = metadata.general.quantized_by;
   metadata_msgs.general.quantization_version =
       metadata.general.quantization_version;
+  metadata_msgs.general.alignment = metadata.general.alignment;
 
+  metadata_msgs.general.name = metadata.general.name;
+  metadata_msgs.general.author = metadata.general.author;
+  metadata_msgs.general.version = metadata.general.version;
+  metadata_msgs.general.organization = metadata.general.organization;
+
+  metadata_msgs.general.basename = metadata.general.basename;
+  metadata_msgs.general.finetune = metadata.general.finetune;
+  metadata_msgs.general.description = metadata.general.description;
+  metadata_msgs.general.quantized_by = metadata.general.quantized_by;
+  metadata_msgs.general.size_label = metadata.general.size_label;
+
+  metadata_msgs.general.license = metadata.general.license;
+  metadata_msgs.general.license_name = metadata.general.license_name;
+  metadata_msgs.general.license_link = metadata.general.license_link;
+
+  metadata_msgs.general.url = metadata.general.url;
+  metadata_msgs.general.repo_url = metadata.general.repo_url;
+  metadata_msgs.general.doi = metadata.general.doi;
+  metadata_msgs.general.uuid = metadata.general.uuid;
+
+  metadata_msgs.general.tags = metadata.general.tags;
+  metadata_msgs.general.languages = metadata.general.languages;
+  metadata_msgs.general.datasets = metadata.general.datasets;
+
+  metadata_msgs.general.file_type = metadata.general.file_type;
+
+  // model
+  metadata_msgs.model.context_length = metadata.model.context_length;
+  metadata_msgs.model.embedding_length = metadata.model.embedding_length;
+  metadata_msgs.model.block_count = metadata.model.block_count;
+  metadata_msgs.model.feed_forward_length = metadata.model.feed_forward_length;
+  metadata_msgs.model.use_parallel_residual =
+      metadata.model.use_parallel_residual;
+  metadata_msgs.model.tensor_data_layout = metadata.model.tensor_data_layout;
+  metadata_msgs.model.expert_count = metadata.model.expert_count;
+  metadata_msgs.model.expert_used_count = metadata.model.expert_used_count;
+
+  // tokenizer
   metadata_msgs.tokenizer.model = metadata.tokenizer.model;
+
+  metadata_msgs.tokenizer.tokens = metadata.tokenizer.tokens;
+  metadata_msgs.tokenizer.scores = metadata.tokenizer.scores;
+  metadata_msgs.tokenizer.token_type = metadata.tokenizer.token_type;
+  metadata_msgs.tokenizer.merges = metadata.tokenizer.merges;
+  metadata_msgs.tokenizer.added_tokens = metadata.tokenizer.added_tokens;
+
+  metadata_msgs.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
   metadata_msgs.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;
+  metadata_msgs.tokenizer.unknown_token_id =
+      metadata.tokenizer.unknown_token_id;
   metadata_msgs.tokenizer.padding_token_id =
       metadata.tokenizer.padding_token_id;
-  metadata_msgs.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
+  metadata_msgs.tokenizer.separator_token_id =
+      metadata.tokenizer.separator_token_id;
+
   metadata_msgs.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
   metadata_msgs.tokenizer.chat_template = metadata.tokenizer.chat_template;
 

@@ -1,0 +1,8 @@
+int32 context_length
+int32 embedding_length
+int32 block_count
+int32 feed_forward_length
+bool use_parallel_residual
+string tensor_data_layout
+int32 expert_count
+int32 expert_used_count

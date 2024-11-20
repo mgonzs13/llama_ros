@@ -85,34 +85,67 @@ struct EmbeddingsOuput {
 struct Metadata {
   struct GeneralInfo {
     std::string architecture;
-    std::string description;
+    uint32_t quantization_version;
+    uint32_t alignment;
+
     std::string name;
+    std::string author;
+    std::string version;
+    std::string organization;
+
     std::string basename;
+    std::string finetune;
+    std::string description;
+    std::string quantized_by;
     std::string size_label;
-    std::string file_type;
+
     std::string license;
+    std::string license_name;
     std::string license_link;
+
     std::string url;
     std::string repo_url;
+    std::string doi;
+    std::string uuid;
+
     std::vector<std::string> tags;
     std::vector<std::string> languages;
-    std::string quantized_by;
-    int quantization_version;
+    std::vector<std::string> datasets;
+    std::string file_type;
+  };
+
+  struct ModelInfo {
+    int context_length;
+    int embedding_length;
+    int block_count;
+    int feed_forward_length;
+    bool use_parallel_residual;
+    std::string tensor_data_layout;
+    int expert_count;
+    int expert_used_count;
   };
 
   struct TokenizerInfo {
     std::string model;
-    int eos_token_id;
-    int padding_token_id;
+
+    std::vector<std::string> tokens;
+    std::vector<float> scores;
+    std::vector<int> token_type;
+    std::vector<std::string> merges;
+    std::vector<std::string> added_tokens;
+
     int bos_token_id;
+    int eos_token_id;
+    int unknown_token_id;
+    int padding_token_id;
+    int separator_token_id;
     bool add_bos_token;
+
     std::string chat_template;
   };
 
-  int version;
-  int tensor_count;
-  int kv_count;
   GeneralInfo general;
+  ModelInfo model;
   TokenizerInfo tokenizer;
 };
 

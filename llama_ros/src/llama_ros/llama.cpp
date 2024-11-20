@@ -22,6 +22,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <memory>
 #include <thread>
 
@@ -215,62 +216,163 @@ struct Metadata Llama::get_metadata() {
       {"18", "MOSTLY_Q6_K"},
   };
 
-  struct Metadata metada;
+  struct Metadata metadata;
 
-  // read general info
-  metada.general.architecture = this->get_metadata("general.architecture", 32);
-  metada.general.description = this->get_metadata("general.description", 512);
-
-  metada.general.name = this->get_metadata("general.name", 32);
-  metada.general.basename = this->get_metadata("general.basename", 32);
-  metada.general.size_label = this->get_metadata("general.size_label", 32);
-
-  std::string file_type = this->get_metadata("general.file_type", 32);
-  if (gguf_types.find(file_type) == gguf_types.end()) {
-    metada.general.file_type = gguf_types.at(file_type.c_str());
-  }
-
-  metada.general.license = this->get_metadata("general.license", 32);
-  metada.general.license_link = this->get_metadata("general.license.link", 32);
-  metada.general.url = this->get_metadata("general.url", 128);
-  metada.general.repo_url = this->get_metadata("general.repo_url", 128);
-
-  metada.general.tags =
-      string_to_vector(this->get_metadata("general.tags", 32));
-  metada.general.languages =
-      string_to_vector(this->get_metadata("general.languages", 32));
-
-  metada.general.quantized_by = this->get_metadata("quantized_by", 32);
+  // required general metadata
+  metadata.general.architecture =
+      this->get_metadata("general.architecture", 32);
 
   std::string quantization_version =
       this->get_metadata("general.quantization_version", 4);
-  metada.general.quantization_version =
+  metadata.general.quantization_version =
       !quantization_version.empty() ? std::stoi(quantization_version) : -1;
 
-  // // read tokenizer info
-  metada.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
+  std::string alignment = this->get_metadata("general.alignment", 4);
+  metadata.general.alignment = !alignment.empty() ? std::stoi(alignment) : -1;
 
-  std::string eos_token_id =
-      this->get_metadata("tokenizer.ggml.eos_token_id", 16);
-  metada.tokenizer.eos_token_id =
-      !eos_token_id.empty() ? std::stoi(eos_token_id) : -1;
+  // general metadata
+  metadata.general.name = this->get_metadata("general.name", 32);
+  metadata.general.author = this->get_metadata("general.author", 32);
+  metadata.general.version = this->get_metadata("general.version", 32);
+  metadata.general.organization =
+      this->get_metadata("general.organization", 32);
 
-  std::string padding_token_id =
-      this->get_metadata("tokenizer.ggml.padding_token_id", 16);
-  metada.tokenizer.padding_token_id =
-      !padding_token_id.empty() ? std::stoi(padding_token_id) : -1;
+  metadata.general.basename = this->get_metadata("general.basename", 32);
+  metadata.general.finetune = this->get_metadata("general.finetune", 32);
+  metadata.general.description = this->get_metadata("general.description", 512);
+  metadata.general.quantized_by = this->get_metadata("quantized_by", 32);
+  metadata.general.size_label = this->get_metadata("general.size_label", 32);
+
+  metadata.general.license = this->get_metadata("general.license", 32);
+  metadata.general.license_name =
+      this->get_metadata("general.license.name", 32);
+  metadata.general.license_link =
+      this->get_metadata("general.license.link", 32);
+
+  metadata.general.url = this->get_metadata("general.url", 128);
+  metadata.general.repo_url = this->get_metadata("general.repo_url", 128);
+  metadata.general.doi = this->get_metadata("general.doi", 64);
+  metadata.general.uuid = this->get_metadata("general.uuid", 64);
+
+  metadata.general.tags =
+      string_to_vector(this->get_metadata("general.tags", 128));
+  metadata.general.languages =
+      string_to_vector(this->get_metadata("general.languages", 64));
+  metadata.general.datasets =
+      string_to_vector(this->get_metadata("general.datasets", 128));
+
+  std::string file_type = this->get_metadata("general.file_type", 32);
+  if (gguf_types.find(file_type) == gguf_types.end()) {
+    metadata.general.file_type = gguf_types.at(file_type.c_str());
+  }
+
+  // llm metadata
+  std::ostringstream context_length_key;
+  context_length_key << metadata.general.architecture.c_str()
+                     << ".context_length";
+  std::string context_length = this->get_metadata(context_length_key.str(), 16);
+  metadata.model.context_length =
+      !context_length.empty() ? std::stoi(context_length) : -1;
+
+  std::ostringstream embedding_length_key;
+  embedding_length_key << metadata.general.architecture.c_str()
+                       << ".embedding_length";
+  std::string embedding_length =
+      this->get_metadata(embedding_length_key.str(), 16);
+  metadata.model.embedding_length =
+      !embedding_length.empty() ? std::stoi(embedding_length) : -1;
+
+  std::ostringstream block_count_key;
+  block_count_key << metadata.general.architecture.c_str() << ".block_count";
+  std::string block_count = this->get_metadata(block_count_key.str(), 16);
+  metadata.model.block_count =
+      !block_count.empty() ? std::stoi(block_count) : -1;
+
+  std::ostringstream feed_forward_length_key;
+  feed_forward_length_key << metadata.general.architecture.c_str()
+                          << ".feed_forward_length";
+  std::string feed_forward_length =
+      this->get_metadata(feed_forward_length_key.str(), 16);
+  metadata.model.feed_forward_length =
+      !feed_forward_length.empty() ? std::stoi(feed_forward_length) : -1;
+
+  std::ostringstream use_parallel_residual_key;
+  use_parallel_residual_key << metadata.general.architecture.c_str()
+                            << ".use_parallel_residual";
+  metadata.model.use_parallel_residual =
+      this->get_metadata(use_parallel_residual_key.str(), 16) == "true";
+
+  std::ostringstream tensor_data_layout_key;
+  tensor_data_layout_key << metadata.general.architecture.c_str()
+                         << ".tensor_data_layout";
+  metadata.model.tensor_data_layout =
+      this->get_metadata(tensor_data_layout_key.str(), 16);
+
+  std::ostringstream expert_count_key;
+  expert_count_key << metadata.general.architecture.c_str() << ".expert_count";
+  std::string expert_count = this->get_metadata(expert_count_key.str(), 16);
+  metadata.model.expert_count =
+      !expert_count.empty() ? std::stoi(expert_count) : -1;
+
+  std::ostringstream expert_used_count_key;
+  expert_used_count_key << metadata.general.architecture.c_str()
+                        << ".expert_used_count";
+  std::string expert_used_count =
+      this->get_metadata(expert_used_count_key.str(), 16);
+  metadata.model.expert_used_count =
+      !expert_used_count.empty() ? std::stoi(expert_used_count) : -1;
+
+  // tokenizer metadata
+  metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
+
+  metadata.tokenizer.tokens =
+      string_to_vector(this->get_metadata("tokenizer.ggml.tokens", 4096));
+  metadata.tokenizer.merges =
+      string_to_vector(this->get_metadata("tokenizer.ggml.merges", 4096));
+  metadata.tokenizer.added_tokens =
+      string_to_vector(this->get_metadata("tokenizer.ggml.added_tokens", 4096));
+
+  for (std::string ele : string_to_vector(
+           this->get_metadata("tokenizer.ggml.token_type", 4096))) {
+    metadata.tokenizer.token_type.push_back(std::stoi(ele));
+  }
+
+  for (std::string ele :
+       string_to_vector(this->get_metadata("tokenizer.ggml.scores", 4096))) {
+    metadata.tokenizer.scores.push_back(std::stof(ele));
+  }
 
   std::string bos_token_id =
       this->get_metadata("tokenizer.ggml.bos_token_id", 16);
-  metada.tokenizer.bos_token_id =
+  metadata.tokenizer.bos_token_id =
       !bos_token_id.empty() ? std::stoi(bos_token_id) : -1;
 
-  metada.tokenizer.add_bos_token =
+  std::string eos_token_id =
+      this->get_metadata("tokenizer.ggml.eos_token_id", 16);
+  metadata.tokenizer.eos_token_id =
+      !eos_token_id.empty() ? std::stoi(eos_token_id) : -1;
+
+  std::string unknown_token_id =
+      this->get_metadata("tokenizer.ggml.unknown_token_id", 16);
+  metadata.tokenizer.unknown_token_id =
+      !unknown_token_id.empty() ? std::stoi(unknown_token_id) : -1;
+
+  std::string padding_token_id =
+      this->get_metadata("tokenizer.ggml.padding_token_id", 16);
+  metadata.tokenizer.padding_token_id =
+      !padding_token_id.empty() ? std::stoi(padding_token_id) : -1;
+
+  std::string separator_token_id =
+      this->get_metadata("tokenizer.ggml.separator_token_id", 16);
+  metadata.tokenizer.separator_token_id =
+      !separator_token_id.empty() ? std::stoi(separator_token_id) : -1;
+
+  metadata.tokenizer.add_bos_token =
       this->get_metadata("tokenizer.ggml.add_bos_token", 8) == "true";
-  metada.tokenizer.chat_template =
+  metadata.tokenizer.chat_template =
       this->get_metadata("tokenizer.chat_template", 2048);
 
-  return metada;
+  return metadata;
 }
 
 /*
