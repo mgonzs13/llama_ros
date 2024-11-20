@@ -222,7 +222,7 @@ void LlamaNode::get_metadata_service_callback(
 
   (void)request;
 
-  llama_ros::Metadata metadata = this->llama->get_metada();
+  llama_ros::Metadata metadata = this->llama->get_metadata();
 
   llama_msgs::msg::Metadata metadata_msgs;
 
