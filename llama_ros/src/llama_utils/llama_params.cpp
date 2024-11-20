@@ -118,7 +118,7 @@ void llama_utils::declare_llama_params(
                                      });
 }
 
-struct llama_params llama_utils::get_llama_params(
+struct LlamaParams llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   int32_t seed;
@@ -144,7 +144,7 @@ struct llama_params llama_utils::get_llama_params(
 
   std::string file_path;
 
-  struct llama_params params;
+  struct LlamaParams params;
 
   node->get_parameter("seed", seed);
   node->get_parameter("n_ctx", params.params.n_ctx);

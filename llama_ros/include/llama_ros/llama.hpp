@@ -27,12 +27,15 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "common.h"
+#include "json.hpp"
 #include "llama.h"
-#include "llama_utils/spinner.hpp"
 #include "sampling.h"
+
+#include "llama_utils/spinner.hpp"
 
 // llama logs
 #define LLAMA_LOG_ERROR(text, ...)                                             \
@@ -42,24 +45,26 @@
 #define LLAMA_LOG_INFO(text, ...)                                              \
   fprintf(stderr, "[INFO] " text "\n", ##__VA_ARGS__)
 
+namespace llama_ros {
+
 // llama structs
-struct token_prob {
+struct TokenProb {
   llama_token token;
   float probability;
 };
 
-struct lora {
+struct LoRA {
   int id;
   std::string path;
   float scale;
 };
 
-struct completion_output {
-  std::vector<token_prob> probs;
+struct CompletionOutput {
+  std::vector<TokenProb> probs;
   llama_token token;
 };
 
-enum stop_type {
+enum StopType {
   NO_STOP,
   FULL_STOP,
   PARTIAL_STOP,
@@ -67,19 +72,51 @@ enum stop_type {
   ABORT,
 };
 
-struct response_output {
-  std::vector<completion_output> completions;
-  stop_type stop;
+struct ResponseOutput {
+  std::vector<CompletionOutput> completions;
+  StopType stop;
 };
 
-struct embeddings_ouput {
+struct EmbeddingsOuput {
   std::vector<float> embeddings;
   int32_t n_tokens;
 };
 
-namespace llama_ros {
+struct Metadata {
+  struct GeneralInfo {
+    std::string architecture;
+    std::string description;
+    std::string name;
+    std::string basename;
+    std::string size_label;
+    std::string file_type;
+    std::string license;
+    std::string license_link;
+    std::string url;
+    std::string repo_url;
+    std::vector<std::string> tags;
+    std::vector<std::string> languages;
+    std::string quantized_by;
+    int quantization_version;
+  };
 
-using GenerateResponseCallback = std::function<void(struct completion_output)>;
+  struct TokenizerInfo {
+    std::string model;
+    int eos_token_id;
+    int padding_token_id;
+    int bos_token_id;
+    bool add_bos_token;
+    std::string chat_template;
+  };
+
+  int version;
+  int tensor_count;
+  int kv_count;
+  GeneralInfo general;
+  TokenizerInfo tokenizer;
+};
+
+using GenerateResponseCallback = std::function<void(struct CompletionOutput)>;
 
 class Llama {
 
@@ -97,27 +134,30 @@ public:
 
   std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
                                  bool add_ass);
-  std::vector<struct lora> list_loras();
-  void update_loras(std::vector<struct lora> loras);
+  std::vector<struct LoRA> list_loras();
+  void update_loras(std::vector<struct LoRA> loras);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
                   bool add_eos = true);
-  embeddings_ouput generate_embeddings(const std::string &input_prompt,
-                                       int normalization = 2);
-  embeddings_ouput generate_embeddings(const std::vector<llama_token> &tokens,
-                                       int normalization = 2);
+  struct EmbeddingsOuput generate_embeddings(const std::string &input_prompt,
+                                             int normalization = 2);
+  struct EmbeddingsOuput
+  generate_embeddings(const std::vector<llama_token> &tokens,
+                      int normalization = 2);
   float rank_document(const std::string &query, const std::string &document);
   std::vector<float> rank_documents(const std::string &query,
                                     const std::vector<std::string> &documents);
 
-  response_output generate_response(const std::string &input_prompt,
-                                    struct common_sampler_params sparams,
-                                    GenerateResponseCallback callbakc = nullptr,
-                                    std::vector<std::string> stop = {});
-  response_output generate_response(const std::string &input_prompt,
-                                    GenerateResponseCallback callbakc = nullptr,
-                                    std::vector<std::string> stop = {});
+  struct ResponseOutput
+  generate_response(const std::string &input_prompt,
+                    struct common_sampler_params sparams,
+                    GenerateResponseCallback callbakc = nullptr,
+                    std::vector<std::string> stop = {});
+  struct ResponseOutput
+  generate_response(const std::string &input_prompt,
+                    GenerateResponseCallback callbakc = nullptr,
+                    std::vector<std::string> stop = {});
 
   const struct llama_context *get_ctx() { return this->ctx; }
   const struct llama_model *get_model() { return this->model; }
@@ -125,6 +165,10 @@ public:
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
+
+  std::string get_metada(const std::string &key, size_t size);
+  struct Metadata get_metada();
+
   bool is_embedding() { return this->params.embedding; }
   bool is_reranking() { return this->params.reranking; }
   bool add_bos_token() { return llama_add_bos_token(this->model); }
@@ -156,11 +200,11 @@ protected:
   virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
                            bool add_sfx);
 
-  stop_type
-  find_stop(std::vector<struct completion_output> completion_result_list,
+  StopType
+  find_stop(std::vector<struct CompletionOutput> completion_result_list,
             std::vector<std::string> stopping_words);
-  stop_type
-  find_stop_word(std::vector<struct completion_output> completion_result_list,
+  StopType
+  find_stop_word(std::vector<struct CompletionOutput> completion_result_list,
                  std::string stopping_word);
 
   bool eval_system_prompt();
@@ -170,8 +214,8 @@ protected:
   bool eval(std::vector<llama_token> tokens);
   bool eval(struct llama_batch batch);
 
-  std::vector<token_prob> get_probs();
-  struct completion_output sample();
+  std::vector<struct TokenProb> get_probs();
+  struct CompletionOutput sample();
 
 private:
   // lock

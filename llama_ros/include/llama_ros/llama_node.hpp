@@ -36,6 +36,7 @@
 #include "llama_msgs/srv/detokenize.hpp"
 #include "llama_msgs/srv/format_chat_messages.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
+#include "llama_msgs/srv/get_metadata.hpp"
 #include "llama_msgs/srv/list_lo_r_as.hpp"
 #include "llama_msgs/srv/rerank_documents.hpp"
 #include "llama_msgs/srv/tokenize.hpp"
@@ -71,7 +72,7 @@ public:
 protected:
   std::unique_ptr<Llama> llama;
   bool params_declared;
-  struct llama_utils::llama_params params;
+  struct llama_utils::LlamaParams params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
 
   virtual void create_llama();
@@ -80,10 +81,12 @@ protected:
   virtual bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal);
   virtual void
   execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
-  void send_text(const struct completion_output &completion);
+  void send_text(const struct CompletionOutput &completion);
 
 private:
   // ros2
+  rclcpp::Service<llama_msgs::srv::GetMetadata>::SharedPtr
+      get_metadata_service_;
   rclcpp::Service<llama_msgs::srv::Tokenize>::SharedPtr tokenize_service_;
   rclcpp::Service<llama_msgs::srv::Detokenize>::SharedPtr detokenize_service_;
   rclcpp::Service<llama_msgs::srv::GenerateEmbeddings>::SharedPtr
@@ -99,6 +102,10 @@ private:
       generate_response_action_server_;
 
   // methods
+  void get_metadata_service_callback(
+      const std::shared_ptr<llama_msgs::srv::GetMetadata::Request> request,
+      std::shared_ptr<llama_msgs::srv::GetMetadata::Response> response);
+
   void tokenize_service_callback(
       const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
       std::shared_ptr<llama_msgs::srv::Tokenize::Response> response);

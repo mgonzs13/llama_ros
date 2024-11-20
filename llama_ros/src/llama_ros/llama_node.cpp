@@ -80,6 +80,12 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
+  // get metadata service
+  this->get_metadata_service_ =
+      this->create_service<llama_msgs::srv::GetMetadata>(
+          "get_metadata",
+          std::bind(&LlamaNode::get_metadata_service_callback, this, _1, _2));
+
   // embeddings service
   if (this->llama->is_embedding() && !this->llama->is_reranking()) {
     this->generate_embeddings_service_ =
@@ -145,6 +151,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->destroy_llama();
 
+  this->get_metadata_service_.reset();
+  this->get_metadata_service_ = nullptr;
+
   if (this->llama->is_embedding() && !this->llama->is_reranking()) {
     this->generate_embeddings_service_.reset();
     this->generate_embeddings_service_ = nullptr;
@@ -200,6 +209,48 @@ LlamaNode::on_shutdown(const rclcpp_lifecycle::State &) {
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
+}
+
+/*
+*****************************
+*         METADATA          *
+*****************************
+*/
+void LlamaNode::get_metadata_service_callback(
+    const std::shared_ptr<llama_msgs::srv::GetMetadata::Request> request,
+    std::shared_ptr<llama_msgs::srv::GetMetadata::Response> response) {
+
+  (void)request;
+
+  llama_ros::Metadata metadata = this->llama->get_metada();
+
+  llama_msgs::msg::Metadata metadata_msgs;
+
+  metadata_msgs.general.architecture = metadata.general.architecture;
+  metadata_msgs.general.description = metadata.general.description;
+  metadata_msgs.general.name = metadata.general.name;
+  metadata_msgs.general.basename = metadata.general.basename;
+  metadata_msgs.general.size_label = metadata.general.size_label;
+  metadata_msgs.general.file_type = metadata.general.file_type;
+  metadata_msgs.general.license = metadata.general.license;
+  metadata_msgs.general.license_link = metadata.general.license_link;
+  metadata_msgs.general.url = metadata.general.url;
+  metadata_msgs.general.repo_url = metadata.general.repo_url;
+  metadata_msgs.general.tags = metadata.general.tags;
+  metadata_msgs.general.languages = metadata.general.languages;
+  metadata_msgs.general.quantized_by = metadata.general.quantized_by;
+  metadata_msgs.general.quantization_version =
+      metadata.general.quantization_version;
+
+  metadata_msgs.tokenizer.model = metadata.tokenizer.model;
+  metadata_msgs.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;
+  metadata_msgs.tokenizer.padding_token_id =
+      metadata.tokenizer.padding_token_id;
+  metadata_msgs.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
+  metadata_msgs.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
+  metadata_msgs.tokenizer.chat_template = metadata.tokenizer.chat_template;
+
+  response->metadata = metadata_msgs;
 }
 
 /*
@@ -324,11 +375,11 @@ void LlamaNode::update_loras_service_callback(
 
   (void)response;
 
-  std::vector<struct lora> loras;
+  std::vector<struct LoRA> loras;
 
   for (auto lora_msg : request->loras) {
 
-    struct lora lora_aux;
+    struct LoRA lora_aux;
     lora_aux.id = lora_msg.id;
     lora_aux.path = lora_msg.path;
     lora_aux.scale = lora_msg.scale;
@@ -407,10 +458,10 @@ void LlamaNode::execute(
                                                     this->llama->get_n_vocab());
 
   // call llama
-  struct response_output output = this->llama->generate_response(
+  struct ResponseOutput output = this->llama->generate_response(
       prompt, sparams, std::bind(&LlamaNode::send_text, this, _1));
 
-  if (output.stop == stop_type::FULL_STOP) {
+  if (output.stop == StopType::FULL_STOP) {
     auto completion_results = output.completions;
 
     for (auto completion : completion_results) {
@@ -431,10 +482,10 @@ void LlamaNode::execute(
 
   if (rclcpp::ok()) {
 
-    if (output.stop == stop_type::CANCEL) {
+    if (output.stop == StopType::CANCEL) {
       this->goal_handle_->canceled(result);
 
-    } else if (output.stop == stop_type::ABORT) {
+    } else if (output.stop == StopType::ABORT) {
       this->goal_handle_->abort(result);
 
     } else {
@@ -445,7 +496,7 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const struct completion_output &completion) {
+void LlamaNode::send_text(const struct CompletionOutput &completion) {
 
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();

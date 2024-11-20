@@ -34,17 +34,17 @@
 
 namespace llama_utils {
 
-struct llama_params {
+struct LlamaParams {
   bool debug;
   std::string system_prompt;
   struct common_params params;
-  struct llava_ros::llava_params llava_params;
+  struct llava_ros::LlavaParams llava_params;
 };
 
 void declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
-struct llama_params
+struct LlamaParams
 get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
 enum ggml_sched_priority parse_priority(std::string priority);

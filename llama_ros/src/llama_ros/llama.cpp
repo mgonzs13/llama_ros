@@ -150,6 +150,130 @@ Llama::~Llama() {
 
 /*
 *****************************
+*          METADATA         *
+*****************************
+*/
+std::string Llama::get_metada(const std::string &key, size_t size) {
+
+  std::vector<char> buffer(size, 0);
+  std::string metada_str;
+
+  int32_t res = llama_model_meta_val_str(this->model, key.c_str(),
+                                         buffer.data(), buffer.size());
+  if (res >= 0) {
+    metada_str = std::string(buffer.data(), buffer.size());
+  }
+
+  return metada_str;
+}
+
+std::vector<std::string> string_to_vector(const std::string &string) {
+
+  std::string str(string.begin(), string.end());
+
+  // Remove the surrounding brackets '[' and ']'
+  if (!str.empty() && str.front() == '[')
+    str.erase(0, 1); // Remove '['
+  if (!str.empty() && str.back() == ']')
+    str.pop_back(); // Remove ']'
+
+  // Split by comma and trim whitespace
+  std::vector<std::string> result;
+  std::istringstream stream(str);
+  std::string token;
+
+  while (std::getline(stream, token, ',')) {
+    // Trim whitespace around the token
+    token.erase(0, token.find_first_not_of(" \t")); // Trim left
+    token.erase(token.find_last_not_of(" \t") + 1); // Trim right
+    result.push_back(token);
+  }
+
+  return result;
+}
+
+struct Metadata Llama::get_metada() {
+
+  std::map<std::string, std::string> gguf_types = {
+      {"", ""},
+      {"0", "ALL_F32"},
+      {"1", "MOSTLY_F16"},
+      {"2", "MOSTLY_Q4_0"},
+      {"3", "MOSTLY_Q4_1"},
+      {"4", "MOSTLY_Q4_1_SOME_F16"},
+      {"7", "MOSTLY_Q8_0"},
+      {"8", "MOSTLY_Q5_0"},
+      {"9", "MOSTLY_Q5_1"},
+      {"10", "MOSTLY_Q2_K"},
+      {"11", "MOSTLY_Q3_K_S"},
+      {"12", "MOSTLY_Q3_K_M"},
+      {"13", "MOSTLY_Q3_K_L"},
+      {"14", "MOSTLY_Q4_K_S"},
+      {"15", "MOSTLY_Q4_K_M"},
+      {"16", "MOSTLY_Q5_K_S"},
+      {"17", "MOSTLY_Q5_K_M"},
+      {"18", "MOSTLY_Q6_K"},
+  };
+
+  struct Metadata metada;
+
+  // read general info
+  metada.general.architecture = this->get_metada("general.architecture", 32);
+  metada.general.description = this->get_metada("general.description", 512);
+
+  metada.general.name = this->get_metada("general.name", 32);
+  metada.general.basename = this->get_metada("general.basename", 32);
+  metada.general.size_label = this->get_metada("general.size_label", 32);
+
+  std::string file_type = this->get_metada("general.file_type", 32);
+  if (gguf_types.find(file_type) == gguf_types.end()) {
+    metada.general.file_type = gguf_types.at(file_type.c_str());
+  }
+
+  metada.general.license = this->get_metada("general.license", 32);
+  metada.general.license_link = this->get_metada("general.license.link", 32);
+  metada.general.url = this->get_metada("general.url", 128);
+  metada.general.repo_url = this->get_metada("general.repo_url", 128);
+
+  metada.general.tags = string_to_vector(this->get_metada("general.tags", 32));
+  metada.general.languages =
+      string_to_vector(this->get_metada("general.languages", 32));
+
+  metada.general.quantized_by = this->get_metada("quantized_by", 32);
+
+  std::string quantization_version =
+      this->get_metada("general.quantization_version", 4);
+  metada.general.quantization_version =
+      !quantization_version.empty() ? std::stoi(quantization_version) : -1;
+
+  // // read tokenizer info
+  metada.tokenizer.model = this->get_metada("tokenizer.ggml.model", 32);
+
+  std::string eos_token_id =
+      this->get_metada("tokenizer.ggml.eos_token_id", 16);
+  metada.tokenizer.eos_token_id =
+      !eos_token_id.empty() ? std::stoi(eos_token_id) : -1;
+
+  std::string padding_token_id =
+      this->get_metada("tokenizer.ggml.padding_token_id", 16);
+  metada.tokenizer.padding_token_id =
+      !padding_token_id.empty() ? std::stoi(padding_token_id) : -1;
+
+  std::string bos_token_id =
+      this->get_metada("tokenizer.ggml.bos_token_id", 16);
+  metada.tokenizer.bos_token_id =
+      !bos_token_id.empty() ? std::stoi(bos_token_id) : -1;
+
+  metada.tokenizer.add_bos_token =
+      this->get_metada("tokenizer.ggml.add_bos_token", 8) == "true";
+  metada.tokenizer.chat_template =
+      this->get_metada("tokenizer.chat_template", 2048);
+
+  return metada;
+}
+
+/*
+*****************************
 *           RESET           *
 *           CANCEL          *
 *****************************
@@ -211,14 +335,14 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-embeddings_ouput
+struct EmbeddingsOuput
 Llama::generate_embeddings(const std::vector<llama_token> &tokens,
                            int normalization) {
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   const int n_embd = this->get_n_embd();
 
-  embeddings_ouput output;
+  struct EmbeddingsOuput output;
   output.embeddings = std::vector<float>(n_embd, 0.0f);
   output.n_tokens = 0;
 
@@ -278,8 +402,8 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   return output;
 }
 
-embeddings_ouput Llama::generate_embeddings(const std::string &input_prompt,
-                                            int normalization) {
+struct EmbeddingsOuput
+Llama::generate_embeddings(const std::string &input_prompt, int normalization) {
 
   auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
   tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
@@ -369,16 +493,16 @@ Llama::format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
 *            LORAS            *
 *******************************
 */
-std::vector<struct lora> Llama::list_loras() {
+std::vector<struct LoRA> Llama::list_loras() {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
-  std::vector<struct lora> loras;
+  std::vector<struct LoRA> loras;
 
   for (size_t i = 0; i < this->lora_adapters.size(); ++i) {
     auto &lora_i = this->lora_adapters[i];
 
-    struct lora lora_aux;
+    struct LoRA lora_aux;
     lora_aux.id = i;
     lora_aux.path = lora_i.path;
     lora_aux.scale = lora_i.scale;
@@ -389,7 +513,7 @@ std::vector<struct lora> Llama::list_loras() {
   return loras;
 }
 
-void Llama::update_loras(std::vector<struct lora> loras) {
+void Llama::update_loras(std::vector<struct LoRA> loras) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
@@ -427,25 +551,25 @@ void Llama::update_loras(std::vector<struct lora> loras) {
 *     GENERATE RESPONSE     *
 *****************************
 */
-response_output Llama::generate_response(const std::string &input_prompt,
-                                         GenerateResponseCallback callback,
-                                         std::vector<std::string> stop) {
+struct ResponseOutput
+Llama::generate_response(const std::string &input_prompt,
+                         GenerateResponseCallback callback,
+                         std::vector<std::string> stop) {
   struct common_sampler_params sparams;
   return this->generate_response(input_prompt, sparams, callback, stop);
 }
 
-response_output Llama::generate_response(const std::string &input_prompt,
-                                         struct common_sampler_params sparams,
-                                         GenerateResponseCallback callback,
-                                         std::vector<std::string> stop) {
+struct ResponseOutput Llama::generate_response(
+    const std::string &input_prompt, struct common_sampler_params sparams,
+    GenerateResponseCallback callback, std::vector<std::string> stop) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
-  struct response_output output;
-  struct completion_output completion_result;
-  std::vector<struct completion_output> response;
-  std::vector<struct completion_output> completion_result_list;
+  struct ResponseOutput output;
+  struct CompletionOutput completion_result;
+  std::vector<struct CompletionOutput> response;
+  std::vector<struct CompletionOutput> completion_result_list;
 
   std::vector<std::string> stop_concat;
   stop_concat.reserve(this->params.antiprompt.size() + stop.size());
@@ -463,7 +587,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
   this->sampler = common_sampler_init(this->model, this->params.sparams);
 
   if (this->sampler == nullptr) {
-    output.stop = stop_type::ABORT;
+    output.stop = StopType::ABORT;
     return output;
   }
 
@@ -484,12 +608,12 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
   // eval prompt
   if (!this->eval_prompt()) {
-    output.stop = stop_type::ABORT;
+    output.stop = StopType::ABORT;
     return output;
   }
 
   // generation loop
-  stop_type stopping = NO_STOP;
+  StopType stopping = NO_STOP;
 
   while (stopping != FULL_STOP) {
 
@@ -497,9 +621,9 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
     if (stopping == FULL_STOP) {
       if (this->canceled) {
-        output.stop = stop_type::CANCEL;
+        output.stop = StopType::CANCEL;
       } else {
-        output.stop = stop_type::FULL_STOP;
+        output.stop = StopType::FULL_STOP;
       }
 
       break;
@@ -525,7 +649,7 @@ response_output Llama::generate_response(const std::string &input_prompt,
 
     // next eval
     if (!this->eval_token(completion_result.token)) {
-      output.stop = stop_type::ABORT;
+      output.stop = StopType::ABORT;
       break;
     }
   }
@@ -596,8 +720,8 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 *           STOP            *
 *****************************
 */
-stop_type
-Llama::find_stop(std::vector<struct completion_output> completion_result_list,
+StopType
+Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
                  std::vector<std::string> stopping_words) {
 
   // check if stopping word appear at the end of the output
@@ -639,7 +763,7 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
 
   // search for stopping words
   for (auto w : stopping_words) {
-    stop_type s = this->find_stop_word(completion_result_list, w);
+    StopType s = this->find_stop_word(completion_result_list, w);
     if (s != NO_STOP) {
 
       if (s == FULL_STOP) {
@@ -653,8 +777,8 @@ Llama::find_stop(std::vector<struct completion_output> completion_result_list,
   return NO_STOP;
 }
 
-stop_type Llama::find_stop_word(
-    std::vector<struct completion_output> completion_result_list,
+StopType Llama::find_stop_word(
+    std::vector<struct CompletionOutput> completion_result_list,
     std::string stopping_word) {
 
   std::string completion_text = "";
@@ -821,8 +945,8 @@ bool Llama::eval(struct llama_batch batch) {
 *          SAMPLE           *
 *****************************
 */
-std::vector<token_prob> Llama::get_probs() {
-  std::vector<token_prob> probs;
+std::vector<struct TokenProb> Llama::get_probs() {
+  std::vector<struct TokenProb> probs;
 
   const auto *cur_p = common_sampler_get_candidates(this->sampler);
 
@@ -838,14 +962,14 @@ std::vector<token_prob> Llama::get_probs() {
   return probs;
 }
 
-struct completion_output Llama::sample() {
+struct CompletionOutput Llama::sample() {
 
   // sample token
   llama_token id = common_sampler_sample(this->sampler, this->ctx, -1);
   common_sampler_accept(this->sampler, id, true);
 
   // create output
-  struct completion_output result;
+  struct CompletionOutput result;
   result.token = id;
   result.probs = this->get_probs();
 

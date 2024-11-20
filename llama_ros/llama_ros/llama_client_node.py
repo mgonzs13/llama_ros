@@ -33,6 +33,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 from action_msgs.msg import GoalStatus
+from llama_msgs.srv import GetMetadata
 from llama_msgs.srv import Tokenize
 from llama_msgs.srv import Detokenize
 from llama_msgs.srv import GenerateEmbeddings
@@ -89,6 +90,10 @@ class LlamaClientNode(Node):
             callback_group=self._callback_group,
         )
 
+        self._get_metadata_srv_client = self.create_client(
+            GetMetadata, "get_metadata", callback_group=self._callback_group
+        )
+
         self._tokenize_srv_client = self.create_client(
             Tokenize, "tokenize", callback_group=self._callback_group
         )
@@ -118,6 +123,9 @@ class LlamaClientNode(Node):
         self._executor.add_node(self)
         self._spin_thread = Thread(target=self._executor.spin)
         self._spin_thread.start()
+
+    def get_metadata(self, req: GetMetadata.Request) -> GetMetadata:
+        return self._get_metadata_srv_client.call(req)
 
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
         self._tokenize_srv_client.wait_for_service()

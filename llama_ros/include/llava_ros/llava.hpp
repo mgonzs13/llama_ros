@@ -38,7 +38,7 @@
 
 namespace llava_ros {
 
-struct llava_params {
+struct LlavaParams {
   std::string image_text = "";
   std::string image_prefix = "";
   std::string image_suffix = "";
@@ -48,7 +48,7 @@ class Llava : public llama_ros::Llama {
 
 public:
   Llava(const struct common_params &params,
-        const struct llava_params &llava_params, std::string system_prompt = "",
+        const struct LlavaParams &llava_params, std::string system_prompt = "",
         bool debug = false);
   ~Llava();
 
@@ -64,7 +64,7 @@ protected:
 
   struct llava_image_embed *image_embed;
   struct clip_ctx *ctx_clip;
-  struct llava_params llava_params;
+  struct LlavaParams llava_params;
 
 private:
   void free_image();

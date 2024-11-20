@@ -20,6 +20,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SamplingConfig.msg"
   "msg/Message.msg"
   "msg/LoRA.msg"
+  "msg/GeneralInfo.msg"
+  "msg/TokenizerInfo.msg"
+  "msg/Metadata.msg"
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"
@@ -28,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ListLoRAs.srv"
   "srv/UpdateLoRAs.srv"
   "srv/RerankDocuments.srv"
+  "srv/GetMetadata.srv"
   DEPENDENCIES sensor_msgs
 )
 

@@ -31,7 +31,7 @@
 using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params,
-             const struct llava_params &llava_params, std::string system_prompt,
+             const struct LlavaParams &llava_params, std::string system_prompt,
              bool debug)
     : llama_ros::Llama(params, system_prompt, debug),
       llava_params(llava_params) {
