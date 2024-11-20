@@ -83,13 +83,6 @@ class LlamaClientNode(Node):
             f"client_{str(uuid.uuid4()).replace('-', '_')}_node", namespace=namespace
         )
 
-        self._action_client = ActionClient(
-            self,
-            GenerateResponse,
-            "generate_response",
-            callback_group=self._callback_group,
-        )
-
         self._get_metadata_srv_client = self.create_client(
             GetMetadata, "get_metadata", callback_group=self._callback_group
         )
@@ -115,6 +108,13 @@ class LlamaClientNode(Node):
         self._format_chat_srv_client = self.create_client(
             FormatChatMessages,
             "format_chat_prompt",
+            callback_group=self._callback_group,
+        )
+
+        self._action_client = ActionClient(
+            self,
+            GenerateResponse,
+            "generate_response",
             callback_group=self._callback_group,
         )
 
