@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['embeddings_5fouput_0',['embeddings_ouput',['../structembeddings__ouput.html',1,'']]]
+  ['embeddingsouput_0',['EmbeddingsOuput',['../structllama__ros_1_1EmbeddingsOuput.html',1,'llama_ros']]]
 ];

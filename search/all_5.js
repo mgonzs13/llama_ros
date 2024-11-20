@@ -1,12 +1,12 @@
 var searchData=
 [
   ['data_5ffiles_0',['data_files',['../namespacesetup.html#ad027a8e9452da003dca32bf7467bd16e',1,'setup']]],
-  ['debug_1',['debug',['../classllama__ros_1_1Llama.html#a0ddc32f341be98b84c36eed25c799eb8',1,'llama_ros::Llama::debug'],['../structllama__utils_1_1llama__params.html#a59e7aa03103e41b72f680e3733e3fad2',1,'llama_utils::llama_params::debug']]],
+  ['debug_1',['debug',['../classllama__ros_1_1Llama.html#a0ddc32f341be98b84c36eed25c799eb8',1,'llama_ros::Llama::debug'],['../structllama__utils_1_1LlamaParams.html#a5a09376cd35e029e55dbaad2c12212a4',1,'llama_utils::LlamaParams::debug']]],
   ['declare_5fllama_5fparams_2',['declare_llama_params',['../namespacellama__utils.html#a4e3b2181ccb7818a8a8498ffdbd1309a',1,'llama_utils']]],
   ['demo_3',['Demo',['../index.html#autotoc_md35',1,'Chat Template Demo'],['../index.html#autotoc_md32',1,'Embeddings Generation Demo'],['../index.html#autotoc_md31',1,'LLM Demo'],['../index.html#autotoc_md33',1,'Reranking Demo'],['../index.html#autotoc_md34',1,'VLM Demo']]],
   ['demo_20llm_20chat_20template_20rag_20reranking_20stream_4',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
   ['demos_5',['Demos',['../index.html#autotoc_md30',1,'']]],
-  ['description_6',['description',['../namespacesetup.html#aedf461ec52a946bda975938ba0b93ec0',1,'setup']]],
+  ['description_6',['description',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#aeb214a1790c3c0732115aab5b39e1299',1,'llama_ros::Metadata::GeneralInfo::description'],['../namespacesetup.html#aedf461ec52a946bda975938ba0b93ec0',1,'setup.description']]],
   ['destroy_5fllama_7',['destroy_llama',['../classllama__ros_1_1LlamaNode.html#abdd5048773256f713b40cf888236701b',1,'llama_ros::LlamaNode']]],
   ['detokenize_8',['Detokenize',['../index.html#autotoc_md18',1,'']]],
   ['detokenize_9',['detokenize',['../classllama__ros_1_1Llama.html#a15eca739cca843954ec299326a462305',1,'llama_ros::Llama::detokenize()'],['../classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a8031a70ad1a207822227457d94539d73',1,'llama_ros.llama_client_node.LlamaClientNode.detokenize()']]],

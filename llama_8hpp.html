@@ -101,38 +101,44 @@ $(function(){ initResizable(false); });
 <code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;mutex&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
+<code>#include &lt;unordered_map&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &quot;common.h&quot;</code><br />
+<code>#include &quot;json.hpp&quot;</code><br />
 <code>#include &quot;llama.h&quot;</code><br />
-<code>#include &quot;<a class="el" href="spinner_8hpp_source.html">llama_utils/spinner.hpp</a>&quot;</code><br />
 <code>#include &quot;sampling.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="spinner_8hpp_source.html">llama_utils/spinner.hpp</a>&quot;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for llama.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="llama_8hpp__incl.png" border="0" usemap="#allama__ros_2include_2llama__ros_2llama_8hpp" alt=""/></div>
 <map name="allama__ros_2include_2llama__ros_2llama_8hpp" id="allama__ros_2include_2llama__ros_2llama_8hpp">
-<area shape="rect" title=" " alt="" coords="279,5,436,46"/>
+<area shape="rect" title=" " alt="" coords="412,5,569,46"/>
 <area shape="rect" title=" " alt="" coords="5,94,83,120"/>
-<area shape="poly" title=" " alt="" coords="280,49,98,95,97,89,278,44"/>
+<area shape="poly" title=" " alt="" coords="412,42,99,96,98,91,411,36"/>
 <area shape="rect" title=" " alt="" coords="106,94,174,120"/>
-<area shape="poly" title=" " alt="" coords="304,49,189,91,187,86,302,44"/>
+<area shape="poly" title=" " alt="" coords="412,46,190,96,188,91,411,41"/>
 <area shape="rect" title=" " alt="" coords="197,94,254,120"/>
-<area shape="poly" title=" " alt="" coords="326,49,260,88,257,83,323,44"/>
-<area shape="rect" title=" " alt="" coords="419,168,472,193"/>
-<area shape="poly" title=" " alt="" coords="340,48,327,64,317,82,313,101,318,118,335,137,357,152,405,170,403,175,355,157,332,141,314,121,308,101,312,80,323,61,336,45"/>
-<area shape="rect" title=" " alt="" coords="329,94,386,120"/>
-<area shape="poly" title=" " alt="" coords="360,46,360,78,355,78,355,46"/>
-<area shape="rect" title=" " alt="" coords="410,94,491,120"/>
-<area shape="poly" title=" " alt="" coords="382,44,426,82,423,86,379,48"/>
-<area shape="rect" title=" " alt="" coords="516,94,578,120"/>
-<area shape="poly" title=" " alt="" coords="406,44,505,85,503,90,404,49"/>
-<area shape="rect" href="spinner_8hpp.html" title=" " alt="" coords="602,94,755,120"/>
-<area shape="poly" title=" " alt="" coords="437,44,615,87,614,92,436,49"/>
-<area shape="rect" title=" " alt="" coords="780,94,863,120"/>
-<area shape="poly" title=" " alt="" coords="437,36,765,91,764,96,436,41"/>
-<area shape="poly" title=" " alt="" coords="640,123,487,169,486,164,638,118"/>
-<area shape="rect" title=" " alt="" coords="650,168,707,193"/>
-<area shape="poly" title=" " alt="" coords="681,120,681,152,676,152,676,120"/>
+<area shape="poly" title=" " alt="" coords="425,49,269,95,268,90,424,44"/>
+<area shape="rect" title=" " alt="" coords="587,168,640,193"/>
+<area shape="poly" title=" " alt="" coords="413,43,367,55,330,72,318,82,311,93,311,105,318,118,334,131,360,142,428,159,505,169,571,174,571,180,504,174,427,164,358,147,332,135,314,121,306,106,306,91,314,79,327,68,366,50,411,38"/>
+<area shape="rect" title=" " alt="" coords="328,94,438,120"/>
+<area shape="poly" title=" " alt="" coords="466,49,413,87,410,82,462,44"/>
+<area shape="rect" title=" " alt="" coords="462,94,519,120"/>
+<area shape="poly" title=" " alt="" coords="493,46,493,78,488,78,488,46"/>
+<area shape="rect" title=" " alt="" coords="543,94,625,120"/>
+<area shape="poly" title=" " alt="" coords="515,44,560,82,556,86,512,48"/>
+<area shape="rect" title=" " alt="" coords="649,94,719,120"/>
+<area shape="poly" title=" " alt="" coords="540,44,641,85,639,90,538,49"/>
+<area shape="rect" title=" " alt="" coords="742,94,804,120"/>
+<area shape="poly" title=" " alt="" coords="562,44,728,90,727,95,561,49"/>
+<area shape="rect" title=" " alt="" coords="829,94,912,120"/>
+<area shape="poly" title=" " alt="" coords="570,41,815,91,814,96,569,46"/>
+<area shape="rect" href="spinner_8hpp.html" title=" " alt="" coords="937,94,1090,120"/>
+<area shape="poly" title=" " alt="" coords="570,36,922,89,921,94,569,41"/>
+<area shape="poly" title=" " alt="" coords="945,123,655,174,655,169,945,118"/>
+<area shape="rect" title=" " alt="" coords="985,168,1042,193"/>
+<area shape="poly" title=" " alt="" coords="1016,120,1016,152,1011,152,1011,120"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
@@ -174,15 +180,21 @@ This graph shows which files directly or indirectly include this file:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structtoken__prob.html">token_prob</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1TokenProb.html">llama_ros::TokenProb</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structlora.html">lora</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1LoRA.html">llama_ros::LoRA</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcompletion__output.html">completion_output</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1CompletionOutput.html">llama_ros::CompletionOutput</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structresponse__output.html">response_output</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1ResponseOutput.html">llama_ros::ResponseOutput</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structembeddings__ouput.html">embeddings_ouput</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1EmbeddingsOuput.html">llama_ros::EmbeddingsOuput</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1Metadata.html">llama_ros::Metadata</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1Metadata_1_1GeneralInfo.html">llama_ros::Metadata::GeneralInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1Metadata_1_1TokenizerInfo.html">llama_ros::Metadata::TokenizerInfo</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1Llama.html">llama_ros::Llama</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -203,21 +215,21 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a336192b33a4c88653b0c6b5e55897a02" id="r_a336192b33a4c88653b0c6b5e55897a02"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__ros.html#a336192b33a4c88653b0c6b5e55897a02">llama_ros::GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structcompletion__output.html">completion_output</a>)&gt;</td></tr>
-<tr class="separator:a336192b33a4c88653b0c6b5e55897a02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d8aa525b7e539a478a0b86a081e7a68" id="r_a3d8aa525b7e539a478a0b86a081e7a68"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__ros.html#a3d8aa525b7e539a478a0b86a081e7a68">llama_ros::GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structllama__ros_1_1CompletionOutput.html">CompletionOutput</a>)&gt;</td></tr>
+<tr class="separator:a3d8aa525b7e539a478a0b86a081e7a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a5f45ff78e1e238c5e04a83641f0c6448" id="r_a5f45ff78e1e238c5e04a83641f0c6448"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448">stop_type</a> { <br />
-&#160;&#160;<a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448a07d08b96075aabf2a99d03f2d9187912">NO_STOP</a>
-, <a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448a255ab489a900ba6a512575226c743127">FULL_STOP</a>
-, <a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448a1b44b7e7fffe828f0eb9c44f4d229092">PARTIAL_STOP</a>
-, <a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448ae4842754cb17e5234637e3a85a7f3d90">CANCEL</a>
+<tr class="memitem:aa0ac7656a188e47404db8ced957790d0" id="r_aa0ac7656a188e47404db8ced957790d0"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0">llama_ros::StopType</a> { <br />
+&#160;&#160;<a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a53f8752c109dec4567ed9d47798a9fff">llama_ros::NO_STOP</a>
+, <a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762">llama_ros::FULL_STOP</a>
+, <a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a1c6f0eac983f6d15eef71678276140ae">llama_ros::PARTIAL_STOP</a>
+, <a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a1347c44f586bf11fd5b711aff814aec7">llama_ros::CANCEL</a>
 , <br />
-&#160;&#160;<a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448a781ad2788df9e25c59a70894c7832096">ABORT</a>
+&#160;&#160;<a class="el" href="namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a50b399f071811144ad24f2b5c497312a">llama_ros::ABORT</a>
 <br />
  }</td></tr>
-<tr class="separator:a5f45ff78e1e238c5e04a83641f0c6448"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:aa0ac7656a188e47404db8ced957790d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="af57cb87dacb596fda45658e510d9ac53" name="af57cb87dacb596fda45658e510d9ac53"></a>
@@ -284,28 +296,6 @@ Enumerations</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">  fprintf(stderr, <span class="stringliteral">&quot;[WARN] &quot;</span> text <span class="stringliteral">&quot;\n&quot;</span>, ##__VA_ARGS__)</div>
 </div><!-- fragment -->
-</div>
-</div>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a5f45ff78e1e238c5e04a83641f0c6448" name="a5f45ff78e1e238c5e04a83641f0c6448"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f45ff78e1e238c5e04a83641f0c6448">&#9670;&#160;</a></span>stop_type</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="#a5f45ff78e1e238c5e04a83641f0c6448">stop_type</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5f45ff78e1e238c5e04a83641f0c6448a07d08b96075aabf2a99d03f2d9187912" name="a5f45ff78e1e238c5e04a83641f0c6448a07d08b96075aabf2a99d03f2d9187912"></a>NO_STOP&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5f45ff78e1e238c5e04a83641f0c6448a255ab489a900ba6a512575226c743127" name="a5f45ff78e1e238c5e04a83641f0c6448a255ab489a900ba6a512575226c743127"></a>FULL_STOP&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5f45ff78e1e238c5e04a83641f0c6448a1b44b7e7fffe828f0eb9c44f4d229092" name="a5f45ff78e1e238c5e04a83641f0c6448a1b44b7e7fffe828f0eb9c44f4d229092"></a>PARTIAL_STOP&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5f45ff78e1e238c5e04a83641f0c6448ae4842754cb17e5234637e3a85a7f3d90" name="a5f45ff78e1e238c5e04a83641f0c6448ae4842754cb17e5234637e3a85a7f3d90"></a>CANCEL&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a5f45ff78e1e238c5e04a83641f0c6448a781ad2788df9e25c59a70894c7832096" name="a5f45ff78e1e238c5e04a83641f0c6448a781ad2788df9e25c59a70894c7832096"></a>ABORT&#160;</td><td class="fielddoc"></td></tr>
-</table>
-
 </div>
 </div>
 </div><!-- contents -->

@@ -143,6 +143,8 @@ Collaboration diagram for llama_ros.llama_client_node.LlamaClientNode:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a0b50f2f13cd9d8f37040846cfe423c22" id="r_a0b50f2f13cd9d8f37040846cfe423c22"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0b50f2f13cd9d8f37040846cfe423c22">__init__</a> (self, str namespace=&quot;llama&quot;)</td></tr>
 <tr class="separator:a0b50f2f13cd9d8f37040846cfe423c22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90a50aec3c5e6027225fac5fbab65492" id="r_a90a50aec3c5e6027225fac5fbab65492"><td class="memItemLeft" align="right" valign="top">GetMetadata&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90a50aec3c5e6027225fac5fbab65492">get_metadata</a> (self, GetMetadata.Request req)</td></tr>
+<tr class="separator:a90a50aec3c5e6027225fac5fbab65492"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31089d801cca7bf163f6961e5907f011" id="r_a31089d801cca7bf163f6961e5907f011"><td class="memItemLeft" align="right" valign="top">Tokenize.Response&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a31089d801cca7bf163f6961e5907f011">tokenize</a> (self, Tokenize.Request req)</td></tr>
 <tr class="separator:a31089d801cca7bf163f6961e5907f011"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8031a70ad1a207822227457d94539d73" id="r_a8031a70ad1a207822227457d94539d73"><td class="memItemLeft" align="right" valign="top">Detokenize.Response&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8031a70ad1a207822227457d94539d73">detokenize</a> (self, Detokenize.Request req)</td></tr>
@@ -174,6 +176,8 @@ Protected Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-attribs" name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:a88a1951bd82fd93c61378de6d6495014" id="r_a88a1951bd82fd93c61378de6d6495014"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a88a1951bd82fd93c61378de6d6495014">_get_metadata_srv_client</a></td></tr>
+<tr class="separator:a88a1951bd82fd93c61378de6d6495014"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11dd99138275c8ac797aba8275bc795f" id="r_a11dd99138275c8ac797aba8275bc795f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11dd99138275c8ac797aba8275bc795f">_detokenize_srv_client</a></td></tr>
 <tr class="separator:a11dd99138275c8ac797aba8275bc795f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a751dfc50fb54823090320cdc200fc381" id="r_a751dfc50fb54823090320cdc200fc381"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a751dfc50fb54823090320cdc200fc381">_rerank_srv_client</a></td></tr>
@@ -471,6 +475,27 @@ Static Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a90a50aec3c5e6027225fac5fbab65492" name="a90a50aec3c5e6027225fac5fbab65492"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90a50aec3c5e6027225fac5fbab65492">&#9670;&#160;</a></span>get_metadata()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"> GetMetadata llama_ros.llama_client_node.LlamaClientNode.get_metadata </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GetMetadata.Request</td>          <td class="paramname"><span class="paramname"><em>req</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a14d2cbeae980c6811349e5c946f5a452" name="a14d2cbeae980c6811349e5c946f5a452"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a14d2cbeae980c6811349e5c946f5a452">&#9670;&#160;</a></span>rerank_documents()</h2>
 
@@ -760,6 +785,31 @@ Static Protected Attributes</h2></td></tr>
 <div class="line">            FormatChatMessages,</div>
 <div class="line">            <span class="stringliteral">&quot;format_chat_prompt&quot;</span>,</div>
 <div class="line">            callback_group=self._callback_group,</div>
+<div class="line">        )</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a88a1951bd82fd93c61378de6d6495014" name="a88a1951bd82fd93c61378de6d6495014"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a88a1951bd82fd93c61378de6d6495014">&#9670;&#160;</a></span>_get_metadata_srv_client</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_ros.llama_client_node.LlamaClientNode._get_metadata_srv_client</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=  self.create_client(</div>
+<div class="line">            GetMetadata, <span class="stringliteral">&quot;get_metadata&quot;</span>, callback_group=self._callback_group</div>
 <div class="line">        )</div>
 </div><!-- fragment -->
 </div>

@@ -87,7 +87,8 @@ $(function(){ initResizable(false); });
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#enum-members">Enumerations</a>  </div>
   <div class="headertitle"><div class="title">llama_ros Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -101,17 +102,42 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1CompletionOutput.html">CompletionOutput</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1EmbeddingsOuput.html">EmbeddingsOuput</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1Llama.html">Llama</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1LlamaNode.html">LlamaNode</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1LoRA.html">LoRA</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1Metadata.html">Metadata</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1ResponseOutput.html">ResponseOutput</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__ros_1_1TokenProb.html">TokenProb</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a336192b33a4c88653b0c6b5e55897a02" id="r_a336192b33a4c88653b0c6b5e55897a02"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a336192b33a4c88653b0c6b5e55897a02">GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structcompletion__output.html">completion_output</a>)&gt;</td></tr>
-<tr class="separator:a336192b33a4c88653b0c6b5e55897a02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d8aa525b7e539a478a0b86a081e7a68" id="r_a3d8aa525b7e539a478a0b86a081e7a68"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3d8aa525b7e539a478a0b86a081e7a68">GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structllama__ros_1_1CompletionOutput.html">CompletionOutput</a>)&gt;</td></tr>
+<tr class="separator:a3d8aa525b7e539a478a0b86a081e7a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbe9e027305368d5aefefaddfee9e97d" id="r_afbe9e027305368d5aefefaddfee9e97d"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afbe9e027305368d5aefefaddfee9e97d">CallbackReturn</a></td></tr>
 <tr class="separator:afbe9e027305368d5aefefaddfee9e97d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:aa0ac7656a188e47404db8ced957790d0" id="r_aa0ac7656a188e47404db8ced957790d0"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa0ac7656a188e47404db8ced957790d0">StopType</a> { <br />
+&#160;&#160;<a class="el" href="#aa0ac7656a188e47404db8ced957790d0a53f8752c109dec4567ed9d47798a9fff">NO_STOP</a>
+, <a class="el" href="#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762">FULL_STOP</a>
+, <a class="el" href="#aa0ac7656a188e47404db8ced957790d0a1c6f0eac983f6d15eef71678276140ae">PARTIAL_STOP</a>
+, <a class="el" href="#aa0ac7656a188e47404db8ced957790d0a1347c44f586bf11fd5b711aff814aec7">CANCEL</a>
+, <br />
+&#160;&#160;<a class="el" href="#aa0ac7656a188e47404db8ced957790d0a50b399f071811144ad24f2b5c497312a">ABORT</a>
+<br />
+ }</td></tr>
+<tr class="separator:aa0ac7656a188e47404db8ced957790d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a id="afbe9e027305368d5aefefaddfee9e97d" name="afbe9e027305368d5aefefaddfee9e97d"></a>
@@ -130,17 +156,39 @@ Typedefs</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
-<a id="a336192b33a4c88653b0c6b5e55897a02" name="a336192b33a4c88653b0c6b5e55897a02"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a336192b33a4c88653b0c6b5e55897a02">&#9670;&#160;</a></span>GenerateResponseCallback</h2>
+<a id="a3d8aa525b7e539a478a0b86a081e7a68" name="a3d8aa525b7e539a478a0b86a081e7a68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d8aa525b7e539a478a0b86a081e7a68">&#9670;&#160;</a></span>GenerateResponseCallback</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="#a336192b33a4c88653b0c6b5e55897a02">llama_ros::GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structcompletion__output.html">completion_output</a>)&gt;</td>
+          <td class="memname">using <a class="el" href="#a3d8aa525b7e539a478a0b86a081e7a68">llama_ros::GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structllama__ros_1_1CompletionOutput.html">CompletionOutput</a>)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="aa0ac7656a188e47404db8ced957790d0" name="aa0ac7656a188e47404db8ced957790d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0ac7656a188e47404db8ced957790d0">&#9670;&#160;</a></span>StopType</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="#aa0ac7656a188e47404db8ced957790d0">llama_ros::StopType</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aa0ac7656a188e47404db8ced957790d0a53f8752c109dec4567ed9d47798a9fff" name="aa0ac7656a188e47404db8ced957790d0a53f8752c109dec4567ed9d47798a9fff"></a>NO_STOP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762" name="aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762"></a>FULL_STOP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa0ac7656a188e47404db8ced957790d0a1c6f0eac983f6d15eef71678276140ae" name="aa0ac7656a188e47404db8ced957790d0a1c6f0eac983f6d15eef71678276140ae"></a>PARTIAL_STOP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa0ac7656a188e47404db8ced957790d0a1347c44f586bf11fd5b711aff814aec7" name="aa0ac7656a188e47404db8ced957790d0a1347c44f586bf11fd5b711aff814aec7"></a>CANCEL&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa0ac7656a188e47404db8ced957790d0a50b399f071811144ad24f2b5c497312a" name="aa0ac7656a188e47404db8ced957790d0a50b399f071811144ad24f2b5c497312a"></a>ABORT&#160;</td><td class="fielddoc"></td></tr>
+</table>
 
 </div>
 </div>

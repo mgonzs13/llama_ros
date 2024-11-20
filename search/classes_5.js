@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['spinner_0',['Spinner',['../classllama__utils_1_1Spinner.html',1,'llama_utils']]]
+  ['promptverb_0',['PromptVerb',['../classllama__cli_1_1verb_1_1prompt_1_1PromptVerb.html',1,'llama_cli::verb::prompt']]]
 ];

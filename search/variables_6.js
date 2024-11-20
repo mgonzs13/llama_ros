@@ -1,9 +1,6 @@
 var searchData=
 [
-  ['ga_5fi_0',['ga_i',['../classllama__ros_1_1Llama.html#a217d6135962787d864a9b3b1cbe1adac',1,'llama_ros::Llama']]],
-  ['generate_5fembeddings_5fservice_5f_1',['generate_embeddings_service_',['../classllama__ros_1_1LlamaNode.html#afab772c7ca8ea17d82dbc5d8b26d2736',1,'llama_ros::LlamaNode']]],
-  ['generate_5fresponse_5faction_5fserver_5f_2',['generate_response_action_server_',['../classllama__ros_1_1LlamaNode.html#aef7268f646a292364b58132499fe3a1b',1,'llama_ros::LlamaNode']]],
-  ['goal_5fhandle_5f_3',['goal_handle_',['../classllama__ros_1_1LlamaNode.html#a372a79b58d036a243578fcb08440c489',1,'llama_ros::LlamaNode']]],
-  ['grammar_4',['grammar',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aed11acfadd7b35f703c0f572ee8d593d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['grammar_5fschema_5',['grammar_schema',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a1d20a56a804da875f9a0a6791ac3d376',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]]
+  ['file_5ftype_0',['file_type',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a223aa11cfdecdda27a830d7ca481e2ad',1,'llama_ros::Metadata::GeneralInfo']]],
+  ['flush_1',['flush',['../namespacellama__demos_1_1llama__rag__demo__node.html#a41975238da28b9c91bc04b7fc0551fdd',1,'llama_demos::llama_rag_demo_node']]],
+  ['format_5fchat_5fservice_5f_2',['format_chat_service_',['../classllama__ros_1_1LlamaNode.html#a878f2ae6fffd31e29863478e58bae25b',1,'llama_ros::LlamaNode']]]
 ];

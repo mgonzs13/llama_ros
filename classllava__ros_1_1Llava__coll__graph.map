@@ -6,7 +6,7 @@
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="346,123,355,124,489,142,488,147,354,130,346,128"/>
 <area shape="rect" id="Node000004" title=" " alt="" coords="216,27,293,53"/>
 <area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="308,56,331,66,355,77,447,110,514,135,512,140,445,115,353,81,329,70,306,61"/>
-<area shape="rect" id="Node000009" href="$structllava__ros_1_1llava__params.html" title=" " alt="" coords="470,57,627,82"/>
+<area shape="rect" id="Node000009" href="$structllava__ros_1_1LlavaParams.html" title=" " alt="" coords="470,57,627,82"/>
 <area shape="poly" id="edge9_Node000009_Node000004" title=" " alt="" coords="308,43,470,59,470,64,308,48"/>
 <area shape="rect" id="Node000005" title=" " alt="" coords="5,20,129,60"/>
 <area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="145,37,215,37,215,43,145,43"/>

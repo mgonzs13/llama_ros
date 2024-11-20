@@ -1,16 +1,14 @@
 var searchData=
 [
-  ['data_5ffiles_0',['data_files',['../namespacesetup.html#ad027a8e9452da003dca32bf7467bd16e',1,'setup']]],
-  ['debug_1',['debug',['../classllama__ros_1_1Llama.html#a0ddc32f341be98b84c36eed25c799eb8',1,'llama_ros::Llama::debug'],['../structllama__utils_1_1llama__params.html#a59e7aa03103e41b72f680e3733e3fad2',1,'llama_utils::llama_params::debug']]],
-  ['description_2',['description',['../namespacesetup.html#aedf461ec52a946bda975938ba0b93ec0',1,'setup']]],
-  ['detokenize_5fservice_5f_3',['detokenize_service_',['../classllama__ros_1_1LlamaNode.html#a547f81d34d463e1dd454d65d73b50908',1,'llama_ros::LlamaNode']]],
-  ['docs_4',['docs',['../namespacellama__demos_1_1llama__rag__demo__node.html#a041abe55c7a19c326978e94879829f81',1,'llama_demos::llama_rag_demo_node']]],
-  ['documents_5',['documents',['../namespacellama__demos_1_1llama__rerank__demo__node.html#ae584ce92dedb5d48796814473662f57a',1,'llama_demos::llama_rerank_demo_node']]],
-  ['dry_5fallowed_5flength_6',['dry_allowed_length',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#ab47daa47f95aab4996a09e80a92a6789',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dry_5fbase_7',['dry_base',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#add2cb64d3b1801c680c46eab8e121bdb',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dry_5fmultiplier_8',['dry_multiplier',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a73c2fac7ba904796fdd6723e58c1d593',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dry_5fpenalty_5flast_5fn_9',['dry_penalty_last_n',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a7972e8a708d95c92325eb0a7495ee69f',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dry_5fsequence_5fbreakers_10',['dry_sequence_breakers',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a939c497ac2319ff020f2a289b1b02001',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dynatemp_5fexponent_11',['dynatemp_exponent',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aae4304736442cbf14df1457b5d5113bc',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['dynatemp_5frange_12',['dynatemp_range',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a1e213bf1243bc289d1547d67baaa8778',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]]
+  ['c_0',['c',['../namespacellama__demos_1_1llama__rag__demo__node.html#aee18f77a0a6d72e5b0934bc8f81316a3',1,'llama_demos::llama_rag_demo_node']]],
+  ['canceled_1',['canceled',['../classllama__ros_1_1Llama.html#a89a870f8fa1c2eb0195f088371b2b6b0',1,'llama_ros::Llama']]],
+  ['chain_2',['chain',['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#a225c18e31c77c026ec5d713f99da7e9f',1,'llama_demos::chatllama_demo_node::ChatLlamaDemoNode']]],
+  ['chat_3',['chat',['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#afbd6a14b77e7d6993f29a6961f85ddc3',1,'llama_demos::chatllama_demo_node::ChatLlamaDemoNode']]],
+  ['chat_5ftemplate_4',['chat_template',['../structllama__ros_1_1Metadata_1_1TokenizerInfo.html#ae71224ead4a22316134d9122c280b792',1,'llama_ros::Metadata::TokenizerInfo']]],
+  ['completions_5',['completions',['../structllama__ros_1_1ResponseOutput.html#a20ef6a87b4c1d77c2ac2bfe7988049e0',1,'llama_ros::ResponseOutput']]],
+  ['compression_5fretriever_6',['compression_retriever',['../namespacellama__demos_1_1llama__rag__demo__node.html#a9fafe478fb500fa40865eb3db57f02f2',1,'llama_demos::llama_rag_demo_node']]],
+  ['compressor_7',['compressor',['../namespacellama__demos_1_1llama__rag__demo__node.html#a14a64e42e347ad809e50fed92cfdfab9',1,'llama_demos::llama_rag_demo_node']]],
+  ['ctx_8',['ctx',['../classllama__ros_1_1Llama.html#addde254ae34b06491d56737b5dab5386',1,'llama_ros::Llama']]],
+  ['ctx_5fclip_9',['ctx_clip',['../classllava__ros_1_1Llava.html#a5f8b920fb2e4873763eb573cef5700b4',1,'llava_ros::Llava']]],
+  ['cv_5fbridge_10',['cv_bridge',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#ab67dc3bf47b45db5ac04f9daf147c35e',1,'llama_ros.langchain.llama_ros_common.LlamaROSCommon.cv_bridge'],['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#a9d78d067883c8e7698d486e965c7cf68',1,'llama_demos.chatllama_demo_node.ChatLlamaDemoNode.cv_bridge'],['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#a0fe7d17f104f108b3e1c5e1435e0a09d',1,'llama_demos.llava_demo_node.LlavaDemoNode.cv_bridge']]]
 ];
