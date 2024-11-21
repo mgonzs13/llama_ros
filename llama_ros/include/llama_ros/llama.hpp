@@ -114,31 +114,43 @@ struct Metadata {
     std::string file_type;
   };
 
+  struct AttentionInfo {
+    uint64_t head_count;
+    uint64_t head_count_kv;
+
+    float max_alibi_bias;
+    float clamp_kqv;
+
+    float layer_norm_epsilon;
+    float layer_norm_rms_epsilon;
+
+    uint32_t key_length;
+    uint32_t value_length;
+  };
+
   struct ModelInfo {
-    int context_length;
-    int embedding_length;
-    int block_count;
-    int feed_forward_length;
+    uint64_t context_length;
+    uint64_t embedding_length;
+    uint64_t block_count;
+    uint64_t feed_forward_length;
+
     bool use_parallel_residual;
     std::string tensor_data_layout;
-    int expert_count;
-    int expert_used_count;
+
+    uint32_t expert_count;
+    uint32_t expert_used_count;
+
+    AttentionInfo attention;
   };
 
   struct TokenizerInfo {
     std::string model;
 
-    std::vector<std::string> tokens;
-    std::vector<float> scores;
-    std::vector<int> token_type;
-    std::vector<std::string> merges;
-    std::vector<std::string> added_tokens;
-
-    int bos_token_id;
-    int eos_token_id;
-    int unknown_token_id;
-    int padding_token_id;
-    int separator_token_id;
+    uint32_t bos_token_id;
+    uint32_t eos_token_id;
+    uint32_t unknown_token_id;
+    uint32_t padding_token_id;
+    uint32_t separator_token_id;
     bool add_bos_token;
 
     std::string chat_template;
@@ -205,6 +217,9 @@ public:
   int get_int_metadata(const std::string &key, size_t size);
   int get_int_metadata(const std::string &model_name, const std::string &key,
                        size_t size);
+  float get_float_metadata(const std::string &key, size_t size);
+  float get_float_metadata(const std::string &model_name,
+                           const std::string &key, size_t size);
   struct Metadata get_metadata();
 
   bool is_embedding() { return this->params.embedding; }

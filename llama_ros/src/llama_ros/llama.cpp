@@ -187,6 +187,17 @@ int Llama::get_int_metadata(const std::string &model_name,
   return !value.empty() ? std::stoi(value) : -1;
 }
 
+float Llama::get_float_metadata(const std::string &key, size_t size) {
+  std::string value = this->get_metadata(key, size);
+  return !value.empty() ? std::stof(value) : -1.0;
+}
+
+float Llama::get_float_metadata(const std::string &model_name,
+                                const std::string &key, size_t size) {
+  std::string value = this->get_metadata(model_name, key, size);
+  return !value.empty() ? std::stof(value) : -1.0;
+}
+
 struct Metadata Llama::get_metadata() {
 
   std::map<std::string, std::string> gguf_types = {
@@ -253,7 +264,6 @@ struct Metadata Llama::get_metadata() {
       metadata.general.architecture, ".context_length", 16);
   metadata.model.embedding_length = this->get_int_metadata(
       metadata.general.architecture, ".embedding_length", 16);
-
   metadata.model.block_count =
       this->get_int_metadata(metadata.general.architecture, ".block_count", 16);
   metadata.model.feed_forward_length = this->get_int_metadata(
@@ -269,6 +279,27 @@ struct Metadata Llama::get_metadata() {
       metadata.general.architecture, ".expert_count", 16);
   metadata.model.expert_used_count = this->get_int_metadata(
       metadata.general.architecture, ".expert_used_count", 16);
+
+  // llm attention
+  metadata.model.attention.head_count = this->get_int_metadata(
+      metadata.general.architecture, ".attention.head_count", 16);
+  metadata.model.attention.head_count_kv = this->get_int_metadata(
+      metadata.general.architecture, ".attention.head_count_kv", 16);
+
+  metadata.model.attention.max_alibi_bias = this->get_float_metadata(
+      metadata.general.architecture, ".attention.max_alibi_bias", 32);
+  metadata.model.attention.clamp_kqv = this->get_float_metadata(
+      metadata.general.architecture, ".attention.clamp_kqv", 32);
+
+  metadata.model.attention.layer_norm_epsilon = this->get_float_metadata(
+      metadata.general.architecture, ".attention.layer_norm_epsilon", 32);
+  metadata.model.attention.layer_norm_rms_epsilon = this->get_float_metadata(
+      metadata.general.architecture, ".attention.layer_norm_rms_epsilon", 16);
+
+  metadata.model.attention.key_length = this->get_int_metadata(
+      metadata.general.architecture, ".attention.key_length", 16);
+  metadata.model.attention.value_length = this->get_int_metadata(
+      metadata.general.architecture, ".attention.value_length", 16);
 
   // tokenizer metadata
   metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);

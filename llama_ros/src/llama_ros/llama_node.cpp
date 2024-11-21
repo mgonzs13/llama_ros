@@ -224,63 +224,81 @@ void LlamaNode::get_metadata_service_callback(
 
   llama_ros::Metadata metadata = this->llama->get_metadata();
 
-  llama_msgs::msg::Metadata metadata_msgs;
+  llama_msgs::msg::Metadata metadata_msg;
 
   // general
-  metadata_msgs.general.architecture = metadata.general.architecture;
-  metadata_msgs.general.quantization_version =
+  metadata_msg.general.architecture = metadata.general.architecture;
+  metadata_msg.general.quantization_version =
       metadata.general.quantization_version;
-  metadata_msgs.general.alignment = metadata.general.alignment;
+  metadata_msg.general.alignment = metadata.general.alignment;
 
-  metadata_msgs.general.name = metadata.general.name;
-  metadata_msgs.general.author = metadata.general.author;
-  metadata_msgs.general.version = metadata.general.version;
-  metadata_msgs.general.organization = metadata.general.organization;
+  metadata_msg.general.name = metadata.general.name;
+  metadata_msg.general.author = metadata.general.author;
+  metadata_msg.general.version = metadata.general.version;
+  metadata_msg.general.organization = metadata.general.organization;
 
-  metadata_msgs.general.basename = metadata.general.basename;
-  metadata_msgs.general.finetune = metadata.general.finetune;
-  metadata_msgs.general.description = metadata.general.description;
-  metadata_msgs.general.quantized_by = metadata.general.quantized_by;
-  metadata_msgs.general.size_label = metadata.general.size_label;
+  metadata_msg.general.basename = metadata.general.basename;
+  metadata_msg.general.finetune = metadata.general.finetune;
+  metadata_msg.general.description = metadata.general.description;
+  metadata_msg.general.quantized_by = metadata.general.quantized_by;
+  metadata_msg.general.size_label = metadata.general.size_label;
 
-  metadata_msgs.general.license = metadata.general.license;
-  metadata_msgs.general.license_name = metadata.general.license_name;
-  metadata_msgs.general.license_link = metadata.general.license_link;
+  metadata_msg.general.license = metadata.general.license;
+  metadata_msg.general.license_name = metadata.general.license_name;
+  metadata_msg.general.license_link = metadata.general.license_link;
 
-  metadata_msgs.general.url = metadata.general.url;
-  metadata_msgs.general.repo_url = metadata.general.repo_url;
-  metadata_msgs.general.doi = metadata.general.doi;
-  metadata_msgs.general.uuid = metadata.general.uuid;
+  metadata_msg.general.url = metadata.general.url;
+  metadata_msg.general.repo_url = metadata.general.repo_url;
+  metadata_msg.general.doi = metadata.general.doi;
+  metadata_msg.general.uuid = metadata.general.uuid;
 
-  metadata_msgs.general.file_type = metadata.general.file_type;
+  metadata_msg.general.file_type = metadata.general.file_type;
 
   // model
-  metadata_msgs.model.context_length = metadata.model.context_length;
-  metadata_msgs.model.embedding_length = metadata.model.embedding_length;
-  metadata_msgs.model.block_count = metadata.model.block_count;
-  metadata_msgs.model.feed_forward_length = metadata.model.feed_forward_length;
-  metadata_msgs.model.use_parallel_residual =
+  metadata_msg.model.context_length = metadata.model.context_length;
+  metadata_msg.model.embedding_length = metadata.model.embedding_length;
+  metadata_msg.model.block_count = metadata.model.block_count;
+  metadata_msg.model.feed_forward_length = metadata.model.feed_forward_length;
+
+  metadata_msg.model.use_parallel_residual =
       metadata.model.use_parallel_residual;
-  metadata_msgs.model.tensor_data_layout = metadata.model.tensor_data_layout;
-  metadata_msgs.model.expert_count = metadata.model.expert_count;
-  metadata_msgs.model.expert_used_count = metadata.model.expert_used_count;
+  metadata_msg.model.tensor_data_layout = metadata.model.tensor_data_layout;
+
+  metadata_msg.model.expert_count = metadata.model.expert_count;
+  metadata_msg.model.expert_used_count = metadata.model.expert_used_count;
+
+  // attention
+  metadata_msg.model.attention.head_count = metadata.model.attention.head_count;
+  metadata_msg.model.attention.head_count_kv =
+      metadata.model.attention.head_count_kv;
+
+  metadata_msg.model.attention.max_alibi_bias =
+      metadata.model.attention.max_alibi_bias;
+  metadata_msg.model.attention.clamp_kqv = metadata.model.attention.clamp_kqv;
+
+  metadata_msg.model.attention.layer_norm_epsilon =
+      metadata.model.attention.layer_norm_epsilon;
+  metadata_msg.model.attention.layer_norm_rms_epsilon =
+      metadata.model.attention.layer_norm_rms_epsilon;
+
+  metadata_msg.model.attention.key_length = metadata.model.attention.key_length;
+  metadata_msg.model.attention.value_length =
+      metadata.model.attention.value_length;
 
   // tokenizer
-  metadata_msgs.tokenizer.model = metadata.tokenizer.model;
+  metadata_msg.tokenizer.model = metadata.tokenizer.model;
 
-  metadata_msgs.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
-  metadata_msgs.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;
-  metadata_msgs.tokenizer.unknown_token_id =
-      metadata.tokenizer.unknown_token_id;
-  metadata_msgs.tokenizer.padding_token_id =
-      metadata.tokenizer.padding_token_id;
-  metadata_msgs.tokenizer.separator_token_id =
+  metadata_msg.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
+  metadata_msg.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;
+  metadata_msg.tokenizer.unknown_token_id = metadata.tokenizer.unknown_token_id;
+  metadata_msg.tokenizer.padding_token_id = metadata.tokenizer.padding_token_id;
+  metadata_msg.tokenizer.separator_token_id =
       metadata.tokenizer.separator_token_id;
 
-  metadata_msgs.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
-  metadata_msgs.tokenizer.chat_template = metadata.tokenizer.chat_template;
+  metadata_msg.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
+  metadata_msg.tokenizer.chat_template = metadata.tokenizer.chat_template;
 
-  response->metadata = metadata_msgs;
+  response->metadata = metadata_msg;
 }
 
 /*

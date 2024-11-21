@@ -1,6 +1,6 @@
 string architecture             # Describes what architecture this model implements
-int32 quantization_version      # The version of the quantization format. Not required if the model is not quantized
-int32 alignment                 # The global alignment to use
+uint32 quantization_version      # The version of the quantization format. Not required if the model is not quantized
+uint32 alignment                 # The global alignment to use
 
 string name                     # The name of the model. This should be a human-readable name that can be used to identify the model. It should be unique within the community that the model is defined in
 string author                   # The author of the model
