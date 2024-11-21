@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['feed_5fforward_5flength_0',['feed_forward_length',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a1eb8e68e2cb722244e9876f5c3160b58',1,'llama_ros::Metadata::ModelInfo']]],
+  ['feed_5fforward_5flength_0',['feed_forward_length',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#abd1eb7944dd38a89b7f95de810eb9bf7',1,'llama_ros::Metadata::ModelInfo']]],
   ['file_5ftype_1',['file_type',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a223aa11cfdecdda27a830d7ca481e2ad',1,'llama_ros::Metadata::GeneralInfo']]],
   ['files_2',['Launch Files',['../index.html#autotoc_md9',1,'']]],
   ['find_5fstop_3',['find_stop',['../classllama__ros_1_1Llama.html#a10807a91fa43dabddf978ed8537b8ad5',1,'llama_ros::Llama']]],
@@ -12,6 +12,7 @@ var searchData=
   ['format_5fchat_5fservice_5fcallback_9',['format_chat_service_callback',['../classllama__ros_1_1LlamaNode.html#a6f2b452fec0b04a8c8e658efc50d2c57',1,'llama_ros::LlamaNode']]],
   ['format_5fdocs_10',['format_docs',['../namespacellama__demos_1_1llama__rag__demo__node.html#af29df7f614d317e934367879b9349119',1,'llama_demos::llama_rag_demo_node']]],
   ['free_5fimage_11',['free_image',['../classllava__ros_1_1Llava.html#a5d6ec81ce46c888323fbf5726886d669',1,'llava_ros::Llava']]],
-  ['full_20demo_20llm_20chat_20template_20rag_20reranking_20stream_12',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
-  ['full_5fstop_13',['FULL_STOP',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762',1,'llama_ros']]]
+  ['freq_5fbase_12',['freq_base',['../structllama__ros_1_1Metadata_1_1RoPEInfo.html#a0a8540d8ed132b652fb2467c4948a270',1,'llama_ros::Metadata::RoPEInfo']]],
+  ['full_20demo_20llm_20chat_20template_20rag_20reranking_20stream_13',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
+  ['full_5fstop_14',['FULL_STOP',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762',1,'llama_ros']]]
 ];

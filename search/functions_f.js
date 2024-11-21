@@ -5,6 +5,5 @@ var searchData=
   ['send_5frerank_2',['send_rerank',['../classllama__demos_1_1llama__embeddings__demo__node_1_1LlamaEmbeddinsDemoNode.html#a64e05ed50ea9ae08a5c5f85663ffab02',1,'llama_demos::llama_embeddings_demo_node::LlamaEmbeddinsDemoNode']]],
   ['send_5ftext_3',['send_text',['../classllama__ros_1_1LlamaNode.html#ac6b0bfef6f517ab21acfff30de94b581',1,'llama_ros::LlamaNode']]],
   ['spin_4',['spin',['../classllama__utils_1_1Spinner.html#adc96b296b292dc2b158412e4cb08cf51',1,'llama_utils::Spinner::spin(std::string text)'],['../classllama__utils_1_1Spinner.html#af28a6fcd48a8597a690514b90a6a2e52',1,'llama_utils::Spinner::spin()']]],
-  ['spinner_5',['Spinner',['../classllama__utils_1_1Spinner.html#a47aa83d9af9bb1ad5584c2ea228aca63',1,'llama_utils::Spinner']]],
-  ['string_5fto_5fvector_6',['string_to_vector',['../llama_8cpp.html#aaa273eb4c21d28c9b28396298c35e21e',1,'llama.cpp']]]
+  ['spinner_5',['Spinner',['../classllama__utils_1_1Spinner.html#a47aa83d9af9bb1ad5584c2ea228aca63',1,'llama_utils::Spinner']]]
 ];
