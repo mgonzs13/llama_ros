@@ -168,6 +168,25 @@ std::string Llama::get_metadata(const std::string &key, size_t size) {
   return metada_str;
 }
 
+std::string Llama::get_metadata(const std::string &model_name,
+                                const std::string &key, size_t size) {
+  std::ostringstream model_key;
+  model_key << model_name.c_str() << key.c_str();
+  std::string value = this->get_metadata(model_key.str(), size);
+  return value;
+}
+
+int Llama::get_int_metadata(const std::string &key, size_t size) {
+  std::string value = this->get_metadata(key, size);
+  return !value.empty() ? std::stoi(value) : -1;
+}
+
+int Llama::get_int_metadata(const std::string &model_name,
+                            const std::string &key, size_t size) {
+  std::string value = this->get_metadata(model_name, key, size);
+  return !value.empty() ? std::stoi(value) : -1;
+}
+
 struct Metadata Llama::get_metadata() {
 
   std::map<std::string, std::string> gguf_types = {
@@ -196,14 +215,9 @@ struct Metadata Llama::get_metadata() {
   // required general metadata
   metadata.general.architecture =
       this->get_metadata("general.architecture", 32);
-
-  std::string quantization_version =
-      this->get_metadata("general.quantization_version", 4);
   metadata.general.quantization_version =
-      !quantization_version.empty() ? std::stoi(quantization_version) : -1;
-
-  std::string alignment = this->get_metadata("general.alignment", 4);
-  metadata.general.alignment = !alignment.empty() ? std::stoi(alignment) : -1;
+      this->get_int_metadata("general.quantization_version", 4);
+  metadata.general.alignment = this->get_int_metadata("general.alignment", 4);
 
   // general metadata
   metadata.general.name = this->get_metadata("general.name", 32);
@@ -235,88 +249,40 @@ struct Metadata Llama::get_metadata() {
   }
 
   // llm metadata
-  std::ostringstream context_length_key;
-  context_length_key << metadata.general.architecture.c_str()
-                     << ".context_length";
-  std::string context_length = this->get_metadata(context_length_key.str(), 16);
-  metadata.model.context_length =
-      !context_length.empty() ? std::stoi(context_length) : -1;
+  metadata.model.context_length = this->get_int_metadata(
+      metadata.general.architecture, ".context_length", 16);
+  metadata.model.embedding_length = this->get_int_metadata(
+      metadata.general.architecture, ".embedding_length", 16);
 
-  std::ostringstream embedding_length_key;
-  embedding_length_key << metadata.general.architecture.c_str()
-                       << ".embedding_length";
-  std::string embedding_length =
-      this->get_metadata(embedding_length_key.str(), 16);
-  metadata.model.embedding_length =
-      !embedding_length.empty() ? std::stoi(embedding_length) : -1;
-
-  std::ostringstream block_count_key;
-  block_count_key << metadata.general.architecture.c_str() << ".block_count";
-  std::string block_count = this->get_metadata(block_count_key.str(), 16);
   metadata.model.block_count =
-      !block_count.empty() ? std::stoi(block_count) : -1;
+      this->get_int_metadata(metadata.general.architecture, ".block_count", 16);
+  metadata.model.feed_forward_length = this->get_int_metadata(
+      metadata.general.architecture, ".feed_forward_length", 16);
 
-  std::ostringstream feed_forward_length_key;
-  feed_forward_length_key << metadata.general.architecture.c_str()
-                          << ".feed_forward_length";
-  std::string feed_forward_length =
-      this->get_metadata(feed_forward_length_key.str(), 16);
-  metadata.model.feed_forward_length =
-      !feed_forward_length.empty() ? std::stoi(feed_forward_length) : -1;
-
-  std::ostringstream use_parallel_residual_key;
-  use_parallel_residual_key << metadata.general.architecture.c_str()
-                            << ".use_parallel_residual";
   metadata.model.use_parallel_residual =
-      this->get_metadata(use_parallel_residual_key.str(), 16) == "true";
+      this->get_metadata(metadata.general.architecture,
+                         ".use_parallel_residual", 16) == "true";
+  metadata.model.tensor_data_layout = this->get_metadata(
+      metadata.general.architecture, ".tensor_data_layout", 16);
 
-  std::ostringstream tensor_data_layout_key;
-  tensor_data_layout_key << metadata.general.architecture.c_str()
-                         << ".tensor_data_layout";
-  metadata.model.tensor_data_layout =
-      this->get_metadata(tensor_data_layout_key.str(), 16);
-
-  std::ostringstream expert_count_key;
-  expert_count_key << metadata.general.architecture.c_str() << ".expert_count";
-  std::string expert_count = this->get_metadata(expert_count_key.str(), 16);
-  metadata.model.expert_count =
-      !expert_count.empty() ? std::stoi(expert_count) : -1;
-
-  std::ostringstream expert_used_count_key;
-  expert_used_count_key << metadata.general.architecture.c_str()
-                        << ".expert_used_count";
-  std::string expert_used_count =
-      this->get_metadata(expert_used_count_key.str(), 16);
-  metadata.model.expert_used_count =
-      !expert_used_count.empty() ? std::stoi(expert_used_count) : -1;
+  metadata.model.expert_count = this->get_int_metadata(
+      metadata.general.architecture, ".expert_count", 16);
+  metadata.model.expert_used_count = this->get_int_metadata(
+      metadata.general.architecture, ".expert_used_count", 16);
 
   // tokenizer metadata
   metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
 
-  std::string bos_token_id =
-      this->get_metadata("tokenizer.ggml.bos_token_id", 16);
   metadata.tokenizer.bos_token_id =
-      !bos_token_id.empty() ? std::stoi(bos_token_id) : -1;
-
-  std::string eos_token_id =
-      this->get_metadata("tokenizer.ggml.eos_token_id", 16);
+      this->get_int_metadata("tokenizer.ggml.bos_token_id", 16);
   metadata.tokenizer.eos_token_id =
-      !eos_token_id.empty() ? std::stoi(eos_token_id) : -1;
-
-  std::string unknown_token_id =
-      this->get_metadata("tokenizer.ggml.unknown_token_id", 16);
+      this->get_int_metadata("tokenizer.ggml.eos_token_id", 16);
   metadata.tokenizer.unknown_token_id =
-      !unknown_token_id.empty() ? std::stoi(unknown_token_id) : -1;
-
-  std::string padding_token_id =
-      this->get_metadata("tokenizer.ggml.padding_token_id", 16);
+      this->get_int_metadata("tokenizer.ggml.unknown_token_id", 16);
   metadata.tokenizer.padding_token_id =
-      !padding_token_id.empty() ? std::stoi(padding_token_id) : -1;
-
-  std::string separator_token_id =
-      this->get_metadata("tokenizer.ggml.separator_token_id", 16);
+      this->get_int_metadata("tokenizer.ggml.padding_token_id", 16);
   metadata.tokenizer.separator_token_id =
-      !separator_token_id.empty() ? std::stoi(separator_token_id) : -1;
+      this->get_int_metadata("tokenizer.ggml.separator_token_id", 16);
 
   metadata.tokenizer.add_bos_token =
       this->get_metadata("tokenizer.ggml.add_bos_token", 8) == "true";

@@ -200,6 +200,11 @@ public:
   int get_n_vocab() { return llama_n_vocab(this->model); }
 
   std::string get_metadata(const std::string &key, size_t size);
+  std::string get_metadata(const std::string &model_name,
+                           const std::string &key, size_t size);
+  int get_int_metadata(const std::string &key, size_t size);
+  int get_int_metadata(const std::string &model_name, const std::string &key,
+                       size_t size);
   struct Metadata get_metadata();
 
   bool is_embedding() { return this->params.embedding; }
