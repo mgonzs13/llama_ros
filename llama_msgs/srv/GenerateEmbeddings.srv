@@ -1,5 +1,5 @@
 string prompt                       # prompt
-bool normalize          true        # whether to normalize embeddings
+int32 normalization      2          # normalization (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
 ---
 float32[] embeddings                # embeddings
 int32 n_tokens                      # tokens processed

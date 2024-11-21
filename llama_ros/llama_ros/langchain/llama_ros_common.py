@@ -23,7 +23,7 @@
 
 from abc import ABC
 from typing import List, Optional, Dict
-from pydantic import root_validator
+from pydantic import model_validator
 from cv_bridge import CvBridge
 import numpy as np
 import urllib.request
@@ -38,7 +38,6 @@ from llama_msgs.msg import LogitBias
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
 
-    namespace: str = "llama"
     llama_client: LlamaClientNode = None
     cv_bridge: CvBridge = CvBridge()
 
@@ -57,7 +56,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     top_k: int = 40
     top_p: float = 0.95
     min_p: float = 0.05
-    tfs_z: float = 1.00
+    xtc_probability: float = 0.0
+    xtc_threshold: float = 0.1
     typical_p: float = 1.00
 
     penalty_last_n: int = 64
@@ -65,13 +65,19 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     penalty_freq: float = 0.00
     penalty_present: float = 0.00
 
+    dry_multiplier: float = 0.0
+    dry_base: float = 1.75
+    dry_allowed_length: int = 2
+    dry_penalty_last_n: int = -1
+    dry_sequence_breakers: List[str] = ["\\n", ":", '\\"', "*"]
+
     mirostat: int = 0
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
     penalize_nl: bool = False
 
-    samplers_sequence: str = "kfypmt"
+    samplers_sequence: str = "dkypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
@@ -84,10 +90,10 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
-        values["llama_client"] = LlamaClientNode.get_instance(
-            values["namespace"])
+        values["llama_client"] = LlamaClientNode.get_instance()
         return values
 
     def cancel(self) -> None:
@@ -110,7 +116,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
             if image_url and image is None:
                 req = urllib.request.Request(
-                    image_url, headers={"User-Agent": "Mozilla/5.0"})
+                    image_url, headers={"User-Agent": "Mozilla/5.0"}
+                )
                 response = urllib.request.urlopen(req)
                 arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
                 image = cv2.imdecode(arr, -1)
@@ -140,13 +147,20 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.top_k = self.top_k
         goal.sampling_config.top_p = self.top_p
         goal.sampling_config.min_p = self.min_p
-        goal.sampling_config.tfs_z = self.tfs_z
+        goal.sampling_config.xtc_probability = self.xtc_probability
+        goal.sampling_config.xtc_threshold = self.xtc_threshold
         goal.sampling_config.typical_p = self.typical_p
 
         goal.sampling_config.penalty_last_n = self.penalty_last_n
         goal.sampling_config.penalty_repeat = self.penalty_repeat
         goal.sampling_config.penalty_freq = self.penalty_freq
         goal.sampling_config.penalty_present = self.penalty_present
+
+        goal.sampling_config.dry_multiplier = self.dry_multiplier
+        goal.sampling_config.dry_base = self.dry_base
+        goal.sampling_config.dry_allowed_length = self.dry_allowed_length
+        goal.sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
+        goal.sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
 
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta

@@ -27,12 +27,15 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "common.h"
+#include "json.hpp"
 #include "llama.h"
-#include "llama_utils/spinner.hpp"
 #include "sampling.h"
+
+#include "llama_utils/spinner.hpp"
 
 // llama logs
 #define LLAMA_LOG_ERROR(text, ...)                                             \
@@ -42,24 +45,26 @@
 #define LLAMA_LOG_INFO(text, ...)                                              \
   fprintf(stderr, "[INFO] " text "\n", ##__VA_ARGS__)
 
+namespace llama_ros {
+
 // llama structs
-struct token_prob {
+struct TokenProb {
   llama_token token;
   float probability;
 };
 
-struct lora {
+struct LoRA {
   int id;
   std::string path;
   float scale;
 };
 
-struct completion_output {
-  std::vector<token_prob> probs;
+struct CompletionOutput {
+  std::vector<TokenProb> probs;
   llama_token token;
 };
 
-enum stop_type {
+enum StopType {
   NO_STOP,
   FULL_STOP,
   PARTIAL_STOP,
@@ -67,24 +72,113 @@ enum stop_type {
   ABORT,
 };
 
-struct response_output {
-  std::vector<completion_output> completions;
-  stop_type stop;
+struct ResponseOutput {
+  std::vector<CompletionOutput> completions;
+  StopType stop;
 };
 
-struct embeddings_ouput {
+struct EmbeddingsOuput {
   std::vector<float> embeddings;
   int32_t n_tokens;
 };
 
-namespace llama_ros {
+struct Metadata {
+  struct GeneralInfo {
+    std::string architecture;
+    uint32_t quantization_version;
+    uint32_t alignment;
 
-using GenerateResponseCallback = std::function<void(struct completion_output)>;
+    std::string name;
+    std::string author;
+    std::string version;
+    std::string organization;
+
+    std::string basename;
+    std::string finetune;
+    std::string description;
+    std::string quantized_by;
+    std::string size_label;
+
+    std::string license;
+    std::string license_name;
+    std::string license_link;
+
+    std::string url;
+    std::string repo_url;
+    std::string doi;
+    std::string uuid;
+
+    std::vector<std::string> tags;
+    std::vector<std::string> languages;
+    std::vector<std::string> datasets;
+    std::string file_type;
+  };
+
+  struct AttentionInfo {
+    uint64_t head_count;
+    uint64_t head_count_kv;
+
+    float max_alibi_bias;
+    float clamp_kqv;
+
+    float layer_norm_epsilon;
+    float layer_norm_rms_epsilon;
+
+    uint32_t key_length;
+    uint32_t value_length;
+  };
+
+  struct RoPEInfo {
+    uint64_t dimension_count;
+    float freq_base;
+
+    std::string scaling_type;
+    float scaling_factor;
+    uint32_t scaling_original_context_length;
+    bool scaling_finetuned;
+  };
+
+  struct ModelInfo {
+    uint64_t context_length;
+    uint64_t embedding_length;
+    uint64_t block_count;
+    uint64_t feed_forward_length;
+
+    bool use_parallel_residual;
+    std::string tensor_data_layout;
+
+    uint32_t expert_count;
+    uint32_t expert_used_count;
+
+    AttentionInfo attention;
+    RoPEInfo rope;
+  };
+
+  struct TokenizerInfo {
+    std::string model;
+
+    uint32_t bos_token_id;
+    uint32_t eos_token_id;
+    uint32_t unknown_token_id;
+    uint32_t padding_token_id;
+    uint32_t separator_token_id;
+    bool add_bos_token;
+
+    std::string chat_template;
+  };
+
+  GeneralInfo general;
+  ModelInfo model;
+  TokenizerInfo tokenizer;
+};
+
+using GenerateResponseCallback = std::function<void(struct CompletionOutput)>;
 
 class Llama {
 
 public:
-  Llama(const struct gpt_params &params, bool debug);
+  Llama(const struct common_params &params, std::string system_prompt = "",
+        bool debug = false);
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -94,20 +188,32 @@ public:
   void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<struct llama_chat_msg> chat_msgs,
+  std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
                                  bool add_ass);
-  std::vector<struct lora> list_loras();
-  void update_loras(std::vector<struct lora> loras);
+  std::vector<struct LoRA> list_loras();
+  void update_loras(std::vector<struct LoRA> loras);
 
-  embeddings_ouput generate_embeddings(const std::string &input_prompt,
-                                       bool normalize = true);
-  response_output generate_response(const std::string &input_prompt,
-                                    struct gpt_sampler_params sparams,
-                                    GenerateResponseCallback callbakc = nullptr,
-                                    std::vector<std::string> stop = {});
-  response_output generate_response(const std::string &input_prompt,
-                                    GenerateResponseCallback callbakc = nullptr,
-                                    std::vector<std::string> stop = {});
+  std::vector<llama_token>
+  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                  bool add_eos = true);
+  struct EmbeddingsOuput generate_embeddings(const std::string &input_prompt,
+                                             int normalization = 2);
+  struct EmbeddingsOuput
+  generate_embeddings(const std::vector<llama_token> &tokens,
+                      int normalization = 2);
+  float rank_document(const std::string &query, const std::string &document);
+  std::vector<float> rank_documents(const std::string &query,
+                                    const std::vector<std::string> &documents);
+
+  struct ResponseOutput
+  generate_response(const std::string &input_prompt,
+                    struct common_sampler_params sparams,
+                    GenerateResponseCallback callbakc = nullptr,
+                    std::vector<std::string> stop = {});
+  struct ResponseOutput
+  generate_response(const std::string &input_prompt,
+                    GenerateResponseCallback callbakc = nullptr,
+                    std::vector<std::string> stop = {});
 
   const struct llama_context *get_ctx() { return this->ctx; }
   const struct llama_model *get_model() { return this->model; }
@@ -115,22 +221,36 @@ public:
   int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
   int get_n_embd() { return llama_n_embd(this->model); }
   int get_n_vocab() { return llama_n_vocab(this->model); }
+
+  std::string get_metadata(const std::string &key, size_t size);
+  std::string get_metadata(const std::string &model_name,
+                           const std::string &key, size_t size);
+  int get_int_metadata(const std::string &key, size_t size);
+  int get_int_metadata(const std::string &model_name, const std::string &key,
+                       size_t size);
+  float get_float_metadata(const std::string &key, size_t size);
+  float get_float_metadata(const std::string &model_name,
+                           const std::string &key, size_t size);
+  struct Metadata get_metadata();
+
   bool is_embedding() { return this->params.embedding; }
+  bool is_reranking() { return this->params.reranking; }
   bool add_bos_token() { return llama_add_bos_token(this->model); }
   llama_token get_token_eos() { return llama_token_eos(this->model); }
 
 protected:
-  struct gpt_params params;
+  struct common_params params;
 
   // model
   struct llama_context *ctx;
   struct llama_model *model;
-  std::vector<struct llama_lora_adapter_container> lora_adapters;
-  struct gpt_sampler *sampler;
+  std::vector<struct common_lora_adapter_container> lora_adapters;
+  struct common_sampler *sampler;
   struct ggml_threadpool *threadpool;
   struct ggml_threadpool *threadpool_batch;
 
   // aux
+  std::string system_prompt;
   bool debug;
   bool canceled;
   llama_utils::Spinner spinner;
@@ -144,11 +264,11 @@ protected:
   virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
                            bool add_sfx);
 
-  stop_type
-  find_stop(std::vector<struct completion_output> completion_result_list,
+  StopType
+  find_stop(std::vector<struct CompletionOutput> completion_result_list,
             std::vector<std::string> stopping_words);
-  stop_type
-  find_stop_word(std::vector<struct completion_output> completion_result_list,
+  StopType
+  find_stop_word(std::vector<struct CompletionOutput> completion_result_list,
                  std::string stopping_word);
 
   bool eval_system_prompt();
@@ -158,8 +278,8 @@ protected:
   bool eval(std::vector<llama_token> tokens);
   bool eval(struct llama_batch batch);
 
-  std::vector<token_prob> get_probs();
-  struct completion_output sample();
+  std::vector<struct TokenProb> get_probs();
+  struct CompletionOutput sample();
 
 private:
   // lock

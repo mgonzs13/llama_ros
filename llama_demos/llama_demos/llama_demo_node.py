@@ -36,15 +36,16 @@ class LlamaDemoNode(Node):
         super().__init__("llama_demo_node")
 
         self.declare_parameter(
-            "prompt", "Do you know the city of León from Spain? Can you tell me a bit about its history?")
-        self.prompt = self.get_parameter(
-            "prompt").get_parameter_value().string_value
+            "prompt",
+            "Do you know the city of León from Spain? Can you tell me a bit about its history?",
+        )
+        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.tokens = 0
         self.initial_time = -1
         self.eval_time = -1
 
-        self._llama_client = LlamaClientNode.get_instance("llama")
+        self._llama_client = LlamaClientNode.get_instance()
 
     def text_cb(self, feedback) -> None:
 
@@ -66,10 +67,10 @@ class LlamaDemoNode(Node):
 
         self.get_logger().info("END")
         end_time = time.time()
+        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
         self.get_logger().info(
-            f"Time to eval: {self.eval_time - self.initial_time} s")
-        self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s")
+            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
+        )
 
 
 def main():

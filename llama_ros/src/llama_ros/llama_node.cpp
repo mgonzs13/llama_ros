@@ -41,8 +41,8 @@ LlamaNode::LlamaNode()
     : rclcpp_lifecycle::LifecycleNode("llama_node"), params_declared(false) {}
 
 void LlamaNode::create_llama() {
-  this->llama =
-      std::make_unique<Llama>(this->params.params, this->params.debug);
+  this->llama = std::make_unique<Llama>(
+      this->params.params, this->params.system_prompt, this->params.debug);
 }
 
 void LlamaNode::destroy_llama() {
@@ -80,35 +80,63 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
-  // services
-  this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
-      "tokenize",
-      std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
-  this->generate_embeddings_service_ =
-      this->create_service<llama_msgs::srv::GenerateEmbeddings>(
-          "generate_embeddings",
-          std::bind(&LlamaNode::generate_embeddings_service_callback, this, _1,
-                    _2));
-  this->format_chat_service_ =
-      this->create_service<llama_msgs::srv::FormatChatMessages>(
-          "format_chat_prompt",
-          std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
-  this->list_loras_service_ = this->create_service<llama_msgs::srv::ListLoRAs>(
-      "list_loras",
-      std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
-  this->update_loras_service_ =
-      this->create_service<llama_msgs::srv::UpdateLoRAs>(
-          "update_loras",
-          std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
+  // get metadata service
+  this->get_metadata_service_ =
+      this->create_service<llama_msgs::srv::GetMetadata>(
+          "get_metadata",
+          std::bind(&LlamaNode::get_metadata_service_callback, this, _1, _2));
 
-  // generate response action server
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_ =
-      rclcpp_action::create_server<GenerateResponse>(
-          this, "generate_response",
-          std::bind(&LlamaNode::handle_goal, this, _1, _2),
-          std::bind(&LlamaNode::handle_cancel, this, _1),
-          std::bind(&LlamaNode::handle_accepted, this, _1));
+  // embeddings service
+  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->generate_embeddings_service_ =
+        this->create_service<llama_msgs::srv::GenerateEmbeddings>(
+            "generate_embeddings",
+            std::bind(&LlamaNode::generate_embeddings_service_callback, this,
+                      _1, _2));
+  }
+
+  // rerank service
+  if (this->llama->is_reranking()) {
+    this->rerank_documents_service_ =
+        this->create_service<llama_msgs::srv::RerankDocuments>(
+            "rerank_documents",
+            std::bind(&LlamaNode::rerank_documents_service_callback, this, _1,
+                      _2));
+  }
+
+  // completion services and action
+  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
+        "tokenize",
+        std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
+    this->detokenize_service_ =
+        this->create_service<llama_msgs::srv::Detokenize>(
+            "detokenize",
+            std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
+
+    this->format_chat_service_ =
+        this->create_service<llama_msgs::srv::FormatChatMessages>(
+            "format_chat_prompt",
+            std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
+
+    this->list_loras_service_ =
+        this->create_service<llama_msgs::srv::ListLoRAs>(
+            "list_loras",
+            std::bind(&LlamaNode::list_loras_service_callback, this, _1, _2));
+    this->update_loras_service_ =
+        this->create_service<llama_msgs::srv::UpdateLoRAs>(
+            "update_loras",
+            std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
+
+    // generate response action server
+    this->goal_handle_ = nullptr;
+    this->generate_response_action_server_ =
+        rclcpp_action::create_server<GenerateResponse>(
+            this, "generate_response",
+            std::bind(&LlamaNode::handle_goal, this, _1, _2),
+            std::bind(&LlamaNode::handle_cancel, this, _1),
+            std::bind(&LlamaNode::handle_accepted, this, _1));
+  }
 
   RCLCPP_INFO(get_logger(), "[%s] Activated", this->get_name());
 
@@ -123,18 +151,39 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->destroy_llama();
 
-  this->tokenize_service_.reset();
-  this->tokenize_service_ = nullptr;
+  this->get_metadata_service_.reset();
+  this->get_metadata_service_ = nullptr;
 
-  this->generate_embeddings_service_.reset();
-  this->generate_embeddings_service_ = nullptr;
+  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->generate_embeddings_service_.reset();
+    this->generate_embeddings_service_ = nullptr;
+  }
 
-  this->format_chat_service_.reset();
-  this->format_chat_service_ = nullptr;
+  if (this->llama->is_reranking()) {
+    this->rerank_documents_service_.reset();
+    this->rerank_documents_service_ = nullptr;
+  }
 
-  this->goal_handle_ = nullptr;
-  this->generate_response_action_server_.reset();
-  this->generate_response_action_server_ = nullptr;
+  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+    this->tokenize_service_.reset();
+    this->tokenize_service_ = nullptr;
+
+    this->detokenize_service_.reset();
+    this->detokenize_service_ = nullptr;
+
+    this->format_chat_service_.reset();
+    this->format_chat_service_ = nullptr;
+
+    this->list_loras_service_.reset();
+    this->list_loras_service_ = nullptr;
+
+    this->update_loras_service_.reset();
+    this->update_loras_service_ = nullptr;
+
+    this->goal_handle_ = nullptr;
+    this->generate_response_action_server_.reset();
+    this->generate_response_action_server_ = nullptr;
+  }
 
   RCLCPP_INFO(get_logger(), "[%s] Deactivated", this->get_name());
 
@@ -164,6 +213,107 @@ LlamaNode::on_shutdown(const rclcpp_lifecycle::State &) {
 
 /*
 *****************************
+*         METADATA          *
+*****************************
+*/
+void LlamaNode::get_metadata_service_callback(
+    const std::shared_ptr<llama_msgs::srv::GetMetadata::Request> request,
+    std::shared_ptr<llama_msgs::srv::GetMetadata::Response> response) {
+
+  (void)request;
+
+  llama_ros::Metadata metadata = this->llama->get_metadata();
+
+  llama_msgs::msg::Metadata metadata_msg;
+
+  // general
+  metadata_msg.general.architecture = metadata.general.architecture;
+  metadata_msg.general.quantization_version =
+      metadata.general.quantization_version;
+  metadata_msg.general.alignment = metadata.general.alignment;
+
+  metadata_msg.general.name = metadata.general.name;
+  metadata_msg.general.author = metadata.general.author;
+  metadata_msg.general.version = metadata.general.version;
+  metadata_msg.general.organization = metadata.general.organization;
+
+  metadata_msg.general.basename = metadata.general.basename;
+  metadata_msg.general.finetune = metadata.general.finetune;
+  metadata_msg.general.description = metadata.general.description;
+  metadata_msg.general.quantized_by = metadata.general.quantized_by;
+  metadata_msg.general.size_label = metadata.general.size_label;
+
+  metadata_msg.general.license = metadata.general.license;
+  metadata_msg.general.license_name = metadata.general.license_name;
+  metadata_msg.general.license_link = metadata.general.license_link;
+
+  metadata_msg.general.url = metadata.general.url;
+  metadata_msg.general.repo_url = metadata.general.repo_url;
+  metadata_msg.general.doi = metadata.general.doi;
+  metadata_msg.general.uuid = metadata.general.uuid;
+
+  metadata_msg.general.file_type = metadata.general.file_type;
+
+  // model
+  metadata_msg.model.context_length = metadata.model.context_length;
+  metadata_msg.model.embedding_length = metadata.model.embedding_length;
+  metadata_msg.model.block_count = metadata.model.block_count;
+  metadata_msg.model.feed_forward_length = metadata.model.feed_forward_length;
+
+  metadata_msg.model.use_parallel_residual =
+      metadata.model.use_parallel_residual;
+  metadata_msg.model.tensor_data_layout = metadata.model.tensor_data_layout;
+
+  metadata_msg.model.expert_count = metadata.model.expert_count;
+  metadata_msg.model.expert_used_count = metadata.model.expert_used_count;
+
+  // attention
+  metadata_msg.model.attention.head_count = metadata.model.attention.head_count;
+  metadata_msg.model.attention.head_count_kv =
+      metadata.model.attention.head_count_kv;
+
+  metadata_msg.model.attention.max_alibi_bias =
+      metadata.model.attention.max_alibi_bias;
+  metadata_msg.model.attention.clamp_kqv = metadata.model.attention.clamp_kqv;
+
+  metadata_msg.model.attention.layer_norm_epsilon =
+      metadata.model.attention.layer_norm_epsilon;
+  metadata_msg.model.attention.layer_norm_rms_epsilon =
+      metadata.model.attention.layer_norm_rms_epsilon;
+
+  metadata_msg.model.attention.key_length = metadata.model.attention.key_length;
+  metadata_msg.model.attention.value_length =
+      metadata.model.attention.value_length;
+
+  // rope
+  metadata_msg.model.rope.dimension_count = metadata.model.rope.dimension_count;
+  metadata_msg.model.rope.freq_base = metadata.model.rope.freq_base;
+
+  metadata_msg.model.rope.scaling_type = metadata.model.rope.scaling_type;
+  metadata_msg.model.rope.scaling_factor = metadata.model.rope.scaling_factor;
+  metadata_msg.model.rope.scaling_original_context_length =
+      metadata.model.rope.scaling_original_context_length;
+  metadata_msg.model.rope.scaling_finetuned =
+      metadata.model.rope.scaling_finetuned;
+
+  // tokenizer
+  metadata_msg.tokenizer.model = metadata.tokenizer.model;
+
+  metadata_msg.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
+  metadata_msg.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;
+  metadata_msg.tokenizer.unknown_token_id = metadata.tokenizer.unknown_token_id;
+  metadata_msg.tokenizer.padding_token_id = metadata.tokenizer.padding_token_id;
+  metadata_msg.tokenizer.separator_token_id =
+      metadata.tokenizer.separator_token_id;
+
+  metadata_msg.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
+  metadata_msg.tokenizer.chat_template = metadata.tokenizer.chat_template;
+
+  response->metadata = metadata_msg;
+}
+
+/*
+*****************************
 *     TOKENIZE SERVICE      *
 *****************************
 */
@@ -171,7 +321,19 @@ void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
-  response->tokens = this->llama->tokenize(request->prompt, false);
+  response->tokens = this->llama->tokenize(request->text, false);
+}
+
+void LlamaNode::detokenize_service_callback(
+    const std::shared_ptr<llama_msgs::srv::Detokenize::Request> request,
+    std::shared_ptr<llama_msgs::srv::Detokenize::Response> response) {
+
+  std::vector<llama_token> tokens;
+  for (auto t : request->tokens) {
+    tokens.push_back(t);
+  }
+
+  response->text = this->llama->detokenize(tokens);
 }
 
 /*
@@ -183,10 +345,39 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Generating embeddings");
+  }
+
   auto embeddings =
-      this->llama->generate_embeddings(request->prompt, request->normalize);
+      this->llama->generate_embeddings(request->prompt, request->normalization);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
+
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Embeddings generated");
+  }
+}
+
+/*
+*****************************
+*         RERANKING         *
+*****************************
+*/
+void LlamaNode::rerank_documents_service_callback(
+    const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
+    std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
+
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Reranking documents...");
+  }
+
+  response->scores =
+      this->llama->rank_documents(request->query, request->documents);
+
+  if (this->params.debug) {
+    RCLCPP_INFO(this->get_logger(), "Reranking finished");
+  }
 }
 
 /*
@@ -198,9 +389,9 @@ void LlamaNode::format_chat_service_callback(
     const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request> request,
     std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response) {
 
-  std::vector<struct llama_chat_msg> converted_messages;
+  std::vector<struct common_chat_msg> converted_messages;
   for (auto message : request->messages) {
-    struct llama_chat_msg aux;
+    struct common_chat_msg aux;
     aux.role = message.role.c_str();
     aux.content = message.content.c_str();
 
@@ -243,11 +434,11 @@ void LlamaNode::update_loras_service_callback(
 
   (void)response;
 
-  std::vector<struct lora> loras;
+  std::vector<struct LoRA> loras;
 
   for (auto lora_msg : request->loras) {
 
-    struct lora lora_aux;
+    struct LoRA lora_aux;
     lora_aux.id = lora_msg.id;
     lora_aux.path = lora_msg.path;
     lora_aux.scale = lora_msg.scale;
@@ -320,16 +511,16 @@ void LlamaNode::execute(
     this->llama->reset();
   }
 
-  // update sampling params of gpt_params
+  // update sampling params of common_params
   auto sampling_config = goal_handle->get_goal()->sampling_config;
   auto sparams = llama_utils::parse_sampling_params(sampling_config,
                                                     this->llama->get_n_vocab());
 
   // call llama
-  struct response_output output = this->llama->generate_response(
+  struct ResponseOutput output = this->llama->generate_response(
       prompt, sparams, std::bind(&LlamaNode::send_text, this, _1));
 
-  if (output.stop == stop_type::FULL_STOP) {
+  if (output.stop == StopType::FULL_STOP) {
     auto completion_results = output.completions;
 
     for (auto completion : completion_results) {
@@ -350,10 +541,10 @@ void LlamaNode::execute(
 
   if (rclcpp::ok()) {
 
-    if (output.stop == stop_type::CANCEL) {
+    if (output.stop == StopType::CANCEL) {
       this->goal_handle_->canceled(result);
 
-    } else if (output.stop == stop_type::ABORT) {
+    } else if (output.stop == StopType::ABORT) {
       this->goal_handle_->abort(result);
 
     } else {
@@ -364,7 +555,7 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const struct completion_output &completion) {
+void LlamaNode::send_text(const struct CompletionOutput &completion) {
 
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();

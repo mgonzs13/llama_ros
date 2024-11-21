@@ -22,7 +22,7 @@
 
 
 from typing import Dict, List
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, model_validator
 from langchain_core.embeddings import Embeddings
 
 from llama_msgs.srv import GenerateEmbeddings
@@ -31,29 +31,26 @@ from llama_ros.llama_client_node import LlamaClientNode
 
 class LlamaROSEmbeddings(BaseModel, Embeddings):
 
-    namespace: str = "llama"
     llama_client: LlamaClientNode = None
-    normalize: bool = True
+    normalization: int = 2
 
     class Config:
-        extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
-        values["llama_client"] = LlamaClientNode.get_instance(
-            values["namespace"])
+        values["llama_client"] = LlamaClientNode.get_instance()
         return values
 
     def __call_generate_embedding_srv(self, text: str) -> List[int]:
         req = GenerateEmbeddings.Request()
         req.prompt = text
-        req.normalize = self.normalize
+        req.normalization = self.normalization
         return self.llama_client.generate_embeddings(req).embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        embeddings = [self.__call_generate_embedding_srv(
-            text) for text in texts]
+        embeddings = [self.__call_generate_embedding_srv(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:

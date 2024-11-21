@@ -44,18 +44,20 @@ class LlavaDemoNode(Node):
         self.cv_bridge = CvBridge()
 
         self.declare_parameter(
-            "prompt", "Who is the character in the middle of the image?")
-        self.prompt = self.get_parameter(
-            "prompt").get_parameter_value().string_value
+            "prompt", "Who is the character in the middle of the image?"
+        )
+        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.declare_parameter("use_image", True)
-        self.use_image = self.get_parameter(
-            "use_image").get_parameter_value().bool_value
+        self.use_image = self.get_parameter("use_image").get_parameter_value().bool_value
 
         self.declare_parameter(
-            "image_url", "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg")
-        self.image = self.load_image_from_url(self.get_parameter(
-            "image_url").get_parameter_value().string_value)
+            "image_url",
+            "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg",
+        )
+        self.image = self.load_image_from_url(
+            self.get_parameter("image_url").get_parameter_value().string_value
+        )
 
         self.tokens = 0
         self.initial_time = -1
@@ -65,8 +67,7 @@ class LlavaDemoNode(Node):
 
     @staticmethod
     def load_image_from_url(url):
-        req = urllib.request.Request(
-            url, headers={"User-Agent": "Mozilla/5.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         response = urllib.request.urlopen(req)
         arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
         img = cv2.imdecode(arr, -1)
@@ -95,10 +96,10 @@ class LlavaDemoNode(Node):
 
         self.get_logger().info("END")
         end_time = time.time()
+        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
         self.get_logger().info(
-            f"Time to eval: {self.eval_time - self.initial_time} s")
-        self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s")
+            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
+        )
 
 
 def main():

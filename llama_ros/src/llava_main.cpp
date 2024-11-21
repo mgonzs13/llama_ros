@@ -20,29 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <signal.h>
-#include <unistd.h>
-
 #include <memory>
 #include <vector>
 
 #include "llava_ros/llava_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace llava_ros;
 
-void sigint_handler(int signo) {
-  if (signo == SIGINT) {
-    _exit(130);
-  }
-}
-
 int main(int argc, char *argv[]) {
-
-  struct sigaction sigint_action;
-  sigint_action.sa_handler = sigint_handler;
-  sigemptyset(&sigint_action.sa_mask);
-  sigint_action.sa_flags = 0;
-  sigaction(SIGINT, &sigint_action, NULL);
 
   rclcpp::init(argc, argv);
 
@@ -52,8 +38,13 @@ int main(int argc, char *argv[]) {
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
+
   executor.spin();
 
+  executor.remove_node(node->get_node_base_interface());
+  node.reset();
+
   rclcpp::shutdown();
+
   return 0;
 }

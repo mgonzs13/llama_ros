@@ -33,8 +33,11 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 from action_msgs.msg import GoalStatus
+from llama_msgs.srv import GetMetadata
 from llama_msgs.srv import Tokenize
+from llama_msgs.srv import Detokenize
 from llama_msgs.srv import GenerateEmbeddings
+from llama_msgs.srv import RerankDocuments
 from llama_msgs.srv import FormatChatMessages
 from llama_msgs.action import GenerateResponse
 from llama_msgs.msg import PartialResponse
@@ -63,11 +66,11 @@ class LlamaClientNode(Node):
     _spin_thread: Thread = None
 
     @staticmethod
-    def get_instance(namespace: str = "llama") -> "LlamaClientNode":
+    def get_instance() -> "LlamaClientNode":
 
         with LlamaClientNode._lock:
             if LlamaClientNode._instance == None:
-                LlamaClientNode._instance = LlamaClientNode(namespace)
+                LlamaClientNode._instance = LlamaClientNode()
 
             return LlamaClientNode._instance
 
@@ -77,31 +80,42 @@ class LlamaClientNode(Node):
             raise Exception("This class is a Singleton")
 
         super().__init__(
-            f"client_{str(uuid.uuid4()).replace('-', '_')}_node", namespace=namespace)
+            f"client_{str(uuid.uuid4()).replace('-', '_')}_node", namespace=namespace
+        )
 
-        self._action_client = ActionClient(
-            self,
-            GenerateResponse,
-            "generate_response",
-            callback_group=self._callback_group
+        self._get_metadata_srv_client = self.create_client(
+            GetMetadata, "get_metadata", callback_group=self._callback_group
         )
 
         self._tokenize_srv_client = self.create_client(
-            Tokenize,
-            "tokenize",
-            callback_group=self._callback_group
+            Tokenize, "tokenize", callback_group=self._callback_group
+        )
+
+        self._detokenize_srv_client = self.create_client(
+            Detokenize, "detokenize", callback_group=self._callback_group
         )
 
         self._embeddings_srv_client = self.create_client(
             GenerateEmbeddings,
             "generate_embeddings",
-            callback_group=self._callback_group
+            callback_group=self._callback_group,
+        )
+
+        self._rerank_srv_client = self.create_client(
+            RerankDocuments, "rerank_documents", callback_group=self._callback_group
         )
 
         self._format_chat_srv_client = self.create_client(
             FormatChatMessages,
             "format_chat_prompt",
-            callback_group=self._callback_group
+            callback_group=self._callback_group,
+        )
+
+        self._action_client = ActionClient(
+            self,
+            GenerateResponse,
+            "generate_response",
+            callback_group=self._callback_group,
         )
 
         # executor
@@ -110,15 +124,30 @@ class LlamaClientNode(Node):
         self._spin_thread = Thread(target=self._executor.spin)
         self._spin_thread.start()
 
+    def get_metadata(self, req: GetMetadata.Request) -> GetMetadata:
+        return self._get_metadata_srv_client.call(req)
+
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
         self._tokenize_srv_client.wait_for_service()
         return self._tokenize_srv_client.call(req)
 
-    def generate_embeddings(self, req: GenerateEmbeddings.Request) -> GenerateEmbeddings.Response:
+    def detokenize(self, req: Detokenize.Request) -> Detokenize.Response:
+        self._detokenize_srv_client.wait_for_service()
+        return self._detokenize_srv_client.call(req)
+
+    def generate_embeddings(
+        self, req: GenerateEmbeddings.Request
+    ) -> GenerateEmbeddings.Response:
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
 
-    def format_chat_prompt(self, req: FormatChatMessages.Request) -> FormatChatMessages.Response:
+    def rerank_documents(self, req: RerankDocuments.Request) -> RerankDocuments.Response:
+        self._rerank_srv_client.wait_for_service()
+        return self._rerank_srv_client.call(req)
+
+    def format_chat_prompt(
+        self, req: FormatChatMessages.Request
+    ) -> FormatChatMessages.Response:
         self._format_chat_srv_client.wait_for_service()
         return self._format_chat_srv_client.call(req)
 
@@ -126,8 +155,11 @@ class LlamaClientNode(Node):
         self,
         goal: GenerateResponse.Goal,
         feedback_cb: Callable = None,
-        stream: bool = False
-    ) -> Union[Tuple[GenerateResponse.Result, GoalStatus], Generator[PartialResponse, None, None]]:
+        stream: bool = False,
+    ) -> Union[
+        Tuple[GenerateResponse.Result, GoalStatus],
+        Generator[PartialResponse, None, None],
+    ]:
 
         self._action_done = False
         self._action_result = None
@@ -139,7 +171,8 @@ class LlamaClientNode(Node):
             feedback_cb = self._feedback_callback
 
         send_goal_future = self._action_client.send_goal_async(
-            goal, feedback_callback=feedback_cb)
+            goal, feedback_callback=feedback_cb
+        )
         send_goal_future.add_done_callback(self._goal_response_callback)
 
         # Wait for action to be done

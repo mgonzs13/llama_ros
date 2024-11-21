@@ -15,6 +15,24 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
+  llama_demos/llama_embeddings_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME llama_embeddings_demo_node
+)
+
+install(PROGRAMS
+  llama_demos/llama_rerank_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME llama_rerank_demo_node
+)
+
+install(PROGRAMS
+  llama_demos/llama_rag_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME llama_rag_demo_node
+)
+
+install(PROGRAMS
   llama_demos/llava_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME llava_demo_node

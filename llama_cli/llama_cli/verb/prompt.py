@@ -28,21 +28,26 @@ from llama_cli.api import prompt_llm, positive_float
 class PromptVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
-        arg = parser.add_argument(
-            "prompt", help="prompt text for the LLM")
+        arg = parser.add_argument("prompt", help="prompt text for the LLM")
         parser.add_argument(
-            "-r", "--reset",
+            "-r",
+            "--reset",
             action="store_true",
-            help="Whether to reset the LLM and its context before prompting")
+            help="Whether to reset the LLM and its context before prompting",
+        )
         parser.add_argument(
-            "-t", "--temp",
-            metavar="N", type=positive_float, default=0.8,
-            help="Temperature value (default: 0.8)")
+            "-t",
+            "--temp",
+            metavar="N",
+            type=positive_float,
+            default=0.8,
+            help="Temperature value (default: 0.8)",
+        )
         parser.add_argument(
-            "--image-url",
-            type=str, default="",
-            help="Image URL to sent to the VLM")
+            "--image-url", type=str, default="", help="Image URL to sent to the VLM"
+        )
 
     def main(self, *, args):
-        prompt_llm(args.prompt, reset=args.reset,
-                   temp=args.temp, image_url=args.image_url)
+        prompt_llm(
+            args.prompt, reset=args.reset, temp=args.temp, image_url=args.image_url
+        )

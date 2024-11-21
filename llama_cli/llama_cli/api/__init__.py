@@ -52,16 +52,15 @@ def launch_llm(file_path: str) -> None:
         print(f"File '{file_path}' does not exists")
         return
 
-    ld = LaunchDescription([
-        create_llama_launch_from_yaml(file_path)
-    ])
+    ld = LaunchDescription([create_llama_launch_from_yaml(file_path)])
     ls = LaunchService()
     ls.include_launch_description(ld)
     ls.run()
 
 
-def prompt_llm(prompt: str, reset: bool = False,
-               temp: float = 0.8, image_url: str = "") -> None:
+def prompt_llm(
+    prompt: str, reset: bool = False, temp: float = 0.8, image_url: str = ""
+) -> None:
 
     rclpy.init()
     llama_client = LlamaClientNode()
@@ -71,8 +70,7 @@ def prompt_llm(prompt: str, reset: bool = False,
     goal.sampling_config.temp = temp
 
     if image_url:
-        req = urllib.request.Request(
-            image_url, headers={"User-Agent": "Mozilla/5.0"})
+        req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
         response = urllib.request.urlopen(req)
         arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
         img = cv2.imdecode(arr, -1)

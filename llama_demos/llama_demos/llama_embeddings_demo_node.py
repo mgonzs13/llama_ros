@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
+
 # MIT License
 
-# Copyright (c) 2024  Alejandro González Cantón
 # Copyright (c) 2024  Miguel Ángel González Santamarta
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,24 +23,40 @@
 # SOFTWARE.
 
 
-from langchain_core.runnables import chain
-from llama_msgs.srv import FormatChatMessages
-from llama_msgs.msg import Message
+import operator
+import rclpy
+from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode
+from llama_msgs.srv import GenerateEmbeddings
 
 
-@chain
-def ChatPromptFormatter(messages):
-    client = LlamaClientNode.get_instance('llama')
-    output_msgs = []
+class LlamaEmbeddinsDemoNode(Node):
 
-    for msg in messages.messages:
-        new_msg = Message()
-        new_msg.role = msg.type
-        new_msg.content = msg.content
-        output_msgs.append(new_msg)
+    def __init__(self) -> None:
+        super().__init__("llama_embeddings_demo_node")
 
-    response = client.format_chat_prompt(
-        FormatChatMessages.Request(messages=output_msgs))
+        self.declare_parameter(
+            "prompt", "This is the test to create embeddings using llama_ros"
+        )
+        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
-    return response.formatted_prompt
+        self._llama_client = LlamaClientNode.get_instance()
+
+    def send_rerank(self) -> None:
+
+        emb_req = GenerateEmbeddings.Request()
+        emb_req.prompt = self.prompt
+
+        emb = self._llama_client.generate_embeddings(emb_req).embeddings
+        self.get_logger().info(f"{emb}")
+
+
+def main():
+    rclpy.init()
+    node = LlamaEmbeddinsDemoNode()
+    node.send_rerank()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

@@ -25,7 +25,6 @@ from typing import Any, Dict, List, Optional, Iterator
 
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
-from llama_ros.llama_client_node import LlamaClientNode
 from llama_ros.langchain import LlamaROSCommon
 
 from langchain_core.outputs import GenerationChunk
@@ -53,8 +52,7 @@ class LlamaROS(LLM, LlamaROSCommon):
 
         goal = self._create_action_goal(prompt, stop, **kwargs)
 
-        result, status = LlamaClientNode.get_instance(
-            self.namespace).generate_response(goal)
+        result, status = self.llama_client.generate_response(goal)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
@@ -70,16 +68,18 @@ class LlamaROS(LLM, LlamaROSCommon):
 
         goal = self._create_action_goal(prompt, stop, **kwargs)
 
-        for pt in LlamaClientNode.get_instance(
-                self.namespace).generate_response(goal, stream=True):
+        for pt in self.llama_client.generate_response(goal, stream=True):
 
             if run_manager:
-                run_manager.on_llm_new_token(pt.text, verbose=self.verbose,)
+                run_manager.on_llm_new_token(
+                    pt.text,
+                    verbose=self.verbose,
+                )
 
             yield GenerationChunk(text=pt.text)
 
     def get_num_tokens(self, text: str) -> int:
         req = Tokenize.Request()
-        req.prompt = text
+        req.text = text
         tokens = self.llama_client.tokenize(req).tokens
         return len(tokens)

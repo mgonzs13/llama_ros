@@ -41,8 +41,9 @@ using std::placeholders::_2;
 LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 
 void LlavaNode::create_llama() {
-  this->llama = std::make_unique<Llava>(
-      this->params.params, this->params.llava_params, this->params.debug);
+  this->llama =
+      std::make_unique<Llava>(this->params.params, this->params.llava_params,
+                              this->params.system_prompt, this->params.debug);
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {

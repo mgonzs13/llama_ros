@@ -1,4 +1,4 @@
-Message[] messages              # List of chat messages
-bool add_ass             true   # Add assistant prompt
+Message[] messages                  # List of chat messages
+bool add_ass             true       # Add assistant prompt
 ---
-string formatted_prompt         # Prompt formatted by the model
+string formatted_prompt             # Prompt formatted by the model

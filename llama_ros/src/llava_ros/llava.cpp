@@ -30,9 +30,11 @@
 
 using namespace llava_ros;
 
-Llava::Llava(const struct gpt_params &params,
-             const struct llava_params &llava_params, bool debug)
-    : llama_ros::Llama(params, debug), llava_params(llava_params) {
+Llava::Llava(const struct common_params &params,
+             const struct LlavaParams &llava_params, std::string system_prompt,
+             bool debug)
+    : llama_ros::Llama(params, system_prompt, debug),
+      llava_params(llava_params) {
 
   // load clip model
   const char *clip_path = this->params.mmproj.c_str();
@@ -157,16 +159,13 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
     }
 
     struct llama_batch batch = {
-        int32_t(n_eval),
-        nullptr,
-        (image_embed->embed + i * n_embd),
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        this->n_past,
-        1,
-        0,
+        int32_t(n_eval),                   // n_tokens
+        nullptr,                           // tokens
+        (image_embed->embed + i * n_embd), // embd
+        nullptr,                           // pos
+        nullptr,                           // n_seq_id
+        nullptr,                           // seq_id
+        nullptr                            // logits
     };
 
     if (!this->eval(batch)) {

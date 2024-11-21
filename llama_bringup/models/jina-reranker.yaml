@@ -1,0 +1,9 @@
+n_ctx: 2048
+n_batch: 1024
+n_gpu_layers: 0
+n_threads: 1
+n_predict: 2048
+reranking: true
+
+model_repo: "gpustack/jina-reranker-v1-tiny-en-GGUF"
+model_filename: "jina-reranker-v1-tiny-en-FP16.gguf"

@@ -2,17 +2,28 @@
 
 This repository provides a set of ROS 2 packages to integrate [llama.cpp](https://github.com/ggerganov/llama.cpp) into ROS 2. Using the llama_ros packages, you can easily incorporate the powerful optimization capabilities of [llama.cpp](https://github.com/ggerganov/llama.cpp) into your ROS 2 projects by running [GGUF](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)-based [LLMs](https://huggingface.co/models?sort=trending&search=gguf+7b) and [VLMs](https://huggingface.co/models?sort=trending&search=gguf+llava). You can also use features from llama.cpp such as [GBNF grammars](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md) and modify LoRAs in real-time.
 
+[![License: MIT](https://img.shields.io/badge/GitHub-MIT-informational)](https://opensource.org/license/mit) [![GitHub release](https://img.shields.io/github/release/mgonzs13/llama_ros.svg)](https://github.com/mgonzs13/llama_ros/releases) [![Code Size](https://img.shields.io/github/languages/code-size/mgonzs13/llama_ros.svg?branch=main)](https://github.com/mgonzs13/llama_ros?branch=main) [![Last Commit](https://img.shields.io/github/last-commit/mgonzs13/llama_ros.svg)](https://github.com/mgonzs13/llama_ros/commits/main) [![GitHub issues](https://img.shields.io/github/issues/mgonzs13/llama_ros)](https://github.com/mgonzs13/llama_ros/issues) [![GitHub pull requests](https://img.shields.io/github/issues-pr/mgonzs13/llama_ros)](https://github.com/mgonzs13/llama_ros/pulls) [![Contributors](https://img.shields.io/github/contributors/mgonzs13/llama_ros.svg)](https://github.com/mgonzs13/llama_ros/graphs/contributors) [![Python Formatter Check](https://github.com/mgonzs13/llama_ros/actions/workflows/python_formatter.yml/badge.svg?branch=main)](https://github.com/mgonzs13/llama_ros/actions/workflows/python_formatter.yml?branch=main) [![C++ Formatter Check](https://github.com/mgonzs13/llama_ros/actions/workflows/cpp_formatter.yml/badge.svg?branch=main)](https://github.com/mgonzs13/llama_ros/actions/workflows/cpp_formatter.yml?branch=main)
+
+<div align="center">
+
+| ROS 2 Distro |                          Branch                           |                                                                                                     Build status                                                                                                      |                                                               Docker Image                                                               | Documentation                                                                                                                                            |
+| :----------: | :-------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  **Humble**  | [`main`](https://github.com/mgonzs13/llama_ros/tree/main) | [![Humble Build](https://github.com/mgonzs13/llama_ros/actions/workflows/humble-docker-build.yml/badge.svg?branch=main)](https://github.com/mgonzs13/llama_ros/actions/workflows/humble-docker-build.yml?branch=main) | [![Docker Image](https://img.shields.io/badge/Docker%20Image%20-humble-blue)](https://hub.docker.com/r/mgons/llama_ros/tags?name=humble) | [![Doxygen Deployment](https://github.com/mgonzs13/llama_ros/actions/workflows/doxygen-deployment.yml/badge.svg)](https://mgonzs13.github.io/llama_ros/) |
+
+</div>
+
 ## Table of Contents
 
 1. [Related Projects](#related-projects)
 2. [Installation](#installation)
-3. [Usage](#usage)
+3. [Docker](#docker)
+4. [Usage](#usage)
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
    - [LoRA Adapters](#lora-adapters)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
-4. [Demos](#demos)
+5. [Demos](#demos)
 
 ## Related Projects
 
@@ -21,7 +32,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 ## Installation
 
-To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit).
+To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you can compile llama_ros with `--cmake-args -DGGML_CUDA=ON` to enable CUDA support.
 
 ```shell
 $ cd ~/ros2_ws/src
@@ -30,6 +41,22 @@ $ pip3 install -r llama_ros/requirements.txt
 $ cd ~/ros2_ws
 $ rosdep install --from-paths src --ignore-src -r -y
 $ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
+```
+
+## Docker
+
+Build the llama_ros docker or download an image from [DockerHub](https://hub.docker.com/repository/docker/mgons/llama_ros). You can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`). Remember that you have to use `DOCKER_BUILDKIT=0` to compile llama_ros with CUDA when building the image.
+
+<!-- To build using CUDA you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [configure the default runtime to NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/1.12.1/user-guide.html#daemon-configuration-file). -->
+
+```shell
+$ DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
+```
+
+Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.
+
+```shell
+$ docker run -it --rm --gpus all llama_ros
 ```
 
 ## Usage
@@ -43,7 +70,7 @@ Commands are included in llama_ros to speed up the test of GGUF-based LLMs withi
 Using this command launch a LLM from a YAML file. The configuration of the YAML is used to launch the LLM in the same way as using a regular launch file. Here is an example of how to use it:
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/params/StableLM-Zephyr.yaml
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml
 ```
 
 #### prompt
@@ -87,7 +114,7 @@ def generate_launch_description():
             model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
             model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file in repo
 
-            system_prompt_type="alpaca" # system prompt type
+            system_prompt_type="Alpaca" # system prompt type
         )
     ])
 ```
@@ -126,12 +153,36 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"), "params", "Spaetzle.yaml"))
+            get_package_share_directory("llama_bringup"), "models", "Spaetzle.yaml"))
     ])
 ```
 
 ```shell
 $ ros2 launch llama_bringup spaetzle.launch.py
+```
+
+</details>
+
+#### llama_ros (YAML Config + model shards)
+
+<details>
+<summary>Click to expand</summary>
+
+```yaml
+n_ctx: 2048 # context of the LLM in tokens
+n_batch: 8 # batch size in tokens
+n_gpu_layers: 0 # layers to load in GPU
+n_threads: 1 # threads
+n_predict: 2048 # max tokens, -1 == inf
+
+model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF" # Hugging Face repo
+model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf" # model shard file in repo
+
+system_prompt_type: "ChatML" # system prompt type
+```
+
+```shell
+$ ros2 llama launch Qwen2.yaml
 ```
 
 </details>
@@ -163,7 +214,7 @@ def generate_launch_description():
             mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf", # Hugging Face repo
             mmproj_filename="mmproj-model-f16.gguf", # mmproj file in repo
 
-            system_prompt_type="mistral" # system prompt type
+            system_prompt_type="Mistral" # system prompt type
         )
     ])
 ```
@@ -202,7 +253,7 @@ def generate_launch_description():
     return LaunchDescription([
         create_llama_launch_from_yaml(os.path.join(
             get_package_share_directory("llama_bringup"),
-            "params", "llava-1.6-mistral-7b-gguf.yaml"))
+            "models", "llava-1.6-mistral-7b-gguf.yaml"))
     ])
 ```
 
@@ -266,12 +317,39 @@ class ExampleNode(Node):
 
         # create the request
         req = Tokenize.Request()
-        req.prompt = "Example text"
+        req.text = "Example text"
 
         # call the tokenize service
         self.srv_client.wait_for_service()
-        res = self.srv_client.call(req)
-        tokens = res.tokens
+        tokens = self.srv_client.call(req).tokens
+```
+
+</details>
+
+#### Detokenize
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+from rclpy.node import Node
+from llama_msgs.srv import Detokenize
+
+
+class ExampleNode(Node):
+    def __init__(self) -> None:
+        super().__init__("example_node")
+
+        # create the client
+        self.srv_client = self.create_client(Detokenize, "/llama/detokenize")
+
+        # create the request
+        req = Detokenize.Request()
+        req.tokens = [123, 123]
+
+        # call the tokenize service
+        self.srv_client.wait_for_service()
+        text = self.srv_client.call(req).text
 ```
 
 </details>
@@ -302,8 +380,7 @@ class ExampleNode(Node):
 
         # call the embedding service
         self.srv_client.wait_for_service()
-        res = self.srv_client.call(req)
-        embeddings = res.embeddings
+        embeddings = self.srv_client.call(req).embeddings
 ```
 
 </details>
@@ -511,13 +588,13 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from llama_ros.langchain import LlamaROSEmbeddings
 
 
 rclpy.init()
 
-# create the llama_ros embeddings for lanchain
+# create the llama_ros embeddings for langchain
 embeddings = LlamaROSEmbeddings()
 
 # create a vector database and assign it
@@ -530,8 +607,171 @@ retriever = db.as_retriever(search_kwargs={"k": 5})
 db.add_texts(texts=["your_texts"])
 
 # retrieve documents
-docuemnts = retriever.get_relevant_documents("your_query")
-print(docuemnts)
+documents = retriever.invoke("your_query")
+print(documents)
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### llama_ros (Renranker)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+from llama_ros.langchain import LlamaROSReranker
+from llama_ros.langchain import LlamaROSEmbeddings
+
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.retrievers import ContextualCompressionRetriever
+
+
+rclpy.init()
+
+# load the documents
+documents = TextLoader("../state_of_the_union.txt",).load()
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500, chunk_overlap=100)
+texts = text_splitter.split_documents(documents)
+
+# create the llama_ros embeddings
+embeddings = LlamaROSEmbeddings()
+
+# create the VD and the retriever
+retriever = FAISS.from_documents(
+    texts, embeddings).as_retriever(search_kwargs={"k": 20})
+
+# create the compressor using the llama_ros reranker
+compressor = LlamaROSReranker()
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor, base_retriever=retriever
+)
+
+# retrieve the documents
+compressed_docs = compression_retriever.invoke(
+    "What did the president say about Ketanji Jackson Brown"
+)
+
+for doc in compressed_docs:
+    print("-" * 50)
+    print(doc.page_content)
+    print("\n")
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### llama_ros (LLM + RAG + Reranker)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import bs4
+import rclpy
+from langchain import hub
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from llama_ros.langchain import LlamaROS, LlamaROSEmbeddings, LlamaROSReranker
+from langchain.retrievers import ContextualCompressionRetriever
+
+
+rclpy.init()
+
+# load, chunk and index the contents of the blog
+loader = WebBaseLoader(
+    web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
+    bs_kwargs=dict(
+        parse_only=bs4.SoupStrainer(
+            class_=("post-content", "post-title", "post-header")
+        )
+    ),
+)
+docs = loader.load()
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=200)
+splits = text_splitter.split_documents(docs)
+vectorstore = Chroma.from_documents(
+    documents=splits, embedding=LlamaROSEmbeddings())
+
+# retrieve and generate using the relevant snippets of the blog
+retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
+prompt = hub.pull("rlm/rag-prompt")
+
+compressor = LlamaROSReranker(top_n=5)
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor, base_retriever=retriever
+)
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+# create and use the chain
+rag_chain = (
+    {"context": compression_retriever | format_docs,
+        "question": RunnablePassthrough()}
+    | prompt
+    | LlamaROS(temp=0.0)
+    | StrOutputParser()
+)
+
+print(rag_chain.invoke("What is Task Decomposition?"))
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### chat_llama_ros
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+from llama_ros.langchain import ChatLlamaROS
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+
+rclpy.init()
+
+# create chat
+chat = ChatLlamaROS(
+    temp=0.2,
+    penalty_last_n=8,
+)
+
+# create prompt template with messages
+prompt = ChatPromptTemplate.from_messages([
+    SystemMessage("You are a IA that just answer with a single word."),
+    HumanMessagePromptTemplate.from_template(template=[
+        {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
+        {"type": "image_url", "image_url": "{image_url}"}
+    ])
+])
+
+# create the chain
+chain = prompt | chat | StrOutputParser()
+
+# stream and print the LLM output
+for text in self.chain.stream({"image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}):
+    print(text, end="", flush=True)
+
+print("", end="\n", flush=True)
 
 rclpy.shutdown()
 ```
@@ -540,7 +780,7 @@ rclpy.shutdown()
 
 ## Demos
 
-### llama_ros
+### LLM Demo
 
 ```shell
 $ ros2 launch llama_bringup spaetzle.launch.py
@@ -554,7 +794,31 @@ $ ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
 
-### llava_ros
+### Embeddings Generation Demo
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+```
+
+```shell
+$ ros2 run llama_demos llama_embeddings_demo_node
+```
+
+https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
+
+### Reranking Demo
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+```
+
+```shell
+$ ros2 run llama_demos llama_rerank_demo_node
+```
+
+https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
+
+### VLM Demo
 
 ```shell
 $ ros2 launch llama_bringup minicpm-2.6.launch.py
@@ -566,14 +830,78 @@ $ ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p im
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
 
-### chatllama
+### Chat Template Demo
 
 ```shell
-$ ros2 launch llama_bringup minicpm-2.6.launch.py
+$ ros2 llama launch MiniCPM-2.6.yaml
 ```
+
+<details>
+<summary>Click to expand MiniCPM-2.6</summary>
+
+```yaml
+use_llava: True
+
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 20
+n_threads: 1
+n_predict: 8192
+
+image_prefix: "<image>"
+image_suffix: "</image>"
+
+model_repo: "openbmb/MiniCPM-V-2_6-gguf"
+model_filename: "ggml-model-Q4_K_M.gguf"
+
+mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
+mmproj_filename: "mmproj-model-f16.gguf"
+
+stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 $ ros2 run llama_demos chatllama_demo_node
 ```
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+
+#### Full Demo (LLM + chat template + RAG + Reranking + Stream)
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+```
+
+```shell
+$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+```
+
+```shell
+$ ros2 llama launch Llama-3.yaml
+```
+
+<details>
+<summary>Click to expand Llama-3.yaml</summary>
+
+```yaml
+n_ctx: 4096
+n_batch: 256
+n_gpu_layers: 33
+n_threads: -1
+n_predict: -1
+
+model_repo: "lmstudio-community/Llama-3.2-1B-Instruct-GGUF"
+model_filename: "Llama-3.2-1B-Instruct-Q8_0.gguf"
+
+stopping_words: ["<|eot_id|>"]
+```
+
+</details>
+
+```shell
+$ ros2 run llama_demos llama_rag_demo_node
+```
+
+https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6

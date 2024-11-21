@@ -22,6 +22,7 @@
 
 
 import os
+import re
 import yaml
 from typing import Tuple
 from huggingface_hub import hf_hub_download
@@ -31,15 +32,42 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def download_model(repo: str, file: str) -> str:
-    return hf_hub_download(repo_id=repo, filename=file, force_download=False) if repo and file else ""
+
+    match = re.search(r"-(\d+)-of-(\d+)\.gguf", file)
+
+    if match:
+        total_shards = int(match.group(2))
+        base_name = file[: match.start()]
+
+        # download shards
+        for i in range(1, total_shards + 1):
+            shard_file = f"{base_name}-{i:05d}-of-{total_shards:05d}.gguf"
+            hf_hub_download(repo_id=repo, filename=shard_file, force_download=False)
+
+        # return first shard
+        return hf_hub_download(
+            repo_id=repo,
+            filename=f"{base_name}-00001-of-{total_shards:05d}.gguf",
+            force_download=False,
+        )
+
+    return hf_hub_download(repo_id=repo, filename=file, force_download=False)
 
 
 def load_prompt_type(prompt_file_name: str) -> Tuple:
-    file_path = os.path.join(get_package_share_directory(
-        "llama_bringup"), "prompts", f"{prompt_file_name}.yaml")
+    file_path = os.path.join(
+        get_package_share_directory("llama_bringup"),
+        "prompts",
+        f"{prompt_file_name}.yaml",
+    )
     with open(file_path, "r") as file:
         yaml_data = yaml.safe_load(file)
-    return yaml_data["prefix"], yaml_data["suffix"], yaml_data["stopping_words"], yaml_data["system_prompt"]
+    return (
+        yaml_data["prefix"],
+        yaml_data["suffix"],
+        yaml_data["stopping_words"],
+        yaml_data["system_prompt"],
+    )
 
 
 def create_llama_launch_from_yaml(file_path: str) -> IncludeLaunchDescription:
@@ -49,8 +77,11 @@ def create_llama_launch_from_yaml(file_path: str) -> IncludeLaunchDescription:
 
 
 def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
-    prompt_data = load_prompt_type(kwargs["system_prompt_type"]) if kwargs.get(
-        "system_prompt_type") else ("", "", [], "")
+    prompt_data = (
+        load_prompt_type(kwargs["system_prompt_type"])
+        if kwargs.get("system_prompt_type")
+        else ("", "", [], "")
+    )
     kwargs["prefix"] = kwargs.get("prefix", prompt_data[0])
     kwargs["suffix"] = kwargs.get("suffix", prompt_data[1])
     kwargs["system_prompt"] = kwargs.get("system_prompt", prompt_data[3])
@@ -62,9 +93,12 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
 
     # load models
     for key in ["model", "mmproj"]:
-        if not kwargs.get(key) and kwargs.get(f"{key}_repo") and kwargs.get(f"{key}_filename"):
-            kwargs[key] = download_model(
-                kwargs[f"{key}_repo"], kwargs[f"{key}_filename"])
+        if (
+            not kwargs.get(key)
+            and kwargs.get(f"{key}_repo")
+            and kwargs.get(f"{key}_filename")
+        ):
+            kwargs[key] = download_model(kwargs[f"{key}_repo"], kwargs[f"{key}_filename"])
 
     # load lora adapters
     lora_adapters = []
@@ -101,8 +135,10 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
         kwargs["use_llava"] = False
 
     return IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory("llama_bringup"), "launch", "base.launch.py")),
-        launch_arguments={key: str(value)
-                          for key, value in kwargs.items()}.items()
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("llama_bringup"), "launch", "base.launch.py"
+            )
+        ),
+        launch_arguments={key: str(value) for key, value in kwargs.items()}.items(),
     )

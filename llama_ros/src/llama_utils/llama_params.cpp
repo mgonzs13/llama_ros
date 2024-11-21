@@ -97,17 +97,18 @@ void llama_utils::declare_llama_params(
                                           {"yarn_attn_factor", 1.0f},
                                           {"yarn_beta_fast", 32.0f},
                                           {"yarn_beta_slow", 1.0f},
+                                          {"defrag_thold", 0.1f},
                                       });
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
   node->declare_parameters<bool>("", {
                                          {"debug", true},
                                          {"embedding", false},
+                                         {"reranking", false},
                                          {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"cont_batching", true},
-                                         {"dump_kv_cache", false},
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
@@ -117,7 +118,7 @@ void llama_utils::declare_llama_params(
                                      });
 }
 
-struct llama_params llama_utils::get_llama_params(
+struct LlamaParams llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   int32_t seed;
@@ -143,7 +144,7 @@ struct llama_params llama_utils::get_llama_params(
 
   std::string file_path;
 
-  struct llama_params params;
+  struct LlamaParams params;
 
   node->get_parameter("seed", seed);
   node->get_parameter("n_ctx", params.params.n_ctx);
@@ -156,6 +157,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("tensor_split", tensor_split);
 
   node->get_parameter("embedding", params.params.embedding);
+  node->get_parameter("reranking", params.params.reranking);
   node->get_parameter("logits_all", params.params.logits_all);
   node->get_parameter("use_mmap", params.params.use_mmap);
   node->get_parameter("use_mlock", params.params.use_mlock);
@@ -163,7 +165,6 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("check_tensors", params.params.check_tensors);
   node->get_parameter("flash_attn", params.params.flash_attn);
 
-  node->get_parameter("dump_kv_cache", params.params.dump_kv_cache);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
   node->get_parameter("cache_type_k", params.params.cache_type_k);
   node->get_parameter("cache_type_v", params.params.cache_type_v);
@@ -200,6 +201,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("yarn_beta_fast", params.params.yarn_beta_fast);
   node->get_parameter("yarn_beta_slow", params.params.yarn_beta_slow);
   node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
+  node->get_parameter("defrag_thold", params.params.defrag_thold);
 
   node->get_parameter("model", params.params.model);
   node->get_parameter("lora_adapters", lora_adapters);
@@ -219,7 +221,7 @@ struct llama_params llama_utils::get_llama_params(
   node->get_parameter("image_suffix", params.llava_params.image_suffix);
   node->get_parameter("image_text", params.llava_params.image_text);
 
-  node->get_parameter("system_prompt", params.params.system_prompt);
+  node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
   node->get_parameter("debug", params.debug);
 
@@ -321,6 +323,11 @@ struct llama_params llama_utils::get_llama_params(
   params.params.cpuparams.poll = poll;
   params.params.cpuparams_batch.poll = poll_batch;
 
+  // rerank
+  if (params.params.reranking) {
+    params.params.embedding = true;
+  }
+
   // rope_scaling_type
   if (rope_scaling_type == "none") {
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_NONE;
@@ -343,6 +350,8 @@ struct llama_params llama_utils::get_llama_params(
     params.params.numa = GGML_NUMA_STRATEGY_NUMACTL;
   } else if (numa == "mirror") {
     params.params.numa = GGML_NUMA_STRATEGY_MIRROR;
+  } else if (numa == "count") {
+    params.params.numa = GGML_NUMA_STRATEGY_COUNT;
   }
 
   // pooling
@@ -352,6 +361,8 @@ struct llama_params llama_utils::get_llama_params(
     params.params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
   } else if (pooling_type == "cls") {
     params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
+  } else if (pooling_type == "last") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
   } else {
     params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
   }
@@ -365,7 +376,7 @@ struct llama_params llama_utils::get_llama_params(
     }
     std::copy(std::istreambuf_iterator<char>(file),
               std::istreambuf_iterator<char>(),
-              back_inserter(params.params.system_prompt));
+              back_inserter(params.system_prompt));
   }
 
   // split tensors
@@ -395,10 +406,10 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
   return GGML_SCHED_PRIO_NORMAL;
 }
 
-struct gpt_sampler_params llama_utils::parse_sampling_params(
+struct common_sampler_params llama_utils::parse_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct gpt_sampler_params sparams;
+  struct common_sampler_params sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
@@ -408,7 +419,6 @@ struct gpt_sampler_params llama_utils::parse_sampling_params(
   sparams.top_k = sampling_config.top_k;
   sparams.top_p = sampling_config.top_p;
   sparams.min_p = sampling_config.min_p;
-  sparams.tfs_z = sampling_config.tfs_z;
   sparams.typ_p = sampling_config.typical_p;
 
   sparams.penalty_last_n = sampling_config.penalty_last_n;
@@ -423,7 +433,7 @@ struct gpt_sampler_params llama_utils::parse_sampling_params(
   sparams.penalize_nl = sampling_config.penalize_nl;
 
   sparams.samplers =
-      gpt_sampler_types_from_chars(sampling_config.samplers_sequence);
+      common_sampler_types_from_chars(sampling_config.samplers_sequence);
   sparams.grammar = sampling_config.grammar;
 
   if (sparams.grammar.size() == 0 &&
