@@ -33,13 +33,16 @@ from langchain_core.language_models import BaseLanguageModel
 
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
+from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
+from llama_msgs.msg import Metadata
 
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
 
     llama_client: LlamaClientNode = None
     cv_bridge: CvBridge = CvBridge()
+    model_metadata: Metadata = None
 
     # sampling params
     n_prev: int = 64
@@ -94,6 +97,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["llama_client"] = LlamaClientNode.get_instance()
+        values["model_metadata"] = values["llama_client"].get_metadata(GetMetadata.Request()).metadata
         return values
 
     def cancel(self) -> None:

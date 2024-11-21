@@ -25,6 +25,8 @@ from typing import Any, List, Optional, Dict, Iterator
 import base64
 import cv2
 import numpy as np
+import jinja2
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import Message
@@ -39,6 +41,12 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
+    jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
+            loader=jinja2.BaseLoader(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+    )
+    
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -47,30 +55,41 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
+    def _generate_prompt(self, messages: List[dict[str, str]]) -> str:        
+        chat_template = self.model_metadata.tokenizer.chat_template
+        
+        if chat_template:
+            formatted_prompt = self.jinja_env.from_string(
+                chat_template
+            ).render(
+                messages=messages,
+                add_generation_prompt=True,
+            )
+            return formatted_prompt
+        else:
+            ros_messages = [Message(content=message["content"], role=message["role"]) for message in messages]
+            return self.llama_client.format_chat_messages(ros_messages).formatted_prompt
+
     def _messages_to_chat_messages(
         self, messages: List[BaseMessage]
     ) -> tuple[FormatChatMessages.Request, Optional[str], Optional[np.ndarray]]:
 
-        chat_messages = FormatChatMessages.Request()
+        chat_messages = []
         image_url = None
         image = None
 
         for message in messages:
-            role = message.type
-            if role.lower() == "human":
-                role = "user"
+            role = "user" if message.type.lower() == "human" else message.type
 
-            if type(message.content) == str:
-                chat_messages.messages.append(Message(role=role, content=message.content))
+            if isinstance(message.content, str):
+                chat_messages.append({"role": role, "content": message.content})
             else:
                 for single_content in message.content:
-                    if type(single_content) == str:
-                        chat_messages.messages.append(
-                            Message(role=role, content=single_content)
-                        )
+                    if isinstance(single_content, str):
+                        chat_messages.append({"role": role, "content": single_content})
                     elif single_content["type"] == "text":
-                        chat_messages.messages.append(
-                            Message(role=role, content=single_content["text"])
+                        chat_messages.append(
+                            {"role": role, "content": single_content["text"]}
                         )
                     elif single_content["type"] == "image_url":
                         image_text = single_content["image_url"]["url"]
@@ -91,11 +110,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-
-        llama_client = self.llama_client.get_instance()
-
+        
         chat_messages, image_url, image = self._messages_to_chat_messages(messages)
-        formatted_prompt = llama_client.format_chat_prompt(chat_messages).formatted_prompt
+        formatted_prompt = self._generate_prompt(chat_messages)
 
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs
@@ -117,10 +134,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
 
-        llama_client = self.llama_client.get_instance()
-
         chat_messages, image_url, image = self._messages_to_chat_messages(messages)
-        formatted_prompt = llama_client.format_chat_prompt(chat_messages).formatted_prompt
+        formatted_prompt = self._generate_prompt(chat_messages)
 
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs
