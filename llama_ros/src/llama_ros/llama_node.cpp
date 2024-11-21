@@ -252,10 +252,6 @@ void LlamaNode::get_metadata_service_callback(
   metadata_msgs.general.doi = metadata.general.doi;
   metadata_msgs.general.uuid = metadata.general.uuid;
 
-  metadata_msgs.general.tags = metadata.general.tags;
-  metadata_msgs.general.languages = metadata.general.languages;
-  metadata_msgs.general.datasets = metadata.general.datasets;
-
   metadata_msgs.general.file_type = metadata.general.file_type;
 
   // model
@@ -271,12 +267,6 @@ void LlamaNode::get_metadata_service_callback(
 
   // tokenizer
   metadata_msgs.tokenizer.model = metadata.tokenizer.model;
-
-  metadata_msgs.tokenizer.tokens = metadata.tokenizer.tokens;
-  metadata_msgs.tokenizer.scores = metadata.tokenizer.scores;
-  metadata_msgs.tokenizer.token_type = metadata.tokenizer.token_type;
-  metadata_msgs.tokenizer.merges = metadata.tokenizer.merges;
-  metadata_msgs.tokenizer.added_tokens = metadata.tokenizer.added_tokens;
 
   metadata_msgs.tokenizer.bos_token_id = metadata.tokenizer.bos_token_id;
   metadata_msgs.tokenizer.eos_token_id = metadata.tokenizer.eos_token_id;

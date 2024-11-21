@@ -22,8 +22,4 @@ string repo_url                 # URL to the model's repository such as a GitHub
 string doi                      # Digital Object Identifier (DOI)
 string uuid                     # Universally unique identifier
 
-string[] tags                   # List of tags that can be used as search terms for a search engine or social media
-string[] languages              # What languages can the model speak. Encoded as ISO 639 two letter codes
-string[] datasets               # Links or references to datasets that the model was trained upon
-
 string file_type                # An enumerated value describing the type of the majority of the tensors in the file

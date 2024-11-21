@@ -168,31 +168,6 @@ std::string Llama::get_metadata(const std::string &key, size_t size) {
   return metada_str;
 }
 
-std::vector<std::string> string_to_vector(const std::string &string) {
-
-  std::string str(string.begin(), string.end());
-
-  // Remove the surrounding brackets '[' and ']'
-  if (!str.empty() && str.front() == '[')
-    str.erase(0, 1); // Remove '['
-  if (!str.empty() && str.back() == ']')
-    str.pop_back(); // Remove ']'
-
-  // Split by comma and trim whitespace
-  std::vector<std::string> result;
-  std::istringstream stream(str);
-  std::string token;
-
-  while (std::getline(stream, token, ',')) {
-    // Trim whitespace around the token
-    token.erase(0, token.find_first_not_of(" \t")); // Trim left
-    token.erase(token.find_last_not_of(" \t") + 1); // Trim right
-    result.push_back(token);
-  }
-
-  return result;
-}
-
 struct Metadata Llama::get_metadata() {
 
   std::map<std::string, std::string> gguf_types = {
@@ -253,13 +228,6 @@ struct Metadata Llama::get_metadata() {
   metadata.general.repo_url = this->get_metadata("general.repo_url", 128);
   metadata.general.doi = this->get_metadata("general.doi", 64);
   metadata.general.uuid = this->get_metadata("general.uuid", 64);
-
-  metadata.general.tags =
-      string_to_vector(this->get_metadata("general.tags", 128));
-  metadata.general.languages =
-      string_to_vector(this->get_metadata("general.languages", 64));
-  metadata.general.datasets =
-      string_to_vector(this->get_metadata("general.datasets", 128));
 
   std::string file_type = this->get_metadata("general.file_type", 32);
   if (gguf_types.find(file_type) == gguf_types.end()) {
@@ -324,23 +292,6 @@ struct Metadata Llama::get_metadata() {
 
   // tokenizer metadata
   metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
-
-  metadata.tokenizer.tokens =
-      string_to_vector(this->get_metadata("tokenizer.ggml.tokens", 4096));
-  metadata.tokenizer.merges =
-      string_to_vector(this->get_metadata("tokenizer.ggml.merges", 4096));
-  metadata.tokenizer.added_tokens =
-      string_to_vector(this->get_metadata("tokenizer.ggml.added_tokens", 4096));
-
-  for (std::string ele : string_to_vector(
-           this->get_metadata("tokenizer.ggml.token_type", 4096))) {
-    metadata.tokenizer.token_type.push_back(std::stoi(ele));
-  }
-
-  for (std::string ele :
-       string_to_vector(this->get_metadata("tokenizer.ggml.scores", 4096))) {
-    metadata.tokenizer.scores.push_back(std::stof(ele));
-  }
 
   std::string bos_token_id =
       this->get_metadata("tokenizer.ggml.bos_token_id", 16);
