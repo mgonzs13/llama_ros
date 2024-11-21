@@ -22,7 +22,8 @@
 
 
 import operator
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
+from pydantic import model_validator
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from llama_msgs.srv import RerankDocuments
@@ -31,10 +32,17 @@ from llama_ros.llama_client_node import LlamaClientNode
 
 class LlamaROSReranker(BaseDocumentCompressor):
 
+    llama_client: LlamaClientNode = None
     top_n: int = 3
 
     class Config:
         arbitrary_types_allowed = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Dict:
+        values["llama_client"] = LlamaClientNode.get_instance()
+        return values
 
     def compress_documents(
         self,
@@ -49,7 +57,7 @@ class LlamaROSReranker(BaseDocumentCompressor):
         for doc in documents:
             req.documents.append(doc.page_content)
 
-        scores = LlamaClientNode.get_instance().rerank_documents(req).scores
+        scores = self.llama_client.rerank_documents(req).scores
         scored_docs = list(zip(documents, scores))
         result = sorted(scored_docs, key=operator.itemgetter(1), reverse=True)
         return [doc for doc, _ in result[: self.top_n]]

@@ -27,7 +27,6 @@ import cv2
 import numpy as np
 
 from llama_ros.langchain import LlamaROSCommon
-from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.msg import Message
 from llama_msgs.srv import FormatChatMessages
 from action_msgs.msg import GoalStatus
@@ -39,6 +38,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -101,7 +101,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             formatted_prompt, stop, image_url, image, **kwargs
         )
 
-        result, status = LlamaClientNode.get_instance().generate_response(goal_action)
+        result, status = self.llama_client.generate_response(goal_action)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
@@ -126,9 +126,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             formatted_prompt, stop, image_url, image, **kwargs
         )
 
-        for pt in LlamaClientNode.get_instance().generate_response(
-            goal_action, stream=True
-        ):
+        for pt in self.llama_client.generate_response(goal_action, stream=True):
 
             if run_manager:
                 run_manager.on_llm_new_token(
