@@ -178,24 +178,24 @@ std::string Llama::get_metadata(const std::string &model_name,
 
 int Llama::get_int_metadata(const std::string &key, size_t size) {
   std::string value = this->get_metadata(key, size);
-  return !value.empty() ? std::stoi(value) : -1;
+  return !value.empty() ? std::stoi(value) : 0;
 }
 
 int Llama::get_int_metadata(const std::string &model_name,
                             const std::string &key, size_t size) {
   std::string value = this->get_metadata(model_name, key, size);
-  return !value.empty() ? std::stoi(value) : -1;
+  return !value.empty() ? std::stoi(value) : 0;
 }
 
 float Llama::get_float_metadata(const std::string &key, size_t size) {
   std::string value = this->get_metadata(key, size);
-  return !value.empty() ? std::stof(value) : -1.0;
+  return !value.empty() ? std::stof(value) : 0.0;
 }
 
 float Llama::get_float_metadata(const std::string &model_name,
                                 const std::string &key, size_t size) {
   std::string value = this->get_metadata(model_name, key, size);
-  return !value.empty() ? std::stof(value) : -1.0;
+  return !value.empty() ? std::stof(value) : 0.0;
 }
 
 struct Metadata Llama::get_metadata() {
@@ -280,7 +280,7 @@ struct Metadata Llama::get_metadata() {
   metadata.model.expert_used_count = this->get_int_metadata(
       metadata.general.architecture, ".expert_used_count", 16);
 
-  // llm attention
+  // llm attention metadata
   metadata.model.attention.head_count = this->get_int_metadata(
       metadata.general.architecture, ".attention.head_count", 16);
   metadata.model.attention.head_count_kv = this->get_int_metadata(
@@ -300,6 +300,23 @@ struct Metadata Llama::get_metadata() {
       metadata.general.architecture, ".attention.key_length", 16);
   metadata.model.attention.value_length = this->get_int_metadata(
       metadata.general.architecture, ".attention.value_length", 16);
+
+  // rope metadata
+  metadata.model.rope.dimension_count = this->get_int_metadata(
+      metadata.general.architecture, ".rope.dimension_count", 16);
+  metadata.model.rope.freq_base = this->get_float_metadata(
+      metadata.general.architecture, ".rope.freq_base", 16);
+
+  metadata.model.rope.scaling_type = this->get_metadata(
+      metadata.general.architecture, ".rope.scaling.type", 16);
+  metadata.model.rope.scaling_factor = this->get_float_metadata(
+      metadata.general.architecture, ".rope.scaling.factor", 16);
+  metadata.model.rope.scaling_original_context_length =
+      this->get_int_metadata(metadata.general.architecture,
+                             ".rope.scaling.original_context_length", 16);
+  metadata.model.rope.scaling_finetuned =
+      this->get_metadata(metadata.general.architecture,
+                         ".rope.scaling.finetuned", 8) == "true";
 
   // tokenizer metadata
   metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);

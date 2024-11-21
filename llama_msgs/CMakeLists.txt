@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GeneralInfo.msg"
   "msg/TokenizerInfo.msg"
   "msg/AttentionInfo.msg"
+  "msg/RoPEInfo.msg"
   "msg/ModelInfo.msg"
   "msg/Metadata.msg"
   "action/GenerateResponse.action"

@@ -285,6 +285,17 @@ void LlamaNode::get_metadata_service_callback(
   metadata_msg.model.attention.value_length =
       metadata.model.attention.value_length;
 
+  // rope
+  metadata_msg.model.rope.dimension_count = metadata.model.rope.dimension_count;
+  metadata_msg.model.rope.freq_base = metadata.model.rope.freq_base;
+
+  metadata_msg.model.rope.scaling_type = metadata.model.rope.scaling_type;
+  metadata_msg.model.rope.scaling_factor = metadata.model.rope.scaling_factor;
+  metadata_msg.model.rope.scaling_original_context_length =
+      metadata.model.rope.scaling_original_context_length;
+  metadata_msg.model.rope.scaling_finetuned =
+      metadata.model.rope.scaling_finetuned;
+
   // tokenizer
   metadata_msg.tokenizer.model = metadata.tokenizer.model;
 

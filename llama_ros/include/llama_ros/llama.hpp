@@ -128,6 +128,16 @@ struct Metadata {
     uint32_t value_length;
   };
 
+  struct RoPEInfo {
+    uint64_t dimension_count;
+    float freq_base;
+
+    std::string scaling_type;
+    float scaling_factor;
+    uint32_t scaling_original_context_length;
+    bool scaling_finetuned;
+  };
+
   struct ModelInfo {
     uint64_t context_length;
     uint64_t embedding_length;
@@ -141,6 +151,7 @@ struct Metadata {
     uint32_t expert_used_count;
 
     AttentionInfo attention;
+    RoPEInfo rope;
   };
 
   struct TokenizerInfo {

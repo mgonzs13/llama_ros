@@ -10,3 +10,4 @@ uint32 expert_count                  # Number of experts in MoE models (optional
 uint32 expert_used_count             # Number of experts used during each token token evaluation (optional for non-MoE arches)
 
 AttentionInfo attention              # Attention info for the model
+RoPEInfo rope                        # RoPE info for the model
