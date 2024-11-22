@@ -6,5 +6,6 @@ var searchData=
   ['text_5fcb_3',['text_cb',['../classllama__demos_1_1llama__demo__node_1_1LlamaDemoNode.html#aab442b36de9fb01cbca17b41c860f20b',1,'llama_demos.llama_demo_node.LlamaDemoNode.text_cb()'],['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#aaca7d1da047ac6424d0a50b806dc2455',1,'llama_demos.llava_demo_node.LlavaDemoNode.text_cb()']]],
   ['tokenize_4',['tokenize',['../classllama__ros_1_1Llama.html#a5a2ed6b1b03a1137f5f964336515f714',1,'llama_ros::Llama::tokenize()'],['../classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a31089d801cca7bf163f6961e5907f011',1,'llama_ros.llama_client_node.LlamaClientNode.tokenize()']]],
   ['tokenize_5fservice_5fcallback_5',['tokenize_service_callback',['../classllama__ros_1_1LlamaNode.html#a3b5b5d613ed74a8e6293643158fb15f7',1,'llama_ros::LlamaNode']]],
-  ['truncate_5ftokens_6',['truncate_tokens',['../classllama__ros_1_1Llama.html#a8a0ab58256927d8658e55350633ebb59',1,'llama_ros::Llama']]]
+  ['trim_6',['trim',['../llama_8cpp.html#a5a01f705cc7b4a7317a57f6bf41aef25',1,'llama.cpp']]],
+  ['truncate_5ftokens_7',['truncate_tokens',['../classllama__ros_1_1Llama.html#a8a0ab58256927d8658e55350633ebb59',1,'llama_ros::Llama']]]
 ];
