@@ -871,6 +871,10 @@ StopType Llama::find_stop_word(
     completion_text.append(trim(this->detokenize({c.token})));
   }
 
+  if (completion_text.empty()) {
+    return NO_STOP;
+  }
+
   for (size_t i = 0; i < completion_text.size() && i < stopping_word.size();
        i++) {
     if (completion_text.at(i) != stopping_word.at(i)) {
