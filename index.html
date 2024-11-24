@@ -121,18 +121,18 @@ Related Projects</h1>
 <h1><a class="anchor" id="autotoc_md3"></a>
 Installation</h1>
 <p>To run <a class="el" href="namespacellama__ros.html">llama_ros</a> with CUDA, first, you must install the <a href="https://developer.nvidia.com/cuda-toolkit">CUDA Toolkit</a>. Then, you can compile <a class="el" href="namespacellama__ros.html">llama_ros</a> with <code>--cmake-args -DGGML_CUDA=ON</code> to enable CUDA support.</p>
-<div class="fragment"><div class="line">$ cd ~/ros2_ws/src</div>
-<div class="line">$ git clone https://github.com/mgonzs13/llama_ros.git</div>
-<div class="line">$ pip3 install -r llama_ros/requirements.txt</div>
-<div class="line">$ cd ~/ros2_ws</div>
-<div class="line">$ rosdep install --from-paths src --ignore-src -r -y</div>
-<div class="line">$ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA</div>
+<div class="fragment"><div class="line">cd ~/ros2_ws/src</div>
+<div class="line">git clone https://github.com/mgonzs13/llama_ros.git</div>
+<div class="line">pip3 install -r llama_ros/requirements.txt</div>
+<div class="line">cd ~/ros2_ws</div>
+<div class="line">rosdep install --from-paths src --ignore-src -r -y</div>
+<div class="line">colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md4"></a>
 Docker</h1>
 <p>Build the <a class="el" href="namespacellama__ros.html">llama_ros</a> docker or download an image from <a href="https://hub.docker.com/repository/docker/mgons/llama_ros">DockerHub</a>. You can choose to build <a class="el" href="namespacellama__ros.html">llama_ros</a> with CUDA (<code>USE_CUDA</code>) and choose the CUDA version (<code>CUDA_VERSION</code>). Remember that you have to use <code>DOCKER_BUILDKIT=0</code> to compile <a class="el" href="namespacellama__ros.html">llama_ros</a> with CUDA when building the image.</p>
-<div class="fragment"><div class="line">$ DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .</div>
+<div class="fragment"><div class="line">DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .</div>
 </div><!-- fragment --><p>Run the docker container. If you want to use CUDA, you have to install the <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">NVIDIA Container Tollkit</a> and add <code>--gpus all</code>.</p>
-<div class="fragment"><div class="line">$ docker run -it --rm --gpus all llama_ros</div>
+<div class="fragment"><div class="line">docker run -it --rm --gpus all llama_ros</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md5"></a>
 Usage</h1>
 <h2><a class="anchor" id="autotoc_md6"></a>
@@ -141,7 +141,7 @@ llama_cli</h2>
 <h3><a class="anchor" id="autotoc_md7"></a>
 launch</h3>
 <p>Using this command launch a LLM from a YAML file. The configuration of the YAML is used to launch the LLM in the same way as using a regular launch file. Here is an example of how to use it:</p>
-<div class="fragment"><div class="line">$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml</div>
+<div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml</div>
 </div><!-- fragment --><h3><a class="anchor" id="autotoc_md8"></a>
 prompt</h3>
 <p>Using this command send a prompt to a launched LLM. The command uses a string, which is the prompt and has the following arguments:</p>
@@ -151,7 +151,7 @@ prompt</h3>
 <li>(<code>--image-url</code>): Image url to sent to a VLM</li>
 </ul>
 <p>Here is an example of how to use it:</p>
-<div class="fragment"><div class="line">$ ros2 llama prompt &quot;Do you know ROS 2?&quot; -t 0.0</div>
+<div class="fragment"><div class="line">ros2 llama prompt &quot;Do you know ROS 2?&quot; -t 0.0</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md9"></a>
 Launch Files</h2>
 <p>First of all, you need to create a launch file to use <a class="el" href="namespacellama__ros.html">llama_ros</a> or <a class="el" href="namespacellava__ros.html">llava_ros</a>. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the <a href="llama_bringup/launch">predefined launch files</a>.</p>
@@ -182,7 +182,7 @@ Click to expand</summary>
 <div class="line">        )</div>
 <div class="line">    ])</div>
 <div class="ttc" id="anamespacellama__bringup_1_1utils_html"><div class="ttname"><a href="namespacellama__bringup_1_1utils.html">llama_bringup.utils</a></div><div class="ttdef"><b>Definition</b> utils.py:1</div></div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 launch llama_bringup marcoroni.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 launch llama_bringup marcoroni.launch.py</div>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md11"></a>
@@ -212,7 +212,7 @@ Click to expand</summary>
 <div class="line">        create_llama_launch_from_yaml(os.path.join(</div>
 <div class="line">            get_package_share_directory(<span class="stringliteral">&quot;llama_bringup&quot;</span>), <span class="stringliteral">&quot;models&quot;</span>, <span class="stringliteral">&quot;Spaetzle.yaml&quot;</span>))</div>
 <div class="line">    ])</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 launch llama_bringup spaetzle.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 launch llama_bringup spaetzle.launch.py</div>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md12"></a>
@@ -231,7 +231,7 @@ Click to expand</summary>
 <div class="line">model_filename: &quot;qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf&quot; # model shard file in repo</div>
 <div class="line"> </div>
 <div class="line">system_prompt_type: &quot;ChatML&quot; # system prompt type</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 llama launch Qwen2.yaml</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 llama launch Qwen2.yaml</div>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md13"></a>
@@ -264,7 +264,7 @@ Click to expand</summary>
 <div class="line">            system_prompt_type=<span class="stringliteral">&quot;Mistral&quot;</span> <span class="comment"># system prompt type</span></div>
 <div class="line">        )</div>
 <div class="line">    ])</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 launch llama_bringup llava.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 launch llama_bringup llava.launch.py</div>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md14"></a>
@@ -294,7 +294,7 @@ Click to expand</summary>
 <div class="line">            get_package_share_directory(<span class="stringliteral">&quot;llama_bringup&quot;</span>),</div>
 <div class="line">            <span class="stringliteral">&quot;models&quot;</span>, <span class="stringliteral">&quot;llava-1.6-mistral-7b-gguf.yaml&quot;</span>))</div>
 <div class="line">    ])</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 launch llama_bringup llava.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 launch llama_bringup llava.launch.py</div>
 </div><!-- fragment --><p></p>
 </details>
 <h2><a class="anchor" id="autotoc_md15"></a>
@@ -785,27 +785,27 @@ Click to expand</summary>
 Demos</h1>
 <h2><a class="anchor" id="autotoc_md31"></a>
 LLM Demo</h2>
-<div class="fragment"><div class="line">$ ros2 launch llama_bringup spaetzle.launch.py</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 run llama_demos llama_demo_node --ros-args -p prompt:=&quot;your prompt&quot;</div>
+<div class="fragment"><div class="line">ros2 launch llama_bringup spaetzle.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_demo_node --ros-args -p prompt:=&quot;your prompt&quot;</div>
 </div><!-- fragment --><p><a href="https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4">https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4</a></p>
 <h2><a class="anchor" id="autotoc_md32"></a>
 Embeddings Generation Demo</h2>
-<div class="fragment"><div class="line">$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 run llama_demos llama_embeddings_demo_node</div>
+<div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_embeddings_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced">https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced</a></p>
 <h2><a class="anchor" id="autotoc_md33"></a>
 Reranking Demo</h2>
-<div class="fragment"><div class="line">$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 run llama_demos llama_rerank_demo_node</div>
+<div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_rerank_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484">https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484</a></p>
 <h2><a class="anchor" id="autotoc_md34"></a>
 VLM Demo</h2>
-<div class="fragment"><div class="line">$ ros2 launch llama_bringup minicpm-2.6.launch.py</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 run llama_demos llava_demo_node --ros-args -p prompt:=&quot;your prompt&quot; -p image_url:=&quot;url of the image&quot; -p use_image:=&quot;whether to send the image&quot;</div>
+<div class="fragment"><div class="line">ros2 launch llama_bringup minicpm-2.6.launch.py</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llava_demo_node --ros-args -p prompt:=&quot;your prompt&quot; -p image_url:=&quot;url of the image&quot; -p use_image:=&quot;whether to send the image&quot;</div>
 </div><!-- fragment --><p><a href="https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c">https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c</a></p>
 <h2><a class="anchor" id="autotoc_md35"></a>
 Chat Template Demo</h2>
-<div class="fragment"><div class="line">$ ros2 llama launch MiniCPM-2.6.yaml</div>
+<div class="fragment"><div class="line">ros2 llama launch MiniCPM-2.6.yaml</div>
 </div><!-- fragment --><details >
 <summary >
 Click to expand MiniCPM-2.6</summary>
@@ -830,13 +830,13 @@ Click to expand MiniCPM-2.6</summary>
 <div class="line">stopping_words: [&quot;&lt;|im_end|&gt;&quot;]</div>
 </div><!-- fragment --><p></p>
 </details>
-<div class="fragment"><div class="line">$ ros2 run llama_demos chatllama_demo_node</div>
+<div class="fragment"><div class="line">ros2 run llama_demos chatllama_demo_node</div>
 </div><!-- fragment --><p><a href="https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20240830T081232Z&amp;X-Amz-Expires=300&amp;X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&amp;X-Amz-SignedHeaders=host&amp;actor_id=55236157&amp;key_id=0&amp;repo_id=622137360">ChatLlamaROS demo</a></p>
 <h3><a class="anchor" id="autotoc_md36"></a>
 Full Demo (LLM + chat template + RAG + Reranking + Stream)</h3>
-<div class="fragment"><div class="line">$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
-</div><!-- fragment --><div class="fragment"><div class="line">$ ros2 llama launch Llama-3.yaml</div>
+<div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
+</div><!-- fragment --><div class="fragment"><div class="line">ros2 llama launch Llama-3.yaml</div>
 </div><!-- fragment --><details >
 <summary >
 Click to expand Llama-3.yaml</summary>
@@ -853,7 +853,7 @@ Click to expand Llama-3.yaml</summary>
 <div class="line">stopping_words: [&quot;&lt;|eot_id|&gt;&quot;]</div>
 </div><!-- fragment --><p></p>
 </details>
-<div class="fragment"><div class="line">$ ros2 run llama_demos llama_rag_demo_node</div>
+<div class="fragment"><div class="line">ros2 run llama_demos llama_rag_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6">https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6</a> </p>
 </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
