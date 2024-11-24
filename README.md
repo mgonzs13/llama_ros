@@ -35,12 +35,12 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you can compile llama_ros with `--cmake-args -DGGML_CUDA=ON` to enable CUDA support.
 
 ```shell
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/mgonzs13/llama_ros.git
-$ pip3 install -r llama_ros/requirements.txt
-$ cd ~/ros2_ws
-$ rosdep install --from-paths src --ignore-src -r -y
-$ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
+cd ~/ros2_ws/src
+git clone https://github.com/mgonzs13/llama_ros.git
+pip3 install -r llama_ros/requirements.txt
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 ```
 
 ## Docker
@@ -50,13 +50,13 @@ Build the llama_ros docker or download an image from [DockerHub](https://hub.doc
 <!-- To build using CUDA you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [configure the default runtime to NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/1.12.1/user-guide.html#daemon-configuration-file). -->
 
 ```shell
-$ DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
+DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
 ```
 
 Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.
 
 ```shell
-$ docker run -it --rm --gpus all llama_ros
+docker run -it --rm --gpus all llama_ros
 ```
 
 ## Usage
@@ -70,7 +70,7 @@ Commands are included in llama_ros to speed up the test of GGUF-based LLMs withi
 Using this command launch a LLM from a YAML file. The configuration of the YAML is used to launch the LLM in the same way as using a regular launch file. Here is an example of how to use it:
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/StableLM-Zephyr.yaml
 ```
 
 #### prompt
@@ -84,7 +84,7 @@ Using this command send a prompt to a launched LLM. The command uses a string, w
 Here is an example of how to use it:
 
 ```shell
-$ ros2 llama prompt "Do you know ROS 2?" -t 0.0
+ros2 llama prompt "Do you know ROS 2?" -t 0.0
 ```
 
 ### Launch Files
@@ -120,7 +120,7 @@ def generate_launch_description():
 ```
 
 ```shell
-$ ros2 launch llama_bringup marcoroni.launch.py
+ros2 launch llama_bringup marcoroni.launch.py
 ```
 
 </details>
@@ -158,7 +158,7 @@ def generate_launch_description():
 ```
 
 ```shell
-$ ros2 launch llama_bringup spaetzle.launch.py
+ros2 launch llama_bringup spaetzle.launch.py
 ```
 
 </details>
@@ -182,7 +182,7 @@ system_prompt_type: "ChatML" # system prompt type
 ```
 
 ```shell
-$ ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen2.yaml
 ```
 
 </details>
@@ -220,7 +220,7 @@ def generate_launch_description():
 ```
 
 ```shell
-$ ros2 launch llama_bringup llava.launch.py
+ros2 launch llama_bringup llava.launch.py
 ```
 
 </details>
@@ -258,7 +258,7 @@ def generate_launch_description():
 ```
 
 ```shell
-$ ros2 launch llama_bringup llava.launch.py
+ros2 launch llama_bringup llava.launch.py
 ```
 
 </details>
@@ -783,11 +783,11 @@ rclpy.shutdown()
 ### LLM Demo
 
 ```shell
-$ ros2 launch llama_bringup spaetzle.launch.py
+ros2 launch llama_bringup spaetzle.launch.py
 ```
 
 ```shell
-$ ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
+ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
 ```
 
 <!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
@@ -797,11 +797,11 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 ### Embeddings Generation Demo
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
 ```
 
 ```shell
-$ ros2 run llama_demos llama_embeddings_demo_node
+ros2 run llama_demos llama_embeddings_demo_node
 ```
 
 https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
@@ -809,11 +809,11 @@ https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
 ### Reranking Demo
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
 ```
 
 ```shell
-$ ros2 run llama_demos llama_rerank_demo_node
+ros2 run llama_demos llama_rerank_demo_node
 ```
 
 https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
@@ -821,11 +821,11 @@ https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 ### VLM Demo
 
 ```shell
-$ ros2 launch llama_bringup minicpm-2.6.launch.py
+ros2 launch llama_bringup minicpm-2.6.launch.py
 ```
 
 ```shell
-$ ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p image_url:="url of the image" -p use_image:="whether to send the image"
+ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p image_url:="url of the image" -p use_image:="whether to send the image"
 ```
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
@@ -833,7 +833,7 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-76
 ### Chat Template Demo
 
 ```shell
-$ ros2 llama launch MiniCPM-2.6.yaml
+ros2 llama launch MiniCPM-2.6.yaml
 ```
 
 <details>
@@ -863,7 +863,7 @@ stopping_words: ["<|im_end|>"]
 </details>
 
 ```shell
-$ ros2 run llama_demos chatllama_demo_node
+ros2 run llama_demos chatllama_demo_node
 ```
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
@@ -871,15 +871,15 @@ $ ros2 run llama_demos chatllama_demo_node
 #### Full Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
 ```
 
 ```shell
-$ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
 ```
 
 ```shell
-$ ros2 llama launch Llama-3.yaml
+ros2 llama launch Llama-3.yaml
 ```
 
 <details>
@@ -901,7 +901,7 @@ stopping_words: ["<|eot_id|>"]
 </details>
 
 ```shell
-$ ros2 run llama_demos llama_rag_demo_node
+ros2 run llama_demos llama_rag_demo_node
 ```
 
 https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6
