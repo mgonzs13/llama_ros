@@ -27,8 +27,9 @@
 #include <thread>
 
 #include "common.h"
-#include "llama_ros/llama.hpp"
 #include "sampling.h"
+
+#include "llama_ros/llama.hpp"
 
 using namespace llama_ros;
 
@@ -89,7 +90,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   // create the sampler
   this->sampler = common_sampler_init(this->model, this->params.sparams);
   if (!this->sampler) {
-    LLAMA_LOG_ERROR("Failed to initialize sampling subsystem");
+    LLAMA_LOG_ERROR("Failed to initialize sampler");
     return;
   }
 

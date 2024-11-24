@@ -30,6 +30,7 @@
 #include <string>
 
 #include "common.h"
+
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_ros/llama_node.hpp"
 #include "llava_ros/llava.hpp"

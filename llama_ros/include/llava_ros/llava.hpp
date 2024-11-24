@@ -31,10 +31,9 @@
 
 #include "clip.h"
 #include "common.h"
-#include "ggml.h"
-#include "llama.h"
-#include "llama_ros/llama.hpp"
 #include "llava.h"
+
+#include "llama_ros/llama.hpp"
 
 namespace llava_ros {
 
