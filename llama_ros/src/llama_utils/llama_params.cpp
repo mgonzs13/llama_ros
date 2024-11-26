@@ -85,9 +85,9 @@ void llama_utils::declare_llama_params(
                                                 {"image_text", "<image>"},
                                             });
   node->declare_parameter<std::vector<std::string>>(
+      "devices", std::vector<std::string>({}));
+  node->declare_parameter<std::vector<std::string>>(
       "lora_adapters", std::vector<std::string>({}));
-  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
-                                               std::vector<double>({}));
   node->declare_parameter<std::vector<std::string>>(
       "stopping_words", std::vector<std::string>({}));
   node->declare_parameters<float>("", {
@@ -101,6 +101,8 @@ void llama_utils::declare_llama_params(
                                       });
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
+  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
+                                               std::vector<double>({}));
   node->declare_parameters<bool>("", {
                                          {"debug", true},
                                          {"embedding", false},
@@ -125,9 +127,12 @@ struct LlamaParams llama_utils::get_llama_params(
   int32_t poll;
   int32_t poll_batch;
 
+  std::vector<std::string> stopping_words;
+
   std::vector<std::string> lora_adapters;
   std::vector<double> lora_adapters_scales;
-  std::vector<std::string> stopping_words;
+
+  std::vector<std::string> devices;
   std::vector<double> tensor_split;
 
   std::string cpu_mask;
@@ -151,6 +156,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("n_batch", params.params.n_batch);
   node->get_parameter("n_ubatch", params.params.n_ubatch);
 
+  node->get_parameter("devices", devices);
   node->get_parameter("n_gpu_layers", params.params.n_gpu_layers);
   node->get_parameter("split_mode", split_mode);
   node->get_parameter("main_gpu", params.params.main_gpu);
@@ -230,6 +236,21 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.sampling.seed = LLAMA_DEFAULT_SEED;
   } else {
     params.params.sampling.seed = seed;
+  }
+
+  // devices
+  for (const std::string &d : devices) {
+
+    if (!d.empty()) {
+      auto *dev = ggml_backend_dev_by_name(d.c_str());
+
+      if (!dev || ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
+        throw std::invalid_argument(
+            string_format("invalid device: %s", d.c_str()));
+      }
+
+      params.params.devices.push_back(dev);
+    }
   }
 
   // check threads number

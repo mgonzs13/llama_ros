@@ -42,6 +42,7 @@ def generate_launch_description():
             "n_batch": LaunchConfiguration("n_batch", default=2048),
             "n_ubatch": LaunchConfiguration("n_batch", default=512),
             # GPU params
+            "devices": LaunchConfiguration("devices", default="['']"),
             "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
             "split_mode": LaunchConfiguration("split_mode", default="layer"),
             "main_gpu": LaunchConfiguration("main_gpu", default=0),
@@ -92,12 +93,9 @@ def generate_launch_description():
             "n_keep": LaunchConfiguration("n_keep", default=-1),
             # paths params
             "model": LaunchConfiguration("model", default=""),
-            "lora_adapters": ParameterValue(
-                LaunchConfiguration("lora_adapters", default=[""]), value_type=List[str]
-            ),
-            "lora_adapters_scales": ParameterValue(
-                LaunchConfiguration("lora_adapters_scales", default=[0.0]),
-                value_type=List[float],
+            "lora_adapters": LaunchConfiguration("lora_adapters", default="['']"),
+            "lora_adapters_scales": LaunchConfiguration(
+                "lora_adapters_scales", default="[0.0]"
             ),
             "mmproj": LaunchConfiguration("mmproj", default=""),
             "numa": LaunchConfiguration("numa", default="none"),
@@ -109,10 +107,7 @@ def generate_launch_description():
             "suffix": ParameterValue(
                 LaunchConfiguration("suffix", default=""), value_type=str
             ),
-            "stopping_words": ParameterValue(
-                LaunchConfiguration("stopping_words", default=[""]),
-                value_type=List[str],
-            ),
+            "stopping_words": LaunchConfiguration("stopping_words", default="['']"),
             "image_prefix": ParameterValue(
                 LaunchConfiguration("image_prefix", default=""), value_type=str
             ),
