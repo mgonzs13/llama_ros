@@ -207,7 +207,7 @@ public:
 
   struct ResponseOutput
   generate_response(const std::string &input_prompt,
-                    struct common_sampler_params sparams,
+                    struct common_params_sampling sparams,
                     GenerateResponseCallback callbakc = nullptr,
                     std::vector<std::string> stop = {});
   struct ResponseOutput

@@ -88,7 +88,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
 
   // create the sampler
-  this->sampler = common_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sampling);
   if (!this->sampler) {
     LLAMA_LOG_ERROR("Failed to initialize sampler");
     return;
@@ -624,12 +624,12 @@ struct ResponseOutput
 Llama::generate_response(const std::string &input_prompt,
                          GenerateResponseCallback callback,
                          std::vector<std::string> stop) {
-  struct common_sampler_params sparams;
+  struct common_params_sampling sparams;
   return this->generate_response(input_prompt, sparams, callback, stop);
 }
 
 struct ResponseOutput Llama::generate_response(
-    const std::string &input_prompt, struct common_sampler_params sparams,
+    const std::string &input_prompt, struct common_params_sampling sparams,
     GenerateResponseCallback callback, std::vector<std::string> stop) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
@@ -647,13 +647,13 @@ struct ResponseOutput Llama::generate_response(
   stop_concat.insert(stop_concat.end(), stop.begin(), stop.end());
 
   // create sampler
-  this->params.sparams = sparams;
+  this->params.sampling = sparams;
 
   if (this->sampler != nullptr) {
     common_sampler_free(this->sampler);
   }
 
-  this->sampler = common_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sampling);
 
   if (this->sampler == nullptr) {
     output.stop = StopType::ABORT;
@@ -665,7 +665,7 @@ struct ResponseOutput Llama::generate_response(
 
   // show sampling info
   if (this->debug) {
-    LLAMA_LOG_INFO("Sampler params: %s", this->params.sparams.print().c_str());
+    LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
     LLAMA_LOG_INFO("Sampler constr: %s",
                    common_sampler_print(this->sampler).c_str());
 
@@ -1041,7 +1041,7 @@ std::vector<struct TokenProb> Llama::get_probs() {
 
   const auto *cur_p = common_sampler_get_candidates(this->sampler);
 
-  const int32_t n_probs = this->params.sparams.n_probs;
+  const int32_t n_probs = this->params.sampling.n_probs;
 
   for (int i = 0; i < n_probs; ++i) {
     probs.push_back({

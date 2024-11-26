@@ -227,9 +227,9 @@ struct LlamaParams llama_utils::get_llama_params(
 
   // seed
   if (seed < 0) {
-    params.params.sparams.seed = LLAMA_DEFAULT_SEED;
+    params.params.sampling.seed = LLAMA_DEFAULT_SEED;
   } else {
-    params.params.sparams.seed = seed;
+    params.params.sampling.seed = seed;
   }
 
   // check threads number
@@ -406,10 +406,10 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
   return GGML_SCHED_PRIO_NORMAL;
 }
 
-struct common_sampler_params llama_utils::parse_sampling_params(
+struct common_params_sampling llama_utils::parse_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct common_sampler_params sparams;
+  struct common_params_sampling sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
