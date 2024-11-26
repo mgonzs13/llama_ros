@@ -97,7 +97,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["llama_client"] = LlamaClientNode.get_instance()
-        values["model_metadata"] = values["llama_client"].get_metadata(GetMetadata.Request()).metadata
+        values["model_metadata"] = values["llama_client"].get_metadata(GetMetadata.Request()).metadata        
         return values
 
     def cancel(self) -> None:
@@ -109,6 +109,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         stop: Optional[List[str]] = None,
         image_url: Optional[str] = None,
         image: Optional[np.ndarray] = None,
+        tools_grammar: Optional[str] = None,
     ) -> GenerateResponse.Result:
 
         goal = GenerateResponse.Goal()
@@ -175,7 +176,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.samplers_sequence = self.samplers_sequence
 
         goal.sampling_config.grammar = self.grammar
-        goal.sampling_config.grammar_schema = self.grammar_schema
+        goal.sampling_config.grammar_schema = tools_grammar if tools_grammar else self.grammar_schema
 
         goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
