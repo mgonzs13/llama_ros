@@ -264,6 +264,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[Union[Dict[str, Dict], bool, str]] = None,
+        method: Literal["function_calling", "json_schema", "json_mode"] = "function_calling",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model
@@ -279,48 +280,67 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             formatted_tools.append(convert_to_openai_tool(tool)['function'])
                         
         tool_names = [ft['name'] for ft in formatted_tools]
-        if tool_choice:
-            if isinstance(tool_choice, dict):
-                if not any(
-                    tool_choice == name for name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice=} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-            elif isinstance(tool_choice, str):
-                valid_choices = ["all", "one", "any"]
+        valid_choices = ["all", "one", "any"]
+        
+        is_valid_choice = tool_choice in valid_choices
+        
+        chosen_tool = [
+            f for f in formatted_tools if f["name"] == tool_choice
+        ]
                 
-                is_valid_choice = tool_choice in valid_choices
-                
-                chosen_tool = [
-                    f for f in formatted_tools if f["name"] == tool_choice
-                ]
-                
-                if not chosen_tool and not is_valid_choice:
-                    raise ValueError(
-                        f"Tool choice {tool_choice=} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-                    
-                tool_choice = formatted_tools[0]
-            elif isinstance(tool_choice, bool):
-                if len(formatted_tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be specified when a single tool is "
-                        f"passed in. Received {len(tools)} tools."
-                    )
-                tool_choice = formatted_tools[0]
+        if not chosen_tool and not is_valid_choice:
+            raise ValueError(
+                f"Tool choice {tool_choice=} was specified, but the only "
+                f"provided tools were {tool_names}."
+            )
+        
+        grammar = {}
+        
+        if method == "json_mode" or method == "json_schema":
+            grammar = chosen_tool[0]['parameters']
+        else:
+            grammar = {
+                "type": "object",
+                "properties": {
+                    "tool_calls": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "maxItems": 5
+                    }
+                },
+                "required": ["tool_calls"]
+            }
+            
+            if chosen_tool:
+                grammar["properties"]['tool_calls']["items"]['oneOf'] = []
+                new_action = {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "const": chosen_tool[0]["name"]},
+                        "arguments": chosen_tool[0]["parameters"]
+                    },
+                    "required": ["name", "arguments"]
+                }
+                grammar["properties"]['tool_calls']["items"]['oneOf'].append(new_action)
             else:
-                raise ValueError(
-                    """Unrecognized tool_choice type. Expected dict having format like 
-                    this {"type": "function", "function": {"name": <<tool_name>>}}"""
-                    f"Received: {tool_choice}"
-                )
+                grammar["properties"]['tool_calls']["items"][f'{tool_choice}Of'] = []
+                for tool in formatted_tools:
+                    new_action = {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "const": tool["name"]},
+                            "arguments": tool["parameters"]
+                        },
+                        "required": ["name", "arguments"]
+                    }
+                    grammar["properties"]['tool_calls']["items"][f'{tool_choice}Of'].append(new_action)
+        # grammar = None
 
         # kwargs["tool_choice"] = tool_choice
         # formatted_tools = [tool.model_json_schema() for tool in tools]
-        return super().bind(tools_grammar=json.dumps(tool_choice['parameters']), **kwargs)
+        return super().bind(tools_grammar=json.dumps(grammar), **kwargs)
 
 
     def with_structured_output(
@@ -347,7 +367,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             
             llm = self.bind_tools(
                 [schema],
-                tool_choice=tool_name
+                tool_choice=tool_name,
+                method=method
             )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
@@ -362,12 +383,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 )
             schema = convert_to_openai_tool(schema)['function']
             tool_name = schema["name"]  
-            
-            print(f"tool_name: {tool_name}")
-                        
+                                    
             llm = self.bind_tools(
                 [schema],
-                tool_choice=tool_name
+                tool_choice=tool_name,
+                method=method
             )   
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(

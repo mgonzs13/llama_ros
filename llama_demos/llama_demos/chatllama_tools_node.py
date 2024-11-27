@@ -31,7 +31,7 @@ import rclpy
 from rclpy.node import Node
 from llama_ros.langchain import ChatLlamaROS
 from langchain_core.messages import HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.tools import tool
 from random import randint
@@ -44,12 +44,12 @@ class City(BaseModel):
     # inhabitants: int = Field(..., description="Number of inhabitants")
 
 @tool
-def get_current_temperature(wheater_input: City) -> int:
+def get_inhabitants(city: str) -> int:
     """Get the current temperature of a city"""
-    return randint(-10, 40)
+    return randint(10000, 40000)
 
 @tool
-def get_max_temperature(wheater_input: City) -> int:
+def get_max_temperature(city: str) -> int:
     """Get the max temperature of a city"""
     return randint(20, 40)
 
@@ -76,6 +76,11 @@ class ChatLlamaToolsDemoNode(Node):
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
+                SystemMessagePromptTemplate.from_template(
+                    template=[
+                        {"type": "text", "text": "You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"},
+                    ]
+                ),
                 HumanMessagePromptTemplate.from_template(
                     template=[
                         {"type": "text", "text": "{prompt}"},
@@ -86,16 +91,20 @@ class ChatLlamaToolsDemoNode(Node):
                 
         llm_temperature = self.chat.with_structured_output(get_max_temperature, method="function_calling")
         llm_city = self.chat.with_structured_output(City, method="json_schema")
+        llm_tools = self.chat.bind_tools([get_inhabitants, get_max_temperature], tool_choice='any')
         
         temperature_chain = self.prompt | llm_temperature
         city_chain = self.prompt | llm_city
+        llm_tools = self.prompt | llm_tools
         
-        city_res = city_chain.invoke({"prompt": "What is the capital of Spain? And how many inhabitants does it have?"})
-        print(city_res)
+        # city_res = city_chain.invoke({"prompt": "What is the capital of Spain?"})
+        # print(city_res)
         
-        temperature_res = temperature_chain.invoke({"prompt": "What is the temperature in Madrid?"})
-        print(temperature_res)
+        # temperature_res = temperature_chain.invoke({"prompt": "What is the temperature in Madrid?"})
+        # print(temperature_res)
 
+        all_tools_res = llm_tools.invoke({"prompt": "What is the current temperature in Madrid? And its inhabitants?"})
+        print(all_tools_res)
 
 
 def main():
