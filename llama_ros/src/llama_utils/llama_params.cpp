@@ -104,7 +104,6 @@ void llama_utils::declare_llama_params(
   node->declare_parameter<std::vector<double>>("lora_adapters_scales",
                                                std::vector<double>({}));
   node->declare_parameters<bool>("", {
-                                         {"debug", true},
                                          {"embedding", false},
                                          {"reranking", false},
                                          {"logits_all", false},
@@ -229,7 +228,6 @@ struct LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
-  node->get_parameter("debug", params.debug);
 
   // seed
   if (seed < 0) {

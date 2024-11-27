@@ -43,7 +43,7 @@ LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.llava_params,
-                              this->params.system_prompt, this->params.debug);
+                              this->params.system_prompt);
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -59,9 +59,7 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
-    if (this->params.debug) {
-      RCLCPP_INFO(this->get_logger(), "Loading image");
-    }
+    RCLCPP_INFO(this->get_logger(), "Loading image");
 
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);

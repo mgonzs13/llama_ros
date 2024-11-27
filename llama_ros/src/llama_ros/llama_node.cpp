@@ -42,8 +42,8 @@ LlamaNode::LlamaNode()
     : rclcpp_lifecycle::LifecycleNode("llama_node"), params_declared(false) {}
 
 void LlamaNode::create_llama() {
-  this->llama = std::make_unique<Llama>(
-      this->params.params, this->params.system_prompt, this->params.debug);
+  this->llama =
+      std::make_unique<Llama>(this->params.params, this->params.system_prompt);
 }
 
 void LlamaNode::destroy_llama() {
@@ -346,18 +346,14 @@ void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
 
-  if (this->params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Generating embeddings");
-  }
+  RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
   auto embeddings =
       this->llama->generate_embeddings(request->prompt, request->normalization);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
 
-  if (this->params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Embeddings generated");
-  }
+  RCLCPP_INFO(this->get_logger(), "Embeddings generated");
 }
 
 /*
@@ -369,16 +365,12 @@ void LlamaNode::rerank_documents_service_callback(
     const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
 
-  if (this->params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Reranking documents...");
-  }
+  RCLCPP_INFO(this->get_logger(), "Reranking documents...");
 
   response->scores =
       this->llama->rank_documents(request->query, request->documents);
 
-  if (this->params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Reranking finished");
-  }
+  RCLCPP_INFO(this->get_logger(), "Reranking finished");
 }
 
 /*
@@ -503,9 +495,7 @@ void LlamaNode::execute(
     return;
   }
 
-  if (this->params.debug) {
-    RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
-  }
+  RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
 
   // reset llama
   if (reset) {

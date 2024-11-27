@@ -33,13 +33,10 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const struct common_params &params, std::string system_prompt,
-             bool debug)
-    : params(params), system_prompt(system_prompt), debug(debug) {
+Llama::Llama(const struct common_params &params, std::string system_prompt)
+    : params(params), system_prompt(system_prompt) {
 
-  if (this->debug) {
-    print_build_info();
-  }
+  print_build_info();
 
   // load model
   llama_backend_init();
@@ -664,14 +661,12 @@ struct ResponseOutput Llama::generate_response(
   this->load_prompt(input_prompt, true, true);
 
   // show sampling info
-  if (this->debug) {
-    LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
-    LLAMA_LOG_INFO("Sampler constr: %s",
-                   common_sampler_print(this->sampler).c_str());
+  LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
+  LLAMA_LOG_INFO("Sampler constr: %s",
+                 common_sampler_print(this->sampler).c_str());
 
-    LLAMA_LOG_INFO("Prompt tokens:\n%s",
-                   this->detokenize(this->prompt_tokens).c_str());
-  }
+  LLAMA_LOG_INFO("Prompt tokens:\n%s",
+                 this->detokenize(this->prompt_tokens).c_str());
 
   LLAMA_LOG_INFO("Starting Response Generation");
 
@@ -725,9 +720,7 @@ struct ResponseOutput Llama::generate_response(
 
   LLAMA_LOG_INFO("Finish Response Generation");
 
-  if (this->debug) {
-    common_perf_print(this->ctx, this->sampler);
-  }
+  common_perf_print(this->ctx, this->sampler);
 
   output.completions = response;
   return output;
@@ -1015,9 +1008,7 @@ bool Llama::eval(struct llama_batch batch) {
           batch.logits + i,
       };
 
-      if (this->debug) {
-        this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
-      }
+      this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
 
       if (llama_decode(this->ctx, batch_view)) {
         LLAMA_LOG_ERROR("Failed to eval");

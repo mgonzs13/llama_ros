@@ -177,8 +177,7 @@ using GenerateResponseCallback = std::function<void(struct CompletionOutput)>;
 class Llama {
 
 public:
-  Llama(const struct common_params &params, std::string system_prompt = "",
-        bool debug = false);
+  Llama(const struct common_params &params, std::string system_prompt = "");
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
@@ -251,7 +250,6 @@ protected:
 
   // aux
   std::string system_prompt;
-  bool debug;
   bool canceled;
   llama_utils::Spinner spinner;
   std::vector<llama_token> prompt_tokens;

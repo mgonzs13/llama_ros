@@ -124,8 +124,6 @@ def generate_launch_description():
             "system_prompt_file": ParameterValue(
                 LaunchConfiguration("system_prompt_file", default=""), value_type=str
             ),
-            # debug
-            "debug": LaunchConfiguration("debug", default=True),
         }
 
         # get llama node name

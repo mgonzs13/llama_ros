@@ -35,7 +35,6 @@
 namespace llama_utils {
 
 struct LlamaParams {
-  bool debug;
   std::string system_prompt;
   struct common_params params;
   struct llava_ros::LlavaParams llava_params;
