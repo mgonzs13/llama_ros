@@ -15,7 +15,6 @@ FetchContent_Declare(
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
-option(LLAMA_CURL "llama: use libcurl to download model from an URL" ON)
 
 FetchContent_MakeAvailable(llama)
 
