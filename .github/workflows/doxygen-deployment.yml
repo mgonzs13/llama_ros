@@ -20,6 +20,6 @@ jobs:
       - name: Deploy Doxygen page
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.DOXYGEN_DEPLOY_TOKEN }}
+          github_token: ${{ secrets.LLAMA_ROS_GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: docs/html
