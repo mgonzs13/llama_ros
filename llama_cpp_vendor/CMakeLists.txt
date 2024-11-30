@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b4206
+  GIT_TAG        b4227
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
@@ -36,13 +36,6 @@ set_target_properties(
 set_target_properties(
   ggml-cpu PROPERTIES
   OUTPUT_NAME "llama_ggml_cpu"
-  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-  CXX_STANDARD 11
-)
-
-set_target_properties(
-  ggml-amx PROPERTIES
-  OUTPUT_NAME "llama_ggml_amx"
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
   CXX_STANDARD 11
 )
@@ -96,7 +89,6 @@ set(INSTALL_TARGETS
   ggml
   ggml-base
   ggml-cpu
-  ggml-amx
   build_info
   common
   llama
