@@ -243,11 +243,10 @@ struct LlamaParams llama_utils::get_llama_params(
       auto *dev = ggml_backend_dev_by_name(d.c_str());
 
       if (!dev || ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
-        throw std::invalid_argument(
-            string_format("invalid device: %s", d.c_str()));
+        LLAMA_LOG_ERROR("Invalid device: %s", d.c_str());
+      } else {
+        params.params.devices.push_back(dev);
       }
-
-      params.params.devices.push_back(dev);
     }
   }
 

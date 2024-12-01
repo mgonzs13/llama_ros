@@ -59,7 +59,7 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
-    RCLCPP_INFO(this->get_logger(), "Loading image");
+    RCLCPP_INFO(this->get_logger(), "Loading image...");
 
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);
@@ -71,9 +71,11 @@ void LlavaNode::execute(
 
     if (!static_cast<Llava *>(this->llama.get())->load_image(encoded_image)) {
       this->goal_handle_->abort(result);
-      RCLCPP_INFO(this->get_logger(), "Failed to load image");
+      RCLCPP_ERROR(this->get_logger(), "Failed to load image");
       return;
     }
+
+    RCLCPP_INFO(this->get_logger(), "Image loaded");
   }
 
   // llama_node execute
