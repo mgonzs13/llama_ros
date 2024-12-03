@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_ROS__common_params_HPP
-#define LLAMA_ROS__common_params_HPP
+#ifndef LLAMA_ROS__LLAMA_PARAMS_HPP
+#define LLAMA_ROS__LLAMA_PARAMS_HPP
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
