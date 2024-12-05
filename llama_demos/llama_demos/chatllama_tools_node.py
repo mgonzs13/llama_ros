@@ -25,23 +25,14 @@
 
 
 import time
-from cv_bridge import CvBridge
 
 import rclpy
 from rclpy.node import Node
 from llama_ros.langchain import ChatLlamaROS
-from langchain_core.messages import HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.tools import tool
 from random import randint
 
-from pydantic import BaseModel, Field
-
-
-class City(BaseModel):
-    city: str = Field(..., description="City to get the temperature")
-    # inhabitants: int = Field(..., description="Number of inhabitants")
 
 @tool
 def get_inhabitants(city: str) -> int:
@@ -74,37 +65,21 @@ class ChatLlamaToolsDemoNode(Node):
             penalty_last_n=8,
         )
 
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(
-                    template=[
-                        {"type": "text", "text": "You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"},
-                    ]
-                ),
-                HumanMessagePromptTemplate.from_template(
-                    template=[
-                        {"type": "text", "text": "{prompt}"},
-                    ]
-                )
-            ]
-        )
+        messages = [
+            SystemMessage("You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"),
+            HumanMessage("What is the current temperature in Madrid? And its inhabitants?")
+        ]
                 
-        llm_temperature = self.chat.with_structured_output(get_max_temperature, method="function_calling")
-        llm_city = self.chat.with_structured_output(City, method="json_schema")
         llm_tools = self.chat.bind_tools([get_inhabitants, get_max_temperature], tool_choice='any')
         
-        temperature_chain = self.prompt | llm_temperature
-        city_chain = self.prompt | llm_city
-        llm_tools = self.prompt | llm_tools
+        all_tools_res = llm_tools.invoke(messages)
         
-        # city_res = city_chain.invoke({"prompt": "What is the capital of Spain?"})
-        # print(city_res)
-        
-        # temperature_res = temperature_chain.invoke({"prompt": "What is the temperature in Madrid?"})
-        # print(temperature_res)
-
-        all_tools_res = llm_tools.invoke({"prompt": "What is the current temperature in Madrid? And its inhabitants?"})
-        print(all_tools_res)
+        for tool in all_tools_res.tool_calls:
+            selected_tool = {"get_inhabitants": get_inhabitants, "get_max_temperature": get_max_temperature}[tool['name']]
+            tool_msg = selected_tool.invoke(tool)
+            messages.append(tool_msg)
+            
+        print(f'All messages: {messages}')
 
 
 def main():

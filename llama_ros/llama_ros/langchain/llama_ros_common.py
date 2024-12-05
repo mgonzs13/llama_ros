@@ -110,6 +110,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         image_url: Optional[str] = None,
         image: Optional[np.ndarray] = None,
         tools_grammar: Optional[str] = None,
+        **kwargs
     ) -> GenerateResponse.Result:
 
         goal = GenerateResponse.Goal()

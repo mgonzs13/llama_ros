@@ -34,11 +34,13 @@ import jinja2
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from pydantic import BaseModel
 from pydantic import create_model
+import uuid
 
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import Message
 from llama_msgs.srv import FormatChatMessages, Detokenize
 from action_msgs.msg import GoalStatus
+from llama_msgs.action import GenerateResponse
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import json
 
@@ -155,49 +157,32 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 new_messages.append({"role": message['role'], "content": message['content']['text']})
         
         return new_messages, image_url, image
+    
+    def _create_chat_generations(self, response: GenerateResponse.Result, method: str) -> List[BaseMessage]:        
+        chat_gen = None
+        
+        if method == "function_calling":
+            ai_message = AIMessage(content='', tool_calls=[])
+            parsed_output = json.loads(response.text)
+            for tool in parsed_output['tool_calls']:
+                ai_message.tool_calls.append({
+                    'name': tool['name'],
+                    'args': tool['arguments'],
+                    'type': 'tool_call',
+                    'id': f'{tool["name"]}_{uuid.uuid4()}'
+                    })
 
-    def _convert_completion_to_chat_function(
-        tool_name: str,
-        completion_or_chunks: Any,
-        stream: bool,
-    ):
-        if not stream:
-            completion = completion_or_chunks  # type: ignore
-            tool_id = "call_" + "_0_" + tool_name + "_" + completion["id"]
-            # TODO: Fix for legacy function calls
-            chat_completion = {
-                "id": "chat" + completion["id"],
-                "object": "chat.completion",
-                "created": completion["created"],
-                "model": completion["model"],
-                "choices": [
-                    {
-                        "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": None,
-                            "function_call": {
-                                "name": tool_name,
-                                "arguments": completion["choices"][0]["text"],
-                            },
-                            "tool_calls": [
-                                {
-                                    "id": tool_id,
-                                    "type": "function",
-                                    "function": {
-                                        "name": tool_name,
-                                        "arguments": completion["choices"][0]["text"],
-                                    },
-                                }
-                            ],
-                        },
-                        "logprobs": completion["choices"][0]["logprobs"],
-                        "finish_reason": "tool_calls",
-                    }
-                ],
-                "usage": completion["usage"],
-            }
-            return chat_completion
+            chat_gen = ChatGeneration(
+                message=ai_message
+            )
+        else:
+            chat_gen = ChatGeneration(
+                message=AIMessage(content=response.text)
+            )
+        
+        return ChatResult(
+            generations=[chat_gen]
+        )
 
 
     def _generate(
@@ -219,15 +204,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             formatted_prompt, stop, image_url, image, **kwargs
         )
 
-        # TODO: Hay que adaptar la salida del modelo al formato estándar de OpenAI
         result, status = self.llama_client.generate_response(goal_action)
+        response = result.response
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
 
-        # TODO: Habría que adaptar esto para funciones
-        generation = ChatGeneration(message=AIMessage(content=result.response.text.strip()))
-        return ChatResult(generations=[generation])
+        return self._create_chat_generations(response, kwargs.get("method", "chat"))
+        
 
     def _stream(
         self,
@@ -307,7 +291,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         "items": {
                             "type": "object"
                         },
-                        "maxItems": 5
+                        "maxItems": 10
                     }
                 },
                 "required": ["tool_calls"]
@@ -340,7 +324,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         # kwargs["tool_choice"] = tool_choice
         # formatted_tools = [tool.model_json_schema() for tool in tools]
-        return super().bind(tools_grammar=json.dumps(grammar), **kwargs)
+        return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
 
 
     def with_structured_output(
@@ -403,7 +387,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
                 f"'json_mode'. Received: '{method}'"
             )
-            
+                        
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
