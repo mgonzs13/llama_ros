@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Any, Callable, List, Literal, Optional, Dict, Iterator, Sequence, Type, Union, Tuple, cast
+from typing import Any, Callable, List, Literal, Optional, Dict, Iterator, Sequence, Type, Union, Tuple
 from operator import itemgetter
 from langchain_core.output_parsers import PydanticToolsParser, JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
@@ -33,12 +33,12 @@ import numpy as np
 import jinja2
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from pydantic import BaseModel
-from pydantic import create_model
 import uuid
+from ament_index_python.packages import get_package_share_directory
 
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import Message
-from llama_msgs.srv import FormatChatMessages, Detokenize
+from llama_msgs.srv import Detokenize
 from action_msgs.msg import GoalStatus
 from llama_msgs.action import GenerateResponse
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -53,9 +53,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    FunctionMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -79,9 +76,41 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _generate_prompt(self, messages: List[dict[str, str]]) -> str:        
-        chat_template = self.model_metadata.tokenizer.chat_template
+    def _json_schema_to_definition(self, input_json):
+        # Extract the tool name
+        tool_name = input_json['properties']["name"]["const"]
         
+        # Extract and map arguments to desired format
+        properties = input_json['properties']["arguments"]["properties"]
+        transformed_properties = {
+            arg: prop["type"]
+            for (arg, prop) in properties.items()
+        }
+        
+        # Create the transformed object
+        return {
+            "name": tool_name,
+            "arguments": transformed_properties
+        }
+
+
+    def _generate_prompt(self, messages: List[dict[str, str]], tools_grammar: str, use_default_prompt: bool = True, **kwargs) -> str:        
+
+        if use_default_prompt:
+            chat_template_path = get_package_share_directory('llama_ros') + '/templates/chatml.jinja2'
+            with open(chat_template_path, 'r') as f:
+                chat_template = f.read()
+        else:
+            chat_template = self.model_metadata.tokenizer.chat_template
+                
+        list_options = json.loads(tools_grammar)['properties']['tool_calls']['items']
+        for key in list_options.keys():
+            if key.endswith('Of'):
+                list_key = key
+                
+        formatted_tools = [self._json_schema_to_definition(tool) for tool in list_options[list_key]]
+        formatted_tools = [{key: tool[key] for key in sorted(tool, reverse=True)} for tool in formatted_tools]
+                
         bos_token = self.llama_client.detokenize(Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])).text
         
         if chat_template:
@@ -91,6 +120,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 messages=messages,
                 add_generation_prompt=True,
                 bos_token=bos_token,
+                tools_grammar=[json.dumps(tool) for tool in formatted_tools]
             )
             return formatted_prompt
         else:
@@ -198,7 +228,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         
         chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
         
-        formatted_prompt = self._generate_prompt(chat_messages)
+        formatted_prompt = self._generate_prompt(chat_messages, **kwargs)
 
         goal_action = self._create_action_goal(
             formatted_prompt, stop, image_url, image, **kwargs
@@ -219,7 +249,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:        
+    ) -> Iterator[ChatGenerationChunk]:
+        if kwargs.get("method") == "function_calling":
+            raise ValueError(
+                "Streaming is not supported when using 'function_calling' method."
+            )
+        
         dict_messages = []
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))

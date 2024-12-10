@@ -125,6 +125,7 @@ class LlamaClientNode(Node):
         self._spin_thread.start()
 
     def get_metadata(self, req: GetMetadata.Request) -> GetMetadata:
+        self._get_metadata_srv_client.wait_for_service()
         return self._get_metadata_srv_client.call(req)
 
     def tokenize(self, req: Tokenize.Request) -> Tokenize.Response:
