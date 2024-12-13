@@ -39,6 +39,21 @@ void replace_all(std::string &input, const std::string &old_str,
   }
 }
 
+const std::vector<ggml_type> kv_cache_types = {
+    GGML_TYPE_F32,    GGML_TYPE_F16,  GGML_TYPE_BF16,
+    GGML_TYPE_Q8_0,   GGML_TYPE_Q4_0, GGML_TYPE_Q4_1,
+    GGML_TYPE_IQ4_NL, GGML_TYPE_Q5_0, GGML_TYPE_Q5_1,
+};
+
+static ggml_type kv_cache_type_from_str(const std::string &s) {
+  for (const auto &type : kv_cache_types) {
+    if (ggml_type_name(type) == s) {
+      return type;
+    }
+  }
+  throw std::runtime_error("Unsupported cache type: " + s);
+}
+
 void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
@@ -139,6 +154,9 @@ struct LlamaParams llama_utils::get_llama_params(
   std::string cpu_mask_batch;
   std::string cpu_range_batch;
 
+  std::string cache_type_k;
+  std::string cache_type_v;
+
   std::string priority;
   std::string priority_batch;
   std::string split_mode;
@@ -171,8 +189,8 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("flash_attn", params.params.flash_attn);
 
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
-  node->get_parameter("cache_type_k", params.params.cache_type_k);
-  node->get_parameter("cache_type_v", params.params.cache_type_v);
+  node->get_parameter("cache_type_k", cache_type_k);
+  node->get_parameter("cache_type_v", cache_type_v);
 
   node->get_parameter("n_threads", params.params.cpuparams.n_threads);
   node->get_parameter("cpu_mask", cpu_mask);
@@ -235,6 +253,10 @@ struct LlamaParams llama_utils::get_llama_params(
   } else {
     params.params.sampling.seed = seed;
   }
+
+  // cache type
+  params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
+  params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
 
   // devices
   for (const std::string &d : devices) {
