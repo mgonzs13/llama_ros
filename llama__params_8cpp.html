@@ -89,7 +89,8 @@ $(function(){ initResizable(false); });
 <div id="doc-content">
 <div class="header">
   <div class="summary">
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">llama_params.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -167,6 +168,11 @@ Include dependency graph for llama_params.cpp:</div>
 Functions</h2></td></tr>
 <tr class="memitem:a6022dd052437b9f97f6c1ffc13f5e518" id="r_a6022dd052437b9f97f6c1ffc13f5e518"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6022dd052437b9f97f6c1ffc13f5e518">replace_all</a> (std::string &amp;input, const std::string &amp;old_str, const std::string &amp;new_str)</td></tr>
 <tr class="separator:a6022dd052437b9f97f6c1ffc13f5e518"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a9e6149e88c7ff01a3287fa75c37bbe80" id="r_a9e6149e88c7ff01a3287fa75c37bbe80"><td class="memItemLeft" align="right" valign="top">const std::vector&lt; ggml_type &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9e6149e88c7ff01a3287fa75c37bbe80">kv_cache_types</a></td></tr>
+<tr class="separator:a9e6149e88c7ff01a3287fa75c37bbe80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a6022dd052437b9f97f6c1ffc13f5e518" name="a6022dd052437b9f97f6c1ffc13f5e518"></a>
@@ -193,6 +199,26 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+</div>
+</div>
+<h2 class="groupheader">Variable Documentation</h2>
+<a id="a9e6149e88c7ff01a3287fa75c37bbe80" name="a9e6149e88c7ff01a3287fa75c37bbe80"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e6149e88c7ff01a3287fa75c37bbe80">&#9670;&#160;</a></span>kv_cache_types</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const std::vector&lt;ggml_type&gt; kv_cache_types</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= {</div>
+<div class="line">    GGML_TYPE_F32,    GGML_TYPE_F16,  GGML_TYPE_BF16,</div>
+<div class="line">    GGML_TYPE_Q8_0,   GGML_TYPE_Q4_0, GGML_TYPE_Q4_1,</div>
+<div class="line">    GGML_TYPE_IQ4_NL, GGML_TYPE_Q5_0, GGML_TYPE_Q5_1,</div>
+<div class="line">}</div>
+</div><!-- fragment -->
 </div>
 </div>
 </div><!-- contents -->
