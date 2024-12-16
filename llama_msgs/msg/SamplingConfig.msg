@@ -31,9 +31,7 @@ int32 mirostat                      0                               # Mirostart 
 float32 mirostat_eta                0.10                            # Mirostat learning rate, parameter eta
 float32 mirostat_tau                5.0                             # Mirostat target entropy, parameter tau
 
-bool penalize_nl                    false                           # consider newlines as a repeatable token
-
-string samplers_sequence            "dkypmxt"                       # DRY, TOP_K, TFS_Z, TYPICAL_P, TOP_P, MIN_P, XTC, TEMP
+string samplers_sequence            "edkypmxt"                       # PENALTIES, DRY, TOP_K, TYPICAL_P, TOP_P, MIN_P, XTC, TEMP
 
 string grammar                      ""                              # optional BNF-like grammar to constrain sampling
 string grammar_schema               ""                              # grammar schema that defines a JSON BNF grammar

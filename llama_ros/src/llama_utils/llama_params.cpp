@@ -470,8 +470,6 @@ struct common_params_sampling llama_utils::parse_sampling_params(
   sparams.mirostat_eta = sampling_config.mirostat_eta;
   sparams.mirostat_tau = sampling_config.mirostat_tau;
 
-  sparams.penalize_nl = sampling_config.penalize_nl;
-
   sparams.samplers =
       common_sampler_types_from_chars(sampling_config.samplers_sequence);
   sparams.grammar = sampling_config.grammar;

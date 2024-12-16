@@ -75,9 +75,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
-    penalize_nl: bool = False
-
-    samplers_sequence: str = "dkypmxt"
+    samplers_sequence: str = "edkypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
@@ -165,8 +163,6 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta
         goal.sampling_config.mirostat_tau = self.mirostat_tau
-
-        goal.sampling_config.penalize_nl = self.penalize_nl
 
         goal.sampling_config.samplers_sequence = self.samplers_sequence
 
