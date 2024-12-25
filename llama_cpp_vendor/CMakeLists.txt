@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b4338
+  GIT_TAG        b4391
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
