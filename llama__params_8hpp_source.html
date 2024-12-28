@@ -93,7 +93,7 @@ $(function(){ initResizable(false); });
 <div class="contents">
 <a href="llama__params_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">// MIT License</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="comment">//</span></div>
-<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment">// Copyright (c) 2024  Miguel Ángel González Santamarta</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment">// Copyright (c) 2024 Miguel Ángel González Santamarta</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment">//</span></div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="comment">// Permission is hereby granted, free of charge, to any person obtaining a copy</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="comment">// of this software and associated documentation files (the &quot;Software&quot;), to deal</span></div>
@@ -113,8 +113,8 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">// SOFTWARE.</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#ifndef LLAMA_ROS__LLAMA_PARAMS_HPP</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#define LLAMA_ROS__LLAMA_PARAMS_HPP</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#ifndef LLAMA_UTILS__LLAMA_PARAMS_HPP</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#define LLAMA_UTILS__LLAMA_PARAMS_HPP</span></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;rclcpp/rclcpp.hpp&gt;</span></div>
@@ -122,46 +122,49 @@ $(function(){ initResizable(false); });
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &quot;common.h&quot;</span></div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &quot;llama.h&quot;</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &quot;llama_msgs/msg/sampling_config.hpp&quot;</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &quot;<a class="code" href="llava_8hpp.html">llava_ros/llava.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="foldopen" id="foldopen00035" data-start="{" data-end="}">
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="namespacellama__utils.html">   35</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellama__utils.html">llama_utils</a> {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &quot;llama_msgs/msg/sampling_config.hpp&quot;</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &quot;<a class="code" href="logs_8hpp.html">llama_utils/logs.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &quot;<a class="code" href="llava_8hpp.html">llava_ros/llava.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html">   37</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a> {</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">   38</a></span>  std::string <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">system_prompt</a>;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">   39</a></span>  <span class="keyword">struct </span>common_params <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">params</a>;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">   40</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structllava__ros_1_1LlavaParams.html">llava_ros::LlavaParams</a> <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">llava_params</a>;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>};</div>
+<div class="foldopen" id="foldopen00037" data-start="{" data-end="}">
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="namespacellama__utils.html">   37</a></span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacellama__utils.html">llama_utils</a> {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
+<div class="foldopen" id="foldopen00039" data-start="{" data-end="};">
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html">   39</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a> {</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">   40</a></span>  std::string <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">system_prompt</a>;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">   41</a></span>  <span class="keyword">struct </span>common_params <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">params</a>;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno"><a class="line" href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">   42</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structllava__ros_1_1LlavaParams.html">llava_ros::LlavaParams</a> <a class="code hl_variable" href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">llava_params</a>;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
 </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellama__utils.html#a4e3b2181ccb7818a8a8498ffdbd1309a">declare_llama_params</a>(</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="keyword">const</span> rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node);</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">struct </span><a class="code hl_struct" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><a class="code hl_function" href="namespacellama__utils.html#acf837a2a370882bdf2f841fad0582ea9">get_llama_params</a>(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node);</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>enum ggml_sched_priority <a class="code hl_function" href="namespacellama__utils.html#a15366a6874997fa374cefb55bea95dd1">parse_priority</a>(std::string priority);</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacellama__utils.html#a4e3b2181ccb7818a8a8498ffdbd1309a">declare_llama_params</a>(</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keyword">const</span> rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">struct </span><a class="code hl_struct" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><a class="code hl_function" href="namespacellama__utils.html#acf837a2a370882bdf2f841fad0582ea9">get_llama_params</a>(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node);</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>struct common_params_sampling</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><a class="code hl_function" href="namespacellama__utils.html#a7123c0ccc68853d01feaa11bc6aa2e0f">parse_sampling_params</a>(const llama_msgs::msg::SamplingConfig &amp;sampling_config,</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>                      int n_vocab);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>} <span class="comment">// namespace llama_utils</span></div>
-</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>enum ggml_sched_priority <a class="code hl_function" href="namespacellama__utils.html#a15366a6874997fa374cefb55bea95dd1">parse_priority</a>(std::string priority);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>struct common_params_sampling</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><a class="code hl_function" href="namespacellama__utils.html#a7123c0ccc68853d01feaa11bc6aa2e0f">parse_sampling_params</a>(const llama_msgs::msg::SamplingConfig &amp;sampling_config,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                      int n_vocab);</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>} <span class="comment">// namespace llama_utils</span></div>
+</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="allava_8hpp_html"><div class="ttname"><a href="llava_8hpp.html">llava.hpp</a></div></div>
-<div class="ttc" id="anamespacellama__utils_html"><div class="ttname"><a href="namespacellama__utils.html">llama_utils</a></div><div class="ttdef"><b>Definition</b> llama_params.hpp:35</div></div>
-<div class="ttc" id="anamespacellama__utils_html_a15366a6874997fa374cefb55bea95dd1"><div class="ttname"><a href="namespacellama__utils.html#a15366a6874997fa374cefb55bea95dd1">llama_utils::parse_priority</a></div><div class="ttdeci">enum ggml_sched_priority parse_priority(std::string priority)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:435</div></div>
-<div class="ttc" id="anamespacellama__utils_html_a4e3b2181ccb7818a8a8498ffdbd1309a"><div class="ttname"><a href="namespacellama__utils.html#a4e3b2181ccb7818a8a8498ffdbd1309a">llama_utils::declare_llama_params</a></div><div class="ttdeci">void declare_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:57</div></div>
-<div class="ttc" id="anamespacellama__utils_html_a7123c0ccc68853d01feaa11bc6aa2e0f"><div class="ttname"><a href="namespacellama__utils.html#a7123c0ccc68853d01feaa11bc6aa2e0f">llama_utils::parse_sampling_params</a></div><div class="ttdeci">struct common_params_sampling parse_sampling_params(const llama_msgs::msg::SamplingConfig &amp;sampling_config, int n_vocab)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:449</div></div>
-<div class="ttc" id="anamespacellama__utils_html_acf837a2a370882bdf2f841fad0582ea9"><div class="ttname"><a href="namespacellama__utils.html#acf837a2a370882bdf2f841fad0582ea9">llama_utils::get_llama_params</a></div><div class="ttdeci">struct LlamaParams get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:137</div></div>
-<div class="ttc" id="astructllama__utils_1_1LlamaParams_html"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html">llama_utils::LlamaParams</a></div><div class="ttdef"><b>Definition</b> llama_params.hpp:37</div></div>
-<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_a89a676517fb802fced98ede2c3796a01"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">llama_utils::LlamaParams::system_prompt</a></div><div class="ttdeci">std::string system_prompt</div><div class="ttdef"><b>Definition</b> llama_params.hpp:38</div></div>
-<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_aa4455bdb0f9135496ecbcf29dc9ad76a"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">llama_utils::LlamaParams::llava_params</a></div><div class="ttdeci">struct llava_ros::LlavaParams llava_params</div><div class="ttdef"><b>Definition</b> llama_params.hpp:40</div></div>
-<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_aa564bafc7aff57c81cd77ec2e992b812"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">llama_utils::LlamaParams::params</a></div><div class="ttdeci">struct common_params params</div><div class="ttdef"><b>Definition</b> llama_params.hpp:39</div></div>
+<div class="ttc" id="alogs_8hpp_html"><div class="ttname"><a href="logs_8hpp.html">logs.hpp</a></div></div>
+<div class="ttc" id="anamespacellama__utils_html"><div class="ttname"><a href="namespacellama__utils.html">llama_utils</a></div><div class="ttdef"><b>Definition</b> llama_params.hpp:37</div></div>
+<div class="ttc" id="anamespacellama__utils_html_a15366a6874997fa374cefb55bea95dd1"><div class="ttname"><a href="namespacellama__utils.html#a15366a6874997fa374cefb55bea95dd1">llama_utils::parse_priority</a></div><div class="ttdeci">enum ggml_sched_priority parse_priority(std::string priority)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:436</div></div>
+<div class="ttc" id="anamespacellama__utils_html_a4e3b2181ccb7818a8a8498ffdbd1309a"><div class="ttname"><a href="namespacellama__utils.html#a4e3b2181ccb7818a8a8498ffdbd1309a">llama_utils::declare_llama_params</a></div><div class="ttdeci">void declare_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:58</div></div>
+<div class="ttc" id="anamespacellama__utils_html_a7123c0ccc68853d01feaa11bc6aa2e0f"><div class="ttname"><a href="namespacellama__utils.html#a7123c0ccc68853d01feaa11bc6aa2e0f">llama_utils::parse_sampling_params</a></div><div class="ttdeci">struct common_params_sampling parse_sampling_params(const llama_msgs::msg::SamplingConfig &amp;sampling_config, int n_vocab)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:450</div></div>
+<div class="ttc" id="anamespacellama__utils_html_acf837a2a370882bdf2f841fad0582ea9"><div class="ttname"><a href="namespacellama__utils.html#acf837a2a370882bdf2f841fad0582ea9">llama_utils::get_llama_params</a></div><div class="ttdeci">struct LlamaParams get_llama_params(const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</div><div class="ttdef"><b>Definition</b> llama_params.cpp:138</div></div>
+<div class="ttc" id="astructllama__utils_1_1LlamaParams_html"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html">llama_utils::LlamaParams</a></div><div class="ttdef"><b>Definition</b> llama_params.hpp:39</div></div>
+<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_a89a676517fb802fced98ede2c3796a01"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01">llama_utils::LlamaParams::system_prompt</a></div><div class="ttdeci">std::string system_prompt</div><div class="ttdef"><b>Definition</b> llama_params.hpp:40</div></div>
+<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_aa4455bdb0f9135496ecbcf29dc9ad76a"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#aa4455bdb0f9135496ecbcf29dc9ad76a">llama_utils::LlamaParams::llava_params</a></div><div class="ttdeci">struct llava_ros::LlavaParams llava_params</div><div class="ttdef"><b>Definition</b> llama_params.hpp:42</div></div>
+<div class="ttc" id="astructllama__utils_1_1LlamaParams_html_aa564bafc7aff57c81cd77ec2e992b812"><div class="ttname"><a href="structllama__utils_1_1LlamaParams.html#aa564bafc7aff57c81cd77ec2e992b812">llama_utils::LlamaParams::params</a></div><div class="ttdeci">struct common_params params</div><div class="ttdef"><b>Definition</b> llama_params.hpp:41</div></div>
 <div class="ttc" id="astructllava__ros_1_1LlavaParams_html"><div class="ttname"><a href="structllava__ros_1_1LlavaParams.html">llava_ros::LlavaParams</a></div><div class="ttdef"><b>Definition</b> llava.hpp:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

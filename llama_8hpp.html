@@ -91,7 +91,6 @@ $(function(){ initResizable(false); });
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
 <a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a>  </div>
   <div class="headertitle"><div class="title">llama.hpp File Reference</div></div>
@@ -210,15 +209,6 @@ Namespaces</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__ros.html">llama_ros</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:af57cb87dacb596fda45658e510d9ac53" id="r_af57cb87dacb596fda45658e510d9ac53"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af57cb87dacb596fda45658e510d9ac53">LLAMA_LOG_ERROR</a>(text, ...)</td></tr>
-<tr class="separator:af57cb87dacb596fda45658e510d9ac53"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7903d2c72fa8e8887bad72cb85d27e8c" id="r_a7903d2c72fa8e8887bad72cb85d27e8c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7903d2c72fa8e8887bad72cb85d27e8c">LLAMA_LOG_WARN</a>(text, ...)</td></tr>
-<tr class="separator:a7903d2c72fa8e8887bad72cb85d27e8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a59f368b6a6adf649e06afe07ef10508b" id="r_a59f368b6a6adf649e06afe07ef10508b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a59f368b6a6adf649e06afe07ef10508b">LLAMA_LOG_INFO</a>(text, ...)</td></tr>
-<tr class="separator:a59f368b6a6adf649e06afe07ef10508b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a3d8aa525b7e539a478a0b86a081e7a68" id="r_a3d8aa525b7e539a478a0b86a081e7a68"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__ros.html#a3d8aa525b7e539a478a0b86a081e7a68">llama_ros::GenerateResponseCallback</a> = std::function&lt;void(struct <a class="el" href="structllama__ros_1_1CompletionOutput.html">CompletionOutput</a>)&gt;</td></tr>
@@ -237,73 +227,6 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="separator:aa0ac7656a188e47404db8ced957790d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="af57cb87dacb596fda45658e510d9ac53" name="af57cb87dacb596fda45658e510d9ac53"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af57cb87dacb596fda45658e510d9ac53">&#9670;&#160;</a></span>LLAMA_LOG_ERROR</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define LLAMA_LOG_ERROR</td>
-          <td>(</td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em></em></span>...&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  fprintf(stderr, <span class="stringliteral">&quot;[ERROR] &quot;</span> text <span class="stringliteral">&quot;\n&quot;</span>, ##__VA_ARGS__)</div>
-</div><!-- fragment -->
-</div>
-</div>
-<a id="a59f368b6a6adf649e06afe07ef10508b" name="a59f368b6a6adf649e06afe07ef10508b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a59f368b6a6adf649e06afe07ef10508b">&#9670;&#160;</a></span>LLAMA_LOG_INFO</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define LLAMA_LOG_INFO</td>
-          <td>(</td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em></em></span>...&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  fprintf(stderr, <span class="stringliteral">&quot;[INFO] &quot;</span> text <span class="stringliteral">&quot;\n&quot;</span>, ##__VA_ARGS__)</div>
-</div><!-- fragment -->
-</div>
-</div>
-<a id="a7903d2c72fa8e8887bad72cb85d27e8c" name="a7903d2c72fa8e8887bad72cb85d27e8c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7903d2c72fa8e8887bad72cb85d27e8c">&#9670;&#160;</a></span>LLAMA_LOG_WARN</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define LLAMA_LOG_WARN</td>
-          <td>(</td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>text</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em></em></span>...&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  fprintf(stderr, <span class="stringliteral">&quot;[WARN] &quot;</span> text <span class="stringliteral">&quot;\n&quot;</span>, ##__VA_ARGS__)</div>
-</div><!-- fragment -->
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

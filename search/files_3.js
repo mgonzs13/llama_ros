@@ -23,5 +23,7 @@ var searchData=
   ['llava_5fdemo_5fnode_2epy_20',['llava_demo_node.py',['../llava__demo__node_8py.html',1,'']]],
   ['llava_5fmain_2ecpp_21',['llava_main.cpp',['../llava__main_8cpp.html',1,'']]],
   ['llava_5fnode_2ecpp_22',['llava_node.cpp',['../llava__node_8cpp.html',1,'']]],
-  ['llava_5fnode_2ehpp_23',['llava_node.hpp',['../llava__node_8hpp.html',1,'']]]
+  ['llava_5fnode_2ehpp_23',['llava_node.hpp',['../llava__node_8hpp.html',1,'']]],
+  ['logs_2ecpp_24',['logs.cpp',['../logs_8cpp.html',1,'']]],
+  ['logs_2ehpp_25',['logs.hpp',['../logs_8hpp.html',1,'']]]
 ];

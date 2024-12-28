@@ -9,8 +9,9 @@ var searchData=
   ['image_5fsuffix_6',['image_suffix',['../structllava__ros_1_1LlavaParams.html#a85d327fc54c6a68b16dcbc9e5126b67a',1,'llava_ros::LlavaParams']]],
   ['image_5ftext_7',['image_text',['../structllava__ros_1_1LlavaParams.html#aae92554a86a9ba13e2087c740847bcdc',1,'llava_ros::LlavaParams']]],
   ['index_8',['index',['../classllama__utils_1_1Spinner.html#a12deebc1a09339b8656b4cc2422125b5',1,'llama_utils::Spinner']]],
-  ['initial_5ftime_9',['initial_time',['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#abfae23b0f25b9883747f9a9723e78eb7',1,'llama_demos.chatllama_demo_node.ChatLlamaDemoNode.initial_time'],['../classllama__demos_1_1llama__demo__node_1_1LlamaDemoNode.html#a74ba568c77f1211d68ed7029fdb2ceb3',1,'llama_demos.llama_demo_node.LlamaDemoNode.initial_time'],['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#a4d2076928313087315c80521dc62ddf1',1,'llama_demos.llava_demo_node.LlavaDemoNode.initial_time']]],
-  ['installation_10',['Installation',['../index.html#autotoc_md3',1,'']]],
-  ['is_5fembedding_11',['is_embedding',['../classllama__ros_1_1Llama.html#a69dd03523245603e633394d0cf06b98f',1,'llama_ros::Llama']]],
-  ['is_5freranking_12',['is_reranking',['../classllama__ros_1_1Llama.html#a9905e319a2c0311b5d700763de7d8d8c',1,'llama_ros::Llama']]]
+  ['info_9',['INFO',['../namespacellama__utils.html#a386024dced31ce4ae6a2bb5e0b97fefda2483ebb1506974cdc19a0b49a48d7afd',1,'llama_utils']]],
+  ['initial_5ftime_10',['initial_time',['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#abfae23b0f25b9883747f9a9723e78eb7',1,'llama_demos.chatllama_demo_node.ChatLlamaDemoNode.initial_time'],['../classllama__demos_1_1llama__demo__node_1_1LlamaDemoNode.html#a74ba568c77f1211d68ed7029fdb2ceb3',1,'llama_demos.llama_demo_node.LlamaDemoNode.initial_time'],['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#a4d2076928313087315c80521dc62ddf1',1,'llama_demos.llava_demo_node.LlavaDemoNode.initial_time']]],
+  ['installation_11',['Installation',['../index.html#autotoc_md3',1,'']]],
+  ['is_5fembedding_12',['is_embedding',['../classllama__ros_1_1Llama.html#a69dd03523245603e633394d0cf06b98f',1,'llama_ros::Llama']]],
+  ['is_5freranking_13',['is_reranking',['../classllama__ros_1_1Llama.html#a9905e319a2c0311b5d700763de7d8d8c',1,'llama_ros::Llama']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['full_5fstop_0',['FULL_STOP',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762',1,'llama_ros']]]
+  ['debug_0',['DEBUG',['../namespacellama__utils.html#a386024dced31ce4ae6a2bb5e0b97fefda54c2fae8455ac7bd4895fe55a200ce98',1,'llama_utils']]]
 ];
