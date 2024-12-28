@@ -26,6 +26,8 @@
 
 #include "base64.hpp"
 #include "common.h"
+
+#include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
 
 using namespace llava_ros;

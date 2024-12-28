@@ -29,7 +29,9 @@
 
 #include "common.h"
 #include "llama.h"
+
 #include "llama_msgs/msg/sampling_config.hpp"
+#include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
 
 namespace llama_utils {

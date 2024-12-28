@@ -27,6 +27,7 @@
 #include "json.hpp"
 
 #include "llama_utils/llama_params.hpp"
+#include "llama_utils/logs.hpp"
 
 using namespace llama_utils;
 

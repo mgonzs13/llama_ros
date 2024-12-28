@@ -30,6 +30,7 @@
 #include "sampling.h"
 
 #include "llama_ros/llama.hpp"
+#include "llama_utils/logs.hpp"
 
 using namespace llama_ros;
 
