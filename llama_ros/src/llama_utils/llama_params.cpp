@@ -310,7 +310,8 @@ struct LlamaParams llama_utils::get_llama_params(
           scale = 1.0;
         }
 
-        params.params.lora_adapters.push_back({lora_adapters.at(i), scale});
+        params.params.lora_adapters.push_back(
+            {lora_adapters.at(i), scale, nullptr});
       }
     }
   }

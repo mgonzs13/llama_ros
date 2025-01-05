@@ -43,10 +43,10 @@ Llama::Llama(const struct common_params &params, std::string system_prompt)
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  struct common_init_result llama_init = common_init_from_params(this->params);
-  this->model = llama_init.model;
-  this->ctx = llama_init.context;
-  this->lora_adapters = llama_init.lora_adapters;
+  this->llama_init = common_init_from_params(this->params);
+  this->model = llama_init.model.get();
+  this->ctx = llama_init.context.get();
+  this->lora_adapters = this->params.lora_adapters;
 
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");

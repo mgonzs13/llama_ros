@@ -233,9 +233,10 @@ protected:
   struct common_params params;
 
   // model
+  struct common_init_result llama_init;
   struct llama_context *ctx;
   struct llama_model *model;
-  std::vector<struct common_lora_adapter_container> lora_adapters;
+  std::vector<common_lora_adapter_info> lora_adapters;
   struct common_sampler *sampler;
   struct ggml_threadpool *threadpool;
   struct ggml_threadpool *threadpool_batch;
