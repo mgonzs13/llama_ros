@@ -113,7 +113,7 @@ var searchData=
   ['log_5flevel_110',['log_level',['../namespacellama__utils.html#a3d05bcd0e9fe90fb804e10196bac8937',1,'llama_utils']]],
   ['log_5fwarn_111',['log_warn',['../namespacellama__utils.html#ac03a5f4981c2825e42e8e741459bdf16',1,'llama_utils']]],
   ['logfunction_112',['LogFunction',['../namespacellama__utils.html#a9b29ce3d5c13af766ffd9aac9c51d617',1,'llama_utils']]],
-  ['logit_5fbias_113',['logit_bias',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#afcc2316b7f8873d81004e723699caee6',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
+  ['logit_5fbias_113',['logit_bias',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a5b639b6c99e8e672cd8eaab3066eae8d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
   ['loglevel_114',['LogLevel',['../namespacellama__utils.html#a386024dced31ce4ae6a2bb5e0b97fefd',1,'llama_utils']]],
   ['logs_2ecpp_115',['logs.cpp',['../logs_8cpp.html',1,'']]],
   ['logs_2ehpp_116',['logs.hpp',['../logs_8hpp.html',1,'']]],

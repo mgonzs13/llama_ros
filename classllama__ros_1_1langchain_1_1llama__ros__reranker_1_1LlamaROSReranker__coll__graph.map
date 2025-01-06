@@ -1,29 +1,9 @@
 <map id="llama_ros.langchain.llama_ros_reranker.LlamaROSReranker" name="llama_ros.langchain.llama_ros_reranker.LlamaROSReranker">
-<area shape="rect" id="Node000001" title=" " alt="" coords="659,226,878,267"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="359,206,539,232"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="555,225,659,234,658,240,554,231"/>
-<area shape="rect" id="Node000003" href="$classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html" title=" " alt="" coords="369,256,528,296"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="544,265,658,254,659,259,544,270"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="60,14,113,40"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="128,13,175,5,231,4,260,7,288,14,314,26,337,44,354,68,360,92,359,117,353,142,346,167,343,192,347,217,361,242,372,253,369,257,357,246,342,219,338,192,341,166,347,141,353,116,355,93,349,70,333,47,311,31,286,19,259,12,231,9,176,11,129,19"/>
-<area shape="rect" id="Node000005" title=" " alt="" coords="57,63,116,89"/>
-<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="132,73,247,78,301,88,322,95,336,105,349,122,354,139,351,174,347,208,351,225,361,242,373,253,369,257,357,246,346,227,342,209,346,173,349,140,345,124,333,109,319,100,299,93,246,84,132,78"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="41,113,132,138"/>
-<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="148,122,255,128,304,137,336,151,346,162,350,174,351,197,350,220,353,231,361,242,374,253,370,257,357,246,348,234,345,221,345,197,345,175,341,165,333,156,302,142,255,133,147,127"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="59,165,114,190"/>
-<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="130,179,242,194,297,205,336,218,349,230,360,242,381,253,378,257,357,246,345,234,333,222,296,210,241,199,129,184"/>
-<area shape="rect" id="Node000008" title=" " alt="" coords="49,214,124,240"/>
-<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="140,231,335,257,369,262,368,267,334,263,139,236"/>
-<area shape="rect" id="Node000009" title=" " alt="" coords="20,263,153,289"/>
-<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="168,273,369,273,369,279,168,279"/>
-<area shape="rect" id="Node000010" title=" " alt="" coords="43,313,130,338"/>
-<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="145,317,334,294,368,288,369,294,335,299,145,322"/>
-<area shape="rect" id="Node000011" title=" " alt="" coords="25,362,148,388"/>
-<area shape="poly" id="edge10_Node000003_Node000011" title=" " alt="" coords="162,366,246,354,334,333,376,315,413,294,416,299,378,320,336,338,247,360,163,372"/>
-<area shape="rect" id="Node000012" title=" " alt="" coords="5,411,168,437"/>
-<area shape="poly" id="edge11_Node000003_Node000012" title=" " alt="" coords="183,420,259,409,297,398,333,383,363,364,390,341,431,295,435,299,394,345,367,369,336,388,299,403,260,414,184,425"/>
-<area shape="rect" id="Node000013" title=" " alt="" coords="10,461,163,486"/>
-<area shape="poly" id="edge12_Node000003_Node000013" title=" " alt="" coords="178,477,217,474,257,468,297,457,333,439,371,408,401,368,423,328,438,295,443,298,428,331,405,371,375,411,336,444,299,462,258,473,217,480,178,482"/>
-<area shape="rect" id="Node000014" title=" " alt="" coords="56,510,117,536"/>
-<area shape="poly" id="edge13_Node000003_Node000014" title=" " alt="" coords="133,528,178,532,230,530,284,520,310,510,333,497,358,476,378,452,410,395,430,340,441,296,446,297,436,341,415,398,383,455,361,480,336,501,312,515,286,525,231,535,178,537,132,533"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="44,184,264,225"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,88,186,114"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,126,145,182,140,185,108,128"/>
+<area shape="rect" id="Node000003" href="$classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html" title=" " alt="" coords="209,80,368,121"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="253,133,182,186,178,181,249,128"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="263,5,315,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="292,47,292,80,286,80,286,47"/>
 </map>
