@@ -132,7 +132,7 @@ Llama::~Llama() {
   llama_free(this->ctx);
   this->ctx = nullptr;
 
-  llama_free_model(this->model);
+  llama_model_free(this->model);
   this->model = nullptr;
 
   if (this->sampler != nullptr) {
