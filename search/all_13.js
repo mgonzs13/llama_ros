@@ -26,8 +26,9 @@ var searchData=
   ['spinner_23',['spinner',['../classllama__ros_1_1Llama.html#ac5758af17e629830eb7dad343115f93b',1,'llama_ros::Llama::spinner'],['../classllama__utils_1_1Spinner.html#ab51213c449e3926314d35d8c7183863e',1,'llama_utils::Spinner::spinner']]],
   ['spinner_2ehpp_24',['spinner.hpp',['../spinner_8hpp.html',1,'']]],
   ['splits_25',['splits',['../namespacellama__demos_1_1llama__rag__demo__node.html#a34fb77601e84c7dec99c9fb16734d55a',1,'llama_demos::llama_rag_demo_node']]],
-  ['stop_26',['stop',['../structllama__ros_1_1ResponseOutput.html#a2b4cf7d6cb0d2d5a02c3b605fe5e7729',1,'llama_ros::ResponseOutput']]],
-  ['stoptype_27',['StopType',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0',1,'llama_ros']]],
-  ['stream_28',['Stream',['../index.html#autotoc_md36',1,'Full Demo (LLM + chat template + RAG + Reranking + Stream)'],['../index.html#autotoc_md24',1,'llama_ros (Stream)']]],
-  ['system_5fprompt_29',['system_prompt',['../classllama__ros_1_1Llama.html#a2159f2355b8f059933f59d1138e1d3c2',1,'llama_ros::Llama::system_prompt'],['../structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01',1,'llama_utils::LlamaParams::system_prompt']]]
+  ['st_5fpos_5fid_26',['st_pos_id',['../classllava__ros_1_1Llava.html#a818a8f591e619f89aa77241742578aa9',1,'llava_ros::Llava']]],
+  ['stop_27',['stop',['../structllama__ros_1_1ResponseOutput.html#a2b4cf7d6cb0d2d5a02c3b605fe5e7729',1,'llama_ros::ResponseOutput']]],
+  ['stoptype_28',['StopType',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0',1,'llama_ros']]],
+  ['stream_29',['Stream',['../index.html#autotoc_md36',1,'Full Demo (LLM + chat template + RAG + Reranking + Stream)'],['../index.html#autotoc_md24',1,'llama_ros (Stream)']]],
+  ['system_5fprompt_30',['system_prompt',['../classllama__ros_1_1Llama.html#a2159f2355b8f059933f59d1138e1d3c2',1,'llama_ros::Llama::system_prompt'],['../structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01',1,'llama_utils::LlamaParams::system_prompt']]]
 ];

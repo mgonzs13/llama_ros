@@ -16,7 +16,7 @@ var searchData=
   ['list_5floras_13',['list_loras',['../classllama__ros_1_1Llama.html#aa17aaf9615a03f65ead934cd8a3c33e0',1,'llama_ros::Llama']]],
   ['list_5floras_5fservice_5f_14',['list_loras_service_',['../classllama__ros_1_1LlamaNode.html#ae48613d70306d3100ea7d332b0a5040c',1,'llama_ros::LlamaNode']]],
   ['list_5floras_5fservice_5fcallback_15',['list_loras_service_callback',['../classllama__ros_1_1LlamaNode.html#a5a79bd20864384f74c8d6faa9a8d2386',1,'llama_ros::LlamaNode']]],
-  ['llama_16',['Llama',['../classllama__ros_1_1Llama.html',1,'llama_ros::Llama'],['../classllama__ros_1_1Llama.html#a67b1d1838dc98f67c03051cc2067b290',1,'llama_ros::Llama::Llama()']]],
+  ['llama_16',['Llama',['../classllama__ros_1_1Llama.html',1,'llama_ros::Llama'],['../classllama__ros_1_1Llama.html#a36707047a228c3a9278337b1426938c3',1,'llama_ros::Llama::Llama()']]],
   ['llama_17',['llama',['../classllama__ros_1_1LlamaNode.html#add09929e4bb019eac008da2bdd4b8427',1,'llama_ros::LlamaNode']]],
   ['llama_2ecpp_18',['llama.cpp',['../llama_8cpp.html',1,'']]],
   ['llama_2ehpp_19',['llama.hpp',['../llama_8hpp.html',1,'']]],

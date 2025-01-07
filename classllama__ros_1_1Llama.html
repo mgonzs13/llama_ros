@@ -132,15 +132,15 @@ Collaboration diagram for llama_ros::Llama:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a67b1d1838dc98f67c03051cc2067b290" id="r_a67b1d1838dc98f67c03051cc2067b290"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a67b1d1838dc98f67c03051cc2067b290">Llama</a> (const struct common_params &amp;<a class="el" href="#a9a44a3d01a7b27d7ec9bcdf7914a274a">params</a>, std::string <a class="el" href="#a2159f2355b8f059933f59d1138e1d3c2">system_prompt</a>=&quot;&quot;)</td></tr>
-<tr class="separator:a67b1d1838dc98f67c03051cc2067b290"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36707047a228c3a9278337b1426938c3" id="r_a36707047a228c3a9278337b1426938c3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a36707047a228c3a9278337b1426938c3">Llama</a> (const struct common_params &amp;<a class="el" href="#a9a44a3d01a7b27d7ec9bcdf7914a274a">params</a>, std::string <a class="el" href="#a2159f2355b8f059933f59d1138e1d3c2">system_prompt</a>=&quot;&quot;, bool initial_reset=true)</td></tr>
+<tr class="separator:a36707047a228c3a9278337b1426938c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac234b99451a4ab4ad2e0055b3d1d351b" id="r_ac234b99451a4ab4ad2e0055b3d1d351b"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac234b99451a4ab4ad2e0055b3d1d351b">~Llama</a> ()</td></tr>
 <tr class="separator:ac234b99451a4ab4ad2e0055b3d1d351b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a2ed6b1b03a1137f5f964336515f714" id="r_a5a2ed6b1b03a1137f5f964336515f714"><td class="memItemLeft" align="right" valign="top">std::vector&lt; llama_token &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a2ed6b1b03a1137f5f964336515f714">tokenize</a> (const std::string &amp;text, bool add_bos, bool special=false)</td></tr>
 <tr class="separator:a5a2ed6b1b03a1137f5f964336515f714"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15eca739cca843954ec299326a462305" id="r_a15eca739cca843954ec299326a462305"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a15eca739cca843954ec299326a462305">detokenize</a> (const std::vector&lt; llama_token &gt; &amp;tokens)</td></tr>
 <tr class="separator:a15eca739cca843954ec299326a462305"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c2cd8a9a1361837e6f7661a4f63910c" id="r_a7c2cd8a9a1361837e6f7661a4f63910c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c2cd8a9a1361837e6f7661a4f63910c">reset</a> ()</td></tr>
+<tr class="memitem:a7c2cd8a9a1361837e6f7661a4f63910c" id="r_a7c2cd8a9a1361837e6f7661a4f63910c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c2cd8a9a1361837e6f7661a4f63910c">reset</a> ()</td></tr>
 <tr class="separator:a7c2cd8a9a1361837e6f7661a4f63910c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a666346d652a0d1de544bb7635eec6e8f" id="r_a666346d652a0d1de544bb7635eec6e8f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a666346d652a0d1de544bb7635eec6e8f">cancel</a> ()</td></tr>
 <tr class="separator:a666346d652a0d1de544bb7635eec6e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -215,7 +215,7 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a04b5be2cefb14b0e824d47ae432ea720"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7906765d40d424934998ea0b1245606" id="r_ab7906765d40d424934998ea0b1245606"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab7906765d40d424934998ea0b1245606">eval_token</a> (llama_token token)</td></tr>
 <tr class="separator:ab7906765d40d424934998ea0b1245606"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab41df18b60dc8bac07cc1ae306082f10" id="r_ab41df18b60dc8bac07cc1ae306082f10"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab41df18b60dc8bac07cc1ae306082f10">eval</a> (std::vector&lt; llama_token &gt; tokens)</td></tr>
+<tr class="memitem:ab41df18b60dc8bac07cc1ae306082f10" id="r_ab41df18b60dc8bac07cc1ae306082f10"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab41df18b60dc8bac07cc1ae306082f10">eval</a> (std::vector&lt; llama_token &gt; tokens)</td></tr>
 <tr class="separator:ab41df18b60dc8bac07cc1ae306082f10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a16e099f81537e166018abd08df63e3" id="r_a8a16e099f81537e166018abd08df63e3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8a16e099f81537e166018abd08df63e3">eval</a> (struct llama_batch batch)</td></tr>
 <tr class="separator:a8a16e099f81537e166018abd08df63e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -263,8 +263,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a5f83cfac90c5e50b74f11f6dddb62f9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a67b1d1838dc98f67c03051cc2067b290" name="a67b1d1838dc98f67c03051cc2067b290"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a67b1d1838dc98f67c03051cc2067b290">&#9670;&#160;</a></span>Llama()</h2>
+<a id="a36707047a228c3a9278337b1426938c3" name="a36707047a228c3a9278337b1426938c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36707047a228c3a9278337b1426938c3">&#9670;&#160;</a></span>Llama()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -277,7 +277,12 @@ Private Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string</td>          <td class="paramname"><span class="paramname"><em>system_prompt</em></span><span class="paramdefsep"> = </span><span class="paramdefval">&quot;&quot;</span>&#160;)</td>
+          <td class="paramtype">std::string</td>          <td class="paramname"><span class="paramname"><em>system_prompt</em></span><span class="paramdefsep"> = </span><span class="paramdefval">&quot;&quot;</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>initial_reset</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -387,10 +392,12 @@ Private Attributes</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+<span class="mlabels"><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classllava__ros_1_1Llava.html#a1629b8fcd0726b58467d7aee7687b849">llava_ros::Llava</a>.</p>
 
 </div>
 </div>
@@ -1207,6 +1214,9 @@ Private Attributes</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">void Llama::reset </td>
@@ -1215,7 +1225,14 @@ Private Attributes</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classllava__ros_1_1Llava.html#a5708e11372b049375bd981443d2d8ac9">llava_ros::Llava</a>.</p>
 
 </div>
 </div>

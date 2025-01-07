@@ -18,7 +18,7 @@ var searchData=
   ['reranker_15',['llama_ros (LLM + RAG + Reranker)',['../index.html#autotoc_md28',1,'']]],
   ['reranking_20demo_16',['Reranking Demo',['../index.html#autotoc_md33',1,'']]],
   ['reranking_20stream_17',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
-  ['reset_18',['reset',['../classllama__ros_1_1Llama.html#a7c2cd8a9a1361837e6f7661a4f63910c',1,'llama_ros::Llama']]],
+  ['reset_18',['reset',['../classllama__ros_1_1Llama.html#a7c2cd8a9a1361837e6f7661a4f63910c',1,'llama_ros::Llama::reset()'],['../classllava__ros_1_1Llava.html#a5708e11372b049375bd981443d2d8ac9',1,'llava_ros::Llava::reset()']]],
   ['response_19',['Generate Response',['../index.html#autotoc_md20',1,'']]],
   ['response_20llava_20',['Generate Response (llava)',['../index.html#autotoc_md21',1,'']]],
   ['responseoutput_21',['ResponseOutput',['../structllama__ros_1_1ResponseOutput.html',1,'llama_ros']]],
