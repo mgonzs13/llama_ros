@@ -267,8 +267,8 @@ protected:
   virtual bool eval_prompt();
   bool eval_prompt(std::vector<llama_token> prompt_tokens);
   bool eval_token(llama_token token);
-  virtual bool eval(std::vector<llama_token> tokens);
-  bool eval(struct llama_batch batch);
+  bool eval(std::vector<llama_token> tokens);
+  virtual bool eval(struct llama_batch batch);
 
   std::vector<struct TokenProb> get_probs();
   struct CompletionOutput sample();

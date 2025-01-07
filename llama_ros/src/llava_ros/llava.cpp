@@ -265,20 +265,9 @@ bool Llava::eval_prompt() {
   return true;
 }
 
-bool Llava::eval(std::vector<llama_token> tokens) {
+bool Llava::eval(struct llama_batch batch) {
 
   std::vector<llama_pos> pos;
-
-  // create batch
-  struct llama_batch batch = {
-      int32_t(tokens.size()), // n_tokens
-      tokens.data(),          // tokens
-      nullptr,                // embd
-      nullptr,                // pos
-      nullptr,                // n_seq_id
-      nullptr,                // seq_id
-      nullptr,                // logits
-  };
 
   if (clip_is_qwen2vl(this->ctx_clip)) {
     pos.resize(batch.n_tokens * 4);
