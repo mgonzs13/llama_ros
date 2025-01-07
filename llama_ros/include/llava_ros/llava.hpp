@@ -50,6 +50,7 @@ public:
         const struct LlavaParams &llava_params, std::string system_prompt = "");
   ~Llava();
 
+  void reset() override;
   bool load_image(std::string base64_str);
   struct llava_image_embed *
   base64_image_to_embed(const std::string &base64_str);
@@ -59,6 +60,7 @@ protected:
                    bool add_sfx) override;
   bool eval_image(struct llava_image_embed *image_embed);
   bool eval_prompt();
+  bool eval(std::vector<llama_token> tokens) override;
 
   struct llava_image_embed *image_embed;
   struct clip_ctx *ctx_clip;
@@ -67,6 +69,7 @@ protected:
 private:
   void free_image();
   int image_pose;
+  int st_pos_id;
 };
 
 } // namespace llava_ros

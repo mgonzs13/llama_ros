@@ -34,7 +34,8 @@
 
 using namespace llama_ros;
 
-Llama::Llama(const struct common_params &params, std::string system_prompt)
+Llama::Llama(const struct common_params &params, std::string system_prompt,
+             bool initial_reset)
     : params(params), system_prompt(system_prompt) {
 
   print_build_info();
@@ -100,7 +101,9 @@ Llama::Llama(const struct common_params &params, std::string system_prompt)
   }
 
   // set inital values
-  this->reset();
+  if (initial_reset) {
+    this->reset();
+  }
 
   // show info
   LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
@@ -146,6 +149,38 @@ Llama::~Llama() {
 
   ggml_threadpool_free(this->threadpool_batch);
   this->threadpool_batch = nullptr;
+}
+
+/*
+*****************************
+*           RESET           *
+*           CANCEL          *
+*****************************
+*/
+void Llama::reset() {
+
+  llama_kv_cache_clear(this->ctx);
+
+  if (this->sampler != nullptr) {
+    common_sampler_reset(this->sampler);
+  }
+
+  this->canceled = false;
+  this->n_past = 0;
+  this->n_consumed = 0;
+  this->ga_i = 0;
+
+  this->prompt_tokens.clear();
+
+  // load system prompt
+  if (!this->eval_system_prompt()) {
+    LLAMA_LOG_ERROR("Failed to eval system prompt");
+  }
+
+  // number of tokens to keep when resetting context
+  if (this->params.n_keep < 0) {
+    this->params.n_keep = (int)this->prompt_tokens.size();
+  }
 }
 
 /*
@@ -337,38 +372,6 @@ struct Metadata Llama::get_metadata() {
       this->get_metadata("tokenizer.chat_template", 2048);
 
   return metadata;
-}
-
-/*
-*****************************
-*           RESET           *
-*           CANCEL          *
-*****************************
-*/
-void Llama::reset() {
-
-  llama_kv_cache_clear(this->ctx);
-
-  if (this->sampler != nullptr) {
-    common_sampler_reset(this->sampler);
-  }
-
-  this->canceled = false;
-  this->n_past = 0;
-  this->n_consumed = 0;
-  this->ga_i = 0;
-
-  this->prompt_tokens.clear();
-
-  // load system prompt
-  if (!this->eval_system_prompt()) {
-    LLAMA_LOG_ERROR("Failed to eval system prompt");
-  }
-
-  // number of tokens to keep when resetting context
-  if (this->params.n_keep < 0) {
-    this->params.n_keep = (int)this->prompt_tokens.size();
-  }
 }
 
 /*
@@ -911,6 +914,7 @@ bool Llama::eval_prompt() { return this->eval_prompt(this->prompt_tokens); }
 bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
 
   std::vector<llama_token> batch;
+  batch.reserve(this->params.n_batch);
 
   while (((int)prompt_tokens.size() > this->n_consumed)) {
 
@@ -941,13 +945,13 @@ bool Llama::eval(std::vector<llama_token> tokens) {
 
   // create batch
   struct llama_batch batch = {
-      int32_t(tokens.size()),
-      tokens.data(),
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
+      int32_t(tokens.size()), // n_tokens
+      tokens.data(),          // tokens
+      nullptr,                // embd
+      nullptr,                // pos
+      nullptr,                // n_seq_id
+      nullptr,                // seq_id
+      nullptr,                // logits
   };
 
   return this->eval(batch);

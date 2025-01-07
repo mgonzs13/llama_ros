@@ -34,17 +34,30 @@ using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params,
              const struct LlavaParams &llava_params, std::string system_prompt)
-    : llama_ros::Llama(params, system_prompt), llava_params(llava_params) {
+    : llama_ros::Llama(params, system_prompt, false),
+      llava_params(llava_params), image_pose(0), st_pos_id(-1) {
 
   // load clip model
   const char *clip_path = this->params.mmproj.c_str();
   this->ctx_clip = clip_model_load(clip_path, 1);
   this->image_embed = nullptr;
+
+  // set inital values
+  this->reset();
 }
 
 Llava::~Llava() {
+  this->image_pose = 0;
+  this->st_pos_id = -1;
   clip_free(this->ctx_clip);
   this->free_image();
+}
+
+void Llava::reset() {
+  this->image_pose = 0;
+  this->st_pos_id = -1;
+  this->free_image();
+  Llama::reset();
 }
 
 /*
@@ -150,13 +163,40 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
   int n_embd = this->get_n_embd();
   bool succ = true;
 
+  // for qwen2-vl
+  auto img_tokens = image_embed->n_image_pos;
+
+  std::vector<llama_pos> mrope_pos;
+  mrope_pos.resize(img_tokens * 4);
+
+  std::vector<llama_pos> batch_mrope_pos;
+  batch_mrope_pos.resize(img_tokens * 4);
+
+  // fill mrope if qwen2-vl
+  if (clip_is_qwen2vl(this->ctx_clip)) {
+    auto image_size = clip_get_load_image_size(this->ctx_clip);
+    const int patch_size = 14 * 2;
+
+    const int ph =
+        image_size->height / patch_size + (image_size->height % patch_size > 0);
+    const int pw =
+        image_size->width / patch_size + (image_size->width % patch_size > 0);
+
+    for (int y = 0; y < ph; y++) {
+      for (int x = 0; x < pw; x++) {
+        int i = y * pw + x;
+        mrope_pos[i] = this->st_pos_id;
+        mrope_pos[i + img_tokens] = this->st_pos_id + y;
+        mrope_pos[i + img_tokens * 2] = this->st_pos_id + x;
+        mrope_pos[i + img_tokens * 3] = 0;
+      }
+    }
+    this->st_pos_id += std::max(pw, ph);
+  }
+
   for (int i = 0; i < image_embed->n_image_pos; i += this->params.n_batch) {
 
-    int n_eval = image_embed->n_image_pos - i;
-
-    if (n_eval > this->params.n_batch) {
-      n_eval = this->params.n_batch;
-    }
+    int n_eval = std::min(this->params.n_batch, image_embed->n_image_pos - i);
 
     struct llama_batch batch = {
         int32_t(n_eval),                   // n_tokens
@@ -168,7 +208,19 @@ bool Llava::eval_image(struct llava_image_embed *image_embed) {
         nullptr                            // logits
     };
 
-    if (!this->eval(batch)) {
+    if (clip_is_qwen2vl(this->ctx_clip)) {
+      std::fill(batch_mrope_pos.begin(), batch_mrope_pos.end(), 0);
+      memcpy(batch_mrope_pos.data(), &mrope_pos[i], n_eval * sizeof(llama_pos));
+      memcpy(&batch_mrope_pos[n_eval * 1], &mrope_pos[img_tokens * 1 + i],
+             n_eval * sizeof(llama_pos));
+      memcpy(&batch_mrope_pos[n_eval * 2], &mrope_pos[img_tokens * 2 + i],
+             n_eval * sizeof(llama_pos));
+      memcpy(&batch_mrope_pos[n_eval * 3], &mrope_pos[img_tokens * 3 + i],
+             n_eval * sizeof(llama_pos));
+      batch.pos = batch_mrope_pos.data();
+    }
+
+    if (!Llama::eval(batch)) {
       LLAMA_LOG_ERROR("Failed in image eval");
       succ = false;
       break;
@@ -209,6 +261,39 @@ bool Llava::eval_prompt() {
   } else { // no image in the prompt
     return llama_ros::Llama::eval_prompt();
   }
+
+  return true;
+}
+
+bool Llava::eval(std::vector<llama_token> tokens) {
+
+  std::vector<llama_pos> pos;
+
+  // create batch
+  struct llama_batch batch = {
+      int32_t(tokens.size()), // n_tokens
+      tokens.data(),          // tokens
+      nullptr,                // embd
+      nullptr,                // pos
+      nullptr,                // n_seq_id
+      nullptr,                // seq_id
+      nullptr,                // logits
+  };
+
+  if (clip_is_qwen2vl(this->ctx_clip)) {
+    pos.resize(batch.n_tokens * 4);
+    std::fill(pos.begin(), pos.end(), 0);
+    for (int j = 0; j < batch.n_tokens * 3; j++) {
+      pos[j] = this->st_pos_id + (j % batch.n_tokens);
+    }
+    batch.pos = pos.data();
+  }
+
+  if (!Llama::eval(batch)) {
+    return false;
+  }
+
+  this->st_pos_id += batch.n_tokens;
 
   return true;
 }

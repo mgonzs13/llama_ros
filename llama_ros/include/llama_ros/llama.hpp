@@ -169,14 +169,15 @@ using GenerateResponseCallback = std::function<void(struct CompletionOutput)>;
 class Llama {
 
 public:
-  Llama(const struct common_params &params, std::string system_prompt = "");
+  Llama(const struct common_params &params, std::string system_prompt = "",
+        bool initial_reset = true);
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
                                     bool special = false);
   std::string detokenize(const std::vector<llama_token> &tokens);
 
-  void reset();
+  virtual void reset();
   void cancel();
 
   std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
@@ -266,7 +267,7 @@ protected:
   virtual bool eval_prompt();
   bool eval_prompt(std::vector<llama_token> prompt_tokens);
   bool eval_token(llama_token token);
-  bool eval(std::vector<llama_token> tokens);
+  virtual bool eval(std::vector<llama_token> tokens);
   bool eval(struct llama_batch batch);
 
   std::vector<struct TokenProb> get_probs();
