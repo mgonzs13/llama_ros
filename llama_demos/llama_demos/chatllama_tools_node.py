@@ -37,11 +37,11 @@ from random import randint
 @tool
 def get_inhabitants(city: str) -> int:
     """Get the current temperature of a city"""
-    return randint(10000, 40000)
+    return 7100000
 
 @tool
-def get_max_temperature(city: str) -> int:
-    """Get the max temperature of a city"""
+def get_curr_temperature(city: str) -> int:
+    """Get the current temperature of a city"""
     return randint(20, 40)
 
 
@@ -66,20 +66,24 @@ class ChatLlamaToolsDemoNode(Node):
         )
 
         messages = [
-            SystemMessage("You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"),
+            # SystemMessage("You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"),
             HumanMessage("What is the current temperature in Madrid? And its inhabitants?")
         ]
                 
-        llm_tools = self.chat.bind_tools([get_inhabitants, get_max_temperature], tool_choice='any')
+        llm_tools = self.chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice='any')
         
         all_tools_res = llm_tools.invoke(messages)
         
+        messages.append(all_tools_res)
+        
         for tool in all_tools_res.tool_calls:
-            selected_tool = {"get_inhabitants": get_inhabitants, "get_max_temperature": get_max_temperature}[tool['name']]
+            selected_tool = {"get_inhabitants": get_inhabitants, "get_curr_temperature": get_curr_temperature}[tool['name']]
             tool_msg = selected_tool.invoke(tool)
             messages.append(tool_msg)
             
-        print(f'All messages: {messages}')
+        
+        res = self.chat.invoke(messages)
+        self.get_logger().info(res.content)
 
 
 def main():

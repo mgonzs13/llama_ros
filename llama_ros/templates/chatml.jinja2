@@ -12,7 +12,7 @@
 
 {% for message in messages %}
     {% if (loop.last and add_generation_prompt) or not loop.last %}
-        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' }}
+        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}
     {% else %}
         {{- '<|im_start|>' + message['role'] + '\n' + message['content'] }}
     {% endif %}

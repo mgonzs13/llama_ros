@@ -94,7 +94,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         }
 
 
-    def _generate_prompt(self, messages: List[dict[str, str]], tools_grammar: str, use_default_prompt: bool = True, **kwargs) -> str:        
+    def _generate_prompt(self, messages: List[dict[str, str]], use_default_prompt: bool = True, **kwargs) -> str:        
+        tools_grammar = kwargs.get("tools_grammar", None)
 
         if use_default_prompt:
             chat_template_path = get_package_share_directory('llama_ros') + '/templates/chatml.jinja2'
@@ -102,14 +103,16 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 chat_template = f.read()
         else:
             chat_template = self.model_metadata.tokenizer.chat_template
-                
-        list_options = json.loads(tools_grammar)['properties']['tool_calls']['items']
-        for key in list_options.keys():
-            if key.endswith('Of'):
-                list_key = key
-                
-        formatted_tools = [self._json_schema_to_definition(tool) for tool in list_options[list_key]]
-        formatted_tools = [{key: tool[key] for key in sorted(tool, reverse=True)} for tool in formatted_tools]
+        
+        formatted_tools = []
+        if tools_grammar:
+            list_options = json.loads(tools_grammar)['properties']['tool_calls']['items']
+            for key in list_options.keys():
+                if key.endswith('Of'):
+                    list_key = key
+                    
+            formatted_tools = [self._json_schema_to_definition(tool) for tool in list_options[list_key]]
+            formatted_tools = [{key: tool[key] for key in sorted(tool, reverse=True)} for tool in formatted_tools]
                 
         bos_token = self.llama_client.detokenize(Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])).text
         
@@ -158,18 +161,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         elif isinstance(message, AIMessage):
             all_messages = []
             
-            # Text messages
-            all_messages.extend([{"role": "assistant", "content": content} for content in self._convert_content(message.content)])
+            contents = self._convert_content(message.content)
+            if isinstance(contents, dict):
+                contents = [contents]
+            contents = [content for content in contents if content["type"] == "text" and content["text"] != ""]
             
-            # Tool messages
-            all_messages.extend([{"role": "assistant", "content": "", "tool_call_id": tc['id']} for tc in message.additional_kwargs["tool_calls"]])
+            all_messages.extend([{"role": "assistant", "content": content} for content in contents])
             
             return all_messages
             
         elif isinstance(message, SystemMessage):
             return [{"role": "system", "content": self._convert_content(message.content)}]
         elif isinstance(message, ToolMessage):
-            return [{"role": "tool", "content": self._convert_content(message.content), "tool_call_id": message.tool_call_id}]
+            return [{"role": "tool", "content": f'{message.name}: {message.content}', "tool_call_id": message.tool_call_id}]
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
@@ -177,9 +181,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         new_messages = []
         image_url = None
         image = None
-                
+        
         for message in messages:
-            if message['content']['type'] == 'image':
+            if 'type' not in message['content']:
+                new_messages.append({"role": message['role'], "content": message['content']})
+            elif message['content']['type'] == 'image':
                 image = message['content']['image']
             elif message['content']['type'] == 'image_url':
                 image_url = message['content']['image_url']
