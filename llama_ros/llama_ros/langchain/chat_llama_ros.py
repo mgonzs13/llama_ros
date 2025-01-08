@@ -38,8 +38,9 @@ from ament_index_python.packages import get_package_share_directory
 
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import Message
-from llama_msgs.srv import Detokenize
 from action_msgs.msg import GoalStatus
+from llama_msgs.srv import Detokenize
+from llama_msgs.srv import FormatChatMessages
 from llama_msgs.action import GenerateResponse
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import json
@@ -63,6 +64,8 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     use_llama_template: bool = False
+    
+    use_gguf_template: bool = True
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
             loader=jinja2.BaseLoader(),
@@ -105,7 +108,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 chat_template = f.read()
         else:
             chat_template = self.model_metadata.tokenizer.chat_template
-        
+                
         formatted_tools = []
         if tools_grammar:
             list_options = json.loads(tools_grammar)['properties']['tool_calls']['items']
@@ -117,8 +120,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             formatted_tools = [{key: tool[key] for key in sorted(tool, reverse=True)} for tool in formatted_tools]
                 
         bos_token = self.llama_client.detokenize(Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])).text
-        
-        if chat_template:
+                
+        if not self.use_gguf_template or self.use_llama_template:
             formatted_prompt = self.jinja_env.from_string(
                 chat_template
             ).render(
@@ -130,7 +133,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return formatted_prompt
         else:
             ros_messages = [Message(content=message["content"], role=message["role"]) for message in messages]
-            return self.llama_client.format_chat_messages(ros_messages).formatted_prompt
+            return self.llama_client.format_chat_prompt(FormatChatMessages.Request(messages=ros_messages)).formatted_prompt
 
     def _convert_content(self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]) -> List[Dict[str, str]]:
         if isinstance(content, str):
@@ -177,7 +180,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         elif isinstance(message, ToolMessage):
             tool_args = message.additional_kwargs.get("args", {})
             formatted_args = ', '.join([f'{value}' for _, value in tool_args.items()])
-            return [{"role": "tool", "content": f'{message.name}({formatted_args}): {message.content}', "tool_call_id": message.tool_call_id}]
+            formatted_content = f'{message.name}({formatted_args}): {message.content}'
+            return [{"role": "tool", "content": {'type': 'text', 'text': formatted_content}, "tool_call_id": message.tool_call_id}]
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
@@ -187,14 +191,25 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         image = None
         
         for message in messages:
-            if 'type' not in message['content']:
-                new_messages.append({"role": message['role'], "content": message['content']})
-            elif message['content']['type'] == 'image':
-                image = message['content']['image']
-            elif message['content']['type'] == 'image_url':
-                image_url = message['content']['image_url']
-            else:
-                new_messages.append({"role": message['role'], "content": message['content']['text']})
+            if isinstance(message, str):
+                new_messages.append({"role": message['role'], "content": message})
+            elif isinstance(message['content'], list):
+                for single_content in message['content']:
+                    if isinstance(single_content, str):
+                        new_messages.append({"role": message['role'], "content": single_content})
+                    elif single_content['type'] == 'text':
+                        new_messages.append({"role": message['role'], "content": single_content['text']})
+                    elif single_content['type'] == 'image':
+                        image = single_content['image']
+                    elif single_content['type'] == 'image_url':
+                        image_url = single_content['image_url']
+            elif isinstance(message['content'], dict):
+                if message['content']['type'] == 'text':
+                    new_messages.append({"role": message['role'], "content": message['content']['text']})
+                elif message['content']['type'] == 'image':
+                    image = message['content']['image']
+                elif message['content']['type'] == 'image_url':
+                    image_url = message['content']['image_url']
         
         return new_messages, image_url, image
     
@@ -237,7 +252,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             dict_messages.extend(self._convert_message_to_dict(message))
         
         chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
-        
+                
         formatted_prompt = self._generate_prompt(chat_messages, **kwargs)
 
         goal_action = self._create_action_goal(
@@ -270,7 +285,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             dict_messages.extend(self._convert_message_to_dict(message))
             
         chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
-        
+                
         formatted_prompt = self._generate_prompt(chat_messages)
 
         goal_action = self._create_action_goal(
