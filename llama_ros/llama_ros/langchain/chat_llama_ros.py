@@ -62,6 +62,8 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
+    use_llama_template: bool = False
+
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
             loader=jinja2.BaseLoader(),
             trim_blocks=True,
@@ -94,10 +96,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         }
 
 
-    def _generate_prompt(self, messages: List[dict[str, str]], use_default_prompt: bool = True, **kwargs) -> str:        
+    def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:        
         tools_grammar = kwargs.get("tools_grammar", None)
 
-        if use_default_prompt:
+        if self.use_llama_template:
             chat_template_path = get_package_share_directory('llama_ros') + '/templates/chatml.jinja2'
             with open(chat_template_path, 'r') as f:
                 chat_template = f.read()
@@ -173,7 +175,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         elif isinstance(message, SystemMessage):
             return [{"role": "system", "content": self._convert_content(message.content)}]
         elif isinstance(message, ToolMessage):
-            return [{"role": "tool", "content": f'{message.name}: {message.content}', "tool_call_id": message.tool_call_id}]
+            tool_args = message.additional_kwargs.get("args", {})
+            formatted_args = ', '.join([f'{value}' for _, value in tool_args.items()])
+            return [{"role": "tool", "content": f'{message.name}({formatted_args}): {message.content}', "tool_call_id": message.tool_call_id}]
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
@@ -361,10 +365,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         "required": ["name", "arguments"]
                     }
                     grammar["properties"]['tool_calls']["items"][f'{tool_choice}Of'].append(new_action)
-        # grammar = None
 
-        # kwargs["tool_choice"] = tool_choice
-        # formatted_tools = [tool.model_json_schema() for tool in tools]
         return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
 
 
@@ -381,11 +382,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
-        
-        # if is_pydantic_schema is False:
-        #     raise ValueError(
-        #         "Schema must be a Pydantic model class or a dict of the form "
-        #     )
         
         if method == "json_mode" or method == "json_schema":
             tool_name = schema.__name__

@@ -17,7 +17,6 @@
         {{- '<|im_start|>' + message['role'] + '\n' + message['content'] }}
     {% endif %}
 {% endfor %}
-
 {% if add_generation_prompt and messages[-1]['role'] != 'assistant' %}
     {{- '<|im_start|>assistant' }}
 {% endif %}

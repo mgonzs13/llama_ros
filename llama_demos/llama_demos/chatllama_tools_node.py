@@ -63,6 +63,7 @@ class ChatLlamaToolsDemoNode(Node):
         self.chat = ChatLlamaROS(
             temp=0.6,
             penalty_last_n=8,
+            use_llama_template=True
         )
 
         messages = [
@@ -79,8 +80,8 @@ class ChatLlamaToolsDemoNode(Node):
         for tool in all_tools_res.tool_calls:
             selected_tool = {"get_inhabitants": get_inhabitants, "get_curr_temperature": get_curr_temperature}[tool['name']]
             tool_msg = selected_tool.invoke(tool)
+            tool_msg.additional_kwargs = {'args': tool['args']}
             messages.append(tool_msg)
-            
         
         res = self.chat.invoke(messages)
         self.get_logger().info(res.content)
