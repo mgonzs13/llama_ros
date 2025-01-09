@@ -21,9 +21,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Any, Callable, List, Literal, Optional, Dict, Iterator, Sequence, Type, Union, Tuple
+from typing import (
+    Any,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    Dict,
+    Iterator,
+    Sequence,
+    Type,
+    Union,
+    Tuple,
+)
 from operator import itemgetter
-from langchain_core.output_parsers import PydanticToolsParser, JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser
+from langchain_core.output_parsers import (
+    PydanticToolsParser,
+    JsonOutputKeyToolsParser,
+    PydanticOutputParser,
+    JsonOutputParser,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.runnables import RunnablePassthrough, RunnableMap
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -64,15 +81,15 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     use_llama_template: bool = False
-    
+
     use_gguf_template: bool = True
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
-            loader=jinja2.BaseLoader(),
-            trim_blocks=True,
-            lstrip_blocks=True,
+        loader=jinja2.BaseLoader(),
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
-    
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -83,59 +100,70 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     def _json_schema_to_definition(self, input_json):
         # Extract the tool name
-        tool_name = input_json['properties']["name"]["const"]
-        
+        tool_name = input_json["properties"]["name"]["const"]
+
         # Extract and map arguments to desired format
-        properties = input_json['properties']["arguments"]["properties"]
+        properties = input_json["properties"]["arguments"]["properties"]
         transformed_properties = {
-            arg: prop["type"]
-            for (arg, prop) in properties.items()
+            arg: prop["type"] for (arg, prop) in properties.items()
         }
-        
+
         # Create the transformed object
-        return {
-            "name": tool_name,
-            "arguments": transformed_properties
-        }
+        return {"name": tool_name, "arguments": transformed_properties}
 
-
-    def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:        
+    def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
         tools_grammar = kwargs.get("tools_grammar", None)
 
         if self.use_llama_template:
-            chat_template_path = get_package_share_directory('llama_ros') + '/templates/chatml.jinja2'
-            with open(chat_template_path, 'r') as f:
+            chat_template_path = (
+                get_package_share_directory("llama_ros") + "/templates/chatml.jinja2"
+            )
+            with open(chat_template_path, "r") as f:
                 chat_template = f.read()
         else:
             chat_template = self.model_metadata.tokenizer.chat_template
-                
+
         formatted_tools = []
         if tools_grammar:
-            list_options = json.loads(tools_grammar)['properties']['tool_calls']['items']
+            list_options = json.loads(tools_grammar)["properties"]["tool_calls"][
+                "items"
+            ]
             for key in list_options.keys():
-                if key.endswith('Of'):
+                if key.endswith("Of"):
                     list_key = key
-                    
-            formatted_tools = [self._json_schema_to_definition(tool) for tool in list_options[list_key]]
-            formatted_tools = [{key: tool[key] for key in sorted(tool, reverse=True)} for tool in formatted_tools]
-                
-        bos_token = self.llama_client.detokenize(Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])).text
-                
-        if not self.use_gguf_template or self.use_llama_template:
-            formatted_prompt = self.jinja_env.from_string(
-                chat_template
-            ).render(
+
+            formatted_tools = [
+                self._json_schema_to_definition(tool) for tool in list_options[list_key]
+            ]
+            formatted_tools = [
+                {key: tool[key] for key in sorted(tool, reverse=True)}
+                for tool in formatted_tools
+            ]
+
+        bos_token = self.llama_client.detokenize(
+            Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
+        ).text
+
+        if self.use_gguf_template or self.use_llama_template:
+            formatted_prompt = self.jinja_env.from_string(chat_template).render(
                 messages=messages,
                 add_generation_prompt=True,
                 bos_token=bos_token,
-                tools_grammar=[json.dumps(tool) for tool in formatted_tools]
+                tools_grammar=[json.dumps(tool) for tool in formatted_tools],
             )
             return formatted_prompt
         else:
-            ros_messages = [Message(content=message["content"], role=message["role"]) for message in messages]
-            return self.llama_client.format_chat_prompt(FormatChatMessages.Request(messages=ros_messages)).formatted_prompt
+            ros_messages = [
+                Message(content=message["content"], role=message["role"])
+                for message in messages
+            ]
+            return self.llama_client.format_chat_prompt(
+                FormatChatMessages.Request(messages=ros_messages)
+            ).formatted_prompt
 
-    def _convert_content(self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]) -> List[Dict[str, str]]:
+    def _convert_content(
+        self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]
+    ) -> List[Dict[str, str]]:
         if isinstance(content, str):
             return {"type": "text", "text": content}
         if isinstance(content, list) and len(content) == 1:
@@ -152,93 +180,110 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     decoded_image = base64.b64decode(image_data)
                     np_image = np.frombuffer(decoded_image, np.uint8)
                     image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-                    
+
                     return {"type": "image", "image": image}
                 else:
                     image_url = image_text
                     return {"type": "image_url", "image_url": image_url}
 
-
     def _convert_message_to_dict(self, message: BaseMessage) -> list[dict[str, str]]:
         if isinstance(message, HumanMessage):
-            return [{"role": "user", "content": self._convert_content(message.content)}]
-        
+            converted_msg = [
+                {"role": "user", "content": self._convert_content(message.content)}
+            ]
+            return converted_msg
+
         elif isinstance(message, AIMessage):
             all_messages = []
-            
+
             contents = self._convert_content(message.content)
             if isinstance(contents, dict):
                 contents = [contents]
-            contents = [content for content in contents if content["type"] == "text" and content["text"] != ""]
-            
-            all_messages.extend([{"role": "assistant", "content": content} for content in contents])
-            
+            contents = [
+                content
+                for content in contents
+                if content["type"] == "text" and content["text"] != ""
+            ]
+
+            all_messages.extend(
+                [{"role": "assistant", "content": content} for content in contents]
+            )
+
             return all_messages
-            
+
         elif isinstance(message, SystemMessage):
-            return [{"role": "system", "content": self._convert_content(message.content)}]
+            converted_msg = [
+                {"role": "system", "content": self._convert_content(message.content)}
+            ]
+            return converted_msg
+
         elif isinstance(message, ToolMessage):
             tool_args = message.additional_kwargs.get("args", {})
-            formatted_args = ', '.join([f'{value}' for _, value in tool_args.items()])
-            formatted_content = f'{message.name}({formatted_args}): {message.content}'
-            return [{"role": "tool", "content": {'type': 'text', 'text': formatted_content}, "tool_call_id": message.tool_call_id}]
+            formatted_args = ", ".join([f"{value}" for _, value in tool_args.items()])
+            formatted_content = f"{message.name}({formatted_args}): {message.content}"
+            return [
+                {
+                    "role": "tool",
+                    "content": {"type": "text", "text": formatted_content},
+                    "tool_call_id": message.tool_call_id,
+                }
+            ]
         else:
             raise ValueError(f"Unsupported message type: {type(message)}")
 
-    def _extract_data_from_messages(self, messages: List[BaseMessage]) -> Tuple[Dict[str, str], Optional[str], Optional[str]]:
+    def _extract_data_from_messages(
+        self, messages: List[BaseMessage]
+    ) -> Tuple[Dict[str, str], Optional[str], Optional[str]]:
         new_messages = []
         image_url = None
         image = None
-        
+
+        def process_content(role, content):
+            nonlocal image, image_url
+            if isinstance(content, str):
+                new_messages.append({"role": role, "content": content})
+            elif isinstance(content, dict):
+                if content["type"] == "text":
+                    new_messages.append({"role": role, "content": content["text"]})
+                elif content["type"] == "image":
+                    image = content["image"]
+                elif content["type"] == "image_url":
+                    image_url = content["image_url"]
+
         for message in messages:
-            if isinstance(message, str):
-                new_messages.append({"role": message['role'], "content": message})
-            elif isinstance(message['content'], list):
-                for single_content in message['content']:
-                    if isinstance(single_content, str):
-                        new_messages.append({"role": message['role'], "content": single_content})
-                    elif single_content['type'] == 'text':
-                        new_messages.append({"role": message['role'], "content": single_content['text']})
-                    elif single_content['type'] == 'image':
-                        image = single_content['image']
-                    elif single_content['type'] == 'image_url':
-                        image_url = single_content['image_url']
-            elif isinstance(message['content'], dict):
-                if message['content']['type'] == 'text':
-                    new_messages.append({"role": message['role'], "content": message['content']['text']})
-                elif message['content']['type'] == 'image':
-                    image = message['content']['image']
-                elif message['content']['type'] == 'image_url':
-                    image_url = message['content']['image_url']
-        
+            role = message["role"]
+            content = message["content"]
+            if isinstance(content, list):
+                for single_content in content:
+                    process_content(role, single_content)
+            else:
+                process_content(role, content)
+
         return new_messages, image_url, image
-    
-    def _create_chat_generations(self, response: GenerateResponse.Result, method: str) -> List[BaseMessage]:        
+
+    def _create_chat_generations(
+        self, response: GenerateResponse.Result, method: str
+    ) -> List[BaseMessage]:
         chat_gen = None
-        
+
         if method == "function_calling":
-            ai_message = AIMessage(content='', tool_calls=[])
+            ai_message = AIMessage(content="", tool_calls=[])
             parsed_output = json.loads(response.text)
-            for tool in parsed_output['tool_calls']:
-                ai_message.tool_calls.append({
-                    'name': tool['name'],
-                    'args': tool['arguments'],
-                    'type': 'tool_call',
-                    'id': f'{tool["name"]}_{uuid.uuid4()}'
-                    })
+            for tool in parsed_output["tool_calls"]:
+                ai_message.tool_calls.append(
+                    {
+                        "name": tool["name"],
+                        "args": tool["arguments"],
+                        "type": "tool_call",
+                        "id": f'{tool["name"]}_{uuid.uuid4()}',
+                    }
+                )
 
-            chat_gen = ChatGeneration(
-                message=ai_message
-            )
+            chat_gen = ChatGeneration(message=ai_message)
         else:
-            chat_gen = ChatGeneration(
-                message=AIMessage(content=response.text)
-            )
-        
-        return ChatResult(
-            generations=[chat_gen]
-        )
+            chat_gen = ChatGeneration(message=AIMessage(content=response.text))
 
+        return ChatResult(generations=[chat_gen])
 
     def _generate(
         self,
@@ -250,9 +295,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         dict_messages = []
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))
-        
-        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
-                
+
+        chat_messages, image_url, image = self._extract_data_from_messages(
+            dict_messages
+        )
+
         formatted_prompt = self._generate_prompt(chat_messages, **kwargs)
 
         goal_action = self._create_action_goal(
@@ -266,7 +313,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return ""
 
         return self._create_chat_generations(response, kwargs.get("method", "chat"))
-        
 
     def _stream(
         self,
@@ -279,13 +325,15 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             raise ValueError(
                 "Streaming is not supported when using 'function_calling' method."
             )
-        
+
         dict_messages = []
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))
-            
-        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
-                
+
+        chat_messages, image_url, image = self._extract_data_from_messages(
+            dict_messages
+        )
+
         formatted_prompt = self._generate_prompt(chat_messages)
 
         goal_action = self._create_action_goal(
@@ -301,14 +349,15 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 )
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=pt.text))
-            
-            
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[Union[Dict[str, Dict], bool, str]] = None,
-        method: Literal["function_calling", "json_schema", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_schema", "json_mode"
+        ] = "function_calling",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model
@@ -317,72 +366,69 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             tool-calling API. should be a dict of the form to force this tool
             {"type": "function", "function": {"name": <<tool_name>>}}.
         """
-        
+
         formatted_tools = []
-        
+
         for tool in tools:
-            formatted_tools.append(convert_to_openai_tool(tool)['function'])
-                        
-        tool_names = [ft['name'] for ft in formatted_tools]
+            formatted_tools.append(convert_to_openai_tool(tool)["function"])
+
+        tool_names = [ft["name"] for ft in formatted_tools]
         valid_choices = ["all", "one", "any"]
-        
+
         is_valid_choice = tool_choice in valid_choices
-        
-        chosen_tool = [
-            f for f in formatted_tools if f["name"] == tool_choice
-        ]
-                
+
+        chosen_tool = [f for f in formatted_tools if f["name"] == tool_choice]
+
         if not chosen_tool and not is_valid_choice:
             raise ValueError(
                 f"Tool choice {tool_choice=} was specified, but the only "
                 f"provided tools were {tool_names}."
             )
-        
+
         grammar = {}
-        
+
         if method == "json_mode" or method == "json_schema":
-            grammar = chosen_tool[0]['parameters']
+            grammar = chosen_tool[0]["parameters"]
         else:
             grammar = {
                 "type": "object",
                 "properties": {
                     "tool_calls": {
                         "type": "array",
-                        "items": {
-                            "type": "object"
-                        },
-                        "maxItems": 10
+                        "items": {"type": "object"},
+                        "maxItems": 10,
                     }
                 },
-                "required": ["tool_calls"]
+                "required": ["tool_calls"],
             }
-            
+
             if chosen_tool:
-                grammar["properties"]['tool_calls']["items"]['oneOf'] = []
+                grammar["properties"]["tool_calls"]["items"]["oneOf"] = []
                 new_action = {
                     "type": "object",
                     "properties": {
                         "name": {"type": "string", "const": chosen_tool[0]["name"]},
-                        "arguments": chosen_tool[0]["parameters"]
+                        "arguments": chosen_tool[0]["parameters"],
                     },
-                    "required": ["name", "arguments"]
+                    "required": ["name", "arguments"],
                 }
-                grammar["properties"]['tool_calls']["items"]['oneOf'].append(new_action)
+                grammar["properties"]["tool_calls"]["items"]["oneOf"].append(new_action)
             else:
-                grammar["properties"]['tool_calls']["items"][f'{tool_choice}Of'] = []
+                grammar["properties"]["tool_calls"]["items"][f"{tool_choice}Of"] = []
                 for tool in formatted_tools:
                     new_action = {
                         "type": "object",
                         "properties": {
                             "name": {"type": "string", "const": tool["name"]},
-                            "arguments": tool["parameters"]
+                            "arguments": tool["parameters"],
                         },
-                        "required": ["name", "arguments"]
+                        "required": ["name", "arguments"],
                     }
-                    grammar["properties"]['tool_calls']["items"][f'{tool_choice}Of'].append(new_action)
+                    grammar["properties"]["tool_calls"]["items"][
+                        f"{tool_choice}Of"
+                    ].append(new_action)
 
         return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
-
 
     def with_structured_output(
         self,
@@ -397,15 +443,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
-        
+
         if method == "json_mode" or method == "json_schema":
             tool_name = schema.__name__
-            
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                method=method
-            )
+
+            llm = self.bind_tools([schema], tool_choice=tool_name, method=method)
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
@@ -417,14 +459,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
-            schema = convert_to_openai_tool(schema)['function']
-            tool_name = schema["name"]  
-                                    
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                method=method
-            )   
+            schema = convert_to_openai_tool(schema)["function"]
+            tool_name = schema["name"]
+
+            llm = self.bind_tools([schema], tool_choice=tool_name, method=method)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -439,7 +477,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
                 f"'json_mode'. Received: '{method}'"
             )
-                        
+
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
