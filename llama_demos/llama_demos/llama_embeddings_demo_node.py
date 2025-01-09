@@ -23,7 +23,6 @@
 # SOFTWARE.
 
 
-import operator
 import rclpy
 from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode

@@ -25,6 +25,7 @@
 
 import bs4
 import rclpy
+
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.output_parsers import StrOutputParser
@@ -32,8 +33,9 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 from langchain.retrievers import ContextualCompressionRetriever
+
+from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 
 
 rclpy.init()
