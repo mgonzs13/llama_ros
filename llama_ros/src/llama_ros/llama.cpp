@@ -678,10 +678,8 @@ struct ResponseOutput Llama::generate_response(
   LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
   LLAMA_LOG_INFO("Sampler constr: %s",
                  common_sampler_print(this->sampler).c_str());
-
   LLAMA_LOG_INFO("Prompt tokens:\n%s",
                  this->detokenize(this->prompt_tokens).c_str());
-
   LLAMA_LOG_INFO("Starting Response Generation");
 
   // eval prompt

@@ -84,7 +84,7 @@ def format_docs(docs):
 rag_chain = (
     {"context": compression_retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
-    | ChatLlamaROS(temp=0.2)
+    | ChatLlamaROS(temp=0.0)
     | StrOutputParser()
 )
 
