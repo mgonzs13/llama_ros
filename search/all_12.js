@@ -1,30 +1,6 @@
 var searchData=
 [
-  ['rag_0',['llama_ros_embeddings (RAG)',['../index.html#autotoc_md26',1,'']]],
-  ['rag_20reranker_1',['llama_ros (LLM + RAG + Reranker)',['../index.html#autotoc_md28',1,'']]],
-  ['rag_20reranking_20stream_2',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
-  ['rag_5fchain_3',['rag_chain',['../namespacellama__demos_1_1llama__rag__demo__node.html#a150d0295fb05e135b1f2a5daa17dad33',1,'llama_demos::llama_rag_demo_node']]],
-  ['rank_5fdocument_4',['rank_document',['../classllama__ros_1_1Llama.html#af6b70809743fbde172c49c9e010e6b7d',1,'llama_ros::Llama']]],
-  ['rank_5fdocuments_5',['rank_documents',['../classllama__ros_1_1Llama.html#a717d60308100ea029939f547c5093a18',1,'llama_ros::Llama']]],
-  ['readme_2emd_6',['README.md',['../README_8md.html',1,'']]],
-  ['related_20projects_7',['Related Projects',['../index.html#autotoc_md2',1,'']]],
-  ['renranker_8',['llama_ros (Renranker)',['../index.html#autotoc_md27',1,'']]],
-  ['replace_5fall_9',['replace_all',['../llama__params_8cpp.html#a6022dd052437b9f97f6c1ffc13f5e518',1,'llama_params.cpp']]],
-  ['repo_5furl_10',['repo_url',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a4ae85b4e316d3c1ef833a74514ecc764',1,'llama_ros::Metadata::GeneralInfo']]],
-  ['rerank_5fdocuments_11',['rerank_documents',['../classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a14d2cbeae980c6811349e5c946f5a452',1,'llama_ros::llama_client_node::LlamaClientNode']]],
-  ['rerank_5fdocuments_5fservice_5f_12',['rerank_documents_service_',['../classllama__ros_1_1LlamaNode.html#adf93f5a08eb423bbb576affe6d2f3b03',1,'llama_ros::LlamaNode']]],
-  ['rerank_5fdocuments_5fservice_5fcallback_13',['rerank_documents_service_callback',['../classllama__ros_1_1LlamaNode.html#a1cf41258ed6f008022420773eb208c61',1,'llama_ros::LlamaNode']]],
-  ['rerank_5freq_14',['rerank_req',['../namespacellama__demos_1_1llama__rerank__demo__node.html#a8f4bde90b23213523efe65f1e13bfadd',1,'llama_demos::llama_rerank_demo_node']]],
-  ['reranker_15',['llama_ros (LLM + RAG + Reranker)',['../index.html#autotoc_md28',1,'']]],
-  ['reranking_20demo_16',['Reranking Demo',['../index.html#autotoc_md33',1,'']]],
-  ['reranking_20stream_17',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md36',1,'']]],
-  ['reset_18',['reset',['../classllama__ros_1_1Llama.html#a7c2cd8a9a1361837e6f7661a4f63910c',1,'llama_ros::Llama::reset()'],['../classllava__ros_1_1Llava.html#a5708e11372b049375bd981443d2d8ac9',1,'llava_ros::Llava::reset()']]],
-  ['response_19',['Generate Response',['../index.html#autotoc_md20',1,'']]],
-  ['response_20llava_20',['Generate Response (llava)',['../index.html#autotoc_md21',1,'']]],
-  ['responseoutput_21',['ResponseOutput',['../structllama__ros_1_1ResponseOutput.html',1,'llama_ros']]],
-  ['result_22',['result',['../namespacellama__demos_1_1llama__rerank__demo__node.html#a6a817f1adaa50e516face31c67afa28f',1,'llama_demos::llama_rerank_demo_node']]],
-  ['retriever_23',['retriever',['../namespacellama__demos_1_1llama__rag__demo__node.html#af864b42feb34ddfa99f1dae9721e3724',1,'llama_demos::llama_rag_demo_node']]],
-  ['rope_24',['rope',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a2871d80fed7bfd5e6dbceeb0f4f6497b',1,'llama_ros::Metadata::ModelInfo']]],
-  ['ropeinfo_25',['RoPEInfo',['../structllama__ros_1_1Metadata_1_1RoPEInfo.html',1,'llama_ros::Metadata']]],
-  ['ros_202_20clients_26',['ROS 2 Clients',['../index.html#autotoc_md16',1,'']]]
+  ['quantization_5fversion_0',['quantization_version',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a32b4bc7b6acd7ece8df4cff4384126e1',1,'llama_ros::Metadata::GeneralInfo']]],
+  ['quantized_5fby_1',['quantized_by',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a8dcee4b756083bf6d6c2edbaa27064dc',1,'llama_ros::Metadata::GeneralInfo']]],
+  ['query_2',['query',['../namespacellama__demos_1_1llama__rerank__demo__node.html#ab327fc3491ec5896465407a03326b2ef',1,'llama_demos::llama_rerank_demo_node']]]
 ];

@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['_7ellama_0',['~Llama',['../classllama__ros_1_1Llama.html#ac234b99451a4ab4ad2e0055b3d1d351b',1,'llama_ros::Llama']]],
-  ['_7ellava_1',['~Llava',['../classllava__ros_1_1Llava.html#a7918235754aa85c1db43cbbb68a97b4f',1,'llava_ros::Llava']]]
+  ['with_5fstructured_5foutput_0',['with_structured_output',['../classllama__ros_1_1langchain_1_1chat__llama__ros_1_1ChatLlamaROS.html#a6c29cabed7002044b0a69e40d9655348',1,'llama_ros::langchain::chat_llama_ros::ChatLlamaROS']]]
 ];

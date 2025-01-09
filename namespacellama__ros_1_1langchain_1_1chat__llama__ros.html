@@ -89,7 +89,8 @@ $(function(){ initResizable(false); });
 <div id="doc-content">
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">llama_ros.langchain.chat_llama_ros Namespace Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -98,7 +99,50 @@ $(function(){ initResizable(false); });
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1langchain_1_1chat__llama__ros_1_1ChatLlamaROS.html">ChatLlamaROS</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ac299d7f9a96d431972de765bef13a770" id="r_ac299d7f9a96d431972de765bef13a770"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac299d7f9a96d431972de765bef13a770">DEFAULT_TEMPLATE</a></td></tr>
+<tr class="separator:ac299d7f9a96d431972de765bef13a770"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Variable Documentation</h2>
+<a id="ac299d7f9a96d431972de765bef13a770" name="ac299d7f9a96d431972de765bef13a770"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac299d7f9a96d431972de765bef13a770">&#9670;&#160;</a></span>DEFAULT_TEMPLATE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">str llama_ros.langchain.chat_llama_ros.DEFAULT_TEMPLATE</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line"><span class="lineno">    1</span>=  <span class="stringliteral">&quot;&quot;&quot;{% if tools_grammar %}</span></div>
+<div class="line"><span class="lineno">    2</span><span class="stringliteral">    {{- &#39;&lt;|im_start|&gt;assistant\n&#39; }}</span></div>
+<div class="line"><span class="lineno">    3</span><span class="stringliteral">    {{- &#39;You are an assistant. You output in JSON format. The key &quot;tool_calls&quot; is a list of possible tools. For each tool, the format is {name, arguments}. You can use the following tools:&#39; }}</span></div>
+<div class="line"><span class="lineno">    4</span><span class="stringliteral">    {% for tool in tools_grammar %}</span></div>
+<div class="line"><span class="lineno">    5</span><span class="stringliteral">        {% if not loop.last %}</span></div>
+<div class="line"><span class="lineno">    6</span><span class="stringliteral">            {{- tool }}</span></div>
+<div class="line"><span class="lineno">    7</span><span class="stringliteral">        {% else %}</span></div>
+<div class="line"><span class="lineno">    8</span><span class="stringliteral">            {{- tool + &#39;&lt;|im_end|&gt;&#39; }}</span></div>
+<div class="line"><span class="lineno">    9</span><span class="stringliteral">        {% endif %}</span></div>
+<div class="line"><span class="lineno">   10</span><span class="stringliteral">    {% endfor %}</span></div>
+<div class="line"><span class="lineno">   11</span><span class="stringliteral">{% endif %}</span></div>
+<div class="line"><span class="lineno">   12</span><span class="stringliteral"></span> </div>
+<div class="line"><span class="lineno">   13</span><span class="stringliteral">{% for message in messages %}</span></div>
+<div class="line"><span class="lineno">   14</span><span class="stringliteral">    {% if (loop.last and add_generation_prompt) or not loop.last %}</span></div>
+<div class="line"><span class="lineno">   15</span><span class="stringliteral">        {{- &#39;&lt;|im_start|&gt;&#39; + message[&#39;role&#39;] + &#39;\n&#39; + message[&#39;content&#39;] + &#39;&lt;|im_end|&gt;\n&#39; }}</span></div>
+<div class="line"><span class="lineno">   16</span><span class="stringliteral">    {% else %}</span></div>
+<div class="line"><span class="lineno">   17</span><span class="stringliteral">        {{- &#39;&lt;|im_start|&gt;&#39; + message[&#39;role&#39;] + &#39;\n&#39; + message[&#39;content&#39;] }}</span></div>
+<div class="line"><span class="lineno">   18</span><span class="stringliteral">    {% endif %}</span></div>
+<div class="line"><span class="lineno">   19</span><span class="stringliteral">{% endfor %}</span></div>
+<div class="line"><span class="lineno">   20</span><span class="stringliteral">{% if add_generation_prompt and messages[-1][&#39;role&#39;] != &#39;assistant&#39; %}</span></div>
+<div class="line"><span class="lineno">   21</span><span class="stringliteral">    {{- &#39;&lt;|im_start|&gt;assistant&#39; }}</span></div>
+<div class="line"><span class="lineno">   22</span><span class="stringliteral">{% endif %}</span></div>
+<div class="line"><span class="lineno">   23</span><span class="stringliteral">&quot;&quot;&quot;</span></div>
+</div><!-- fragment -->
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

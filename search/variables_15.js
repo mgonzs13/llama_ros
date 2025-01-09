@@ -1,6 +1,12 @@
 var searchData=
 [
-  ['value_5flength_0',['value_length',['../structllama__ros_1_1Metadata_1_1AttentionInfo.html#a38b92b211af8eefdfb85eb36729a20ff',1,'llama_ros::Metadata::AttentionInfo']]],
-  ['vectorstore_1',['vectorstore',['../namespacellama__demos_1_1llama__rag__demo__node.html#a1e75aa82ea58d750b97bc8aea2263c50',1,'llama_demos::llama_rag_demo_node']]],
-  ['version_2',['version',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a74c0ccfa6a0f0347a47a53b563d5e367',1,'llama_ros::Metadata::GeneralInfo::version'],['../namespacesetup.html#a2aa722b36a933088812b50ea79b97a5c',1,'setup.version']]]
+  ['unknown_5ftoken_5fid_0',['unknown_token_id',['../structllama__ros_1_1Metadata_1_1TokenizerInfo.html#af32aa6d0c2af0849c4970bfe523cc00a',1,'llama_ros::Metadata::TokenizerInfo']]],
+  ['update_5floras_5fservice_5f_1',['update_loras_service_',['../classllama__ros_1_1LlamaNode.html#af66f3c472a2456c25852a1371afcac3e',1,'llama_ros::LlamaNode']]],
+  ['url_2',['url',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a39e51b97a1c2e97ed3dfcc54434b0d07',1,'llama_ros::Metadata::GeneralInfo']]],
+  ['use_5fgguf_5ftemplate_3',['use_gguf_template',['../classllama__ros_1_1langchain_1_1chat__llama__ros_1_1ChatLlamaROS.html#a314c773891e4727bbee93b372b18e2ef',1,'llama_ros::langchain::chat_llama_ros::ChatLlamaROS']]],
+  ['use_5fimage_4',['use_image',['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#ac4d9014a7b28bc3356f8d73079e9ad6b',1,'llama_demos::llava_demo_node::LlavaDemoNode']]],
+  ['use_5fllama_5ftemplate_5',['use_llama_template',['../classllama__ros_1_1langchain_1_1chat__llama__ros_1_1ChatLlamaROS.html#a87f5966e66091d9082ee2f70bf9fcf04',1,'llama_ros::langchain::chat_llama_ros::ChatLlamaROS']]],
+  ['use_5fparallel_5fresidual_6',['use_parallel_residual',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a502b50f9c2b8a7fa60d69b51c17eed0e',1,'llama_ros::Metadata::ModelInfo']]],
+  ['use_5fpenalty_5fprompt_5ftokens_7',['use_penalty_prompt_tokens',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aa42948543e6dbb4f4068c0c08abda38d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
+  ['uuid_8',['uuid',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a9dc4d8b30688d638b5e6b9efeb2730e1',1,'llama_ros::Metadata::GeneralInfo']]]
 ];
