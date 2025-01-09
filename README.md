@@ -942,7 +942,7 @@ ros2 llama launch MiniCPM-2.6.yaml
 ```
 
 ```shell
-ros2 run llama_demos chatllama_tools_node
+ros2 run llama_demos chatllama_tools_demo_node
 ```
 
 [Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)

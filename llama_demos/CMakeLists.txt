@@ -45,9 +45,9 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
-  llama_demos/chatllama_tools_node.py
+  llama_demos/chatllama_tools_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_tools_node
+  RENAME chatllama_tools_demo_node
 )
 
 ament_python_install_package(${PROJECT_NAME})
