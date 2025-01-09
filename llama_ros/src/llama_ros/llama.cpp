@@ -369,7 +369,7 @@ struct Metadata Llama::get_metadata() {
   metadata.tokenizer.add_bos_token =
       this->get_metadata("tokenizer.ggml.add_bos_token", 8) == "true";
   metadata.tokenizer.chat_template =
-      this->get_metadata("tokenizer.chat_template", 2048);
+      this->get_metadata("tokenizer.chat_template", 4096);
 
   return metadata;
 }

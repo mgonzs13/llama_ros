@@ -33,13 +33,16 @@ from langchain_core.language_models import BaseLanguageModel
 
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
+from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
+from llama_msgs.msg import Metadata
 
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
 
     llama_client: LlamaClientNode = None
     cv_bridge: CvBridge = CvBridge()
+    model_metadata: Metadata = None
 
     # sampling params
     n_prev: int = 64
@@ -92,6 +95,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         values["llama_client"] = LlamaClientNode.get_instance()
+        values["model_metadata"] = (
+            values["llama_client"].get_metadata(GetMetadata.Request()).metadata
+        )
         return values
 
     def cancel(self) -> None:
@@ -103,6 +109,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         stop: Optional[List[str]] = None,
         image_url: Optional[str] = None,
         image: Optional[np.ndarray] = None,
+        tools_grammar: Optional[str] = None,
+        **kwargs
     ) -> GenerateResponse.Result:
 
         goal = GenerateResponse.Goal()
@@ -167,7 +175,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.samplers_sequence = self.samplers_sequence
 
         goal.sampling_config.grammar = self.grammar
-        goal.sampling_config.grammar_schema = self.grammar_schema
+        goal.sampling_config.grammar_schema = (
+            tools_grammar if tools_grammar else self.grammar_schema
+        )
 
         goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens

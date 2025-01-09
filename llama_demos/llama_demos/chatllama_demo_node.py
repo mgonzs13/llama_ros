@@ -54,6 +54,7 @@ class ChatLlamaDemoNode(Node):
         self.chat = ChatLlamaROS(
             temp=0.2,
             penalty_last_n=8,
+            use_gguf_template=False,
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
