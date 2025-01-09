@@ -77,6 +77,30 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
+DEFAULT_TEMPLATE ="""{% if tools_grammar %}
+    {{- '<|im_start|>assistant\n' }}
+    {{- 'You are an assistant. You output in JSON format. The key "tool_calls" is a list of possible tools. For each tool, the format is {name, arguments}. You can use the following tools:' }}
+    {% for tool in tools_grammar %}
+        {% if not loop.last %}
+            {{- tool }}
+        {% else %}
+            {{- tool + '<|im_end|>' }}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% for message in messages %}
+    {% if (loop.last and add_generation_prompt) or not loop.last %}
+        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}
+    {% else %}
+        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] }}
+    {% endif %}
+{% endfor %}
+{% if add_generation_prompt and messages[-1]['role'] != 'assistant' %}
+    {{- '<|im_start|>assistant' }}
+{% endif %}
+"""
+
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
@@ -115,19 +139,13 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         tools_grammar = kwargs.get("tools_grammar", None)
 
         if self.use_llama_template:
-            chat_template_path = (
-                get_package_share_directory("llama_ros") + "/templates/chatml.jinja2"
-            )
-            with open(chat_template_path, "r") as f:
-                chat_template = f.read()
+            chat_template = DEFAULT_TEMPLATE
         else:
             chat_template = self.model_metadata.tokenizer.chat_template
 
         formatted_tools = []
         if tools_grammar:
-            list_options = json.loads(tools_grammar)["properties"]["tool_calls"][
-                "items"
-            ]
+            list_options = json.loads(tools_grammar)["properties"]["tool_calls"]["items"]
             for key in list_options.keys():
                 if key.endswith("Of"):
                     list_key = key
