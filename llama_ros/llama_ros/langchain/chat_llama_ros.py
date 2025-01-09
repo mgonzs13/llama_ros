@@ -77,7 +77,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
-DEFAULT_TEMPLATE ="""{% if tools_grammar %}
+DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}
     {{- 'You are an assistant. You output in JSON format. The key "tool_calls" is a list of possible tools. For each tool, the format is {name, arguments}. You can use the following tools:' }}
     {% for tool in tools_grammar %}
@@ -128,9 +128,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         # Extract and map arguments to desired format
         properties = input_json["properties"]["arguments"]["properties"]
-        transformed_properties = {
-            arg: prop["type"] for (arg, prop) in properties.items()
-        }
+        transformed_properties = {arg: prop["type"] for (arg, prop) in properties.items()}
 
         # Create the transformed object
         return {"name": tool_name, "arguments": transformed_properties}
@@ -314,9 +312,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))
 
-        chat_messages, image_url, image = self._extract_data_from_messages(
-            dict_messages
-        )
+        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
 
         formatted_prompt = self._generate_prompt(chat_messages, **kwargs)
 
@@ -348,9 +344,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))
 
-        chat_messages, image_url, image = self._extract_data_from_messages(
-            dict_messages
-        )
+        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
 
         formatted_prompt = self._generate_prompt(chat_messages)
 

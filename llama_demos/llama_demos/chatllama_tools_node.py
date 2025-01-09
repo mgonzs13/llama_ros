@@ -37,12 +37,13 @@ from random import randint
 @tool
 def get_inhabitants(city: str) -> int:
     """Get the current temperature of a city"""
-    return 7100000
+    return randint(4_000_000, 8_000_000)
+
 
 @tool
 def get_curr_temperature(city: str) -> int:
     """Get the current temperature of a city"""
-    return randint(20, 40)
+    return randint(20, 30)
 
 
 class ChatLlamaToolsDemoNode(Node):
@@ -50,41 +51,45 @@ class ChatLlamaToolsDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chat_tools_demo_node")
 
-        self.declare_parameter(
-            "prompt", "What is the temperature today in leon?")
-        self.prompt = self.get_parameter(
-            "prompt").get_parameter_value().string_value
-
-        self.tokens = 0
         self.initial_time = -1
+        self.tools_time = -1
         self.eval_time = -1
 
     def send_prompt(self) -> None:
-        self.chat = ChatLlamaROS(
-            temp=0.6,
-            penalty_last_n=8,
-            use_llama_template=True
-        )
+        self.chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, use_llama_template=True)
 
         messages = [
-            # SystemMessage("You are an IA that solves problems. You ouput in JSON format. The key 'tool_calls' is a list of possible tools, like 'get_inhabitants' or 'get_max_temperature'. For each tool, the format is {{name, arguments}}"),
-            HumanMessage("What is the current temperature in Madrid? And its inhabitants?")
+            HumanMessage(
+                "What is the current temperature in Madrid? And its inhabitants?"
+            )
         ]
-                
-        llm_tools = self.chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice='any')
-        
+
+        llm_tools = self.chat.bind_tools(
+            [get_inhabitants, get_curr_temperature], tool_choice='any'
+        )
+
+        self.initial_time = time.time()
         all_tools_res = llm_tools.invoke(messages)
-        
+        self.tools_time = time.time()
+
         messages.append(all_tools_res)
-        
+
         for tool in all_tools_res.tool_calls:
-            selected_tool = {"get_inhabitants": get_inhabitants, "get_curr_temperature": get_curr_temperature}[tool['name']]
+            selected_tool = {
+                "get_inhabitants": get_inhabitants, "get_curr_temperature": get_curr_temperature
+            }[tool['name']]
             tool_msg = selected_tool.invoke(tool)
             tool_msg.additional_kwargs = {'args': tool['args']}
             messages.append(tool_msg)
-        
+
         res = self.chat.invoke(messages)
+
+        self.eval_time = time.time()
+
         self.get_logger().info(res.content)
+
+        self.get_logger().info(f"Time to generate tools: {self.tools_time - self.initial_time} s")
+        self.get_logger().info(f"Time to generate last response: {self.eval_time - self.tools_time} s")
 
 
 def main():
