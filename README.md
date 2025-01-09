@@ -553,7 +553,7 @@ rclpy.shutdown()
 
 </details>
 
-### llava_ros
+#### llava_ros
 
 <details>
 <summary>Click to expand</summary>
@@ -568,15 +568,14 @@ rclpy.init()
 llm = LlamaROS()
 
 # bind the url_image
-llm = llm.bind(image_url=image_url).stream("Describe the image")
 image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+llm = llm.bind(image_url=image_url).stream("Describe the image")
 
 # run the llm
 for c in llm:
     print(c, flush=True, end="")
 
 rclpy.shutdown()
-
 ```
 
 </details>
@@ -675,14 +674,17 @@ rclpy.shutdown()
 ```python
 import bs4
 import rclpy
-from langchain import hub
+
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from llama_ros.langchain import LlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 from langchain.retrievers import ContextualCompressionRetriever
+
+from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 
 
 rclpy.init()
@@ -691,50 +693,61 @@ rclpy.init()
 loader = WebBaseLoader(
     web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
     bs_kwargs=dict(
-        parse_only=bs4.SoupStrainer(
-            class_=("post-content", "post-title", "post-header")
-        )
+        parse_only=bs4.SoupStrainer(class_=("post-content", "post-title", "post-header"))
     ),
 )
 docs = loader.load()
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 splits = text_splitter.split_documents(docs)
-vectorstore = Chroma.from_documents(
-    documents=splits, embedding=LlamaROSEmbeddings())
+vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())
 
 # retrieve and generate using the relevant snippets of the blog
 retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
-prompt = hub.pull("rlm/rag-prompt")
 
-compressor = LlamaROSReranker(top_n=5)
+# create prompt
+prompt = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage("You are an AI assistant that answer questions briefly."),
+        HumanMessagePromptTemplate.from_template(
+            "Taking into account the followin information:{context}\n\n{question}"
+        ),
+    ]
+)
+
+# create rerank compression retriever
+compressor = LlamaROSReranker(top_n=3)
 compression_retriever = ContextualCompressionRetriever(
     base_compressor=compressor, base_retriever=retriever
 )
 
 
 def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    formated_docs = ""
+
+    for d in docs:
+        formated_docs += f"\n\n\t- {d.page_content}"
+
+    return formated_docs
 
 
 # create and use the chain
 rag_chain = (
-    {"context": compression_retriever | format_docs,
-        "question": RunnablePassthrough()}
+    {"context": compression_retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
-    | LlamaROS(temp=0.0)
+    | ChatLlamaROS(temp=0.0)
     | StrOutputParser()
 )
 
-print(rag_chain.invoke("What is Task Decomposition?"))
+for c in rag_chain.stream("What is Task Decomposition?"):
+    print(c, flush=True, end="")
 
 rclpy.shutdown()
 ```
 
 </details>
 
-#### chat_llama_ros (Chat + LVM)
+#### chat_llama_ros (Chat + VLM)
 
 <details>
 <summary>Click to expand</summary>
@@ -768,7 +781,7 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | chat | StrOutputParser()
 
 # stream and print the LLM output
-for text in self.chain.stream({"image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}):
+for text in chain.stream({"image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"}):
     print(text, end="", flush=True)
 
 print("", end="\n", flush=True)
@@ -786,15 +799,15 @@ rclpy.shutdown()
 The current implementation of Tools allows executing tools without requiring a model trained for that task.
 
 ```python
-
 import time
+from random import randint
 
 import rclpy
 from rclpy.node import Node
-from llama_ros.langchain import ChatLlamaROS
-from langchain_core.messages import HumanMessage
+
 from langchain.tools import tool
-from random import randint
+from langchain_core.messages import HumanMessage
+from llama_ros.langchain import ChatLlamaROS
 
 rclpy.init()
 
@@ -817,7 +830,7 @@ messages = [
     )
 ]
 
-llm_tools = self.chat.bind_tools(
+llm_tools = chat.bind_tools(
     [get_inhabitants, get_curr_temperature], tool_choice='any'
 )
 
@@ -836,7 +849,7 @@ for tool in all_tools_res.tool_calls:
     tool_msg.additional_kwargs = {'args': tool['args']}
     messages.append(tool_msg)
 
-res = self.chat.invoke(messages)
+res = chat.invoke(messages)
 
 print(f"Response: {res.content}")
 
@@ -904,7 +917,7 @@ ros2 llama launch MiniCPM-2.6.yaml
 ```
 
 <details>
-<summary>Click to expand MiniCPM-2.6</summary>
+<summary>Click to expand MiniCPM-2.6.yaml</summary>
 
 ```yaml
 use_llava: True
@@ -912,7 +925,7 @@ use_llava: True
 n_ctx: 8192
 n_batch: 512
 n_gpu_layers: 20
-n_threads: 1
+n_threads: -1
 n_predict: 8192
 
 image_prefix: "<image>"
