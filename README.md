@@ -975,7 +975,7 @@ ros2 llama launch Qwen2.yaml
 ```
 
 <details>
-<summary>Click to expand Llama-3.yaml</summary>
+<summary>Click to expand Qwen2.yaml</summary>
 
 ```yaml
 _ctx: 4096
