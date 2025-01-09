@@ -35,7 +35,7 @@ var searchData=
   ['llama_5fdemo_5fnode_2epy_32',['llama_demo_node.py',['../llama__demo__node_8py.html',1,'']]],
   ['llama_5fdemos_33',['llama_demos',['../namespacellama__demos.html',1,'']]],
   ['llama_5fdemos_3a_3achatllama_5fdemo_5fnode_34',['chatllama_demo_node',['../namespacellama__demos_1_1chatllama__demo__node.html',1,'llama_demos']]],
-  ['llama_5fdemos_3a_3achatllama_5ftools_5fnode_35',['chatllama_tools_node',['../namespacellama__demos_1_1chatllama__tools__node.html',1,'llama_demos']]],
+  ['llama_5fdemos_3a_3achatllama_5ftools_5fdemo_5fnode_35',['chatllama_tools_demo_node',['../namespacellama__demos_1_1chatllama__tools__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5fdemo_5fnode_36',['llama_demo_node',['../namespacellama__demos_1_1llama__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5fembeddings_5fdemo_5fnode_37',['llama_embeddings_demo_node',['../namespacellama__demos_1_1llama__embeddings__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5frag_5fdemo_5fnode_38',['llama_rag_demo_node',['../namespacellama__demos_1_1llama__rag__demo__node.html',1,'llama_demos']]],

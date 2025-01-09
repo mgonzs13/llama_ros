@@ -11,7 +11,7 @@ var searchData=
   ['llama_5fcli_3a_3averb_3a_3aprompt_8',['prompt',['../namespacellama__cli_1_1verb_1_1prompt.html',1,'llama_cli::verb']]],
   ['llama_5fdemos_9',['llama_demos',['../namespacellama__demos.html',1,'']]],
   ['llama_5fdemos_3a_3achatllama_5fdemo_5fnode_10',['chatllama_demo_node',['../namespacellama__demos_1_1chatllama__demo__node.html',1,'llama_demos']]],
-  ['llama_5fdemos_3a_3achatllama_5ftools_5fnode_11',['chatllama_tools_node',['../namespacellama__demos_1_1chatllama__tools__node.html',1,'llama_demos']]],
+  ['llama_5fdemos_3a_3achatllama_5ftools_5fdemo_5fnode_11',['chatllama_tools_demo_node',['../namespacellama__demos_1_1chatllama__tools__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5fdemo_5fnode_12',['llama_demo_node',['../namespacellama__demos_1_1llama__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5fembeddings_5fdemo_5fnode_13',['llama_embeddings_demo_node',['../namespacellama__demos_1_1llama__embeddings__demo__node.html',1,'llama_demos']]],
   ['llama_5fdemos_3a_3allama_5frag_5fdemo_5fnode_14',['llama_rag_demo_node',['../namespacellama__demos_1_1llama__rag__demo__node.html',1,'llama_demos']]],
