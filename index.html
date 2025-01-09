@@ -566,8 +566,8 @@ Click to expand</summary>
 <div class="line">rclpy.shutdown()</div>
 </div><!-- fragment --><p></p>
 </details>
-<h2><a class="anchor" id="autotoc_md25"></a>
-llava_ros</h2>
+<h3><a class="anchor" id="autotoc_md25"></a>
+llava_ros</h3>
 <details >
 <summary >
 Click to expand</summary>
@@ -581,8 +581,8 @@ Click to expand</summary>
 <div class="line">llm = LlamaROS()</div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># bind the url_image</span></div>
-<div class="line">llm = llm.bind(image_url=image_url).stream(<span class="stringliteral">&quot;Describe the image&quot;</span>)</div>
 <div class="line">image_url = <span class="stringliteral">&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg&quot;</span></div>
+<div class="line">llm = llm.bind(image_url=image_url).stream(<span class="stringliteral">&quot;Describe the image&quot;</span>)</div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># run the llm</span></div>
 <div class="line"><span class="keywordflow">for</span> c <span class="keywordflow">in</span> llm:</div>
@@ -681,14 +681,17 @@ Click to expand</summary>
 <p></p>
 <div class="fragment"><div class="line"><span class="keyword">import</span> bs4</div>
 <div class="line"><span class="keyword">import</span> rclpy</div>
-<div class="line"><span class="keyword">from</span> langchain <span class="keyword">import</span> hub</div>
+<div class="line"> </div>
 <div class="line"><span class="keyword">from</span> langchain_chroma <span class="keyword">import</span> Chroma</div>
 <div class="line"><span class="keyword">from</span> langchain_community.document_loaders <span class="keyword">import</span> WebBaseLoader</div>
 <div class="line"><span class="keyword">from</span> langchain_core.output_parsers <span class="keyword">import</span> StrOutputParser</div>
 <div class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnablePassthrough</div>
+<div class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> SystemMessage</div>
+<div class="line"><span class="keyword">from</span> langchain_core.prompts <span class="keyword">import</span> ChatPromptTemplate, HumanMessagePromptTemplate</div>
 <div class="line"><span class="keyword">from</span> langchain_text_splitters <span class="keyword">import</span> RecursiveCharacterTextSplitter</div>
-<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> LlamaROS, LlamaROSEmbeddings, LlamaROSReranker</div>
 <div class="line"><span class="keyword">from</span> langchain.retrievers <span class="keyword">import</span> ContextualCompressionRetriever</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker</div>
 <div class="line"> </div>
 <div class="line"> </div>
 <div class="line">rclpy.init()</div>
@@ -697,49 +700,60 @@ Click to expand</summary>
 <div class="line">loader = WebBaseLoader(</div>
 <div class="line">    web_paths=(<span class="stringliteral">&quot;https://lilianweng.github.io/posts/2023-06-23-agent/&quot;</span>,),</div>
 <div class="line">    bs_kwargs=dict(</div>
-<div class="line">        parse_only=bs4.SoupStrainer(</div>
-<div class="line">            class_=(<span class="stringliteral">&quot;post-content&quot;</span>, <span class="stringliteral">&quot;post-title&quot;</span>, <span class="stringliteral">&quot;post-header&quot;</span>)</div>
-<div class="line">        )</div>
+<div class="line">        parse_only=bs4.SoupStrainer(class_=(<span class="stringliteral">&quot;post-content&quot;</span>, <span class="stringliteral">&quot;post-title&quot;</span>, <span class="stringliteral">&quot;post-header&quot;</span>))</div>
 <div class="line">    ),</div>
 <div class="line">)</div>
 <div class="line">docs = loader.load()</div>
 <div class="line"> </div>
-<div class="line">text_splitter = RecursiveCharacterTextSplitter(</div>
-<div class="line">    chunk_size=1000, chunk_overlap=200)</div>
+<div class="line">text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)</div>
 <div class="line">splits = text_splitter.split_documents(docs)</div>
-<div class="line">vectorstore = Chroma.from_documents(</div>
-<div class="line">    documents=splits, embedding=LlamaROSEmbeddings())</div>
+<div class="line">vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())</div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># retrieve and generate using the relevant snippets of the blog</span></div>
 <div class="line">retriever = vectorstore.as_retriever(search_kwargs={<span class="stringliteral">&quot;k&quot;</span>: 20})</div>
-<div class="line">prompt = hub.pull(<span class="stringliteral">&quot;rlm/rag-prompt&quot;</span>)</div>
 <div class="line"> </div>
-<div class="line">compressor = LlamaROSReranker(top_n=5)</div>
+<div class="line"><span class="comment"># create prompt</span></div>
+<div class="line">prompt = ChatPromptTemplate.from_messages(</div>
+<div class="line">    [</div>
+<div class="line">        SystemMessage(<span class="stringliteral">&quot;You are an AI assistant that answer questions briefly.&quot;</span>),</div>
+<div class="line">        HumanMessagePromptTemplate.from_template(</div>
+<div class="line">            <span class="stringliteral">&quot;Taking into account the followin information:{context}\n\n{question}&quot;</span></div>
+<div class="line">        ),</div>
+<div class="line">    ]</div>
+<div class="line">)</div>
+<div class="line"> </div>
+<div class="line"><span class="comment"># create rerank compression retriever</span></div>
+<div class="line">compressor = LlamaROSReranker(top_n=3)</div>
 <div class="line">compression_retriever = ContextualCompressionRetriever(</div>
 <div class="line">    base_compressor=compressor, base_retriever=retriever</div>
 <div class="line">)</div>
 <div class="line"> </div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">def </span>format_docs(docs):</div>
-<div class="line">    <span class="keywordflow">return</span> <span class="stringliteral">&quot;\n\n&quot;</span>.join(doc.page_content <span class="keywordflow">for</span> doc <span class="keywordflow">in</span> docs)</div>
+<div class="line">    formated_docs = <span class="stringliteral">&quot;&quot;</span></div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">for</span> d <span class="keywordflow">in</span> docs:</div>
+<div class="line">        formated_docs += f<span class="stringliteral">&quot;\n\n\t- {d.page_content}&quot;</span></div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> formated_docs</div>
 <div class="line"> </div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># create and use the chain</span></div>
 <div class="line">rag_chain = (</div>
-<div class="line">    {<span class="stringliteral">&quot;context&quot;</span>: compression_retriever | format_docs,</div>
-<div class="line">        <span class="stringliteral">&quot;question&quot;</span>: RunnablePassthrough()}</div>
+<div class="line">    {<span class="stringliteral">&quot;context&quot;</span>: compression_retriever | format_docs, <span class="stringliteral">&quot;question&quot;</span>: RunnablePassthrough()}</div>
 <div class="line">    | prompt</div>
-<div class="line">    | LlamaROS(temp=0.0)</div>
+<div class="line">    | ChatLlamaROS(temp=0.0)</div>
 <div class="line">    | StrOutputParser()</div>
 <div class="line">)</div>
 <div class="line"> </div>
-<div class="line">print(rag_chain.invoke(<span class="stringliteral">&quot;What is Task Decomposition?&quot;</span>))</div>
+<div class="line"><span class="keywordflow">for</span> c <span class="keywordflow">in</span> rag_chain.stream(<span class="stringliteral">&quot;What is Task Decomposition?&quot;</span>):</div>
+<div class="line">    print(c, flush=<span class="keyword">True</span>, end=<span class="stringliteral">&quot;&quot;</span>)</div>
 <div class="line"> </div>
 <div class="line">rclpy.shutdown()</div>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md29"></a>
-chat_llama_ros (Chat + LVM)</h3>
+chat_llama_ros (Chat + VLM)</h3>
 <details >
 <summary >
 Click to expand</summary>
@@ -772,7 +786,7 @@ Click to expand</summary>
 <div class="line">chain = prompt | chat | StrOutputParser()</div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># stream and print the LLM output</span></div>
-<div class="line"><span class="keywordflow">for</span> text <span class="keywordflow">in</span> self.chain.stream({<span class="stringliteral">&quot;image_url&quot;</span>: <span class="stringliteral">&quot;https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg&quot;</span>}):</div>
+<div class="line"><span class="keywordflow">for</span> text <span class="keywordflow">in</span> chain.stream({<span class="stringliteral">&quot;image_url&quot;</span>: <span class="stringliteral">&quot;https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg&quot;</span>}):</div>
 <div class="line">    print(text, end=<span class="stringliteral">&quot;&quot;</span>, flush=<span class="keyword">True</span>)</div>
 <div class="line"> </div>
 <div class="line">print(<span class="stringliteral">&quot;&quot;</span>, end=<span class="stringliteral">&quot;\n&quot;</span>, flush=<span class="keyword">True</span>)</div>
@@ -788,13 +802,14 @@ Click to expand</summary>
 <p></p>
 <p>The current implementation of Tools allows executing tools without requiring a model trained for that task.</p>
 <div class="fragment"><div class="line"><span class="keyword">import</span> time</div>
+<div class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">import</span> rclpy</div>
 <div class="line"><span class="keyword">from</span> rclpy.node <span class="keyword">import</span> Node</div>
-<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> ChatLlamaROS</div>
-<div class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</div>
+<div class="line"> </div>
 <div class="line"><span class="keyword">from</span> langchain.tools <span class="keyword">import</span> tool</div>
-<div class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</div>
+<div class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</div>
+<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> ChatLlamaROS</div>
 <div class="line"> </div>
 <div class="line">rclpy.init()</div>
 <div class="line"> </div>
@@ -817,7 +832,7 @@ Click to expand</summary>
 <div class="line">    )</div>
 <div class="line">]</div>
 <div class="line"> </div>
-<div class="line">llm_tools = self.chat.bind_tools(</div>
+<div class="line">llm_tools = chat.bind_tools(</div>
 <div class="line">    [get_inhabitants, get_curr_temperature], tool_choice=<span class="stringliteral">&#39;any&#39;</span></div>
 <div class="line">)</div>
 <div class="line"> </div>
@@ -836,7 +851,7 @@ Click to expand</summary>
 <div class="line">    tool_msg.additional_kwargs = {<span class="stringliteral">&#39;args&#39;</span>: tool[<span class="stringliteral">&#39;args&#39;</span>]}</div>
 <div class="line">    messages.append(tool_msg)</div>
 <div class="line"> </div>
-<div class="line">res = self.chat.invoke(messages)</div>
+<div class="line">res = chat.invoke(messages)</div>
 <div class="line"> </div>
 <div class="line">print(f<span class="stringliteral">&quot;Response: {res.content}&quot;</span>)</div>
 <div class="line"> </div>
@@ -870,14 +885,14 @@ Chat Template Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch MiniCPM-2.6.yaml</div>
 </div><!-- fragment --><details >
 <summary >
-Click to expand MiniCPM-2.6</summary>
+Click to expand MiniCPM-2.6.yaml</summary>
 <p></p>
 <div class="fragment"><div class="line">use_llava: True</div>
 <div class="line"> </div>
 <div class="line">n_ctx: 8192</div>
 <div class="line">n_batch: 512</div>
 <div class="line">n_gpu_layers: 20</div>
-<div class="line">n_threads: 1</div>
+<div class="line">n_threads: -1</div>
 <div class="line">n_predict: 8192</div>
 <div class="line"> </div>
 <div class="line">image_prefix: &quot;&lt;image&gt;&quot;</div>
