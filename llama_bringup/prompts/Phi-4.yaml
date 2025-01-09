@@ -1,0 +1,11 @@
+prefix: "\n<|im_start|>user<|im_sep|>\n"
+suffix: "<|im_end|>\n<|assistant|>\n"
+stopping_words: ["<|im_end|>"]
+
+system_prompt: |-
+  <|im_start|>system<|im_sep|>
+  Below is an instruction that describes a task. Write a response that appropriately completes the request<|im_end|>
+  <|im_start|>user<|im_sep|>
+  Hello<|im_end|>
+  <|im_start|>assistant<|im_sep|>
+  Hello<|im_end|>
