@@ -293,7 +293,7 @@ Variables</h2></td></tr>
 <b>Initial value:</b><div class="fragment"><div class="line"><span class="lineno">    1</span>=  (</div>
 <div class="line"><span class="lineno">    2</span>    {<span class="stringliteral">&quot;context&quot;</span>: compression_retriever | format_docs, <span class="stringliteral">&quot;question&quot;</span>: RunnablePassthrough()}</div>
 <div class="line"><span class="lineno">    3</span>    | prompt</div>
-<div class="line"><span class="lineno">    4</span>    | ChatLlamaROS(temp=0.2)</div>
+<div class="line"><span class="lineno">    4</span>    | ChatLlamaROS(temp=0.0)</div>
 <div class="line"><span class="lineno">    5</span>    | StrOutputParser()</div>
 <div class="line"><span class="lineno">    6</span>)</div>
 </div><!-- fragment -->
