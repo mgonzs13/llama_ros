@@ -516,16 +516,26 @@ float Llama::rank_document(const std::string &query,
   }
 
   std::vector<llama_token> tokens;
+  tokens.reserve(this->params.n_batch);
 
-  auto part1 = this->tokenize(query, true, true);
-  part1 = this->truncate_tokens(part1, (int)(this->params.n_batch / 2), true);
+  tokens.push_back(llama_token_bos(this->model));
+
+  auto part1 = this->tokenize(query, false, true);
+  part1 =
+      this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part1.begin(), part1.end());
 
-  auto part2 = this->tokenize(document, true, true);
-  part2 = this->truncate_tokens(part2, (int)(this->params.n_batch / 2), true);
+  tokens.push_back(llama_token_eos(this->model));
+  tokens.push_back(llama_token_sep(this->model));
+
+  auto part2 = this->tokenize(document, false, true);
+  part2 =
+      this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part2.begin(), part2.end());
 
-  return this->generate_embeddings(tokens, false).embeddings.at(0);
+  tokens.push_back(llama_token_eos(this->model));
+
+  return this->generate_embeddings(tokens, -1).embeddings.at(0);
 }
 
 std::vector<float>
