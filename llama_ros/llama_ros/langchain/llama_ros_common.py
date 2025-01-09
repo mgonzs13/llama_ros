@@ -97,7 +97,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         values["llama_client"] = LlamaClientNode.get_instance()
         values["model_metadata"] = (
             values["llama_client"].get_metadata(GetMetadata.Request()).metadata
-        )        
+        )
         return values
 
     def cancel(self) -> None:

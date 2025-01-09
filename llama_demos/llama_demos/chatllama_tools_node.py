@@ -63,7 +63,7 @@ class ChatLlamaToolsDemoNode(Node):
                 "What is the current temperature in Madrid? And its inhabitants?"
             )
         ]
-        
+
         self.get_logger().info(f"\nPrompt: {messages[0].content}")
 
         llm_tools = self.chat.bind_tools(
@@ -79,13 +79,15 @@ class ChatLlamaToolsDemoNode(Node):
         for tool in all_tools_res.tool_calls:
             selected_tool = {
                 "get_inhabitants": get_inhabitants,
-                "get_curr_temperature": get_curr_temperature
-            }[tool['name']]
+                "get_curr_temperature": get_curr_temperature,
+            }[tool["name"]]
 
             tool_msg = selected_tool.invoke(tool)
 
-            formatted_output = f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
-            self.get_logger().info(f'Calling tool: {formatted_output}')
+            formatted_output = (
+                f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
+            )
+            self.get_logger().info(f"Calling tool: {formatted_output}")
 
             tool_msg.additional_kwargs = {"args": tool["args"]}
             messages.append(tool_msg)
@@ -98,9 +100,7 @@ class ChatLlamaToolsDemoNode(Node):
 
         time_generate_tools = self.tools_time - self.initial_time
         time_last_response = self.eval_time - self.tools_time
-        self.get_logger().info(
-            f"Time to generate tools: {time_generate_tools:.2} s"
-        )
+        self.get_logger().info(f"Time to generate tools: {time_generate_tools:.2} s")
         self.get_logger().info(
             f"Time to generate last response: {time_last_response:.2} s"
         )
