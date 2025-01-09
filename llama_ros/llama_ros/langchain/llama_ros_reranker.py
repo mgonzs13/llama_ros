@@ -24,8 +24,10 @@
 import operator
 from typing import Optional, Sequence, Dict
 from pydantic import model_validator
+
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
+
 from llama_msgs.srv import RerankDocuments
 from llama_ros.llama_client_node import LlamaClientNode
 

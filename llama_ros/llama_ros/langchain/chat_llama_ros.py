@@ -21,6 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import cv2
+import json
+import uuid
+import jinja2
+import base64
+import numpy as np
 from typing import (
     Any,
     Callable,
@@ -35,37 +41,26 @@ from typing import (
     Tuple,
 )
 from operator import itemgetter
+
+from pydantic import BaseModel
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from langchain_core.output_parsers import (
     PydanticToolsParser,
     JsonOutputKeyToolsParser,
     PydanticOutputParser,
     JsonOutputParser,
 )
-from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.runnables import RunnablePassthrough, RunnableMap
+
 from langchain_core.utils.pydantic import is_basemodel_subclass
-import base64
-import cv2
-import numpy as np
-import jinja2
-from jinja2.sandbox import ImmutableSandboxedEnvironment
-from pydantic import BaseModel
-import uuid
-
-from llama_ros.langchain import LlamaROSCommon
-from llama_msgs.msg import Message
-from action_msgs.msg import GoalStatus
-from llama_msgs.srv import Detokenize
-from llama_msgs.srv import FormatChatMessages
-from llama_msgs.action import GenerateResponse
 from langchain_core.utils.function_calling import convert_to_openai_tool
-import json
-
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.runnables import RunnablePassthrough, RunnableMap
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.tools import BaseTool
-from langchain_core.runnables import Runnable
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -74,7 +69,13 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+from action_msgs.msg import GoalStatus
+from llama_ros.langchain import LlamaROSCommon
+from llama_msgs.msg import Message
+from llama_msgs.srv import Detokenize
+from llama_msgs.srv import FormatChatMessages
+from llama_msgs.action import GenerateResponse
 
 DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}

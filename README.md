@@ -735,6 +735,7 @@ rclpy.shutdown()
 </details>
 
 #### chat_llama_ros (Chat + LVM)
+
 <details>
 <summary>Click to expand</summary>
 
@@ -777,7 +778,7 @@ rclpy.shutdown()
 
 </details>
 
-#### 🎉 \*\*\*NEW*** chat_llama_ros (Tools) 🎉
+#### 🎉 \*\*\*NEW\*\*\* chat_llama_ros (Tools) 🎉
 
 <details>
 <summary>Click to expand</summary>
@@ -944,11 +945,9 @@ ros2 llama launch MiniCPM-2.6.yaml
 ros2 run llama_demos chatllama_tools_node
 ```
 
-
-
 [Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
 
-#### Full Demo (LLM + chat template + RAG + Reranking + Stream)
+### Full Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell
 ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
