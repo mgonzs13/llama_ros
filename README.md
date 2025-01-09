@@ -958,23 +958,23 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yam
 ```
 
 ```shell
-ros2 llama launch Llama-3.yaml
+ros2 llama launch Qwen2.yaml
 ```
 
 <details>
 <summary>Click to expand Llama-3.yaml</summary>
 
 ```yaml
-n_ctx: 4096
+_ctx: 4096
 n_batch: 256
 n_gpu_layers: 33
 n_threads: -1
 n_predict: -1
 
-model_repo: "lmstudio-community/Llama-3.2-1B-Instruct-GGUF"
-model_filename: "Llama-3.2-1B-Instruct-Q8_0.gguf"
+model_repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
+model_filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
 
-stopping_words: ["<|eot_id|>"]
+stopping_words: ["<|im_end|>"]
 ```
 
 </details>

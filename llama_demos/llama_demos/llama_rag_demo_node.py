@@ -57,9 +57,9 @@ retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
 # create prompt
 prompt = ChatPromptTemplate.from_messages(
     [
-        SystemMessage("You are an AI assistant that answer questions."),
+        SystemMessage("You are an AI assistant that answer questions briefly."),
         HumanMessagePromptTemplate.from_template(
-            "Taking into account the followin context:{context}\n\nAnswer this question: {question}"
+            "Taking into account the followin information:{context}\n\n{question}"
         ),
     ]
 )
