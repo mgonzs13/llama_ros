@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
 # MIT License
-
-# Copyright (c) 2024  Miguel Ángel González Santamarta
-
+#
+# Copyright (c) 2024 Miguel Ángel González Santamarta
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,9 +43,7 @@ class LlavaDemoNode(Node):
 
         self.cv_bridge = CvBridge()
 
-        self.declare_parameter(
-            "prompt", "Who is the character in the middle of the image?"
-        )
+        self.declare_parameter("prompt", "What type of food is the girl holding?")
         self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.declare_parameter("use_image", True)
@@ -53,7 +51,7 @@ class LlavaDemoNode(Node):
 
         self.declare_parameter(
             "image_url",
-            "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg",
+            "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg",
         )
         self.image = self.load_image_from_url(
             self.get_parameter("image_url").get_parameter_value().string_value

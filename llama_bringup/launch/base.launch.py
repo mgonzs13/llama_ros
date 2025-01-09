@@ -1,17 +1,17 @@
 # MIT License
-
-# Copyright (c) 2023  Miguel Ángel González Santamarta
-
+#
+# Copyright (c) 2023 Miguel Ángel González Santamarta
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,6 +42,7 @@ def generate_launch_description():
             "n_batch": LaunchConfiguration("n_batch", default=2048),
             "n_ubatch": LaunchConfiguration("n_batch", default=512),
             # GPU params
+            "devices": LaunchConfiguration("devices", default="['']"),
             "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
             "split_mode": LaunchConfiguration("split_mode", default="layer"),
             "main_gpu": LaunchConfiguration("main_gpu", default=0),
@@ -92,12 +93,9 @@ def generate_launch_description():
             "n_keep": LaunchConfiguration("n_keep", default=-1),
             # paths params
             "model": LaunchConfiguration("model", default=""),
-            "lora_adapters": ParameterValue(
-                LaunchConfiguration("lora_adapters", default=[""]), value_type=List[str]
-            ),
-            "lora_adapters_scales": ParameterValue(
-                LaunchConfiguration("lora_adapters_scales", default=[0.0]),
-                value_type=List[float],
+            "lora_adapters": LaunchConfiguration("lora_adapters", default="['']"),
+            "lora_adapters_scales": LaunchConfiguration(
+                "lora_adapters_scales", default="[0.0]"
             ),
             "mmproj": LaunchConfiguration("mmproj", default=""),
             "numa": LaunchConfiguration("numa", default="none"),
@@ -109,10 +107,7 @@ def generate_launch_description():
             "suffix": ParameterValue(
                 LaunchConfiguration("suffix", default=""), value_type=str
             ),
-            "stopping_words": ParameterValue(
-                LaunchConfiguration("stopping_words", default=[""]),
-                value_type=List[str],
-            ),
+            "stopping_words": LaunchConfiguration("stopping_words", default="['']"),
             "image_prefix": ParameterValue(
                 LaunchConfiguration("image_prefix", default=""), value_type=str
             ),
@@ -129,8 +124,6 @@ def generate_launch_description():
             "system_prompt_file": ParameterValue(
                 LaunchConfiguration("system_prompt_file", default=""), value_type=str
             ),
-            # debug
-            "debug": LaunchConfiguration("debug", default=True),
         }
 
         # get llama node name

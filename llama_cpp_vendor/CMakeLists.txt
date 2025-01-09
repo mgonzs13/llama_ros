@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b4149
+  GIT_TAG        b4433
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
@@ -23,28 +23,21 @@ set_target_properties(
   ggml PROPERTIES
   OUTPUT_NAME "llama_ggml"
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-  CXX_STANDARD 11
+  CXX_STANDARD 17
 )
 
 set_target_properties(
   ggml-base PROPERTIES
   OUTPUT_NAME "llama_ggml_base"
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-  CXX_STANDARD 11
+  CXX_STANDARD 17
 )
 
 set_target_properties(
   ggml-cpu PROPERTIES
   OUTPUT_NAME "llama_ggml_cpu"
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-  CXX_STANDARD 11
-)
-
-set_target_properties(
-  ggml-amx PROPERTIES
-  OUTPUT_NAME "llama_ggml_amx"
-  INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-  CXX_STANDARD 11
+  CXX_STANDARD 17
 )
 
 if(GGML_CUDA)
@@ -52,7 +45,7 @@ if(GGML_CUDA)
     ggml-cuda PROPERTIES
     OUTPUT_NAME "llama_ggml_cuda"
     INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
-    CXX_STANDARD 11
+    CXX_STANDARD 17
   )
 endif()
 
@@ -60,7 +53,7 @@ endif()
 set_target_properties(
   build_info llama common PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/src;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/>"
-  CXX_STANDARD 11
+  CXX_STANDARD 17
 )
 
 # llava
@@ -96,7 +89,6 @@ set(INSTALL_TARGETS
   ggml
   ggml-base
   ggml-cpu
-  ggml-amx
   build_info
   common
   llama

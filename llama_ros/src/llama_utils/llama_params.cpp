@@ -1,14 +1,14 @@
 // MIT License
-
-// Copyright (c) 2024  Miguel Ángel González Santamarta
-
+//
+// Copyright (c) 2024 Miguel Ángel González Santamarta
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 
@@ -27,6 +27,7 @@
 #include "json.hpp"
 
 #include "llama_utils/llama_params.hpp"
+#include "llama_utils/logs.hpp"
 
 using namespace llama_utils;
 
@@ -37,6 +38,21 @@ void replace_all(std::string &input, const std::string &old_str,
     input.replace(start_pos, old_str.length(), new_str);
     start_pos += new_str.length();
   }
+}
+
+const std::vector<ggml_type> kv_cache_types = {
+    GGML_TYPE_F32,    GGML_TYPE_F16,  GGML_TYPE_BF16,
+    GGML_TYPE_Q8_0,   GGML_TYPE_Q4_0, GGML_TYPE_Q4_1,
+    GGML_TYPE_IQ4_NL, GGML_TYPE_Q5_0, GGML_TYPE_Q5_1,
+};
+
+static ggml_type kv_cache_type_from_str(const std::string &s) {
+  for (const auto &type : kv_cache_types) {
+    if (ggml_type_name(type) == s) {
+      return type;
+    }
+  }
+  throw std::runtime_error("Unsupported cache type: " + s);
 }
 
 void llama_utils::declare_llama_params(
@@ -85,9 +101,9 @@ void llama_utils::declare_llama_params(
                                                 {"image_text", "<image>"},
                                             });
   node->declare_parameter<std::vector<std::string>>(
+      "devices", std::vector<std::string>({}));
+  node->declare_parameter<std::vector<std::string>>(
       "lora_adapters", std::vector<std::string>({}));
-  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
-                                               std::vector<double>({}));
   node->declare_parameter<std::vector<std::string>>(
       "stopping_words", std::vector<std::string>({}));
   node->declare_parameters<float>("", {
@@ -101,8 +117,9 @@ void llama_utils::declare_llama_params(
                                       });
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
+  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
+                                               std::vector<double>({}));
   node->declare_parameters<bool>("", {
-                                         {"debug", true},
                                          {"embedding", false},
                                          {"reranking", false},
                                          {"logits_all", false},
@@ -125,15 +142,21 @@ struct LlamaParams llama_utils::get_llama_params(
   int32_t poll;
   int32_t poll_batch;
 
+  std::vector<std::string> stopping_words;
+
   std::vector<std::string> lora_adapters;
   std::vector<double> lora_adapters_scales;
-  std::vector<std::string> stopping_words;
+
+  std::vector<std::string> devices;
   std::vector<double> tensor_split;
 
   std::string cpu_mask;
   std::string cpu_range;
   std::string cpu_mask_batch;
   std::string cpu_range_batch;
+
+  std::string cache_type_k;
+  std::string cache_type_v;
 
   std::string priority;
   std::string priority_batch;
@@ -151,6 +174,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("n_batch", params.params.n_batch);
   node->get_parameter("n_ubatch", params.params.n_ubatch);
 
+  node->get_parameter("devices", devices);
   node->get_parameter("n_gpu_layers", params.params.n_gpu_layers);
   node->get_parameter("split_mode", split_mode);
   node->get_parameter("main_gpu", params.params.main_gpu);
@@ -166,8 +190,8 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("flash_attn", params.params.flash_attn);
 
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
-  node->get_parameter("cache_type_k", params.params.cache_type_k);
-  node->get_parameter("cache_type_v", params.params.cache_type_v);
+  node->get_parameter("cache_type_k", cache_type_k);
+  node->get_parameter("cache_type_v", cache_type_v);
 
   node->get_parameter("n_threads", params.params.cpuparams.n_threads);
   node->get_parameter("cpu_mask", cpu_mask);
@@ -223,13 +247,30 @@ struct LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
-  node->get_parameter("debug", params.debug);
 
   // seed
   if (seed < 0) {
-    params.params.sparams.seed = LLAMA_DEFAULT_SEED;
+    params.params.sampling.seed = LLAMA_DEFAULT_SEED;
   } else {
-    params.params.sparams.seed = seed;
+    params.params.sampling.seed = seed;
+  }
+
+  // cache type
+  params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
+  params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
+
+  // devices
+  for (const std::string &d : devices) {
+
+    if (!d.empty()) {
+      auto *dev = ggml_backend_dev_by_name(d.c_str());
+
+      if (!dev || ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
+        LLAMA_LOG_ERROR("Invalid device: %s", d.c_str());
+      } else {
+        params.params.devices.push_back(dev);
+      }
+    }
   }
 
   // check threads number
@@ -269,7 +310,8 @@ struct LlamaParams llama_utils::get_llama_params(
           scale = 1.0;
         }
 
-        params.params.lora_adapters.push_back({lora_adapters.at(i), scale});
+        params.params.lora_adapters.push_back(
+            {lora_adapters.at(i), scale, nullptr});
       }
     }
   }
@@ -406,10 +448,10 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
   return GGML_SCHED_PRIO_NORMAL;
 }
 
-struct common_sampler_params llama_utils::parse_sampling_params(
+struct common_params_sampling llama_utils::parse_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct common_sampler_params sparams;
+  struct common_params_sampling sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
@@ -429,8 +471,6 @@ struct common_sampler_params llama_utils::parse_sampling_params(
   sparams.mirostat = sampling_config.mirostat;
   sparams.mirostat_eta = sampling_config.mirostat_eta;
   sparams.mirostat_tau = sampling_config.mirostat_tau;
-
-  sparams.penalize_nl = sampling_config.penalize_nl;
 
   sparams.samplers =
       common_sampler_types_from_chars(sampling_config.samplers_sequence);

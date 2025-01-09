@@ -1,0 +1,9 @@
+n_ctx: 2048
+n_batch: 1024
+n_gpu_layers: 0
+n_threads: -1
+n_predict: 2048
+embedding: true
+
+model_repo: "nnch/multilingual-e5-large-Q4_K_M-GGUF"
+model_filename: "multilingual-e5-large-q4_k_m.gguf"

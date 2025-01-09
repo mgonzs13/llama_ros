@@ -1,14 +1,14 @@
 // MIT License
-
-// Copyright (c) 2024  Miguel Ángel González Santamarta
-
+//
+// Copyright (c) 2024 Miguel Ángel González Santamarta
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 
@@ -43,7 +43,7 @@ LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.llava_params,
-                              this->params.system_prompt, this->params.debug);
+                              this->params.system_prompt);
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -59,9 +59,7 @@ void LlavaNode::execute(
   // load image
   if (image_msg.data.size() > 0) {
 
-    if (this->params.debug) {
-      RCLCPP_INFO(this->get_logger(), "Loading image");
-    }
+    RCLCPP_INFO(this->get_logger(), "Loading image...");
 
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);
@@ -73,9 +71,11 @@ void LlavaNode::execute(
 
     if (!static_cast<Llava *>(this->llama.get())->load_image(encoded_image)) {
       this->goal_handle_->abort(result);
-      RCLCPP_INFO(this->get_logger(), "Failed to load image");
+      RCLCPP_ERROR(this->get_logger(), "Failed to load image");
       return;
     }
+
+    RCLCPP_INFO(this->get_logger(), "Image loaded");
   }
 
   // llama_node execute

@@ -1,17 +1,17 @@
 // MIT License
-
-// Copyright (c) 2023  Miguel Ángel González Santamarta
-
+//
+// Copyright (c) 2023 Miguel Ángel González Santamarta
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -36,14 +36,6 @@
 #include "sampling.h"
 
 #include "llama_utils/spinner.hpp"
-
-// llama logs
-#define LLAMA_LOG_ERROR(text, ...)                                             \
-  fprintf(stderr, "[ERROR] " text "\n", ##__VA_ARGS__)
-#define LLAMA_LOG_WARN(text, ...)                                              \
-  fprintf(stderr, "[WARN] " text "\n", ##__VA_ARGS__)
-#define LLAMA_LOG_INFO(text, ...)                                              \
-  fprintf(stderr, "[INFO] " text "\n", ##__VA_ARGS__)
 
 namespace llama_ros {
 
@@ -178,14 +170,14 @@ class Llama {
 
 public:
   Llama(const struct common_params &params, std::string system_prompt = "",
-        bool debug = false);
+        bool initial_reset = true);
   virtual ~Llama();
 
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
                                     bool special = false);
   std::string detokenize(const std::vector<llama_token> &tokens);
 
-  void reset();
+  virtual void reset();
   void cancel();
 
   std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
@@ -207,7 +199,7 @@ public:
 
   struct ResponseOutput
   generate_response(const std::string &input_prompt,
-                    struct common_sampler_params sparams,
+                    struct common_params_sampling sparams,
                     GenerateResponseCallback callbakc = nullptr,
                     std::vector<std::string> stop = {});
   struct ResponseOutput
@@ -242,16 +234,16 @@ protected:
   struct common_params params;
 
   // model
+  struct common_init_result llama_init;
   struct llama_context *ctx;
   struct llama_model *model;
-  std::vector<struct common_lora_adapter_container> lora_adapters;
+  std::vector<common_lora_adapter_info> lora_adapters;
   struct common_sampler *sampler;
   struct ggml_threadpool *threadpool;
   struct ggml_threadpool *threadpool_batch;
 
   // aux
   std::string system_prompt;
-  bool debug;
   bool canceled;
   llama_utils::Spinner spinner;
   std::vector<llama_token> prompt_tokens;
@@ -276,7 +268,7 @@ protected:
   bool eval_prompt(std::vector<llama_token> prompt_tokens);
   bool eval_token(llama_token token);
   bool eval(std::vector<llama_token> tokens);
-  bool eval(struct llama_batch batch);
+  virtual bool eval(struct llama_batch batch);
 
   std::vector<struct TokenProb> get_probs();
   struct CompletionOutput sample();

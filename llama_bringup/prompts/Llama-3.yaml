@@ -3,7 +3,7 @@ suffix: "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 stopping_words: ["<|eot_id|>"]
 
 system_prompt: |+
-  <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+  <|start_header_id|>system<|end_header_id|>
 
   Below is an instruction that describes a task. Write a response that appropriately completes the request<|eot_id|><|start_header_id|>user<|end_header_id|>
 

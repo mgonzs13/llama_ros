@@ -1,18 +1,18 @@
 # MIT License
-
-# Copyright (c) 2024  Alejandro González Cantón
-# Copyright (c) 2024  Miguel Ángel González Santamarta
-
+#
+# Copyright (c) 2024 Alejandro González Cantón
+# Copyright (c) 2024 Miguel Ángel González Santamarta
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -78,9 +78,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
-    penalize_nl: bool = False
-
-    samplers_sequence: str = "dkypmxt"
+    samplers_sequence: str = "edkypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
@@ -171,8 +169,6 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.mirostat = self.mirostat
         goal.sampling_config.mirostat_eta = self.mirostat_eta
         goal.sampling_config.mirostat_tau = self.mirostat_tau
-
-        goal.sampling_config.penalize_nl = self.penalize_nl
 
         goal.sampling_config.samplers_sequence = self.samplers_sequence
 

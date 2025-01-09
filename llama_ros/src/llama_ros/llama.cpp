@@ -1,17 +1,17 @@
 // MIT License
-
-// Copyright (c) 2023  Miguel Ángel González Santamarta
-
+//
+// Copyright (c) 2023 Miguel Ángel González Santamarta
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,27 +27,27 @@
 #include <thread>
 
 #include "common.h"
-#include "llama_ros/llama.hpp"
 #include "sampling.h"
+
+#include "llama_ros/llama.hpp"
+#include "llama_utils/logs.hpp"
 
 using namespace llama_ros;
 
 Llama::Llama(const struct common_params &params, std::string system_prompt,
-             bool debug)
-    : params(params), system_prompt(system_prompt), debug(debug) {
+             bool initial_reset)
+    : params(params), system_prompt(system_prompt) {
 
-  if (this->debug) {
-    print_build_info();
-  }
+  print_build_info();
 
   // load model
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  struct common_init_result llama_init = common_init_from_params(this->params);
-  this->model = llama_init.model;
-  this->ctx = llama_init.context;
-  this->lora_adapters = llama_init.lora_adapters;
+  this->llama_init = common_init_from_params(this->params);
+  this->model = llama_init.model.get();
+  this->ctx = llama_init.context.get();
+  this->lora_adapters = this->params.lora_adapters;
 
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
@@ -87,9 +87,9 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
 
   // create the sampler
-  this->sampler = common_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sampling);
   if (!this->sampler) {
-    LLAMA_LOG_ERROR("Failed to initialize sampling subsystem");
+    LLAMA_LOG_ERROR("Failed to initialize sampler");
     return;
   }
 
@@ -101,7 +101,9 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   }
 
   // set inital values
-  this->reset();
+  if (initial_reset) {
+    this->reset();
+  }
 
   // show info
   LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
@@ -133,7 +135,7 @@ Llama::~Llama() {
   llama_free(this->ctx);
   this->ctx = nullptr;
 
-  llama_free_model(this->model);
+  llama_model_free(this->model);
   this->model = nullptr;
 
   if (this->sampler != nullptr) {
@@ -147,6 +149,38 @@ Llama::~Llama() {
 
   ggml_threadpool_free(this->threadpool_batch);
   this->threadpool_batch = nullptr;
+}
+
+/*
+*****************************
+*           RESET           *
+*           CANCEL          *
+*****************************
+*/
+void Llama::reset() {
+
+  llama_kv_cache_clear(this->ctx);
+
+  if (this->sampler != nullptr) {
+    common_sampler_reset(this->sampler);
+  }
+
+  this->canceled = false;
+  this->n_past = 0;
+  this->n_consumed = 0;
+  this->ga_i = 0;
+
+  this->prompt_tokens.clear();
+
+  // load system prompt
+  if (!this->eval_system_prompt()) {
+    LLAMA_LOG_ERROR("Failed to eval system prompt");
+  }
+
+  // number of tokens to keep when resetting context
+  if (this->params.n_keep < 0) {
+    this->params.n_keep = (int)this->prompt_tokens.size();
+  }
 }
 
 /*
@@ -338,38 +372,6 @@ struct Metadata Llama::get_metadata() {
       this->get_metadata("tokenizer.chat_template", 4096);
 
   return metadata;
-}
-
-/*
-*****************************
-*           RESET           *
-*           CANCEL          *
-*****************************
-*/
-void Llama::reset() {
-
-  llama_kv_cache_clear(this->ctx);
-
-  if (this->sampler != nullptr) {
-    common_sampler_reset(this->sampler);
-  }
-
-  this->canceled = false;
-  this->n_past = 0;
-  this->n_consumed = 0;
-  this->ga_i = 0;
-
-  this->prompt_tokens.clear();
-
-  // load system prompt
-  if (!this->eval_system_prompt()) {
-    LLAMA_LOG_ERROR("Failed to eval system prompt");
-  }
-
-  // number of tokens to keep when resetting context
-  if (this->params.n_keep < 0) {
-    this->params.n_keep = (int)this->prompt_tokens.size();
-  }
 }
 
 /*
@@ -623,12 +625,12 @@ struct ResponseOutput
 Llama::generate_response(const std::string &input_prompt,
                          GenerateResponseCallback callback,
                          std::vector<std::string> stop) {
-  struct common_sampler_params sparams;
+  struct common_params_sampling sparams;
   return this->generate_response(input_prompt, sparams, callback, stop);
 }
 
 struct ResponseOutput Llama::generate_response(
-    const std::string &input_prompt, struct common_sampler_params sparams,
+    const std::string &input_prompt, struct common_params_sampling sparams,
     GenerateResponseCallback callback, std::vector<std::string> stop) {
 
   std::lock_guard<std::recursive_mutex> lk(this->mutex);
@@ -646,13 +648,13 @@ struct ResponseOutput Llama::generate_response(
   stop_concat.insert(stop_concat.end(), stop.begin(), stop.end());
 
   // create sampler
-  this->params.sparams = sparams;
+  this->params.sampling = sparams;
 
   if (this->sampler != nullptr) {
     common_sampler_free(this->sampler);
   }
 
-  this->sampler = common_sampler_init(this->model, this->params.sparams);
+  this->sampler = common_sampler_init(this->model, this->params.sampling);
 
   if (this->sampler == nullptr) {
     output.stop = StopType::ABORT;
@@ -663,14 +665,12 @@ struct ResponseOutput Llama::generate_response(
   this->load_prompt(input_prompt, true, true);
 
   // show sampling info
-  if (this->debug) {
-    LLAMA_LOG_INFO("Sampler params: %s", this->params.sparams.print().c_str());
-    LLAMA_LOG_INFO("Sampler constr: %s",
-                   common_sampler_print(this->sampler).c_str());
+  LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
+  LLAMA_LOG_INFO("Sampler constr: %s",
+                 common_sampler_print(this->sampler).c_str());
 
-    LLAMA_LOG_INFO("Prompt tokens:\n%s",
-                   this->detokenize(this->prompt_tokens).c_str());
-  }
+  LLAMA_LOG_INFO("Prompt tokens:\n%s",
+                 this->detokenize(this->prompt_tokens).c_str());
 
   LLAMA_LOG_INFO("Starting Response Generation");
 
@@ -724,9 +724,7 @@ struct ResponseOutput Llama::generate_response(
 
   LLAMA_LOG_INFO("Finish Response Generation");
 
-  if (this->debug) {
-    common_perf_print(this->ctx, this->sampler);
-  }
+  common_perf_print(this->ctx, this->sampler);
 
   output.completions = response;
   return output;
@@ -819,13 +817,13 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
 
   // respect the maximum number of tokens
   if (this->n_past > this->params.n_predict && this->params.n_predict != -1) {
-    LLAMA_LOG_INFO("Maximun number of tokens reached %d",
+    LLAMA_LOG_INFO("Maximum number of tokens reached %d",
                    this->params.n_predict);
     return FULL_STOP;
   }
 
   if (this->n_past > this->get_n_ctx() && this->params.n_predict == -2) {
-    LLAMA_LOG_INFO("Maximun number of tokens reached %d", this->get_n_ctx());
+    LLAMA_LOG_INFO("Maximum number of tokens reached %d", this->get_n_ctx());
     return FULL_STOP;
   }
 
@@ -845,22 +843,44 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
   return NO_STOP;
 }
 
+inline std::string trim(const std::string &str) {
+
+  // find the position of the first non-whitespace character
+  size_t start = str.find_first_not_of(" \t\n\r\f\v");
+
+  // if the string is all whitespace, return an empty string
+  if (start == std::string::npos) {
+    return "";
+  }
+
+  // find the position of the last non-whitespace character
+  size_t end = str.find_last_not_of(" \t\n\r\f\v");
+
+  // return the substring that excludes leading and trailing whitespace
+  return str.substr(start, end - start + 1);
+}
+
 StopType Llama::find_stop_word(
     std::vector<struct CompletionOutput> completion_result_list,
     std::string stopping_word) {
 
   std::string completion_text = "";
   for (auto c : completion_result_list) {
-    completion_text.append(this->detokenize({c.token}));
+    completion_text.append(trim(this->detokenize({c.token})));
   }
 
-  for (size_t i = 0; i < completion_text.size(); i++) {
+  if (completion_text.empty()) {
+    return NO_STOP;
+  }
+
+  for (size_t i = 0; i < completion_text.size() && i < stopping_word.size();
+       i++) {
     if (completion_text.at(i) != stopping_word.at(i)) {
       return NO_STOP;
     }
   }
 
-  if (completion_text.size() == stopping_word.size()) {
+  if (completion_text.size() >= stopping_word.size()) {
     return FULL_STOP;
   } else {
     return PARTIAL_STOP;
@@ -894,6 +914,7 @@ bool Llama::eval_prompt() { return this->eval_prompt(this->prompt_tokens); }
 bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
 
   std::vector<llama_token> batch;
+  batch.reserve(this->params.n_batch);
 
   while (((int)prompt_tokens.size() > this->n_consumed)) {
 
@@ -924,13 +945,13 @@ bool Llama::eval(std::vector<llama_token> tokens) {
 
   // create batch
   struct llama_batch batch = {
-      int32_t(tokens.size()),
-      tokens.data(),
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
+      int32_t(tokens.size()), // n_tokens
+      tokens.data(),          // tokens
+      nullptr,                // embd
+      nullptr,                // pos
+      nullptr,                // n_seq_id
+      nullptr,                // seq_id
+      nullptr,                // logits
   };
 
   return this->eval(batch);
@@ -992,9 +1013,7 @@ bool Llama::eval(struct llama_batch batch) {
           batch.logits + i,
       };
 
-      if (this->debug) {
-        this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
-      }
+      this->spinner.spin("EVALUATING " + std::to_string(n_eval) + " TOKENS");
 
       if (llama_decode(this->ctx, batch_view)) {
         LLAMA_LOG_ERROR("Failed to eval");
@@ -1018,7 +1037,7 @@ std::vector<struct TokenProb> Llama::get_probs() {
 
   const auto *cur_p = common_sampler_get_candidates(this->sampler);
 
-  const int32_t n_probs = this->params.sparams.n_probs;
+  const int32_t n_probs = this->params.sampling.n_probs;
 
   for (int i = 0; i < n_probs; ++i) {
     probs.push_back({
