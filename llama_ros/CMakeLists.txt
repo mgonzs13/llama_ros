@@ -102,7 +102,6 @@ install(TARGETS
 )
 
 install(DIRECTORY
-  templates
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -734,8 +734,7 @@ rclpy.shutdown()
 
 </details>
 
-#### chat_llama_ros
-
+#### chat_llama_ros (Chat + LVM)
 <details>
 <summary>Click to expand</summary>
 
@@ -772,6 +771,73 @@ for text in self.chain.stream({"image_url": "https://pics.filmaffinity.com/Drago
     print(text, end="", flush=True)
 
 print("", end="\n", flush=True)
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### 🎉 \*\*\*NEW*** chat_llama_ros (Tools) 🎉
+
+<details>
+<summary>Click to expand</summary>
+
+The current implementation of Tools allows executing tools without requiring a model trained for that task.
+
+```python
+
+import time
+
+import rclpy
+from rclpy.node import Node
+from llama_ros.langchain import ChatLlamaROS
+from langchain_core.messages import HumanMessage
+from langchain.tools import tool
+from random import randint
+
+rclpy.init()
+
+@tool
+def get_inhabitants(city: str) -> int:
+    """Get the current temperature of a city"""
+    return randint(4_000_000, 8_000_000)
+
+
+@tool
+def get_curr_temperature(city: str) -> int:
+    """Get the current temperature of a city"""
+    return randint(20, 30)
+
+chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, use_llama_template=True)
+
+messages = [
+    HumanMessage(
+        "What is the current temperature in Madrid? And its inhabitants?"
+    )
+]
+
+llm_tools = self.chat.bind_tools(
+    [get_inhabitants, get_curr_temperature], tool_choice='any'
+)
+
+all_tools_res = llm_tools.invoke(messages)
+messages.append(all_tools_res)
+
+for tool in all_tools_res.tool_calls:
+    selected_tool = {
+        "get_inhabitants": get_inhabitants, "get_curr_temperature": get_curr_temperature
+    }[tool['name']]
+
+    tool_msg = selected_tool.invoke(tool)
+
+    formatted_output = f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
+
+    tool_msg.additional_kwargs = {'args': tool['args']}
+    messages.append(tool_msg)
+
+res = self.chat.invoke(messages)
+
+print(f"Response: {res.content}")
 
 rclpy.shutdown()
 ```
@@ -867,6 +933,20 @@ ros2 run llama_demos chatllama_demo_node
 ```
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+
+### Tools Demo
+
+```shell
+ros2 llama launch MiniCPM-2.6.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_tools_node
+```
+
+
+
+[Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
 
 #### Full Demo (LLM + chat template + RAG + Reranking + Stream)
 
