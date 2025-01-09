@@ -51,7 +51,6 @@ import jinja2
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from pydantic import BaseModel
 import uuid
-from ament_index_python.packages import get_package_share_directory
 
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import Message
