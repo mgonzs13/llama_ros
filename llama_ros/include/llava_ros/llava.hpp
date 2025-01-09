@@ -59,7 +59,7 @@ protected:
   void load_prompt(const std::string &input_prompt, bool add_pfx,
                    bool add_sfx) override;
   bool eval_image(struct llava_image_embed *image_embed);
-  bool eval_prompt();
+  bool eval_prompt() override;
   bool eval(struct llama_batch batch) override;
 
   struct llava_image_embed *image_embed;

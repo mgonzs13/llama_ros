@@ -245,6 +245,7 @@ bool Llava::eval_prompt() {
     }
 
     // eval the image
+    LLAMA_LOG_INFO("Checking the image");
     if (this->image_embed != nullptr) {
       LLAMA_LOG_INFO("Evaluating the image");
 
