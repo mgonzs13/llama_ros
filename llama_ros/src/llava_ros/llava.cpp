@@ -81,7 +81,7 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
 
       // no image_text
       if (image_pos == std::string::npos) {
-        prompt = this->llava_params.image_text + "\n" + prompt;
+        prompt = this->llava_params.image_text + prompt;
         image_pos = 0;
       }
     }
