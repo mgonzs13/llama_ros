@@ -484,10 +484,11 @@ void LlamaNode::execute(
   // get goal data
   this->goal_handle_ = goal_handle;
   auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<GenerateResponse::Result>();
+
   std::string prompt = goal->prompt;
   std::vector<std::string> stop = goal->stop;
-  bool reset = goal_handle->get_goal()->reset;
-  auto result = std::make_shared<GenerateResponse::Result>();
+  bool reset = goal->reset;
 
   // check if goal is empty
   if (this->goal_empty(goal)) {
@@ -503,7 +504,7 @@ void LlamaNode::execute(
   }
 
   // update sampling params of common_params
-  auto sampling_config = goal_handle->get_goal()->sampling_config;
+  auto sampling_config = goal->sampling_config;
   auto sparams = llama_utils::parse_sampling_params(sampling_config,
                                                     this->llama->get_n_vocab());
 
