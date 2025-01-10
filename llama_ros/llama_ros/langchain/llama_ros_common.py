@@ -94,6 +94,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
+
         values["llama_client"] = LlamaClientNode.get_instance()
         values["model_metadata"] = (
             values["llama_client"].get_metadata(GetMetadata.Request()).metadata

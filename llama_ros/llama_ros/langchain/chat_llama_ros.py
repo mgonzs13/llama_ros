@@ -123,6 +123,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return "chatllamaros"
 
     def _json_schema_to_definition(self, input_json):
+
         # Extract the tool name
         tool_name = input_json["properties"]["name"]["const"]
 
@@ -134,6 +135,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return {"name": tool_name, "arguments": transformed_properties}
 
     def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
+
         tools_grammar = kwargs.get("tools_grammar", None)
 
         if self.use_llama_template:
@@ -180,6 +182,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _convert_content(
         self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]
     ) -> List[Dict[str, str]]:
+
         if isinstance(content, str):
             return {"type": "text", "text": content}
         if isinstance(content, list) and len(content) == 1:
@@ -203,6 +206,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     return {"type": "image_url", "image_url": image_url}
 
     def _convert_message_to_dict(self, message: BaseMessage) -> list[dict[str, str]]:
+
         if isinstance(message, HumanMessage):
             converted_msg = [
                 {"role": "user", "content": self._convert_content(message.content)}
@@ -250,6 +254,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _extract_data_from_messages(
         self, messages: List[BaseMessage]
     ) -> Tuple[Dict[str, str], Optional[str], Optional[str]]:
+
         new_messages = []
         image_url = None
         image = None
@@ -280,6 +285,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _create_chat_generations(
         self, response: GenerateResponse.Result, method: str
     ) -> List[BaseMessage]:
+
         chat_gen = None
 
         if method == "function_calling":
@@ -308,6 +314,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
+
         dict_messages = []
         for message in messages:
             dict_messages.extend(self._convert_message_to_dict(message))
@@ -335,6 +342,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+
         if kwargs.get("method") == "function_calling":
             raise ValueError(
                 "Streaming is not supported when using 'function_calling' method."
@@ -366,29 +374,20 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[Dict[str, Dict], bool, str]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["all", "one", "any"], bool]
+        ] = "any",
         method: Literal[
             "function_calling", "json_schema", "json_mode"
         ] = "function_calling",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model
 
-        tool_choice: does not currently support "any", "auto" choices like OpenAI
-            tool-calling API. should be a dict of the form to force this tool
-            {"type": "function", "function": {"name": <<tool_name>>}}.
-        """
-
-        formatted_tools = []
-
-        for tool in tools:
-            formatted_tools.append(convert_to_openai_tool(tool)["function"])
-
+        formatted_tools = [convert_to_openai_tool(tool)["function"] for tool in tools]
         tool_names = [ft["name"] for ft in formatted_tools]
         valid_choices = ["all", "one", "any"]
 
         is_valid_choice = tool_choice in valid_choices
-
         chosen_tool = [f for f in formatted_tools if f["name"] == tool_choice]
 
         if not chosen_tool and not is_valid_choice:
@@ -401,6 +400,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         if method == "json_mode" or method == "json_schema":
             grammar = chosen_tool[0]["parameters"]
+
         else:
             grammar = {
                 "type": "object",
@@ -425,8 +425,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     "required": ["name", "arguments"],
                 }
                 grammar["properties"]["tool_calls"]["items"]["oneOf"].append(new_action)
+
             else:
                 grammar["properties"]["tool_calls"]["items"][f"{tool_choice}Of"] = []
+
                 for tool in formatted_tools:
                     new_action = {
                         "type": "object",
@@ -452,6 +454,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         ] = "function_calling",
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
@@ -465,6 +468,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
+
         elif method == "function_calling":
             if schema is None:
                 raise ValueError(
@@ -499,5 +503,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
+
         else:
             return llm | output_parser
