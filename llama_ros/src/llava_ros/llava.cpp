@@ -35,7 +35,7 @@ using namespace llava_ros;
 Llava::Llava(const struct common_params &params,
              const struct LlavaParams &llava_params, std::string system_prompt)
     : llama_ros::Llama(params, system_prompt, false),
-      llava_params(llava_params), image_pose(0), st_pos_id(-1) {
+      llava_params(llava_params), image_pose(0), st_pos_id(0) {
 
   // load clip model
   const char *clip_path = this->params.mmproj.c_str();
@@ -47,16 +47,12 @@ Llava::Llava(const struct common_params &params,
 }
 
 Llava::~Llava() {
-  this->image_pose = 0;
-  this->st_pos_id = -1;
   clip_free(this->ctx_clip);
   this->free_image();
 }
 
 void Llava::reset() {
-  this->image_pose = 0;
-  this->st_pos_id = -1;
-  this->free_image();
+  this->st_pos_id = 0;
   Llama::reset();
 }
 
