@@ -79,7 +79,7 @@ from llama_msgs.action import GenerateResponse
 
 DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}
-    {{- 'You are an assistant. Output in JSON format with either a "text" or "tool_calls" key and its reasoning. Use "text" for responses and "tool_calls" for tool usage. "tool_calls" is a list of tools in the format: {name, arguments}. Available tools are:' }}
+    {{- 'You are an assistant. Output in JSON format. The key "tool_calls" is a list of tools in the format: {name, arguments}. Available tools are:' }}
     {% for tool in tools_grammar %}
         {% if not loop.last %}
             {{- tool }}
@@ -147,9 +147,15 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         formatted_tools = []
         if tools_grammar:
-            list_options = json.loads(tools_grammar)["properties"]["response"]["oneOf"][
-                1
-            ]["properties"]["tool_calls"]["items"]
+            if "response" in tools_grammar:
+                list_options = json.loads(tools_grammar)["properties"]["response"][
+                    "oneOf"
+                ][1]["properties"]["tool_calls"]["items"]
+            else:
+                list_options = json.loads(tools_grammar)["properties"]["tool_calls"][
+                    "items"
+                ]
+
             for key in list_options.keys():
                 if key.endswith("Of"):
                     list_key = key
@@ -296,8 +302,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             ai_message = AIMessage(content="", tool_calls=[])
             parsed_output = json.loads(response.text)
 
-            if "tool_calls" in parsed_output["response"]:
-                for tool in parsed_output["response"]["tool_calls"]:
+            if (
+                "response" in parsed_output and "tool_calls" in parsed_output["response"]
+            ) or ("tool_calls" in parsed_output):
+
+                if "tool_calls" in parsed_output:
+                    tool_calls = parsed_output["tool_calls"]
+                elif (
+                    "response" in parsed_output
+                    and "tool_calls" in parsed_output["response"]
+                ):
+                    tool_calls = parsed_output["response"]["tool_calls"]
+
+                for tool in tool_calls:
                     ai_message.tool_calls.append(
                         {
                             "name": tool["name"],
@@ -306,6 +323,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             "id": f'{tool["name"]}_{uuid.uuid4()}',
                         }
                     )
+
             else:
                 ai_message.content = parsed_output["response"]["text"]
 
@@ -385,6 +403,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         tool_choice: Optional[
             Union[dict, str, Literal["all", "one", "any"], bool]
         ] = "any",
+        only_tool_calling: bool = True,
         method: Literal[
             "function_calling", "json_schema", "json_mode"
         ] = "function_calling",
@@ -428,6 +447,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             }
 
             tool_calls = {
+                "type": "object",
                 "properties": {
                     "tool_calls": {
                         "type": "array",
@@ -466,7 +486,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         f"{tool_choice}Of"
                     ].append(new_tool)
 
-            grammar["properties"]["response"]["oneOf"].append(tool_calls)
+            if only_tool_calling:
+                grammar = tool_calls
+            else:
+                grammar["properties"]["response"]["oneOf"].append(tool_calls)
 
         return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
 
