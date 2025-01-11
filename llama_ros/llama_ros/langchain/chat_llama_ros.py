@@ -79,7 +79,7 @@ from llama_msgs.action import GenerateResponse
 
 DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}
-    {{- 'You are an assistant. You output in JSON format. The key "tool_calls" is a list of possible tools. For each tool, the format is {name, arguments}. You can use the following tools:' }}
+    {{- 'You are an assistant. Output in JSON format with either a "text" or "tool_calls" key and its reasoning. Use "text" for responses and "tool_calls" for tool usage. "tool_calls" is a list of tools in the format: {name, arguments}. Available tools are:' }}
     {% for tool in tools_grammar %}
         {% if not loop.last %}
             {{- tool }}
@@ -129,7 +129,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         # Extract and map arguments to desired format
         properties = input_json["properties"]["arguments"]["properties"]
-        transformed_properties = {arg: prop["type"] for (arg, prop) in properties.items()}
+        transformed_properties = {
+            arg: prop["type"] for (arg, prop) in properties.items() if "type" in prop
+        }
 
         # Create the transformed object
         return {"name": tool_name, "arguments": transformed_properties}
@@ -145,7 +147,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         formatted_tools = []
         if tools_grammar:
-            list_options = json.loads(tools_grammar)["properties"]["tool_calls"]["items"]
+            list_options = json.loads(tools_grammar)["properties"]["response"]["oneOf"][
+                1
+            ]["properties"]["tool_calls"]["items"]
             for key in list_options.keys():
                 if key.endswith("Of"):
                     list_key = key
@@ -291,15 +295,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if method == "function_calling":
             ai_message = AIMessage(content="", tool_calls=[])
             parsed_output = json.loads(response.text)
-            for tool in parsed_output["tool_calls"]:
-                ai_message.tool_calls.append(
-                    {
-                        "name": tool["name"],
-                        "args": tool["arguments"],
-                        "type": "tool_call",
-                        "id": f'{tool["name"]}_{uuid.uuid4()}',
-                    }
-                )
+
+            if "tool_calls" in parsed_output["response"]:
+                for tool in parsed_output["response"]["tool_calls"]:
+                    ai_message.tool_calls.append(
+                        {
+                            "name": tool["name"],
+                            "args": tool["arguments"],
+                            "type": "tool_call",
+                            "id": f'{tool["name"]}_{uuid.uuid4()}',
+                        }
+                    )
+            else:
+                ai_message.content = parsed_output["response"]["text"]
 
             chat_gen = ChatGeneration(message=ai_message)
         else:
@@ -392,7 +400,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         if not chosen_tool and not is_valid_choice:
             raise ValueError(
-                f"Tool choice {tool_choice=} was specified, but the only "
+                f"Tool choice {tool_choice} was specified, but the only "
                 f"provided tools were {tool_names}."
             )
 
@@ -405,6 +413,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             grammar = {
                 "type": "object",
                 "properties": {
+                    "reasoning": {"type": "string"},
+                    "response": {
+                        "type": "object",
+                        "oneOf": [
+                            {
+                                "properties": {"text": {"type": "string"}},
+                                "required": ["text"],
+                            },
+                        ],
+                    },
+                },
+                "required": ["reasoning", "response"],
+            }
+
+            tool_calls = {
+                "properties": {
                     "tool_calls": {
                         "type": "array",
                         "items": {"type": "object"},
@@ -415,22 +439,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             }
 
             if chosen_tool:
-                grammar["properties"]["tool_calls"]["items"]["oneOf"] = []
-                new_action = {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string", "const": chosen_tool[0]["name"]},
-                        "arguments": chosen_tool[0]["parameters"],
-                    },
-                    "required": ["name", "arguments"],
-                }
-                grammar["properties"]["tool_calls"]["items"]["oneOf"].append(new_action)
+                tool_calls["properties"]["tool_calls"]["items"]["oneOf"] = [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "const": chosen_tool[0]["name"]},
+                            "arguments": chosen_tool[0]["parameters"],
+                        },
+                        "required": ["name", "arguments"],
+                    }
+                ]
 
             else:
-                grammar["properties"]["tool_calls"]["items"][f"{tool_choice}Of"] = []
+                tool_calls["properties"]["tool_calls"]["items"][f"{tool_choice}Of"] = []
 
                 for tool in formatted_tools:
-                    new_action = {
+                    new_tool = {
                         "type": "object",
                         "properties": {
                             "name": {"type": "string", "const": tool["name"]},
@@ -438,9 +462,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         },
                         "required": ["name", "arguments"],
                     }
-                    grammar["properties"]["tool_calls"]["items"][
+                    tool_calls["properties"]["tool_calls"]["items"][
                         f"{tool_choice}Of"
-                    ].append(new_action)
+                    ].append(new_tool)
+
+            grammar["properties"]["response"]["oneOf"].append(tool_calls)
 
         return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
 
