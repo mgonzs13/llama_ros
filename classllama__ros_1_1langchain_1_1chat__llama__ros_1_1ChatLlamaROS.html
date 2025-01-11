@@ -157,8 +157,8 @@ Collaboration diagram for llama_ros.langchain.chat_llama_ros.ChatLlamaROS:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a69f356a9735498f6fe81b3c4388ad855" id="r_a69f356a9735498f6fe81b3c4388ad855"><td class="memItemLeft" align="right" valign="top">Runnable[LanguageModelInput, BaseMessage]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a69f356a9735498f6fe81b3c4388ad855">bind_tools</a> (self, Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]] tools, *, Optional[Union[dict, str, Literal[&quot;all&quot;, &quot;one&quot;, &quot;any&quot;], bool]] tool_choice=&quot;any&quot;, Literal[&quot;function_calling&quot;, &quot;json_schema&quot;, &quot;json_mode&quot;] method=&quot;function_calling&quot;, **Any kwargs)</td></tr>
-<tr class="separator:a69f356a9735498f6fe81b3c4388ad855"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06d2b38a031c2f0fde1348d3474cdabe" id="r_a06d2b38a031c2f0fde1348d3474cdabe"><td class="memItemLeft" align="right" valign="top">Runnable[LanguageModelInput, BaseMessage]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a06d2b38a031c2f0fde1348d3474cdabe">bind_tools</a> (self, Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]] tools, *, Optional[Union[dict, str, Literal[&quot;all&quot;, &quot;one&quot;, &quot;any&quot;], bool]] tool_choice=&quot;any&quot;, bool only_tool_calling=True, Literal[&quot;function_calling&quot;, &quot;json_schema&quot;, &quot;json_mode&quot;] method=&quot;function_calling&quot;, **Any kwargs)</td></tr>
+<tr class="separator:a06d2b38a031c2f0fde1348d3474cdabe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c29cabed7002044b0a69e40d9655348" id="r_a6c29cabed7002044b0a69e40d9655348"><td class="memItemLeft" align="right" valign="top">Runnable[LanguageModelInput, Union[Dict, BaseModel]]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c29cabed7002044b0a69e40d9655348">with_structured_output</a> (self, Optional[Union[Dict, Type[BaseModel], Type]] schema=None, *, bool include_raw=False, Literal[&quot;function_calling&quot;, &quot;json_schema&quot;, &quot;json_mode&quot;] method=&quot;function_calling&quot;, **Any kwargs)</td></tr>
 <tr class="separator:a6c29cabed7002044b0a69e40d9655348"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html">llama_ros.langchain.llama_ros_common.LlamaROSCommon</a></td></tr>
@@ -597,8 +597,8 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a69f356a9735498f6fe81b3c4388ad855" name="a69f356a9735498f6fe81b3c4388ad855"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69f356a9735498f6fe81b3c4388ad855">&#9670;&#160;</a></span>bind_tools()</h2>
+<a id="a06d2b38a031c2f0fde1348d3474cdabe" name="a06d2b38a031c2f0fde1348d3474cdabe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06d2b38a031c2f0fde1348d3474cdabe">&#9670;&#160;</a></span>bind_tools()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -624,6 +624,11 @@ Protected Member Functions</h2></td></tr>
           <td class="paramtype">Optional[
             Union[dict, str, Literal[&quot;all&quot;, &quot;one&quot;, &quot;any&quot;], bool]
         ] </td>          <td class="paramname"><span class="paramname"><em>tool_choice</em></span><span class="paramdefsep"> = </span><span class="paramdefval">&quot;any&quot;</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool </td>          <td class="paramname"><span class="paramname"><em>only_tool_calling</em></span><span class="paramdefsep"> = </span><span class="paramdefval">True</span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
