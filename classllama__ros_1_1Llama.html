@@ -168,6 +168,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:acf5404efd113cecb5022bb492565dfb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6acbcaef218f647243cc0074c8ac4811" id="r_a6acbcaef218f647243cc0074c8ac4811"><td class="memItemLeft" align="right" valign="top">const struct llama_model *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6acbcaef218f647243cc0074c8ac4811">get_model</a> ()</td></tr>
 <tr class="separator:a6acbcaef218f647243cc0074c8ac4811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c0da9163ff562d233aeaf8c058008c3" id="r_a4c0da9163ff562d233aeaf8c058008c3"><td class="memItemLeft" align="right" valign="top">const struct llama_vocab *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4c0da9163ff562d233aeaf8c058008c3">get_vocab</a> ()</td></tr>
+<tr class="separator:a4c0da9163ff562d233aeaf8c058008c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bb082407b1395400bb6b6b44ee5fd68" id="r_a1bb082407b1395400bb6b6b44ee5fd68"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1bb082407b1395400bb6b6b44ee5fd68">get_n_ctx</a> ()</td></tr>
 <tr class="separator:a1bb082407b1395400bb6b6b44ee5fd68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc160f4559dffe543eadfe1f680dddbf" id="r_adc160f4559dffe543eadfe1f680dddbf"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adc160f4559dffe543eadfe1f680dddbf">get_n_ctx_train</a> ()</td></tr>
@@ -196,8 +198,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9905e319a2c0311b5d700763de7d8d8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafe745e4c8d092867b1b211593c45857" id="r_aafe745e4c8d092867b1b211593c45857"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aafe745e4c8d092867b1b211593c45857">add_bos_token</a> ()</td></tr>
 <tr class="separator:aafe745e4c8d092867b1b211593c45857"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3b57329dde7f04a162bc4f802f28003" id="r_ae3b57329dde7f04a162bc4f802f28003"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae3b57329dde7f04a162bc4f802f28003">is_eog</a> ()</td></tr>
+<tr class="separator:ae3b57329dde7f04a162bc4f802f28003"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a317a25ada528bfffbfb803f5a08f3c17" id="r_a317a25ada528bfffbfb803f5a08f3c17"><td class="memItemLeft" align="right" valign="top">llama_token&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a317a25ada528bfffbfb803f5a08f3c17">get_token_eos</a> ()</td></tr>
 <tr class="separator:a317a25ada528bfffbfb803f5a08f3c17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73ace043cabac28e132c0e8b17c48ce4" id="r_a73ace043cabac28e132c0e8b17c48ce4"><td class="memItemLeft" align="right" valign="top">llama_token&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a73ace043cabac28e132c0e8b17c48ce4">get_token_bos</a> ()</td></tr>
+<tr class="separator:a73ace043cabac28e132c0e8b17c48ce4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd93834338643aa97ccb3828df13cf74" id="r_acd93834338643aa97ccb3828df13cf74"><td class="memItemLeft" align="right" valign="top">llama_token&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acd93834338643aa97ccb3828df13cf74">get_token_sep</a> ()</td></tr>
+<tr class="separator:acd93834338643aa97ccb3828df13cf74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -234,8 +242,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:addde254ae34b06491d56737b5dab5386"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f8e4f4b16f1a492809ca1f7fe40eda3" id="r_a8f8e4f4b16f1a492809ca1f7fe40eda3"><td class="memItemLeft" align="right" valign="top">struct llama_model *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8f8e4f4b16f1a492809ca1f7fe40eda3">model</a></td></tr>
 <tr class="separator:a8f8e4f4b16f1a492809ca1f7fe40eda3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeca933d968802d5ed9ae72a2add7b451" id="r_aeca933d968802d5ed9ae72a2add7b451"><td class="memItemLeft" align="right" valign="top">std::vector&lt; common_lora_adapter_info &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aeca933d968802d5ed9ae72a2add7b451">lora_adapters</a></td></tr>
-<tr class="separator:aeca933d968802d5ed9ae72a2add7b451"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3343eadcff7fe39bf6254f616ac96908" id="r_a3343eadcff7fe39bf6254f616ac96908"><td class="memItemLeft" align="right" valign="top">std::vector&lt; common_adapter_lora_info &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3343eadcff7fe39bf6254f616ac96908">lora_adapters</a></td></tr>
+<tr class="separator:a3343eadcff7fe39bf6254f616ac96908"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a59b039ec75e9acf845470d439d74b746" id="r_a59b039ec75e9acf845470d439d74b746"><td class="memItemLeft" align="right" valign="top">struct common_sampler *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a59b039ec75e9acf845470d439d74b746">sampler</a></td></tr>
 <tr class="separator:a59b039ec75e9acf845470d439d74b746"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af18d6cf311a9f1bc1c2a7476b2a0e302" id="r_af18d6cf311a9f1bc1c2a7476b2a0e302"><td class="memItemLeft" align="right" valign="top">struct ggml_threadpool *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af18d6cf311a9f1bc1c2a7476b2a0e302">threadpool</a></td></tr>
@@ -1039,6 +1047,31 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a73ace043cabac28e132c0e8b17c48ce4" name="a73ace043cabac28e132c0e8b17c48ce4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73ace043cabac28e132c0e8b17c48ce4">&#9670;&#160;</a></span>get_token_bos()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_token llama_ros::Llama::get_token_bos </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a317a25ada528bfffbfb803f5a08f3c17" name="a317a25ada528bfffbfb803f5a08f3c17"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a317a25ada528bfffbfb803f5a08f3c17">&#9670;&#160;</a></span>get_token_eos()</h2>
 
@@ -1064,6 +1097,56 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="acd93834338643aa97ccb3828df13cf74" name="acd93834338643aa97ccb3828df13cf74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acd93834338643aa97ccb3828df13cf74">&#9670;&#160;</a></span>get_token_sep()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_token llama_ros::Llama::get_token_sep </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4c0da9163ff562d233aeaf8c058008c3" name="a4c0da9163ff562d233aeaf8c058008c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c0da9163ff562d233aeaf8c058008c3">&#9670;&#160;</a></span>get_vocab()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const struct llama_vocab * llama_ros::Llama::get_vocab </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a69dd03523245603e633394d0cf06b98f" name="a69dd03523245603e633394d0cf06b98f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a69dd03523245603e633394d0cf06b98f">&#9670;&#160;</a></span>is_embedding()</h2>
 
@@ -1075,6 +1158,31 @@ Private Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">bool llama_ros::Llama::is_embedding </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae3b57329dde7f04a162bc4f802f28003" name="ae3b57329dde7f04a162bc4f802f28003"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3b57329dde7f04a162bc4f802f28003">&#9670;&#160;</a></span>is_eog()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llama_ros::Llama::is_eog </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
@@ -1419,8 +1527,8 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="aeca933d968802d5ed9ae72a2add7b451" name="aeca933d968802d5ed9ae72a2add7b451"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeca933d968802d5ed9ae72a2add7b451">&#9670;&#160;</a></span>lora_adapters</h2>
+<a id="a3343eadcff7fe39bf6254f616ac96908" name="a3343eadcff7fe39bf6254f616ac96908"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3343eadcff7fe39bf6254f616ac96908">&#9670;&#160;</a></span>lora_adapters</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1429,7 +1537,7 @@ Private Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;common_lora_adapter_info&gt; llama_ros::Llama::lora_adapters</td>
+          <td class="memname">std::vector&lt;common_adapter_lora_info&gt; llama_ros::Llama::lora_adapters</td>
         </tr>
       </table>
   </td>

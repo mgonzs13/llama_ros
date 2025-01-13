@@ -13,5 +13,6 @@ var searchData=
   ['initial_5ftime_10',['initial_time',['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#abfae23b0f25b9883747f9a9723e78eb7',1,'llama_demos.chatllama_demo_node.ChatLlamaDemoNode.initial_time'],['../classllama__demos_1_1chatllama__tools__demo__node_1_1ChatLlamaToolsDemoNode.html#ae81792a5eb668b648b0b6ab03534c6ce',1,'llama_demos.chatllama_tools_demo_node.ChatLlamaToolsDemoNode.initial_time'],['../classllama__demos_1_1llama__demo__node_1_1LlamaDemoNode.html#a74ba568c77f1211d68ed7029fdb2ceb3',1,'llama_demos.llama_demo_node.LlamaDemoNode.initial_time'],['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#a4d2076928313087315c80521dc62ddf1',1,'llama_demos.llava_demo_node.LlavaDemoNode.initial_time']]],
   ['installation_11',['Installation',['../index.html#autotoc_md3',1,'']]],
   ['is_5fembedding_12',['is_embedding',['../classllama__ros_1_1Llama.html#a69dd03523245603e633394d0cf06b98f',1,'llama_ros::Llama']]],
-  ['is_5freranking_13',['is_reranking',['../classllama__ros_1_1Llama.html#a9905e319a2c0311b5d700763de7d8d8c',1,'llama_ros::Llama']]]
+  ['is_5feog_13',['is_eog',['../classllama__ros_1_1Llama.html#ae3b57329dde7f04a162bc4f802f28003',1,'llama_ros::Llama']]],
+  ['is_5freranking_14',['is_reranking',['../classllama__ros_1_1Llama.html#a9905e319a2c0311b5d700763de7d8d8c',1,'llama_ros::Llama']]]
 ];

@@ -18,5 +18,5 @@ var searchData=
   ['log_5flevel_15',['log_level',['../namespacellama__utils.html#a3d05bcd0e9fe90fb804e10196bac8937',1,'llama_utils']]],
   ['log_5fwarn_16',['log_warn',['../namespacellama__utils.html#ac03a5f4981c2825e42e8e741459bdf16',1,'llama_utils']]],
   ['logit_5fbias_17',['logit_bias',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a5b639b6c99e8e672cd8eaab3066eae8d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['lora_5fadapters_18',['lora_adapters',['../classllama__ros_1_1Llama.html#aeca933d968802d5ed9ae72a2add7b451',1,'llama_ros::Llama']]]
+  ['lora_5fadapters_18',['lora_adapters',['../classllama__ros_1_1Llama.html#a3343eadcff7fe39bf6254f616ac96908',1,'llama_ros::Llama']]]
 ];
