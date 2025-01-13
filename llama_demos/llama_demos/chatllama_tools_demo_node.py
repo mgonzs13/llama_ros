@@ -66,7 +66,9 @@ class ChatLlamaToolsDemoNode(Node):
         ]
 
         self.get_logger().info(f"\nPrompt: {messages[0].content}")
-        llm_tools = self.chat.bind_tools([get_inhabitants, get_curr_temperature])
+        llm_tools = self.chat.bind_tools(
+            [get_inhabitants, get_curr_temperature], tool_choice="any"
+        )
 
         self.initial_time = time.time()
         all_tools_res = llm_tools.invoke(messages)
