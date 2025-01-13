@@ -518,22 +518,22 @@ float Llama::rank_document(const std::string &query,
   std::vector<llama_token> tokens;
   tokens.reserve(this->params.n_batch);
 
-  tokens.push_back(llama_token_bos(this->model));
+  tokens.push_back(this->get_token_bos());
 
   auto part1 = this->tokenize(query, false, true);
   part1 =
       this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part1.begin(), part1.end());
 
-  tokens.push_back(llama_token_eos(this->model));
-  tokens.push_back(llama_token_sep(this->model));
+  tokens.push_back(this->get_token_eos());
+  tokens.push_back(this->get_token_sep());
 
   auto part2 = this->tokenize(document, false, true);
   part2 =
       this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part2.begin(), part2.end());
 
-  tokens.push_back(llama_token_eos(this->model));
+  tokens.push_back(this->get_token_eos());
 
   return this->generate_embeddings(tokens, -1).embeddings.at(0);
 }
@@ -623,7 +623,7 @@ void Llama::update_loras(std::vector<struct LoRA> loras) {
     }
   }
 
-  common_lora_adapters_apply(this->ctx, this->lora_adapters);
+  common_set_adapter_lora(this->ctx, this->lora_adapters);
 }
 
 /*
@@ -812,7 +812,7 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
   }
 
   // eos
-  if (llama_token_is_eog(this->model, common_sampler_last(this->sampler))) {
+  if (this->is_eog()) {
     LLAMA_LOG_INFO("Stopping with EOS");
     return FULL_STOP;
   }

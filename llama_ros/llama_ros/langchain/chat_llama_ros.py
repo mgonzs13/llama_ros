@@ -354,7 +354,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         result, status = self.llama_client.generate_response(goal_action)
         response = result.response
-        print(response.text)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""

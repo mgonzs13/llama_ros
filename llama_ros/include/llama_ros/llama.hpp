@@ -209,10 +209,14 @@ public:
 
   const struct llama_context *get_ctx() { return this->ctx; }
   const struct llama_model *get_model() { return this->model; }
+  const struct llama_vocab *get_vocab() {
+    return llama_model_get_vocab(this->model);
+  }
+
   int get_n_ctx() { return llama_n_ctx(this->ctx); }
-  int get_n_ctx_train() { return llama_n_ctx_train(this->model); }
-  int get_n_embd() { return llama_n_embd(this->model); }
-  int get_n_vocab() { return llama_n_vocab(this->model); }
+  int get_n_ctx_train() { return llama_model_n_ctx_train(this->model); }
+  int get_n_embd() { return llama_model_n_embd(this->model); }
+  int get_n_vocab() { return llama_vocab_n_tokens(this->get_vocab()); }
 
   std::string get_metadata(const std::string &key, size_t size);
   std::string get_metadata(const std::string &model_name,
@@ -227,8 +231,15 @@ public:
 
   bool is_embedding() { return this->params.embedding; }
   bool is_reranking() { return this->params.reranking; }
-  bool add_bos_token() { return llama_add_bos_token(this->model); }
-  llama_token get_token_eos() { return llama_token_eos(this->model); }
+
+  bool add_bos_token() { return llama_vocab_get_add_bos(this->get_vocab()); }
+  bool is_eog() {
+    return llama_vocab_is_eog(this->get_vocab(),
+                              common_sampler_last(this->sampler));
+  }
+  llama_token get_token_eos() { return llama_vocab_eos(this->get_vocab()); }
+  llama_token get_token_bos() { return llama_vocab_bos(this->get_vocab()); }
+  llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
 protected:
   struct common_params params;
@@ -237,7 +248,7 @@ protected:
   struct common_init_result llama_init;
   struct llama_context *ctx;
   struct llama_model *model;
-  std::vector<common_lora_adapter_info> lora_adapters;
+  std::vector<common_adapter_lora_info> lora_adapters;
   struct common_sampler *sampler;
   struct ggml_threadpool *threadpool;
   struct ggml_threadpool *threadpool_batch;
