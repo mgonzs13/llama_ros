@@ -104,8 +104,7 @@ DEFAULT_TEMPLATE = """{% if tools_grammar %}
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
-    use_llama_template: bool = False
-
+    use_default_template: bool = False
     use_gguf_template: bool = True
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
@@ -140,7 +139,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         tools_grammar = kwargs.get("tools_grammar", None)
 
-        if self.use_llama_template:
+        if self.use_default_template:
             chat_template = DEFAULT_TEMPLATE
         else:
             chat_template = self.model_metadata.tokenizer.chat_template
@@ -172,7 +171,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
         ).text
 
-        if self.use_gguf_template or self.use_llama_template:
+        if self.use_gguf_template or self.use_default_template:
             formatted_prompt = self.jinja_env.from_string(chat_template).render(
                 messages=messages,
                 add_generation_prompt=True,
@@ -355,6 +354,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         result, status = self.llama_client.generate_response(goal_action)
         response = result.response
+        print(response.text)
 
         if status != GoalStatus.STATUS_SUCCEEDED:
             return ""
