@@ -803,7 +803,6 @@ import time
 from random import randint
 
 import rclpy
-from rclpy.node import Node
 
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
@@ -868,7 +867,6 @@ import time
 from random import randint
 
 import rclpy
-from rclpy.node import Node
 
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
