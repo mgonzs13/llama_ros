@@ -57,7 +57,7 @@ class ChatLlamaToolsDemoNode(Node):
         self.eval_time = -1
 
     def send_prompt(self) -> None:
-        self.chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, use_llama_template=True)
+        self.chat = ChatLlamaROS(temp=0.0, use_default_template=True)
 
         messages = [
             HumanMessage(

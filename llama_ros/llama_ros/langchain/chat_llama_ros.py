@@ -79,7 +79,7 @@ from llama_msgs.action import GenerateResponse
 
 DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}
-    {{- 'You are an assistant. Output in JSON format. The key "tool_calls" is a list of tools in the format {name, arguments}. Available tools are:' }}
+    {{- 'You are an AI assistant that outputs in JSON format. Think about tools, your previous data and your next step. Available tools are:' }}
     {% for tool in tools_grammar %}
         {% if not loop.last %}
             {{- tool }}
@@ -121,23 +121,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _json_schema_to_definition(self, input_json):
-
-        # Extract the tool name
-        tool_name = input_json["properties"]["name"]["const"]
-
-        # Extract and map arguments to desired format
-        properties = input_json["properties"]["arguments"]["properties"]
-        transformed_properties = {
-            arg: prop["type"] for (arg, prop) in properties.items() if "type" in prop
-        }
-
-        # Create the transformed object
-        return {"name": tool_name, "arguments": transformed_properties}
-
     def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
 
-        tools_grammar = kwargs.get("tools_grammar", None)
+        tools: List[BaseTool] = kwargs.get("tools", None)
 
         if self.use_default_template:
             chat_template = DEFAULT_TEMPLATE
@@ -145,27 +131,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_template = self.model_metadata.tokenizer.chat_template
 
         formatted_tools = []
-        if tools_grammar:
-            if "response" in tools_grammar:
-                list_options = json.loads(tools_grammar)["properties"]["response"][
-                    "oneOf"
-                ][1]["properties"]["tool_calls"]["items"]
-            else:
-                list_options = json.loads(tools_grammar)["properties"]["tool_calls"][
-                    "items"
-                ]
-
-            for key in list_options.keys():
-                if key.endswith("Of"):
-                    list_key = key
-
-            formatted_tools = [
-                self._json_schema_to_definition(tool) for tool in list_options[list_key]
-            ]
-            formatted_tools = [
-                {key: tool[key] for key in sorted(tool, reverse=True)}
-                for tool in formatted_tools
-            ]
+        if tools:
+            formatted_tools = [f"- {tool.name}: {tool.description}" for tool in tools]
 
         bos_token = self.llama_client.detokenize(
             Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
@@ -176,7 +143,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 messages=messages,
                 add_generation_prompt=True,
                 bos_token=bos_token,
-                tools_grammar=[json.dumps(tool) for tool in formatted_tools],
+                tools_grammar=[tool for tool in formatted_tools],
             )
             return formatted_prompt
         else:
@@ -247,9 +214,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return converted_msg
 
         elif isinstance(message, ToolMessage):
-            tool_args = message.additional_kwargs.get("args", {})
-            formatted_args = ", ".join([f"{value}" for _, value in tool_args.items()])
-            formatted_content = f"{message.name}({formatted_args}): {message.content}"
+            formatted_content = f"{message.name}: {message.content}"
             return [
                 {
                     "role": "tool",
@@ -312,6 +277,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     and "tool_calls" in parsed_output["response"]
                 ):
                     tool_calls = parsed_output["response"]["tool_calls"]
+                    ai_message.content = parsed_output["thinking"]
 
                 for tool in tool_calls:
                     ai_message.tool_calls.append(
@@ -430,7 +396,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             grammar = {
                 "type": "object",
                 "properties": {
-                    "reasoning": {"type": "string"},
+                    "thinking": {"type": "string"},
                     "response": {
                         "type": "object",
                         "oneOf": [
@@ -441,7 +407,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                         ],
                     },
                 },
-                "required": ["reasoning", "response"],
+                "required": ["thinking", "response"],
             }
 
             tool_calls = {
@@ -491,7 +457,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             else:
                 grammar["properties"]["response"]["oneOf"].append(tool_calls)
 
-        return super().bind(tools_grammar=json.dumps(grammar), method=method, **kwargs)
+        return super().bind(
+            tools_grammar=json.dumps(grammar), tools=tools, method=method, **kwargs
+        )
 
     def with_structured_output(
         self,
