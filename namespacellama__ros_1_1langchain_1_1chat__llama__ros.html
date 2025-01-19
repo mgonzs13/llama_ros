@@ -119,7 +119,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line"><span class="lineno">    1</span>=  <span class="stringliteral">&quot;&quot;&quot;{% if tools_grammar %}</span></div>
 <div class="line"><span class="lineno">    2</span><span class="stringliteral">    {{- &#39;&lt;|im_start|&gt;assistant\n&#39; }}</span></div>
-<div class="line"><span class="lineno">    3</span><span class="stringliteral">    {{- &#39;You are an AI assistant that outputs in JSON format. Think about tools, your previous data and your next step. Available tools are:&#39; }}</span></div>
+<div class="line"><span class="lineno">    3</span><span class="stringliteral">    {{- &#39;You are an AI assistant that outputs in JSON format. Think about your tools, your previous data and your next step. Available tools are:&#39; }}</span></div>
 <div class="line"><span class="lineno">    4</span><span class="stringliteral">    {% for tool in tools_grammar %}</span></div>
 <div class="line"><span class="lineno">    5</span><span class="stringliteral">        {% if not loop.last %}</span></div>
 <div class="line"><span class="lineno">    6</span><span class="stringliteral">            {{- tool }}</span></div>

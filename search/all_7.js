@@ -13,6 +13,5 @@ var searchData=
   ['format_5fdocs_10',['format_docs',['../namespacellama__demos_1_1llama__rag__demo__node.html#af29df7f614d317e934367879b9349119',1,'llama_demos::llama_rag_demo_node']]],
   ['free_5fimage_11',['free_image',['../classllava__ros_1_1Llava.html#a5d6ec81ce46c888323fbf5726886d669',1,'llava_ros::Llava']]],
   ['freq_5fbase_12',['freq_base',['../structllama__ros_1_1Metadata_1_1RoPEInfo.html#a0a8540d8ed132b652fb2467c4948a270',1,'llama_ros::Metadata::RoPEInfo']]],
-  ['full_20demo_20llm_20chat_20template_20rag_20reranking_20stream_13',['Full Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md38',1,'']]],
-  ['full_5fstop_14',['FULL_STOP',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762',1,'llama_ros']]]
+  ['full_5fstop_13',['FULL_STOP',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0a7546fb8138505832416edceaba764762',1,'llama_ros']]]
 ];
