@@ -79,7 +79,7 @@ from llama_msgs.action import GenerateResponse
 
 DEFAULT_TEMPLATE = """{% if tools_grammar %}
     {{- '<|im_start|>assistant\n' }}
-    {{- 'You are an AI assistant that outputs in JSON format. Think about tools, your previous data and your next step. Available tools are:' }}
+    {{- 'You are an AI assistant that outputs in JSON format. Think about your tools, your previous data and your next step. Available tools are:' }}
     {% for tool in tools_grammar %}
         {% if not loop.last %}
             {{- tool }}

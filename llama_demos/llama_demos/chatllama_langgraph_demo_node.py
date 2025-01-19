@@ -32,6 +32,7 @@ from rclpy.node import Node
 
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
+from langgraph.prebuilt import create_react_agent
 from llama_ros.langchain import ChatLlamaROS
 
 
@@ -47,66 +48,39 @@ def get_curr_temperature(city: str) -> int:
     return randint(20, 30)
 
 
-class ChatLlamaToolsDemoNode(Node):
+class ChatLlamaLanggraphDemoNode(Node):
 
     def __init__(self) -> None:
-        super().__init__("chatllama_tools_demo_node")
+        super().__init__("chatllama_langgraph_demo_node")
 
-        self.initial_time = -1
-        self.tools_time = -1
-        self.eval_time = -1
-
-    def send_prompt(self) -> None:
         self.chat = ChatLlamaROS(temp=0.0, use_default_template=True)
-
-        messages = [
-            HumanMessage(
-                "What is the current temperature in Madrid? And its inhabitants?"
-            )
-        ]
-
-        self.get_logger().info(f"\nPrompt: {messages[0].content}")
-        llm_tools = self.chat.bind_tools(
-            [get_inhabitants, get_curr_temperature], tool_choice="any"
+        self.agent_executor = create_react_agent(
+            self.chat, [get_inhabitants, get_curr_temperature]
         )
 
-        self.initial_time = time.time()
-        all_tools_res = llm_tools.invoke(messages)
-        self.tools_time = time.time()
+    def send_prompt(self) -> None:
 
-        messages.append(all_tools_res)
+        initial_time = time.time()
 
-        for tool in all_tools_res.tool_calls:
-            selected_tool = {
-                "get_inhabitants": get_inhabitants,
-                "get_curr_temperature": get_curr_temperature,
-            }[tool["name"]]
+        response = self.agent_executor.invoke(
+            {
+                "messages": [
+                    HumanMessage(
+                        content="What is the current temperature in Madrid? And its inhabitants?"
+                    )
+                ]
+            }
+        )
 
-            tool_msg = selected_tool.invoke(tool)
+        end_time = time.time()
 
-            formatted_output = (
-                f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
-            )
-            self.get_logger().info(f"Calling tool: {formatted_output}")
-
-            tool_msg.additional_kwargs = {"args": tool["args"]}
-            messages.append(tool_msg)
-
-        res = self.chat.invoke(messages)
-
-        self.eval_time = time.time()
-
-        self.get_logger().info(f"\nResponse: {res.content}")
-
-        time_generate_tools = self.tools_time - self.initial_time
-        time_last_response = self.eval_time - self.tools_time
-        self.get_logger().info(f"Time to generate tools: {time_generate_tools} s")
-        self.get_logger().info(f"Time to generate last response: {time_last_response} s")
+        self.get_logger().info(f"\nResponse: {response['messages'][-1].content}")
+        self.get_logger().info(f"Time to run the agent: {end_time - initial_time} s")
 
 
 def main():
     rclpy.init()
-    node = ChatLlamaToolsDemoNode()
+    node = ChatLlamaLanggraphDemoNode()
     node.send_prompt()
     rclpy.shutdown()
 

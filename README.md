@@ -791,7 +791,7 @@ rclpy.shutdown()
 
 </details>
 
-#### 🎉 \*\*\*NEW\*\*\* chat_llama_ros (Tools) 🎉
+#### chat_llama_ros (Tools)
 
 <details>
 <summary>Click to expand</summary>
@@ -852,6 +852,59 @@ for tool in all_tools_res.tool_calls:
 res = chat.invoke(messages)
 
 print(f"Response: {res.content}")
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### chat_llama_ros (langgraph)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import time
+from random import randint
+
+import rclpy
+from rclpy.node import Node
+
+from langchain.tools import tool
+from langchain_core.messages import HumanMessage
+from langgraph.prebuilt import create_react_agent
+from llama_ros.langchain import ChatLlamaROS
+
+rclpy.init()
+
+@tool
+def get_inhabitants(city: str) -> int:
+    """Get the current temperature of a city"""
+    return randint(4_000_000, 8_000_000)
+
+
+@tool
+def get_curr_temperature(city: str) -> int:
+    """Get the current temperature of a city"""
+    return randint(20, 30)
+
+chat = ChatLlamaROS(temp=0.0, use_default_template=True)
+
+agent_executor = create_react_agent(
+    self.chat, [get_inhabitants, get_curr_temperature]
+)
+
+response = self.agent_executor.invoke(
+    {
+        "messages": [
+            HumanMessage(
+                content="What is the current temperature in Madrid? And its inhabitants?"
+            )
+        ]
+    }
+)
+
+print(f"Response: {response['messages'][-1].content}")
 
 rclpy.shutdown()
 ```
@@ -960,7 +1013,37 @@ ros2 run llama_demos chatllama_tools_demo_node
 
 [Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
 
-### Full Demo (LLM + chat template + RAG + Reranking + Stream)
+### Langgraph Demo
+
+```shell
+ros2 llama launch Qwen2.yaml
+```
+
+<details>
+<summary>Click to expand Qwen2.yaml</summary>
+
+```yaml
+_ctx: 4096
+n_batch: 256
+n_gpu_layers: 29
+n_threads: -1
+n_predict: -1
+
+model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF"
+model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf"
+
+stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_langgraph_demo_node
+```
+
+[Langgraph ChatLlama](https://github.com/user-attachments/assets/a0991cb4-f7f4-43d5-b629-3b1819aead0d)
+
+### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell
 ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
@@ -980,7 +1063,7 @@ ros2 llama launch Qwen2.yaml
 ```yaml
 _ctx: 4096
 n_batch: 256
-n_gpu_layers: 33
+n_gpu_layers: 29
 n_threads: -1
 n_predict: -1
 
