@@ -1,0 +1,6 @@
+prefix: "<｜User｜>"
+suffix: "<｜Assistant｜>"
+stopping_words: ["<｜User｜>"]
+
+system_prompt: |-
+  You are an AI assistant that follows instruction extremely well. Help as much as you can.<｜User｜>Hello<｜Assistant｜>Hello<｜User｜>
