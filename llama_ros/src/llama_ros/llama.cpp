@@ -824,13 +824,13 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
   }
 
   // respect the maximum number of tokens
-  if (this->n_past > this->params.n_predict && this->params.n_predict != -1) {
+  if (this->n_past >= this->params.n_predict && this->params.n_predict >= 0) {
     LLAMA_LOG_INFO("Maximum number of tokens reached %d",
                    this->params.n_predict);
     return FULL_STOP;
   }
 
-  if (this->n_past > this->get_n_ctx() && this->params.n_predict == -2) {
+  if (this->n_past >= this->get_n_ctx() && this->params.n_predict == -2) {
     LLAMA_LOG_INFO("Maximum number of tokens reached %d", this->get_n_ctx());
     return FULL_STOP;
   }
