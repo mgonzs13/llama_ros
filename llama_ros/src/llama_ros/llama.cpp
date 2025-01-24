@@ -28,6 +28,7 @@
 
 #include "common.h"
 #include "sampling.h"
+#include "chat-template.hpp"
 
 #include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
@@ -563,23 +564,19 @@ Llama::rank_documents(const std::string &query,
 *****************************
 */
 std::string
-Llama::format_chat_prompt(std::vector<llama_chat_message> chat_msgs,
-                          bool add_ass, bool use_jinja) {
-  const char * tmpl = llama_model_chat_template(this->get_model(), /* name */ nullptr);
-  if (!use_jinja) {
-    std::vector<char> formatted(this->get_n_ctx());
+Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
+                          bool add_ass, bool use_jinja, bool use_tools) {
+  auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
+  
+  const common_chat_template *selected_template;
 
-    int new_len = llama_chat_apply_template(tmpl, chat_msgs.data(), chat_msgs.size(), true, formatted.data(), formatted.size());
-    formatted.resize(new_len);
-    new_len = llama_chat_apply_template(tmpl, chat_msgs.data(), chat_msgs.size(), true, formatted.data(), formatted.size());
-
-    std::cout << std::string(formatted.data()) << std::endl;
-
-    return std::string(formatted.data());
+  if (use_tools) {
+      selected_template = chat_templates.template_tool_use.get();
   } else {
-    auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
+      selected_template = chat_templates.template_default.get();
   }
-  return std::string("");
+
+  return common_chat_apply_template(*selected_template, chat_msgs, add_ass, use_jinja);
 }
 
 /*

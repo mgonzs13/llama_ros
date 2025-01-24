@@ -382,17 +382,17 @@ void LlamaNode::format_chat_service_callback(
     const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request> request,
     std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response) {
 
-  std::vector<llama_chat_message> converted_messages;
+  std::vector<common_chat_msg> converted_messages;
   for (auto message : request->messages) {
-    llama_chat_message aux;
-    aux.role = message.role.c_str();
-    aux.content = message.content.c_str();
+    common_chat_msg aux;
+    aux.role = message.role;
+    aux.content = message.content;
 
     converted_messages.push_back(aux);
   }
 
   std::string formatted_chat =
-      this->llama->format_chat_prompt(converted_messages, request->add_ass, request->use_jinja);
+      this->llama->format_chat_prompt(converted_messages, request->add_ass, request->use_jinja, request->use_tools);
 
   response->formatted_prompt = formatted_chat;
 }

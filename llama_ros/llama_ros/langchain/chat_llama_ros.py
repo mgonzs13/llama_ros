@@ -107,12 +107,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     use_default_template: bool = False
     use_gguf_template: bool = True
 
-    jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
-        loader=jinja2.BaseLoader(),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -122,38 +116,16 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return "chatllamaros"
 
     def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
-
         tools: List[BaseTool] = kwargs.get("tools", None)
+        use_tools = tools is not None
 
-        if self.use_default_template:
-            chat_template = DEFAULT_TEMPLATE
-        else:
-            chat_template = self.model_metadata.tokenizer.chat_template
-
-        formatted_tools = []
-        if tools:
-            formatted_tools = [f"- {tool.name}: {tool.description}" for tool in tools]
-
-        bos_token = self.llama_client.detokenize(
-            Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
-        ).text
-
-        if self.use_gguf_template or self.use_default_template:
-            formatted_prompt = self.jinja_env.from_string(chat_template).render(
-                messages=messages,
-                add_generation_prompt=True,
-                bos_token=bos_token,
-                tools_grammar=[tool for tool in formatted_tools],
-            )
-            return formatted_prompt
-        else:
-            ros_messages = [
-                Message(content=message["content"], role=message["role"])
-                for message in messages
-            ]
-            return self.llama_client.format_chat_prompt(
-                FormatChatMessages.Request(messages=ros_messages, use_jinja=True)
-            ).formatted_prompt
+        ros_messages = [
+            Message(content=message["content"], role=message["role"])
+            for message in messages
+        ]
+        return self.llama_client.format_chat_prompt(
+            FormatChatMessages.Request(messages=ros_messages, use_jinja=self.use_gguf_template, use_tools=use_tools)
+        ).formatted_prompt
 
     def _convert_content(
         self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]
