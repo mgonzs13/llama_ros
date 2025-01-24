@@ -152,7 +152,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 for message in messages
             ]
             return self.llama_client.format_chat_prompt(
-                FormatChatMessages.Request(messages=ros_messages)
+                FormatChatMessages.Request(messages=ros_messages, use_jinja=True)
             ).formatted_prompt
 
     def _convert_content(

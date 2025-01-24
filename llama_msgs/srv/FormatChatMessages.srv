@@ -1,4 +1,5 @@
 Message[] messages                  # List of chat messages
 bool add_ass             true       # Add assistant prompt
+bool use_jinja           false      # Use metadata prompt to generate prompt
 ---
 string formatted_prompt             # Prompt formatted by the model
