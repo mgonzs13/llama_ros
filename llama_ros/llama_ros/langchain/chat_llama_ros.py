@@ -113,6 +113,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             - "minja": Uses Minja templates to format the prompt.
             - "llama": Uses Llama-specific templates to format the prompt.
     """
+
     template_method: str = FormatChatMessages.Request.USE_JINJA
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
@@ -131,7 +132,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             "llama": FormatChatMessages.Request.USE_LLAMA,
         }[v["template_method"]]
 
-        
         if v["template_value"] not in [
             FormatChatMessages.Request.USE_MINJA,
             FormatChatMessages.Request.USE_JINJA,
@@ -164,7 +164,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             for message in messages
         ]
 
-        if self.template_value == FormatChatMessages.Request.USE_JINJA:            
+        if self.template_value == FormatChatMessages.Request.USE_JINJA:
             bos_token = self.llama_client.detokenize(
                 Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
             ).text
