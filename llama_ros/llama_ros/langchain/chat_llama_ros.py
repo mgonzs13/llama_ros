@@ -42,7 +42,7 @@ from typing import (
 )
 from operator import itemgetter
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from langchain_core.output_parsers import (
     PydanticToolsParser,
@@ -103,9 +103,45 @@ DEFAULT_TEMPLATE = """{% if tools_grammar %}
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
+    """
+    ChatLlamaROS is a class that extends BaseChatModel and LlamaROSCommon to provide
+    chat functionalities using the LlamaROS framework.
 
-    use_default_template: bool = False
-    use_gguf_template: bool = True
+    Attributes:
+        template_method (str): Determines how the prompt is built. It can take one of the following values:
+            - "jinja": Uses Jinja templates to format the prompt.
+            - "minja": Uses Minja templates to format the prompt.
+            - "llama": Uses Llama-specific templates to format the prompt.
+    """
+    template_method: str = FormatChatMessages.Request.USE_JINJA
+    
+    jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
+        loader=jinja2.BaseLoader(),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    
+    template_value: int = FormatChatMessages.Request.USE_MINJA
+
+    @model_validator(mode="before")
+    def validate_template_method(cls, v):
+        v['template_value'] = {
+            'minja': FormatChatMessages.Request.USE_MINJA,
+            'jinja': FormatChatMessages.Request.USE_JINJA,
+            'llama': FormatChatMessages.Request.USE_LLAMA,
+        }[v['template_method']]
+
+        
+        if v["template_value"] not in [
+            FormatChatMessages.Request.USE_MINJA,
+            FormatChatMessages.Request.USE_JINJA,
+            FormatChatMessages.Request.USE_LLAMA,
+        ]:
+            raise ValueError(
+                f"template_method must be one of 'jinja', 'minja', or 'llama'. Received: {v}"
+            )
+        
+        return v
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -118,14 +154,32 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
         tools: List[BaseTool] = kwargs.get("tools", None)
         use_tools = tools is not None
+        formatted_tools = []
+        
+        if use_tools:
+            formatted_tools = [f"- {tool.name}: {tool.description}" for tool in tools]
 
         ros_messages = [
             Message(content=message["content"], role=message["role"])
             for message in messages
         ]
-        return self.llama_client.format_chat_prompt(
-            FormatChatMessages.Request(messages=ros_messages, use_jinja=self.use_gguf_template, use_tools=use_tools)
-        ).formatted_prompt
+        
+        if self.template_value == FormatChatMessages.Request.USE_JINJA:            
+            bos_token = self.llama_client.detokenize(
+                Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
+            ).text
+            
+            jinja_tmpl = self.jinja_env.from_string(DEFAULT_TEMPLATE)
+            return jinja_tmpl.render(
+                messages=messages,
+                add_generation_prompt=True,
+                bos_token=bos_token,
+                tools_grammar=[tool for tool in formatted_tools],
+            )
+        else:
+            return self.llama_client.format_chat_prompt(
+                FormatChatMessages.Request(messages=ros_messages, template_method=self.template_value, use_tools=use_tools)
+            ).formatted_prompt
 
     def _convert_content(
         self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]

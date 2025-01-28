@@ -565,7 +565,7 @@ Llama::rank_documents(const std::string &query,
 */
 std::string
 Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
-                          bool add_ass, bool use_jinja, bool use_tools) {
+                          bool add_ass, bool use_minja, bool use_tools) {
   auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
   
   const common_chat_template *selected_template;
@@ -576,7 +576,7 @@ Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
       selected_template = chat_templates.template_default.get();
   }
 
-  return common_chat_apply_template(*selected_template, chat_msgs, add_ass, use_jinja);
+  return common_chat_apply_template(*selected_template, chat_msgs, add_ass, use_minja);
 }
 
 /*
