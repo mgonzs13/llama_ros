@@ -52,11 +52,7 @@ class ChatLlamaDemoNode(Node):
 
     def send_prompt(self) -> None:
 
-        self.chat = ChatLlamaROS(
-            temp=0.2,
-            penalty_last_n=8,
-            template_method="jinja"
-        )
+        self.chat = ChatLlamaROS(temp=0.2, penalty_last_n=8, template_method="jinja")
 
         self.prompt = ChatPromptTemplate.from_messages(
             [

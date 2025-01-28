@@ -114,22 +114,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             - "llama": Uses Llama-specific templates to format the prompt.
     """
     template_method: str = FormatChatMessages.Request.USE_JINJA
-    
+
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
         loader=jinja2.BaseLoader(),
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    
+
     template_value: int = FormatChatMessages.Request.USE_MINJA
 
     @model_validator(mode="before")
     def validate_template_method(cls, v):
-        v['template_value'] = {
-            'minja': FormatChatMessages.Request.USE_MINJA,
-            'jinja': FormatChatMessages.Request.USE_JINJA,
-            'llama': FormatChatMessages.Request.USE_LLAMA,
-        }[v['template_method']]
+        v["template_value"] = {
+            "minja": FormatChatMessages.Request.USE_MINJA,
+            "jinja": FormatChatMessages.Request.USE_JINJA,
+            "llama": FormatChatMessages.Request.USE_LLAMA,
+        }[v["template_method"]]
 
         
         if v["template_value"] not in [
@@ -140,7 +140,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             raise ValueError(
                 f"template_method must be one of 'jinja', 'minja', or 'llama'. Received: {v}"
             )
-        
+
         return v
 
     @property
@@ -155,7 +155,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         tools: List[BaseTool] = kwargs.get("tools", None)
         use_tools = tools is not None
         formatted_tools = []
-        
+
         if use_tools:
             formatted_tools = [f"- {tool.name}: {tool.description}" for tool in tools]
 
@@ -163,12 +163,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             Message(content=message["content"], role=message["role"])
             for message in messages
         ]
-        
+
         if self.template_value == FormatChatMessages.Request.USE_JINJA:            
             bos_token = self.llama_client.detokenize(
                 Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
             ).text
-            
+
             jinja_tmpl = self.jinja_env.from_string(DEFAULT_TEMPLATE)
             return jinja_tmpl.render(
                 messages=messages,
@@ -178,7 +178,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             )
         else:
             return self.llama_client.format_chat_prompt(
-                FormatChatMessages.Request(messages=ros_messages, template_method=self.template_value, use_tools=use_tools)
+                FormatChatMessages.Request(
+                    messages=ros_messages,
+                    template_method=self.template_value,
+                    use_tools=use_tools,
+                )
             ).formatted_prompt
 
     def _convert_content(

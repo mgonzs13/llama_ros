@@ -26,9 +26,9 @@
 #include <memory>
 #include <thread>
 
+#include "chat-template.hpp"
 #include "common.h"
 #include "sampling.h"
-#include "chat-template.hpp"
 
 #include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
@@ -563,20 +563,21 @@ Llama::rank_documents(const std::string &query,
 *    FORMAT CHAT SERVICE    *
 *****************************
 */
-std::string
-Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
-                          bool add_ass, bool use_minja, bool use_tools) {
+std::string Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
+                                      bool add_ass, bool use_minja,
+                                      bool use_tools) {
   auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
-  
+
   const common_chat_template *selected_template;
 
   if (use_tools) {
-      selected_template = chat_templates.template_tool_use.get();
+    selected_template = chat_templates.template_tool_use.get();
   } else {
-      selected_template = chat_templates.template_default.get();
+    selected_template = chat_templates.template_default.get();
   }
 
-  return common_chat_apply_template(*selected_template, chat_msgs, add_ass, use_minja);
+  return common_chat_apply_template(*selected_template, chat_msgs, add_ass,
+                                    use_minja);
 }
 
 /*

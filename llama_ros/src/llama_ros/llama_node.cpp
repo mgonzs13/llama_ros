@@ -391,10 +391,11 @@ void LlamaNode::format_chat_service_callback(
     converted_messages.push_back(aux);
   }
 
-  bool use_minja = request->template_method == llama_msgs::srv::FormatChatMessages::Request::USE_MINJA;
+  bool use_minja = request->template_method ==
+                   llama_msgs::srv::FormatChatMessages::Request::USE_MINJA;
 
-  std::string formatted_chat =
-      this->llama->format_chat_prompt(converted_messages, request->add_ass, use_minja, request->use_tools);
+  std::string formatted_chat = this->llama->format_chat_prompt(
+      converted_messages, request->add_ass, use_minja, request->use_tools);
 
   response->formatted_prompt = formatted_chat;
 }
