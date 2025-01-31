@@ -46,7 +46,7 @@ void GenerateResponseAction::on_tick()
 
 BT::NodeStatus GenerateResponseAction::on_success()
 {
-  setOutput("response", result_.result->response);
+  setOutput("response", result_.result->response.text);
   return BT::NodeStatus::SUCCESS;
 }
 
