@@ -182,8 +182,8 @@ TEST_F(GenerateResponseActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
   // Check if the output is correct
-  auto response = config_->blackboard->get<llama_msgs::msg::Response>("response");
-  EXPECT_EQ(response.text, "This is a test response");
+  auto response = config_->blackboard->get<std::string>("response");
+  EXPECT_EQ(response, "This is a test response");
 }
 
 int main(int argc, char ** argv)
