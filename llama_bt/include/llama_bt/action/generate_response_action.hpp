@@ -69,7 +69,7 @@ public:
         BT::InputPort<std::string>("prompt", "Prompt"),
         BT::InputPort<std::vector<std::string>>("stop", "Stop list"),
         BT::InputPort<bool>("reset", false, "Whether to reset the context"),
-        BT::OutputPort<llama_msgs::msg::Response>("response", "Final Response"),
+        BT::OutputPort<std::string>("response", "Final Response"),
       });
   }
 };
