@@ -821,7 +821,7 @@ def get_curr_temperature(city: str) -> int:
     """Get the current temperature of a city"""
     return randint(20, 30)
 
-chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, use_default_template=True)
+chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, template_method="jinja")
 
 messages = [
     HumanMessage(
@@ -886,7 +886,7 @@ def get_curr_temperature(city: str) -> int:
     """Get the current temperature of a city"""
     return randint(20, 30)
 
-chat = ChatLlamaROS(temp=0.0, use_default_template=True)
+chat = ChatLlamaROS(temp=0.0, template_method="jinja")
 
 agent_executor = create_react_agent(
     self.chat, [get_inhabitants, get_curr_temperature]

@@ -180,8 +180,8 @@ public:
   virtual void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
-                                 bool add_ass);
+  std::string format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
+                                 bool add_ass, bool use_minja, bool use_tools);
   std::vector<struct LoRA> list_loras();
   void update_loras(std::vector<struct LoRA> loras);
 
