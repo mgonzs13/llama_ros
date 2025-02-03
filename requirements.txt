@@ -1,5 +1,5 @@
 langchain==0.3.17
-langchain-core==0.3.3
+langchain-core==0.3.33
 langchain-community==0.3.14
 langchain-chroma==0.2.0
 langgraph==0.2.64
