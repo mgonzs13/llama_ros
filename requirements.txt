@@ -1,9 +1,9 @@
-langchain==0.3.14
-langchain-core==0.3.29
+langchain==0.3.17
+langchain-core==0.3.3
 langchain-community==0.3.14
 langchain-chroma==0.2.0
 langgraph==0.2.64
 pydantic==2.9.2
-huggingface-hub==0.27.0
+huggingface-hub==0.28.0
 jinja2==3.1.3
 
