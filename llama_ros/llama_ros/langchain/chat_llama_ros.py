@@ -105,6 +105,7 @@ USE_JINJA = 0
 USE_MINJA = 1
 USE_LLAMA = 2
 
+
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     """
     ChatLlamaROS is a class that extends BaseChatModel and LlamaROSCommon to provide
