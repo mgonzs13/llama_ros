@@ -382,9 +382,9 @@ void LlamaNode::format_chat_service_callback(
     const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request> request,
     std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response) {
 
-  std::vector<common_chat_msg> converted_messages;
+  std::vector<struct common_chat_msg> converted_messages;
   for (auto message : request->messages) {
-    common_chat_msg aux;
+    struct common_chat_msg aux;
     aux.role = message.role;
     aux.content = message.content;
 

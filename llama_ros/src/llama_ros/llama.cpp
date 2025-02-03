@@ -563,9 +563,9 @@ Llama::rank_documents(const std::string &query,
 *    FORMAT CHAT SERVICE    *
 *****************************
 */
-std::string Llama::format_chat_prompt(std::vector<common_chat_msg> chat_msgs,
-                                      bool add_ass, bool use_minja,
-                                      bool use_tools) {
+std::string
+Llama::format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
+                          bool add_ass, bool use_minja, bool use_tools) {
   auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
 
   const common_chat_template *selected_template;
