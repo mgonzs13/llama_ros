@@ -26,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RoPEInfo.msg"
   "msg/ModelInfo.msg"
   "msg/Metadata.msg"
+  "msg/GrammarTrigger.msg"
   "action/GenerateResponse.action"
   "srv/GenerateEmbeddings.srv"
   "srv/Tokenize.srv"

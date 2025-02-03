@@ -472,9 +472,20 @@ struct common_params_sampling llama_utils::parse_sampling_params(
   sparams.mirostat_eta = sampling_config.mirostat_eta;
   sparams.mirostat_tau = sampling_config.mirostat_tau;
 
+  // grammar params
   sparams.samplers =
       common_sampler_types_from_chars(sampling_config.samplers_sequence);
   sparams.grammar = sampling_config.grammar;
+  sparams.grammar_lazy = sampling_config.grammar_lazy;
+
+  for (const auto &ele : sampling_config.grammar_trigger_words) {
+    sparams.grammar_trigger_words.push_back({ele.word, ele.at_start});
+  }
+
+  sparams.grammar_trigger_tokens = sampling_config.grammar_trigger_tokens;
+  sparams.preserved_tokens =
+      std::set<llama_token>(sampling_config.preserved_tokens.begin(),
+                            sampling_config.preserved_tokens.end());
 
   if (sparams.grammar.size() == 0 &&
       sampling_config.grammar_schema.size() > 0) {

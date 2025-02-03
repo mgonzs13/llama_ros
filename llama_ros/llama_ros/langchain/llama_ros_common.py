@@ -27,7 +27,7 @@ from abc import ABC
 import urllib.request
 from cv_bridge import CvBridge
 from pydantic import model_validator
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from langchain_core.language_models import BaseLanguageModel
 
@@ -36,6 +36,7 @@ from llama_msgs.action import GenerateResponse
 from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
 from llama_msgs.msg import Metadata
+from llama_msgs.msg import GrammarTrigger
 
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
@@ -82,6 +83,10 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     grammar: str = ""
     grammar_schema: str = ""
+    grammar_lazy: bool = False
+    grammar_trigger_words: List[List[Union[int, bool]]] = []
+    grammar_trigger_tokens: List[int] = []
+    preserved_tokens: List[int] = []
 
     penalty_prompt_tokens: List[int] = []
     use_penalty_prompt_tokens: bool = False
@@ -179,6 +184,13 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config.grammar_schema = (
             tools_grammar if tools_grammar else self.grammar_schema
         )
+        goal.sampling_config.grammar_lazy = self.grammar_lazy
+        goal.sampling_config.grammar_trigger_words = [
+            GrammarTrigger(word=pair[0], at_start=pair[1])
+            for pair in self.grammar_trigger_words
+        ]
+        goal.sampling_config.grammar_trigger_tokens = self.grammar_trigger_tokens
+        goal.sampling_config.preserved_tokens = self.preserved_tokens
 
         goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens

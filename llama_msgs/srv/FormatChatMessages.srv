@@ -1,6 +1,6 @@
 Message[] messages                   # List of chat messages
 bool add_ass              true       # Add assistant prompt
-bool use_tools            false      
-bool use_minja            false
+bool use_tools            false      # Whether to use tools   
+bool use_minja            false      # Whether to use minja to parse the messages
 ---
-string formatted_prompt             # Prompt formatted by the model
+string formatted_prompt              # Prompt formatted by the model
