@@ -101,6 +101,9 @@ DEFAULT_TEMPLATE = """{% if tools_grammar %}
 {% endif %}
 """
 
+USE_JINJA = 0
+USE_MINJA = 1
+USE_LLAMA = 2
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     """
@@ -114,7 +117,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             - "llama": Uses Llama-specific templates to format the prompt.
     """
 
-    template_method: str = FormatChatMessages.Request.USE_JINJA
+    template_method: str = USE_JINJA
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
         loader=jinja2.BaseLoader(),
@@ -122,20 +125,20 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         lstrip_blocks=True,
     )
 
-    template_value: int = FormatChatMessages.Request.USE_MINJA
+    template_value: int = USE_MINJA
 
     @model_validator(mode="before")
     def validate_template_method(cls, v):
         v["template_value"] = {
-            "minja": FormatChatMessages.Request.USE_MINJA,
-            "jinja": FormatChatMessages.Request.USE_JINJA,
-            "llama": FormatChatMessages.Request.USE_LLAMA,
+            "minja": USE_MINJA,
+            "jinja": USE_JINJA,
+            "llama": USE_LLAMA,
         }[v["template_method"]]
 
         if v["template_value"] not in [
-            FormatChatMessages.Request.USE_MINJA,
-            FormatChatMessages.Request.USE_JINJA,
-            FormatChatMessages.Request.USE_LLAMA,
+            USE_MINJA,
+            USE_JINJA,
+            USE_LLAMA,
         ]:
             raise ValueError(
                 f"template_method must be one of 'jinja', 'minja', or 'llama'. Received: {v}"
@@ -164,7 +167,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             for message in messages
         ]
 
-        if self.template_value == FormatChatMessages.Request.USE_JINJA:
+        if self.template_value == USE_JINJA:
             bos_token = self.llama_client.detokenize(
                 Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
             ).text
@@ -180,7 +183,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return self.llama_client.format_chat_prompt(
                 FormatChatMessages.Request(
                     messages=ros_messages,
-                    template_method=self.template_value,
+                    use_minja_template=USE_MINJA == self.template_value,
                     use_tools=use_tools,
                 )
             ).formatted_prompt

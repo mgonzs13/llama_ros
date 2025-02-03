@@ -1,10 +1,6 @@
-int8 USE_MINJA=1
-int8 USE_JINJA=2
-int8 USE_LLAMA=3
-
 Message[] messages                   # List of chat messages
 bool add_ass              true       # Add assistant prompt
 bool use_tools            false      
-int8 template_method      1          # Method to build the prompt
+bool use_minja_template   false
 ---
 string formatted_prompt             # Prompt formatted by the model
