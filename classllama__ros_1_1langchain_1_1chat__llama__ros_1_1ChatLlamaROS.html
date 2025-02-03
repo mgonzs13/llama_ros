@@ -157,6 +157,8 @@ Collaboration diagram for llama_ros.langchain.chat_llama_ros.ChatLlamaROS:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:ab5eb0e05ff13877daeb13e0d7602932e" id="r_ab5eb0e05ff13877daeb13e0d7602932e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab5eb0e05ff13877daeb13e0d7602932e">validate_template_method</a> (cls, v)</td></tr>
+<tr class="separator:ab5eb0e05ff13877daeb13e0d7602932e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a048aa4e664332c4c0bba388325af57" id="r_a7a048aa4e664332c4c0bba388325af57"><td class="memItemLeft" align="right" valign="top">Runnable[LanguageModelInput, BaseMessage]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7a048aa4e664332c4c0bba388325af57">bind_tools</a> (self, Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]] tools, *, Optional[Union[dict, str, Literal[&quot;auto&quot;, &quot;all&quot;, &quot;one&quot;, &quot;any&quot;], bool]] tool_choice=&quot;auto&quot;, Literal[&quot;function_calling&quot;, &quot;json_schema&quot;, &quot;json_mode&quot;] method=&quot;function_calling&quot;, **Any kwargs)</td></tr>
 <tr class="separator:a7a048aa4e664332c4c0bba388325af57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c29cabed7002044b0a69e40d9655348" id="r_a6c29cabed7002044b0a69e40d9655348"><td class="memItemLeft" align="right" valign="top">Runnable[LanguageModelInput, Union[Dict, BaseModel]]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6c29cabed7002044b0a69e40d9655348">with_structured_output</a> (self, Optional[Union[Dict, Type[BaseModel], Type]] schema=None, *, bool include_raw=False, Literal[&quot;function_calling&quot;, &quot;json_schema&quot;, &quot;json_mode&quot;] method=&quot;function_calling&quot;, **Any kwargs)</td></tr>
@@ -169,12 +171,12 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:acf163d17fe19dc4b7d2a554dbb40e542" id="r_acf163d17fe19dc4b7d2a554dbb40e542"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acf163d17fe19dc4b7d2a554dbb40e542">use_default_template</a> = False</td></tr>
-<tr class="separator:acf163d17fe19dc4b7d2a554dbb40e542"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a314c773891e4727bbee93b372b18e2ef" id="r_a314c773891e4727bbee93b372b18e2ef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a314c773891e4727bbee93b372b18e2ef">use_gguf_template</a> = True</td></tr>
-<tr class="separator:a314c773891e4727bbee93b372b18e2ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f905ad36a63b2ab366426c8a4945dce" id="r_a1f905ad36a63b2ab366426c8a4945dce"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1f905ad36a63b2ab366426c8a4945dce">template_method</a> = <a class="el" href="namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a9baa29fb084dd14d0900ecfd4886ac36">USE_JINJA_TEMPLATE</a></td></tr>
+<tr class="separator:a1f905ad36a63b2ab366426c8a4945dce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb878f4ababc2a554a75071567bbb4d5" id="r_afb878f4ababc2a554a75071567bbb4d5"><td class="memItemLeft" align="right" valign="top">ImmutableSandboxedEnvironment&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#afb878f4ababc2a554a75071567bbb4d5">jinja_env</a></td></tr>
 <tr class="separator:afb878f4ababc2a554a75071567bbb4d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a106a4e7adf1791f9ff113b48876f2cf2" id="r_a106a4e7adf1791f9ff113b48876f2cf2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a106a4e7adf1791f9ff113b48876f2cf2">template_value</a> = <a class="el" href="namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a60044372053ce9dcafa6f25254dfc6d6">USE_MINJA_TEMPLATE</a></td></tr>
+<tr class="separator:a106a4e7adf1791f9ff113b48876f2cf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_static_attribs_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_static_attribs_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html">llama_ros.langchain.llama_ros_common.LlamaROSCommon</a></td></tr>
 <tr class="memitem:a7b501bbb960ff2ad744219f9d4c79111 inherit pub_static_attribs_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon" id="r_a7b501bbb960ff2ad744219f9d4c79111"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html">LlamaClientNode</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a7b501bbb960ff2ad744219f9d4c79111">llama_client</a> = None</td></tr>
 <tr class="separator:a7b501bbb960ff2ad744219f9d4c79111 inherit pub_static_attribs_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -269,7 +271,16 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a1f9e914a4070025b4c1b703c7a4489a9 inherit pro_methods_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon" id="r_a1f9e914a4070025b4c1b703c7a4489a9"><td class="memItemLeft" align="right" valign="top">GenerateResponse.Result&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a1f9e914a4070025b4c1b703c7a4489a9">_create_action_goal</a> (self, str prompt, Optional[List[str]] stop=None, Optional[str] image_url=None, Optional[np.ndarray] image=None, Optional[str] tools_grammar=None, **kwargs)</td></tr>
 <tr class="separator:a1f9e914a4070025b4c1b703c7a4489a9 inherit pro_methods_classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Function Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><pre class="fragment">ChatLlamaROS is a class that extends BaseChatModel and LlamaROSCommon to provide
+chat functionalities using the LlamaROS framework.
+
+Attributes:
+    template_method (str): Determines how the prompt is built. It can take one of the following values:
+        - "jinja": Uses Jinja templates to format the prompt.
+        - "minja": Uses Minja templates to format the prompt.
+        - "llama": Uses Llama-specific templates to format the prompt.
+</pre> </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a0f1351644a90f072b9ddebf8466509cd" name="a0f1351644a90f072b9ddebf8466509cd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0f1351644a90f072b9ddebf8466509cd">&#9670;&#160;</a></span>_convert_content()</h2>
 
@@ -611,6 +622,27 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab5eb0e05ff13877daeb13e0d7602932e" name="ab5eb0e05ff13877daeb13e0d7602932e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5eb0e05ff13877daeb13e0d7602932e">&#9670;&#160;</a></span>validate_template_method()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_ros.langchain.chat_llama_ros.ChatLlamaROS.validate_template_method </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>cls</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>v</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a6c29cabed7002044b0a69e40d9655348" name="a6c29cabed7002044b0a69e40d9655348"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6c29cabed7002044b0a69e40d9655348">&#9670;&#160;</a></span>with_structured_output()</h2>
 
@@ -682,8 +714,8 @@ Protected Member Functions</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
-<a id="acf163d17fe19dc4b7d2a554dbb40e542" name="acf163d17fe19dc4b7d2a554dbb40e542"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acf163d17fe19dc4b7d2a554dbb40e542">&#9670;&#160;</a></span>use_default_template</h2>
+<a id="a1f905ad36a63b2ab366426c8a4945dce" name="a1f905ad36a63b2ab366426c8a4945dce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f905ad36a63b2ab366426c8a4945dce">&#9670;&#160;</a></span>template_method</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -692,7 +724,7 @@ Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool llama_ros.langchain.chat_llama_ros.ChatLlamaROS.use_default_template = False</td>
+          <td class="memname">str llama_ros.langchain.chat_llama_ros.ChatLlamaROS.template_method = <a class="el" href="namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a9baa29fb084dd14d0900ecfd4886ac36">USE_JINJA_TEMPLATE</a></td>
         </tr>
       </table>
   </td>
@@ -704,8 +736,8 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a314c773891e4727bbee93b372b18e2ef" name="a314c773891e4727bbee93b372b18e2ef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a314c773891e4727bbee93b372b18e2ef">&#9670;&#160;</a></span>use_gguf_template</h2>
+<a id="a106a4e7adf1791f9ff113b48876f2cf2" name="a106a4e7adf1791f9ff113b48876f2cf2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a106a4e7adf1791f9ff113b48876f2cf2">&#9670;&#160;</a></span>template_value</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -714,7 +746,7 @@ Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool llama_ros.langchain.chat_llama_ros.ChatLlamaROS.use_gguf_template = True</td>
+          <td class="memname">int llama_ros.langchain.chat_llama_ros.ChatLlamaROS.template_value = <a class="el" href="namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a60044372053ce9dcafa6f25254dfc6d6">USE_MINJA_TEMPLATE</a></td>
         </tr>
       </table>
   </td>

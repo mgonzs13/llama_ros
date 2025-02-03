@@ -7,7 +7,7 @@ var searchData=
   ['find_5fstop_5fword_4',['find_stop_word',['../classllama__ros_1_1Llama.html#a44ac39736bcbc6a0236a16c354d6c69d',1,'llama_ros::Llama']]],
   ['finetune_5',['finetune',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a2938fe295a7ebbcf6c3441c88ea1db4c',1,'llama_ros::Metadata::GeneralInfo']]],
   ['flush_6',['flush',['../namespacellama__demos_1_1llama__rag__demo__node.html#a41975238da28b9c91bc04b7fc0551fdd',1,'llama_demos::llama_rag_demo_node']]],
-  ['format_5fchat_5fprompt_7',['format_chat_prompt',['../classllama__ros_1_1Llama.html#aed17e1d99daf349d3cc46969afa2909b',1,'llama_ros::Llama::format_chat_prompt()'],['../classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a3ce2aeedb87a4b37820c72c582b35160',1,'llama_ros.llama_client_node.LlamaClientNode.format_chat_prompt()']]],
+  ['format_5fchat_5fprompt_7',['format_chat_prompt',['../classllama__ros_1_1Llama.html#a89073424dc16a92516111a71d1b7fca9',1,'llama_ros::Llama::format_chat_prompt()'],['../classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a3ce2aeedb87a4b37820c72c582b35160',1,'llama_ros.llama_client_node.LlamaClientNode.format_chat_prompt()']]],
   ['format_5fchat_5fservice_5f_8',['format_chat_service_',['../classllama__ros_1_1LlamaNode.html#a878f2ae6fffd31e29863478e58bae25b',1,'llama_ros::LlamaNode']]],
   ['format_5fchat_5fservice_5fcallback_9',['format_chat_service_callback',['../classllama__ros_1_1LlamaNode.html#a6f2b452fec0b04a8c8e658efc50d2c57',1,'llama_ros::LlamaNode']]],
   ['format_5fdocs_10',['format_docs',['../namespacellama__demos_1_1llama__rag__demo__node.html#af29df7f614d317e934367879b9349119',1,'llama_demos::llama_rag_demo_node']]],
