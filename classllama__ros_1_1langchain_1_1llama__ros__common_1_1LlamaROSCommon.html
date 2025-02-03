@@ -230,6 +230,14 @@ Static Public Attributes</h2></td></tr>
 <tr class="separator:aed11acfadd7b35f703c0f572ee8d593d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d20a56a804da875f9a0a6791ac3d376" id="r_a1d20a56a804da875f9a0a6791ac3d376"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1d20a56a804da875f9a0a6791ac3d376">grammar_schema</a> = &quot;&quot;</td></tr>
 <tr class="separator:a1d20a56a804da875f9a0a6791ac3d376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11f901d3abd0c0d89cb12f8fda1ac7e2" id="r_a11f901d3abd0c0d89cb12f8fda1ac7e2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11f901d3abd0c0d89cb12f8fda1ac7e2">grammar_lazy</a> = False</td></tr>
+<tr class="separator:a11f901d3abd0c0d89cb12f8fda1ac7e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8dcad5dfa61d77a43939f0a332d299b7" id="r_a8dcad5dfa61d77a43939f0a332d299b7"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8dcad5dfa61d77a43939f0a332d299b7">grammar_trigger_words</a> = []</td></tr>
+<tr class="separator:a8dcad5dfa61d77a43939f0a332d299b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1f113454abf13b3d2913dd55ecca2da" id="r_af1f113454abf13b3d2913dd55ecca2da"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af1f113454abf13b3d2913dd55ecca2da">grammar_trigger_tokens</a> = []</td></tr>
+<tr class="separator:af1f113454abf13b3d2913dd55ecca2da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac12f10f0601e421949f10ef2989d51a7" id="r_ac12f10f0601e421949f10ef2989d51a7"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac12f10f0601e421949f10ef2989d51a7">preserved_tokens</a> = []</td></tr>
+<tr class="separator:ac12f10f0601e421949f10ef2989d51a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90f85076e9c281d581f438783d6695ca" id="r_a90f85076e9c281d581f438783d6695ca"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90f85076e9c281d581f438783d6695ca">penalty_prompt_tokens</a> = []</td></tr>
 <tr class="separator:a90f85076e9c281d581f438783d6695ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa42948543e6dbb4f4068c0c08abda38d" id="r_aa42948543e6dbb4f4068c0c08abda38d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa42948543e6dbb4f4068c0c08abda38d">use_penalty_prompt_tokens</a> = False</td></tr>
@@ -532,6 +540,28 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a11f901d3abd0c0d89cb12f8fda1ac7e2" name="a11f901d3abd0c0d89cb12f8fda1ac7e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11f901d3abd0c0d89cb12f8fda1ac7e2">&#9670;&#160;</a></span>grammar_lazy</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_lazy = False</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a1d20a56a804da875f9a0a6791ac3d376" name="a1d20a56a804da875f9a0a6791ac3d376"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1d20a56a804da875f9a0a6791ac3d376">&#9670;&#160;</a></span>grammar_schema</h2>
 
@@ -543,6 +573,50 @@ Protected Member Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">str llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_schema = &quot;&quot;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af1f113454abf13b3d2913dd55ecca2da" name="af1f113454abf13b3d2913dd55ecca2da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af1f113454abf13b3d2913dd55ecca2da">&#9670;&#160;</a></span>grammar_trigger_tokens</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_trigger_tokens = []</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8dcad5dfa61d77a43939f0a332d299b7" name="a8dcad5dfa61d77a43939f0a332d299b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8dcad5dfa61d77a43939f0a332d299b7">&#9670;&#160;</a></span>grammar_trigger_words</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_trigger_words = []</td>
         </tr>
       </table>
   </td>
@@ -895,6 +969,28 @@ Protected Member Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">float llama_ros.langchain.llama_ros_common.LlamaROSCommon.penalty_repeat = 1.00</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac12f10f0601e421949f10ef2989d51a7" name="ac12f10f0601e421949f10ef2989d51a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac12f10f0601e421949f10ef2989d51a7">&#9670;&#160;</a></span>preserved_tokens</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.preserved_tokens = []</td>
         </tr>
       </table>
   </td>
