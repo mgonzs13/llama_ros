@@ -101,9 +101,9 @@ DEFAULT_TEMPLATE = """{% if tools_grammar %}
 {% endif %}
 """
 
-USE_JINJA = 0
-USE_MINJA = 1
-USE_LLAMA = 2
+USE_JINJA_TEMPLATE = 0
+USE_MINJA_TEMPLATE = 1
+USE_LLAMA_TEMPLATE = 2
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
@@ -118,7 +118,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             - "llama": Uses Llama-specific templates to format the prompt.
     """
 
-    template_method: str = USE_JINJA
+    template_method: str = USE_JINJA_TEMPLATE
 
     jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
         loader=jinja2.BaseLoader(),
@@ -126,20 +126,20 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         lstrip_blocks=True,
     )
 
-    template_value: int = USE_MINJA
+    template_value: int = USE_MINJA_TEMPLATE
 
     @model_validator(mode="before")
     def validate_template_method(cls, v):
         v["template_value"] = {
-            "minja": USE_MINJA,
-            "jinja": USE_JINJA,
-            "llama": USE_LLAMA,
+            "minja": USE_MINJA_TEMPLATE,
+            "jinja": USE_JINJA_TEMPLATE,
+            "llama": USE_LLAMA_TEMPLATE,
         }[v["template_method"]]
 
         if v["template_value"] not in [
-            USE_MINJA,
-            USE_JINJA,
-            USE_LLAMA,
+            USE_MINJA_TEMPLATE,
+            USE_JINJA_TEMPLATE,
+            USE_LLAMA_TEMPLATE,
         ]:
             raise ValueError(
                 f"template_method must be one of 'jinja', 'minja', or 'llama'. Received: {v}"
@@ -168,7 +168,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             for message in messages
         ]
 
-        if self.template_value == USE_JINJA:
+        if self.template_value == USE_JINJA_TEMPLATE:
             bos_token = self.llama_client.detokenize(
                 Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
             ).text
@@ -184,7 +184,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return self.llama_client.format_chat_prompt(
                 FormatChatMessages.Request(
                     messages=ros_messages,
-                    use_minja_template=USE_MINJA == self.template_value,
+                    use_minja_template=USE_MINJA_TEMPLATE == self.template_value,
                     use_tools=use_tools,
                 )
             ).formatted_prompt

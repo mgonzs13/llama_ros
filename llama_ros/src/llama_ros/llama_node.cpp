@@ -391,9 +391,9 @@ void LlamaNode::format_chat_service_callback(
     converted_messages.push_back(aux);
   }
 
-  std::string formatted_chat = this->llama->format_chat_prompt(
-      converted_messages, request->add_ass, request->use_minja_template,
-      request->use_tools);
+  std::string formatted_chat =
+      this->llama->format_chat_prompt(converted_messages, request->add_ass,
+                                      request->use_minja, request->use_tools);
 
   response->formatted_prompt = formatted_chat;
 }
