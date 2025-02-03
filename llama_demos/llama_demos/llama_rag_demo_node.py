@@ -61,7 +61,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessage("You are an AI assistant that answer questions briefly."),
         HumanMessagePromptTemplate.from_template(
-            "Taking into account the followin information:{context}\n\n{question}"
+            "Taking into account the following information:{context}\n\n{question}"
         ),
     ]
 )

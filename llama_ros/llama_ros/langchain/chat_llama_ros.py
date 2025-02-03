@@ -101,9 +101,9 @@ DEFAULT_TEMPLATE = """{% if tools_grammar %}
 {% endif %}
 """
 
-USE_JINJA_TEMPLATE = 0
-USE_MINJA_TEMPLATE = 1
-USE_LLAMA_TEMPLATE = 2
+USE_JINJA_TEMPLATE = "jinja"
+USE_MINJA_TEMPLATE = "minja"
+USE_LLAMA_TEMPLATE = "llama"
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
@@ -130,11 +130,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     @model_validator(mode="before")
     def validate_template_method(cls, v):
-        v["template_value"] = {
-            "minja": USE_MINJA_TEMPLATE,
-            "jinja": USE_JINJA_TEMPLATE,
-            "llama": USE_LLAMA_TEMPLATE,
-        }[v["template_method"]]
+
+        if "template_value" not in v:
+            return v
 
         if v["template_value"] not in [
             USE_MINJA_TEMPLATE,
@@ -184,7 +182,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return self.llama_client.format_chat_prompt(
                 FormatChatMessages.Request(
                     messages=ros_messages,
-                    use_minja_template=USE_MINJA_TEMPLATE == self.template_value,
+                    use_minja=USE_MINJA_TEMPLATE == self.template_value,
                     use_tools=use_tools,
                 )
             ).formatted_prompt

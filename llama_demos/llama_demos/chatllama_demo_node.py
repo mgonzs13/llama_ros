@@ -56,7 +56,7 @@ class ChatLlamaDemoNode(Node):
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                SystemMessage("You are a IA that answer questions."),
+                SystemMessage("You are an IA that answer questions."),
                 HumanMessagePromptTemplate.from_template(
                     template=[
                         {"type": "text", "text": f"<image>{self.prompt}"},
