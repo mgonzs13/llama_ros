@@ -12,11 +12,22 @@ FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
   GIT_TAG        b4678
+  GIT_SHALLOW    TRUE
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
 
 FetchContent_MakeAvailable(llama)
+
+execute_process(
+  COMMAND bash -c "git apply ${CMAKE_CURRENT_SOURCE_DIR}/0001-use-cuda-clip.patch 2>&1 | tee /dev/stderr"
+  WORKING_DIRECTORY ${llama_SOURCE_DIR}
+  RESULT_VARIABLE PATCH_RESULT
+)
+
+if (PATCH_RESULT AND NOT PATCH_RESULT EQUAL "0")
+    message(FATAL_ERROR "Failed to apply patch")
+endif()
 
 # ggml
 set_target_properties(
