@@ -18,8 +18,8 @@
 #include <set>
 #include <string>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "llama_bt/action/generate_response_action.hpp"
@@ -119,7 +119,7 @@ TEST_F(GenerateResponseActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <GenerateResponse/>
         </BehaviorTree>
@@ -130,7 +130,7 @@ TEST_F(GenerateResponseActionTestFixture, test_ports)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <GenerateResponse prompt="" stop=""/>
         </BehaviorTree>
@@ -138,25 +138,25 @@ TEST_F(GenerateResponseActionTestFixture, test_ports)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(tree_->rootNode()->getInput<std::string>("prompt").value().empty());
-  EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop"));
+  EXPECT_TRUE(tree_->rootNode()->getInput<std::vector<std::string>>("stop").value().empty());
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <GenerateResponse prompt="This is a test" stop="This;te,st" reset="true" response="{response}"/>
+            <GenerateResponse prompt="This is a test" stop="This;test" reset="true" response="{response}"/>
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("prompt"), "This is a test");
-  // auto stop_optional = tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
-  // ASSERT_TRUE(stop_optional.has_value());
-  // std::vector<std::string> stop = stop_optional.value();
-  // EXPECT_EQ(stop.size(), 2);
-  // EXPECT_EQ(stop[0], "This");
-  // EXPECT_EQ(stop[1], "test");
+  auto stop_optional = tree_->rootNode()->getInput<std::vector<std::string>>("stop");
+  ASSERT_TRUE(stop_optional.has_value());
+  std::vector<std::string> stop = stop_optional.value();
+  EXPECT_EQ(stop.size(), 2);
+  EXPECT_EQ(stop[0], "This");
+  EXPECT_EQ(stop[1], "test");
   EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
 }
 
@@ -164,7 +164,7 @@ TEST_F(GenerateResponseActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root>
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <GenerateResponse prompt="" stop="" response="{response}"/>
         </BehaviorTree>
@@ -172,7 +172,7 @@ TEST_F(GenerateResponseActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(tree_->rootNode()->getInput<std::string>("prompt").value().empty());
-  EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop").has_value());
+  EXPECT_TRUE(tree_->rootNode()->getInput<std::vector<std::string>>("stop").value().empty());
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
