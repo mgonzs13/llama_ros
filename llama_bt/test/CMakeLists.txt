@@ -10,5 +10,5 @@ target_link_libraries(test_register
   rclcpp::rclcpp
 )
 ament_target_dependencies(test_register
-  behaviortree_cpp_v3
+  behaviortree_cpp
 )

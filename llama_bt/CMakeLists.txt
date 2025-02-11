@@ -50,7 +50,7 @@ endif()
 # ###############################################
 # # Find ament macros and libraries
 find_package(ament_cmake REQUIRED)
-find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -69,12 +69,13 @@ foreach(bt_plugin ${plugin_libs})
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   )
   target_link_libraries(${bt_plugin} PUBLIC
+    behaviortree_cpp::behaviortree_cpp
     rclcpp::rclcpp
     rclcpp_action::rclcpp_action
     rclcpp_lifecycle::rclcpp_lifecycle
     ${llama_msgs_TARGETS}
   )
-  ament_target_dependencies(${bt_plugin} PUBLIC behaviortree_cpp_v3 nav2_behavior_tree) # TODO(ajtudela): Fix this in jazzy
+  ament_target_dependencies(${bt_plugin} PUBLIC nav2_behavior_tree) # TODO(ajtudela): Fix this in jazzy
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
@@ -114,7 +115,7 @@ endif()
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries()
 ament_export_dependencies(
-  behaviortree_cpp_v3
+  behaviortree_cpp
   nav2_behavior_tree
   rclcpp
   rclcpp_action

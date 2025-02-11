@@ -1,4 +1,4 @@
-<root>
+<root BTCPP_format="4">
     <TreeNodesModel>
         <!-- ############################### ACTION NODES ################################# -->
         <Action ID="GenerateResponse">

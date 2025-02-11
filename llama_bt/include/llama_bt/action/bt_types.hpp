@@ -16,18 +16,30 @@
 #ifndef LLAMA_BT__ACTION__BT_TYPES_HPP_
 #define LLAMA_BT__ACTION__BT_TYPES_HPP_
 
-#include <behaviortree_cpp_v3/behavior_tree.h>
-
 #include <string>
 #include <vector>
 
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/json_export.h"
 #include "llama_msgs/msg/response.hpp"
+
+// Allow bi-directional convertion to JSON
+BT_JSON_CONVERTER(llama_msgs::msg::Response, response)
+{
+  add_field("text", &response.text);
+  add_field("tokens", &response.tokens);
+}
 
 // Template specialization
 namespace BT
 {
 template<> inline llama_msgs::msg::Response convertFromString(BT::StringView str)
 {
+  if (StartWith(str, "json:")) {
+    str.remove_prefix(5);
+    return convertFromJSON<llama_msgs::msg::Response>(str);
+  }
+
   llama_msgs::msg::Response output;
   if (!str.empty()) {
     // We expect values separated by /
