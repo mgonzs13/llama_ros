@@ -1,0 +1,12 @@
+<root BTCPP_format="4">
+    <TreeNodesModel>
+        <!-- ############################### ACTION NODES ################################# -->
+        <Action ID="GenerateResponse">
+            <input_port name="prompt">Prompt</input_port>
+            <input_port name="stop">Stop list</input_port>
+            <input_port name="reset">Whether to reset the context</input_port>
+            <output_port name="response">Final response</output_port>
+        </Action>
+    </TreeNodesModel>
+</root>
+
