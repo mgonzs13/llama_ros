@@ -2,9 +2,9 @@ name: Jazzy Docker Build
 
 on:
   push:
+    branches: [jazzy]
   pull_request:
-  schedule:
-    - cron: "0 5 * * 1"
+    branches: [jazzy]
 
 jobs:
   jazzy_docker_build:

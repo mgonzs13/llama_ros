@@ -1,6 +1,10 @@
 name: Python Formatting Check
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [jazzy]
+  pull_request:
+    branches: [jazzy]
 
 jobs:
   python_formatter:

@@ -1,6 +1,10 @@
 name: C++ Formatting Check
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [jazzy]
+  pull_request:
+    branches: [jazzy]
 
 jobs:
   cpp_formatter:
