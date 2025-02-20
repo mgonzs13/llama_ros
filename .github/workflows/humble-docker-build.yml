@@ -2,9 +2,9 @@ name: Humble Docker Build
 
 on:
   push:
+    branches: [humble]
   pull_request:
-  schedule:
-    - cron: "0 5 * * 1"
+    branches: [humble]
 
 jobs:
   humble_docker_build:
