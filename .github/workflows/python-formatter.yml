@@ -1,6 +1,10 @@
 name: Python Formatting Check
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [humble]
+  pull_request:
+    branches: [humble]
 
 jobs:
   python_formatter:
