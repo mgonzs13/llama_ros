@@ -7,7 +7,9 @@ endif()
 
 include(FetchContent)
 find_package(ament_cmake REQUIRED)
+find_package(CURL REQUIRED)  # Add CURL as a required package
 
+# Declare hfhub from Git repository
 FetchContent_Declare(
   hfhub
   GIT_REPOSITORY https://github.com/mgonzs13/huggingface-hub-cpp
@@ -17,6 +19,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(hfhub)
 
+# Export targets and include directories
 install(
   TARGETS hfhub
   EXPORT export_hfhub
@@ -24,6 +27,9 @@ install(
   INCLUDES DESTINATION include
 )
 
+# Export include directories and dependencies (CURL)
 ament_export_include_directories(include)
+ament_export_dependencies(CURL)  # Export CURL dependency
 ament_export_targets(export_hfhub HAS_LIBRARY_TARGET)
+
 ament_package()

@@ -16,7 +16,6 @@ find_package(Threads REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(llama_hfhub_vendor REQUIRED)
-find_package(CURL REQUIRED)
 
 include_directories(
   include
@@ -56,7 +55,6 @@ target_link_libraries(llama_node
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
   Threads::Threads
-  CURL::libcurl
 )
 ament_target_dependencies(llama_node
   rclcpp
@@ -82,7 +80,6 @@ target_link_libraries(llava_node
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
   Threads::Threads
-  CURL::libcurl
 )
 ament_target_dependencies(llava_node
   rclcpp
