@@ -23,6 +23,7 @@
 #include <fstream>
 
 #include "common.h"
+#include "downloader.h"
 #include "json-schema-to-grammar.h"
 #include "json.hpp"
 
@@ -79,7 +80,11 @@ void llama_utils::declare_llama_params(
                                         });
   node->declare_parameters<std::string>("", {
                                                 {"model", ""},
+                                                {"model_repo", ""},
+                                                {"model_filename", ""},
                                                 {"mmproj", ""},
+                                                {"mmproj_repo", ""},
+                                                {"mmproj_filename", ""},
                                                 {"cpu_mask", ""},
                                                 {"cpu_range", ""},
                                                 {"cpu_mask_batch", ""},
@@ -137,6 +142,11 @@ void llama_utils::declare_llama_params(
 
 struct LlamaParams llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
+
+  std::string model_repo;
+  std::string model_filename;
+  std::string mmproj_repo;
+  std::string mmproj_filename;
 
   int32_t seed;
   int32_t poll;
@@ -228,9 +238,13 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("defrag_thold", params.params.defrag_thold);
 
   node->get_parameter("model", params.params.model);
+  node->get_parameter("model_repo", model_repo);
+  node->get_parameter("model_filename", model_filename);
   node->get_parameter("lora_adapters", lora_adapters);
   node->get_parameter("lora_adapters_scales", lora_adapters_scales);
   node->get_parameter("mmproj", params.params.mmproj);
+  node->get_parameter("mmproj_repo", mmproj_repo);
+  node->get_parameter("mmproj_filename", mmproj_filename);
   node->get_parameter("numa", numa);
   node->get_parameter("pooling_type", pooling_type);
 
@@ -247,6 +261,27 @@ struct LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
+
+  // models
+  if (params.params.model.empty()) {
+    auto result = huggingface_hub::Downloader::hf_hub_download(model_repo,
+                                                               model_filename);
+    if (result.success) {
+      params.params.model = result.path;
+    } else {
+      RCLCPP_ERROR(node->get_logger(), "Failed to download model");
+    }
+  }
+
+  if (params.params.mmproj.empty()) {
+    auto result = huggingface_hub::Downloader::hf_hub_download(mmproj_repo,
+                                                               mmproj_filename);
+    if (result.success) {
+      params.params.mmproj = result.path;
+    } else {
+      RCLCPP_ERROR(node->get_logger(), "Failed to download mmproj model");
+    }
+  }
 
   // seed
   if (seed < 0) {
