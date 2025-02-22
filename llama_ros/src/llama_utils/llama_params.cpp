@@ -105,12 +105,14 @@ void llama_utils::declare_llama_params(
                                                 {"image_suffix", ""},
                                                 {"image_text", "<image>"},
                                             });
-  node->declare_parameter<std::vector<std::string>>(
-      "devices", std::vector<std::string>({}));
-  node->declare_parameter<std::vector<std::string>>(
-      "lora_adapters", std::vector<std::string>({}));
-  node->declare_parameter<std::vector<std::string>>(
-      "stopping_words", std::vector<std::string>({}));
+  node->declare_parameters<std::vector<std::string>>(
+      {""}, {
+                {"devices", std::vector<std::string>({})},
+                {"stopping_words", std::vector<std::string>({})},
+                {"lora_adapters", std::vector<std::string>({})},
+                {"lora_adapters_repos", std::vector<std::string>({})},
+                {"lora_adapters_filenames", std::vector<std::string>({})},
+            });
   node->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
                                           {"rope_freq_scale", 0.0f},
@@ -155,6 +157,8 @@ struct LlamaParams llama_utils::get_llama_params(
   std::vector<std::string> stopping_words;
 
   std::vector<std::string> lora_adapters;
+  std::vector<std::string> lora_adapters_repos;
+  std::vector<std::string> lora_adapters_filenames;
   std::vector<double> lora_adapters_scales;
 
   std::vector<std::string> devices;
@@ -240,11 +244,13 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("model", params.params.model);
   node->get_parameter("model_repo", model_repo);
   node->get_parameter("model_filename", model_filename);
-  node->get_parameter("lora_adapters", lora_adapters);
-  node->get_parameter("lora_adapters_scales", lora_adapters_scales);
   node->get_parameter("mmproj", params.params.mmproj);
   node->get_parameter("mmproj_repo", mmproj_repo);
   node->get_parameter("mmproj_filename", mmproj_filename);
+  node->get_parameter("lora_adapters", lora_adapters);
+  node->get_parameter("lora_adapters_repos", lora_adapters);
+  node->get_parameter("lora_adapters_filenames", lora_adapters);
+  node->get_parameter("lora_adapters_scales", lora_adapters_scales);
   node->get_parameter("numa", numa);
   node->get_parameter("pooling_type", pooling_type);
 
@@ -261,27 +267,6 @@ struct LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
-
-  // models
-  if (params.params.model.empty()) {
-    auto result = huggingface_hub::Downloader::hf_hub_download(model_repo,
-                                                               model_filename);
-    if (result.success) {
-      params.params.model = result.path;
-    } else {
-      RCLCPP_ERROR(node->get_logger(), "Failed to download model");
-    }
-  }
-
-  if (params.params.mmproj.empty()) {
-    auto result = huggingface_hub::Downloader::hf_hub_download(mmproj_repo,
-                                                               mmproj_filename);
-    if (result.success) {
-      params.params.mmproj = result.path;
-    } else {
-      RCLCPP_ERROR(node->get_logger(), "Failed to download mmproj model");
-    }
-  }
 
   // seed
   if (seed < 0) {
@@ -317,22 +302,78 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.cpuparams_batch.n_threads = cpu_get_num_math();
   }
 
+  // models
+  if (params.params.model.empty()) {
+    auto result = huggingface_hub::Downloader::hf_hub_download(model_repo,
+                                                               model_filename);
+    if (result.success) {
+      params.params.model = result.path;
+    } else {
+      RCLCPP_ERROR(node->get_logger(), "Failed to download model");
+    }
+  }
+
+  if (params.params.mmproj.empty()) {
+    auto result = huggingface_hub::Downloader::hf_hub_download(mmproj_repo,
+                                                               mmproj_filename);
+    if (result.success) {
+      params.params.mmproj = result.path;
+    } else {
+      RCLCPP_ERROR(node->get_logger(), "Failed to download mmproj model");
+    }
+  }
+
   // lora_adapters
-  if (lora_adapters.size()) {
+  if (!lora_adapters.empty()) {
     if (lora_adapters.size() != lora_adapters_scales.size()) {
       RCLCPP_ERROR(
           node->get_logger(),
           "lora_adapters and lora_adapters_scales must have the same size");
+
     } else {
 
-      for (size_t i = 0; i < lora_adapters.size(); i++) {
+      while (!lora_adapters.empty()) {
 
-        if (lora_adapters.at(i).empty()) {
+        // get lora
+        std::string lora = lora_adapters.front();
+        lora_adapters.erase(lora_adapters.begin());
+
+        // get scale
+        float scale = (float)lora_adapters_scales.front();
+        lora_adapters_scales.erase(lora_adapters_scales.begin());
+
+        if (lora.empty()) {
           continue;
         }
 
-        float scale = (float)lora_adapters_scales.at(i);
+        // check if lora is from HF
+        if (lora == "HF") {
+          if (lora_adapters_repos.empty() || lora_adapters_filenames.empty()) {
+            RCLCPP_ERROR(node->get_logger(),
+                         "lora_adapters_repos and lora_adapters_filenames "
+                         "must have the same size");
+            continue;
+          }
 
+          std::string repo = lora_adapters_repos.front();
+          std::string filename = lora_adapters_filenames.front();
+
+          lora_adapters_repos.erase(lora_adapters_repos.begin());
+          lora_adapters_filenames.erase(lora_adapters_filenames.begin());
+
+          auto result =
+              huggingface_hub::Downloader::hf_hub_download(repo, filename);
+
+          if (result.success) {
+            lora = result.path;
+
+          } else {
+            RCLCPP_ERROR(node->get_logger(), "Failed to download model");
+            continue;
+          }
+        }
+
+        // fix scale
         if (scale < 0.0) {
           RCLCPP_WARN(node->get_logger(),
                       "Scale %f cannot be lower than 0.0, setting it to 0.0",
@@ -345,8 +386,8 @@ struct LlamaParams llama_utils::get_llama_params(
           scale = 1.0;
         }
 
-        params.params.lora_adapters.push_back(
-            {lora_adapters.at(i), scale, nullptr});
+        // add lora
+        params.params.lora_adapters.push_back({lora, scale, nullptr});
       }
     }
   }

@@ -22,36 +22,11 @@
 
 
 import os
-import re
 import yaml
 from typing import Tuple
-from huggingface_hub import hf_hub_download
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-
-
-def download_model(repo: str, file: str) -> str:
-
-    match = re.search(r"-(\d+)-of-(\d+)\.gguf", file)
-
-    if match:
-        total_shards = int(match.group(2))
-        base_name = file[: match.start()]
-
-        # download shards
-        for i in range(1, total_shards + 1):
-            shard_file = f"{base_name}-{i:05d}-of-{total_shards:05d}.gguf"
-            hf_hub_download(repo_id=repo, filename=shard_file, force_download=False)
-
-        # return first shard
-        return hf_hub_download(
-            repo_id=repo,
-            filename=f"{base_name}-00001-of-{total_shards:05d}.gguf",
-            force_download=False,
-        )
-
-    return hf_hub_download(repo_id=repo, filename=file, force_download=False)
 
 
 def load_prompt_type(prompt_file_name: str) -> Tuple:
@@ -93,6 +68,8 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
 
     # load lora adapters
     lora_adapters = []
+    lora_adapters_repos = []
+    lora_adapters_filenames = []
     lora_adapters_scales = []
 
     if "lora_adapters" in kwargs:
@@ -100,10 +77,12 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
             lora = kwargs["lora_adapters"][i]
 
             if "repo" in lora and "filename" in lora:
-                lora_path = download_model(lora["repo"], lora["filename"])
+                lora_adapters_repos.append(lora["repo"])
+                lora_adapters_filenames.append(lora["filename"])
+                lora_adapters.append("HF")
 
             elif "path" in lora:
-                lora_path = lora["path"]
+                lora_adapters.append(lora["path"])
 
             else:
                 continue
@@ -111,7 +90,6 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
             if "scale" not in lora:
                 continue
 
-            lora_adapters.append(lora_path)
             lora_adapters_scales.append(lora["scale"])
 
     else:
@@ -119,6 +97,8 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
         lora_adapters_scales = [0.0]
 
     kwargs["lora_adapters"] = lora_adapters
+    kwargs["lora_adapters_repos"] = lora_adapters
+    kwargs["lora_adapters_filenames"] = lora_adapters
     kwargs["lora_adapters_scales"] = lora_adapters_scales
 
     # use llava
