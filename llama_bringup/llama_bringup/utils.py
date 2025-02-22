@@ -97,8 +97,8 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
         lora_adapters_scales = [0.0]
 
     kwargs["lora_adapters"] = lora_adapters
-    kwargs["lora_adapters_repos"] = lora_adapters
-    kwargs["lora_adapters_filenames"] = lora_adapters
+    kwargs["lora_adapters_repos"] = lora_adapters_repos
+    kwargs["lora_adapters_filenames"] = lora_adapters_filenames
     kwargs["lora_adapters_scales"] = lora_adapters_scales
 
     # use llava

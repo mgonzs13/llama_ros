@@ -248,8 +248,8 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("mmproj_repo", mmproj_repo);
   node->get_parameter("mmproj_filename", mmproj_filename);
   node->get_parameter("lora_adapters", lora_adapters);
-  node->get_parameter("lora_adapters_repos", lora_adapters);
-  node->get_parameter("lora_adapters_filenames", lora_adapters);
+  node->get_parameter("lora_adapters_repos", lora_adapters_repos);
+  node->get_parameter("lora_adapters_filenames", lora_adapters_filenames);
   node->get_parameter("lora_adapters_scales", lora_adapters_scales);
   node->get_parameter("numa", numa);
   node->get_parameter("pooling_type", pooling_type);
