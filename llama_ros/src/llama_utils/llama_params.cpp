@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 #include <fstream>
+#include <iostream>
+#include <regex>
 
 #include "common.h"
 #include "downloader.h"
@@ -54,6 +56,46 @@ static ggml_type kv_cache_type_from_str(const std::string &s) {
     }
   }
   throw std::runtime_error("Unsupported cache type: " + s);
+}
+
+std::string hf_hub_download(const std::string &repo_id,
+                            const std::string &filename) {
+
+  auto result = huggingface_hub::Downloader::hf_hub_download(repo_id, filename);
+
+  if (!result.success) {
+    LLAMA_LOG_ERROR("Failed to download file '%s' from repo '%s'",
+                    filename.c_str(), repo_id.c_str());
+    return "";
+  }
+
+  return result.path;
+}
+
+std::string download_model(const std::string &repo, const std::string &file) {
+  std::regex pattern(R"(-([0-9]+)-of-([0-9]+)\.gguf)");
+  std::smatch match;
+
+  if (std::regex_search(file, match, pattern)) {
+    int total_shards = std::stoi(match[2]);
+    std::string base_name = file.substr(0, match.position(0));
+
+    // Download shards
+    for (int i = 1; i <= total_shards; ++i) {
+      char shard_file[256];
+      snprintf(shard_file, sizeof(shard_file), "%s-%05d-of-%05d.gguf",
+               base_name.c_str(), i, total_shards);
+      hf_hub_download(repo, shard_file);
+    }
+
+    // Return first shard
+    char first_shard[256];
+    snprintf(first_shard, sizeof(first_shard), "%s-00001-of-%05d.gguf",
+             base_name.c_str(), total_shards);
+    return hf_hub_download(repo, first_shard);
+  }
+
+  return hf_hub_download(repo, file);
 }
 
 void llama_utils::declare_llama_params(
@@ -303,25 +345,8 @@ struct LlamaParams llama_utils::get_llama_params(
   }
 
   // models
-  if (params.params.model.empty()) {
-    auto result = huggingface_hub::Downloader::hf_hub_download(model_repo,
-                                                               model_filename);
-    if (result.success) {
-      params.params.model = result.path;
-    } else {
-      RCLCPP_ERROR(node->get_logger(), "Failed to download model");
-    }
-  }
-
-  if (params.params.mmproj.empty()) {
-    auto result = huggingface_hub::Downloader::hf_hub_download(mmproj_repo,
-                                                               mmproj_filename);
-    if (result.success) {
-      params.params.mmproj = result.path;
-    } else {
-      RCLCPP_ERROR(node->get_logger(), "Failed to download mmproj model");
-    }
-  }
+  params.params.model = download_model(model_repo, model_filename);
+  params.params.mmproj = download_model(mmproj_repo, mmproj_filename);
 
   // lora_adapters
   if (!lora_adapters.empty()) {
@@ -342,10 +367,6 @@ struct LlamaParams llama_utils::get_llama_params(
         float scale = (float)lora_adapters_scales.front();
         lora_adapters_scales.erase(lora_adapters_scales.begin());
 
-        if (lora.empty()) {
-          continue;
-        }
-
         // check if lora is from HF
         if (lora == "HF") {
           if (lora_adapters_repos.empty() || lora_adapters_filenames.empty()) {
@@ -361,16 +382,11 @@ struct LlamaParams llama_utils::get_llama_params(
           lora_adapters_repos.erase(lora_adapters_repos.begin());
           lora_adapters_filenames.erase(lora_adapters_filenames.begin());
 
-          auto result =
-              huggingface_hub::Downloader::hf_hub_download(repo, filename);
+          lora = download_model(repo, filename);
+        }
 
-          if (result.success) {
-            lora = result.path;
-
-          } else {
-            RCLCPP_ERROR(node->get_logger(), "Failed to download model");
-            continue;
-          }
+        if (lora.empty()) {
+          continue;
         }
 
         // fix scale
