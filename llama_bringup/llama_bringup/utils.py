@@ -67,16 +67,24 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
         kwargs["stopping_words"] = [""]
 
     # load lora adapters
-    lora_adapters = []
-    lora_adapters_repos = []
-    lora_adapters_filenames = []
-    lora_adapters_scales = []
+    lora_adapters = [""]
+    lora_adapters_repos = [""]
+    lora_adapters_filenames = [""]
+    lora_adapters_scales = [0.0]
 
     if "lora_adapters" in kwargs:
         for i in range(len(kwargs["lora_adapters"])):
+            if not lora_adapters[0]:
+                lora_adapters.clear()
+                lora_adapters_scales.clear()
+
             lora = kwargs["lora_adapters"][i]
 
             if "repo" in lora and "filename" in lora:
+                if not lora_adapters_repos[0]:
+                    lora_adapters_repos.clear()
+                    lora_adapters_filenames.clear()
+
                 lora_adapters_repos.append(lora["repo"])
                 lora_adapters_filenames.append(lora["filename"])
                 lora_adapters.append("HF")
@@ -91,10 +99,6 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
                 continue
 
             lora_adapters_scales.append(lora["scale"])
-
-    else:
-        lora_adapters = [""]
-        lora_adapters_scales = [0.0]
 
     kwargs["lora_adapters"] = lora_adapters
     kwargs["lora_adapters_repos"] = lora_adapters_repos
