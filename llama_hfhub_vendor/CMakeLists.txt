@@ -13,7 +13,7 @@ find_package(CURL REQUIRED)  # Add CURL as a required package
 FetchContent_Declare(
   hfhub
   GIT_REPOSITORY https://github.com/mgonzs13/huggingface-hub-cpp
-  GIT_TAG        e58f7ba400006599a7f7d503ddff1d39b8f677f1
+  GIT_TAG        0d561d03f8f30002a9c2d701257ff338bd3619d3
   GIT_SHALLOW    TRUE
 )
 

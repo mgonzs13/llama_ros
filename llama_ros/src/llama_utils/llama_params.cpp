@@ -25,7 +25,7 @@
 #include <regex>
 
 #include "common.h"
-#include "downloader.h"
+#include "hfhub_cpp.h"
 #include "json-schema-to-grammar.h"
 #include "json.hpp"
 
@@ -61,7 +61,7 @@ static ggml_type kv_cache_type_from_str(const std::string &s) {
 std::string hf_hub_download(const std::string &repo_id,
                             const std::string &filename) {
 
-  auto result = huggingface_hub::Downloader::hf_hub_download(repo_id, filename);
+  auto result = huggingface_hub::hf_hub_download(repo_id, filename);
 
   if (!result.success) {
     LLAMA_LOG_ERROR("Failed to download file '%s' from repo '%s'",
