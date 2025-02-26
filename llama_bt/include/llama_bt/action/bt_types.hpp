@@ -24,17 +24,15 @@
 #include "llama_msgs/msg/response.hpp"
 
 // Allow bi-directional convertion to JSON
-BT_JSON_CONVERTER(llama_msgs::msg::Response, response)
-{
+BT_JSON_CONVERTER(llama_msgs::msg::Response, response) {
   add_field("text", &response.text);
   add_field("tokens", &response.tokens);
 }
 
 // Template specialization
-namespace BT
-{
-template<> inline llama_msgs::msg::Response convertFromString(BT::StringView str)
-{
+namespace BT {
+template <>
+inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
   if (StartWith(str, "json:")) {
     str.remove_prefix(5);
     return convertFromJSON<llama_msgs::msg::Response>(str);
@@ -53,6 +51,6 @@ template<> inline llama_msgs::msg::Response convertFromString(BT::StringView str
   }
   return output;
 }
-}  // namespace BT
+} // namespace BT
 
-#endif  // LLAMA_BT__ACTION__BT_TYPES_HPP_
+#endif // LLAMA_BT__ACTION__BT_TYPES_HPP_

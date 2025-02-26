@@ -13,22 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/utils/shared_library.h"
 #include "rclcpp/rclcpp.hpp"
+#include <gtest/gtest.h>
 
-TEST(LlamaBT, register_nodes)
-{
+TEST(LlamaBT, register_nodes) {
   BT::BehaviorTreeFactory factory;
   BT::SharedLibrary loader;
 
   factory.registerFromPlugin(
-    loader.getOSName("llama_generate_response_action_bt_node"));
+      loader.getOSName("llama_generate_response_action_bt_node"));
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   // initialize ROS

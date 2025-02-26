@@ -13,25 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "llama_bt/action/generate_response_action.hpp"
 
-namespace llama_bt
-{
+namespace llama_bt {
 
 GenerateResponseAction::GenerateResponseAction(
-  const std::string & xml_tag_name,
-  const std::string & action_name,
-  const BT::NodeConfiguration & conf)
-: nav2_behavior_tree::BtActionNode<llama_msgs::action::GenerateResponse>(
-    xml_tag_name, action_name, conf)
-{
-}
+    const std::string &xml_tag_name, const std::string &action_name,
+    const BT::NodeConfiguration &conf)
+    : nav2_behavior_tree::BtActionNode<llama_msgs::action::GenerateResponse>(
+          xml_tag_name, action_name, conf) {}
 
-void GenerateResponseAction::on_tick()
-{
+void GenerateResponseAction::on_tick() {
   std::string prompt;
   getInput("prompt", prompt);
   std::vector<std::string> stop;
@@ -44,23 +39,21 @@ void GenerateResponseAction::on_tick()
   goal_.reset = reset;
 }
 
-BT::NodeStatus GenerateResponseAction::on_success()
-{
+BT::NodeStatus GenerateResponseAction::on_success() {
   setOutput("response", result_.result->response.text);
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace llama_bt
+} // namespace llama_bt
 
 #include "behaviortree_cpp/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  BT::NodeBuilder builder =
-    [](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<llama_bt::GenerateResponseAction>(name, "generate_response", config);
-    };
+BT_REGISTER_NODES(factory) {
+  BT::NodeBuilder builder = [](const std::string &name,
+                               const BT::NodeConfiguration &config) {
+    return std::make_unique<llama_bt::GenerateResponseAction>(
+        name, "generate_response", config);
+  };
 
-  factory.registerBuilder<llama_bt::GenerateResponseAction>(
-    "GenerateResponse", builder);
+  factory.registerBuilder<llama_bt::GenerateResponseAction>("GenerateResponse",
+                                                            builder);
 }
