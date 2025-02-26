@@ -18,29 +18,24 @@
 #include <set>
 #include <string>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include "behaviortree_cpp_v3/bt_factory.h"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
-#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "llama_bt/action/generate_response_action.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 
 class GenerateResponseActionServer
-  : public TestActionServer<llama_msgs::action::GenerateResponse>
-{
+    : public TestActionServer<llama_msgs::action::GenerateResponse> {
 public:
-  GenerateResponseActionServer()
-  : TestActionServer("generate_response")
-  {
-  }
+  GenerateResponseActionServer() : TestActionServer("generate_response") {}
 
 protected:
-  void execute(
-    const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<llama_msgs::action::GenerateResponse>> goal_handle)
-  override
-  {
+  void
+  execute(const typename std::shared_ptr<
+          rclcpp_action::ServerGoalHandle<llama_msgs::action::GenerateResponse>>
+              goal_handle) override {
     llama_msgs::action::GenerateResponse::Result::SharedPtr result =
-      std::make_shared<llama_msgs::action::GenerateResponse::Result>();
+        std::make_shared<llama_msgs::action::GenerateResponse::Result>();
     result->response.text = "This is a test response";
     bool return_success = getReturnSuccess();
     if (return_success) {
@@ -51,11 +46,9 @@ protected:
   }
 };
 
-class GenerateResponseActionTestFixture : public ::testing::Test
-{
+class GenerateResponseActionTestFixture : public ::testing::Test {
 public:
-  static void SetUpTestCase()
-  {
+  static void SetUpTestCase() {
     node_ = std::make_shared<rclcpp::Node>("generate_response_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
@@ -66,24 +59,23 @@ public:
     // Put items on the blackboard
     config_->blackboard->set("node", node_);
     config_->blackboard->set<std::chrono::milliseconds>(
-      "server_timeout", std::chrono::milliseconds(20));
+        "server_timeout", std::chrono::milliseconds(20));
     config_->blackboard->set<std::chrono::milliseconds>(
-      "bt_loop_duration", std::chrono::milliseconds(10));
+        "bt_loop_duration", std::chrono::milliseconds(10));
     config_->blackboard->set<std::chrono::milliseconds>(
-      "wait_for_service_timeout", std::chrono::milliseconds(1000));
+        "wait_for_service_timeout", std::chrono::milliseconds(1000));
 
-    BT::NodeBuilder builder =
-      [](const std::string & name, const BT::NodeConfiguration & config)
-      {
-        return std::make_unique<llama_bt::GenerateResponseAction>(
+    BT::NodeBuilder builder = [](const std::string &name,
+                                 const BT::NodeConfiguration &config) {
+      return std::make_unique<llama_bt::GenerateResponseAction>(
           name, "generate_response", config);
-      };
+    };
 
-    factory_->registerBuilder<llama_bt::GenerateResponseAction>("GenerateResponse", builder);
+    factory_->registerBuilder<llama_bt::GenerateResponseAction>(
+        "GenerateResponse", builder);
   }
 
-  static void TearDownTestCase()
-  {
+  static void TearDownTestCase() {
     delete config_;
     config_ = nullptr;
     node_.reset();
@@ -91,67 +83,69 @@ public:
     factory_.reset();
   }
 
-  void SetUp() override
-  {
-  }
+  void SetUp() override {}
 
-  void TearDown() override
-  {
-    tree_.reset();
-  }
+  void TearDown() override { tree_.reset(); }
 
   static std::shared_ptr<GenerateResponseActionServer> server_;
 
 protected:
   static rclcpp::Node::SharedPtr node_;
-  static BT::NodeConfiguration * config_;
+  static BT::NodeConfiguration *config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
 rclcpp::Node::SharedPtr GenerateResponseActionTestFixture::node_ = nullptr;
-std::shared_ptr<GenerateResponseActionServer> GenerateResponseActionTestFixture::server_ = nullptr;
-BT::NodeConfiguration * GenerateResponseActionTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> GenerateResponseActionTestFixture::factory_ = nullptr;
+std::shared_ptr<GenerateResponseActionServer>
+    GenerateResponseActionTestFixture::server_ = nullptr;
+BT::NodeConfiguration *GenerateResponseActionTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory>
+    GenerateResponseActionTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> GenerateResponseActionTestFixture::tree_ = nullptr;
 
-TEST_F(GenerateResponseActionTestFixture, test_ports)
-{
+TEST_F(GenerateResponseActionTestFixture, test_ports) {
   std::string xml_txt =
-    R"(
+      R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
             <GenerateResponse/>
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  tree_ = std::make_shared<BT::Tree>(
+      factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   xml_txt =
-    R"(
+      R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
             <GenerateResponse prompt="" stop=""/>
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_TRUE(tree_->rootNode()->getInput<std::string>("prompt").value().empty());
+  tree_ = std::make_shared<BT::Tree>(
+      factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_TRUE(
+      tree_->rootNode()->getInput<std::string>("prompt").value().empty());
   EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop"));
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   xml_txt =
-    R"(
+      R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
             <GenerateResponse prompt="This is a test" stop="This;te,st" reset="true" response="{response}"/>
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("prompt"), "This is a test");
-  // auto stop_optional = tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
+  tree_ = std::make_shared<BT::Tree>(
+      factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("prompt"),
+            "This is a test");
+  // auto stop_optional =
+  // tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
   // ASSERT_TRUE(stop_optional.has_value());
   // std::vector<std::string> stop = stop_optional.value();
   // EXPECT_EQ(stop.size(), 2);
@@ -160,19 +154,22 @@ TEST_F(GenerateResponseActionTestFixture, test_ports)
   EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
 }
 
-TEST_F(GenerateResponseActionTestFixture, test_tick)
-{
+TEST_F(GenerateResponseActionTestFixture, test_tick) {
   std::string xml_txt =
-    R"(
+      R"(
       <root>
         <BehaviorTree ID="MainTree">
             <GenerateResponse prompt="" stop="" response="{response}"/>
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_TRUE(tree_->rootNode()->getInput<std::string>("prompt").value().empty());
-  EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop").has_value());
+  tree_ = std::make_shared<BT::Tree>(
+      factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_TRUE(
+      tree_->rootNode()->getInput<std::string>("prompt").value().empty());
+  EXPECT_FALSE(tree_->rootNode()
+                   ->getInput<std::vector<std::string>>("stop")
+                   .has_value());
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -186,18 +183,17 @@ TEST_F(GenerateResponseActionTestFixture, test_tick)
   EXPECT_EQ(response, "This is a test response");
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   // initialize ROS
   rclcpp::init(argc, argv);
 
   // initialize service and spin on new thread
-  GenerateResponseActionTestFixture::server_ = std::make_shared<GenerateResponseActionServer>();
-  std::thread server_thread([]() {
-      rclcpp::spin(GenerateResponseActionTestFixture::server_);
-    });
+  GenerateResponseActionTestFixture::server_ =
+      std::make_shared<GenerateResponseActionServer>();
+  std::thread server_thread(
+      []() { rclcpp::spin(GenerateResponseActionTestFixture::server_); });
 
   int all_successful = RUN_ALL_TESTS();
 

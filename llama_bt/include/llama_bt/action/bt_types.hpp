@@ -24,10 +24,9 @@
 #include "llama_msgs/msg/response.hpp"
 
 // Template specialization
-namespace BT
-{
-template<> inline llama_msgs::msg::Response convertFromString(BT::StringView str)
-{
+namespace BT {
+template <>
+inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
   llama_msgs::msg::Response output;
   if (!str.empty()) {
     // We expect values separated by /
@@ -41,6 +40,6 @@ template<> inline llama_msgs::msg::Response convertFromString(BT::StringView str
   }
   return output;
 }
-}  // namespace BT
+} // namespace BT
 
-#endif  // LLAMA_BT__ACTION__BT_TYPES_HPP_
+#endif // LLAMA_BT__ACTION__BT_TYPES_HPP_
