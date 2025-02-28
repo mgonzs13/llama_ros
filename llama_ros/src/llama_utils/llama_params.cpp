@@ -25,7 +25,7 @@
 #include <regex>
 
 #include "common.h"
-#include "hfhub_cpp.h"
+#include "huggingface_hub.h"
 #include "json-schema-to-grammar.h"
 #include "json.hpp"
 
