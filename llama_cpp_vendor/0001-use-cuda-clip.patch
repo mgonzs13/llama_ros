@@ -1,5 +1,5 @@
 diff --git a/examples/llava/clip.cpp b/examples/llava/clip.cpp
-index 271cf2a2..e96e8b1f 100644
+index 76d4a785..a31bb970 100644
 --- a/examples/llava/clip.cpp
 +++ b/examples/llava/clip.cpp
 @@ -9,9 +9,9 @@
@@ -15,7 +15,7 @@ index 271cf2a2..e96e8b1f 100644
  //
  //#ifdef GGML_USE_SYCL
  //#include "ggml-sycl.h"
-@@ -1275,10 +1275,10 @@ struct clip_ctx * clip_model_load(const char * fname, const int verbosity = 1) {
+@@ -1296,10 +1296,10 @@ struct clip_ctx * clip_model_load(const char * fname, const int verbosity = 1) {
          }
      }
  
