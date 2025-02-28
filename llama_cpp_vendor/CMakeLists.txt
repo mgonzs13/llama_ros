@@ -89,6 +89,7 @@ file(GLOB COMMON_HEADERS
   ${llama_SOURCE_DIR}/ggml/include/*
   ${llama_SOURCE_DIR}/common/*.h
   ${llama_SOURCE_DIR}/common/*.hpp
+  ${llama_SOURCE_DIR}/common/minja/*.hpp
   ${llama_SOURCE_DIR}/examples/llava/*.h
 )
 install(
