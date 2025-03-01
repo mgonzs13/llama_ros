@@ -3,7 +3,7 @@
 <package format="3">
   <name>llama_hfhub_vendor</name>
   <version>4.4.1</version>
-  <description>Hugging Face vendor package for llama.cpp.</description>
+  <description>huggingface-hub-cpp vendor package for llama_ros</description>
   <maintainer email="mgons@unileon.es">Miguel Ángel González Santamarta</maintainer>
   <license>MIT</license>
 

@@ -345,8 +345,13 @@ struct LlamaParams llama_utils::get_llama_params(
   }
 
   // models
-  params.params.model = download_model(model_repo, model_filename);
-  params.params.mmproj = download_model(mmproj_repo, mmproj_filename);
+  if (params.params.model.empty()) {
+    params.params.model = download_model(model_repo, model_filename);
+  }
+
+  if (params.params.mmproj.empty()) {
+    params.params.mmproj = download_model(mmproj_repo, mmproj_filename);
+  }
 
   // lora_adapters
   if (!lora_adapters.empty()) {
