@@ -1,13 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>llama_cpp_vendor</name>
+  <name>llama_hfhub_vendor</name>
   <version>4.4.1</version>
-  <description>Vendor package for llama.cpp.</description>
+  <description>huggingface-hub-cpp vendor package for llama_ros</description>
   <maintainer email="mgons@unileon.es">Miguel Ángel González Santamarta</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>curl</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
