@@ -5,7 +5,7 @@
   <version>1.0.0</version>
   <description>A package containing behavior trees plugins for the llama_ros stack.</description>
   <maintainer email="ajtudela@gmail.com">Alberto Tudela</maintainer>
-  <license>Apache-2.0</license>
+  <license>MIT</license>
   <author email="ajtudela@gmail.com">Alberto Tudela</author>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>behaviortree_cpp_v3</depend>
