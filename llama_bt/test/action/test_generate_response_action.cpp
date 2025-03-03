@@ -22,7 +22,7 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "llama_bt/action/generate_response_action.hpp"
-#include "nav2_behavior_tree/utils/test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 
 class GenerateResponseActionServer
     : public TestActionServer<llama_msgs::action::GenerateResponse> {

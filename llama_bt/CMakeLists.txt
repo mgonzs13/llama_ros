@@ -92,6 +92,10 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
+install(DIRECTORY test/utils/
+  DESTINATION include/${PROJECT_NAME}/utils/
+)
+
 install(FILES llama_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
 # ###########
