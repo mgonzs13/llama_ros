@@ -64,87 +64,31 @@ from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    InvalidToolCall,
+    FunctionMessage,
+    ToolCall,
     BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from langchain_openai.chat_models.base import (
+    _create_usage_metadata,
+    _lc_invalid_tool_call_to_openai_tool_call,
+    _lc_tool_call_to_openai_tool_call,
+    _format_message_content,
+    _convert_dict_to_message,
+)
 
 from action_msgs.msg import GoalStatus
 from llama_ros.langchain import LlamaROSCommon
-from llama_msgs.msg import Message
+from llama_msgs.msg import ChatMessage, Content
 from llama_msgs.srv import Detokenize
-from llama_msgs.srv import FormatChatMessages
-from llama_msgs.action import GenerateResponse
-
-DEFAULT_TEMPLATE = """{% if tools_grammar %}
-    {{- '<|im_start|>assistant\n' }}
-    {{- 'You are an AI assistant that outputs in JSON format. Think about your tools, your previous data and your next step. Available tools are:' }}
-    {% for tool in tools_grammar %}
-        {% if not loop.last %}
-            {{- tool }}
-        {% else %}
-            {{- tool + '<|im_end|>' }}
-        {% endif %}
-    {% endfor %}
-{% endif %}
-
-{% for message in messages %}
-    {% if (loop.last and add_generation_prompt) or not loop.last %}
-        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}
-    {% else %}
-        {{- '<|im_start|>' + message['role'] + '\n' + message['content'] }}
-    {% endif %}
-{% endfor %}
-{% if add_generation_prompt and messages[-1]['role'] != 'assistant' %}
-    {{- '<|im_start|>assistant' }}
-{% endif %}
-"""
-
-USE_JINJA_TEMPLATE = "jinja"
-USE_MINJA_TEMPLATE = "minja"
-USE_LLAMA_TEMPLATE = "llama"
+from llama_msgs.action import GenerateChatCompletions
+import openai
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
-    """
-    ChatLlamaROS is a class that extends BaseChatModel and LlamaROSCommon to provide
-    chat functionalities using the LlamaROS framework.
-
-    Attributes:
-        template_method (str): Determines how the prompt is built. It can take one of the following values:
-            - "jinja": Uses Jinja templates to format the prompt.
-            - "minja": Uses Minja templates to format the prompt.
-            - "llama": Uses Llama-specific templates to format the prompt.
-    """
-
-    template_method: str = USE_JINJA_TEMPLATE
-
-    jinja_env: ImmutableSandboxedEnvironment = ImmutableSandboxedEnvironment(
-        loader=jinja2.BaseLoader(),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-
-    template_value: int = USE_MINJA_TEMPLATE
-
-    @model_validator(mode="before")
-    def validate_template_method(cls, v):
-
-        if "template_value" not in v:
-            return v
-
-        if v["template_value"] not in [
-            USE_MINJA_TEMPLATE,
-            USE_JINJA_TEMPLATE,
-            USE_LLAMA_TEMPLATE,
-        ]:
-            raise ValueError(
-                f"template_method must be one of 'jinja', 'minja', or 'llama'. Received: {v}"
-            )
-
-        return v
-
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -153,405 +97,159 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _generate_prompt(self, messages: List[dict[str, str]], **kwargs) -> str:
-        tools: List[BaseTool] = kwargs.get("tools", None)
-        use_tools = tools is not None
-        formatted_tools = []
+    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
+        message_dict: Dict[str, Any] = {
+            "content": _format_message_content(message.content)
+        }
+        if (name := message.name or message.additional_kwargs.get("name")) is not None:
+            message_dict["name"] = name
 
-        if use_tools:
-            formatted_tools = [f"- {tool.name}: {tool.description}" for tool in tools]
-
-        ros_messages = [
-            Message(content=message["content"], role=message["role"])
-            for message in messages
-        ]
-
-        if self.template_value == USE_JINJA_TEMPLATE:
-            bos_token = self.llama_client.detokenize(
-                Detokenize.Request(tokens=[self.model_metadata.tokenizer.bos_token_id])
-            ).text
-
-            jinja_tmpl = self.jinja_env.from_string(DEFAULT_TEMPLATE)
-            return jinja_tmpl.render(
-                messages=messages,
-                add_generation_prompt=True,
-                bos_token=bos_token,
-                tools_grammar=[tool for tool in formatted_tools],
-            )
-        else:
-            return self.llama_client.format_chat_prompt(
-                FormatChatMessages.Request(
-                    messages=ros_messages,
-                    use_minja=USE_MINJA_TEMPLATE == self.template_value,
-                    use_tools=use_tools,
-                )
-            ).formatted_prompt
-
-    def _convert_content(
-        self, content: Union[Dict[str, str], str, List[str], List[Dict[str, str]]]
-    ) -> List[Dict[str, str]]:
-
-        if isinstance(content, str):
-            return {"type": "text", "text": content}
-        if isinstance(content, list) and len(content) == 1:
-            return self._convert_content(content[0])
-        elif isinstance(content, list):
-            return [self._convert_content(c) for c in content]
-        elif isinstance(content, dict):
-            if content["type"] == "text":
-                return {"type": "text", "text": content["text"]}
-            elif content["type"] == "image_url":
-                image_text = content["image_url"]["url"]
-                if "data:image" in image_text:
-                    image_data = image_text.split(",")[-1]
-                    decoded_image = base64.b64decode(image_data)
-                    np_image = np.frombuffer(decoded_image, np.uint8)
-                    image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-
-                    return {"type": "image", "image": image}
-                else:
-                    image_url = image_text
-                    return {"type": "image_url", "image_url": image_url}
-
-    def _convert_message_to_dict(self, message: BaseMessage) -> list[dict[str, str]]:
-
-        if isinstance(message, HumanMessage):
-            converted_msg = [
-                {"role": "user", "content": self._convert_content(message.content)}
-            ]
-            return converted_msg
-
+        # populate role and additional message data
+        if isinstance(message, ChatMessage):
+            message_dict["role"] = message.role
+        elif isinstance(message, HumanMessage):
+            message_dict["role"] = "user"
         elif isinstance(message, AIMessage):
-            all_messages = []
-
-            contents = self._convert_content(message.content)
-            if isinstance(contents, dict):
-                contents = [contents]
-            contents = [
-                content
-                for content in contents
-                if content["type"] == "text" and content["text"] != ""
-            ]
-
-            all_messages.extend(
-                [{"role": "assistant", "content": content} for content in contents]
-            )
-
-            return all_messages
+            message_dict["role"] = "assistant"
+            if "function_call" in message.additional_kwargs:
+                message_dict["function_call"] = message.additional_kwargs[
+                    "function_call"
+                ]
+            if message.tool_calls or message.invalid_tool_calls:
+                message_dict["tool_calls"] = [
+                    _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+                ] + [
+                    _lc_invalid_tool_call_to_openai_tool_call(tc)
+                    for tc in message.invalid_tool_calls
+                ]
+            elif "tool_calls" in message.additional_kwargs:
+                message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+                tool_call_supported_props = {"id", "type", "function"}
+                message_dict["tool_calls"] = [
+                    {
+                        k: v
+                        for k, v in tool_call.items()
+                        if k in tool_call_supported_props
+                    }
+                    for tool_call in message_dict["tool_calls"]
+                ]
+            else:
+                pass
+            # If tool calls present, content null value should be None not empty string.
+            if "function_call" in message_dict or "tool_calls" in message_dict:
+                message_dict["content"] = message_dict["content"] or None
 
         elif isinstance(message, SystemMessage):
-            converted_msg = [
-                {"role": "system", "content": self._convert_content(message.content)}
-            ]
-            return converted_msg
-
+            message_dict["role"] = message.additional_kwargs.get(
+                "__openai_role__", "system"
+            )
+        elif isinstance(message, FunctionMessage):
+            message_dict["role"] = "function"
         elif isinstance(message, ToolMessage):
-            formatted_content = f"{message.name}: {message.content}"
-            return [
-                {
-                    "role": "tool",
-                    "content": {"type": "text", "text": formatted_content},
-                    "tool_call_id": message.tool_call_id,
-                }
-            ]
+            message_dict["role"] = "tool"
+            message_dict["tool_call_id"] = message.tool_call_id
+
+            supported_props = {"content", "role", "tool_call_id"}
+            message_dict = {
+                k: v for k, v in message_dict.items() if k in supported_props
+            }
         else:
-            raise ValueError(f"Unsupported message type: {type(message)}")
+            raise TypeError(f"Got unknown type {message}")
+        return message_dict
 
-    def _extract_data_from_messages(
-        self, messages: List[BaseMessage]
-    ) -> Tuple[Dict[str, str], Optional[str], Optional[str]]:
-
-        new_messages = []
-        image_url = None
-        image = None
-
-        def process_content(role, content):
-            nonlocal image, image_url
-            if isinstance(content, str):
-                new_messages.append({"role": role, "content": content})
-            elif isinstance(content, dict):
-                if content["type"] == "text":
-                    new_messages.append({"role": role, "content": content["text"]})
-                elif content["type"] == "image":
-                    image = content["image"]
-                elif content["type"] == "image_url":
-                    image_url = content["image_url"]
-
-        for message in messages:
-            role = message["role"]
-            content = message["content"]
-            if isinstance(content, list):
-                for single_content in content:
-                    process_content(role, single_content)
-            else:
-                process_content(role, content)
-
-        return new_messages, image_url, image
-
-    def _create_chat_generations(
-        self, response: GenerateResponse.Result, method: str
-    ) -> List[BaseMessage]:
-
-        chat_gen = None
-
-        if method == "function_calling":
-            ai_message = AIMessage(content="", tool_calls=[])
-            parsed_output = json.loads(response.text)
-
-            if (
-                "response" in parsed_output and "tool_calls" in parsed_output["response"]
-            ) or ("tool_calls" in parsed_output):
-
-                if "tool_calls" in parsed_output:
-                    tool_calls = parsed_output["tool_calls"]
-                elif (
-                    "response" in parsed_output
-                    and "tool_calls" in parsed_output["response"]
-                ):
-                    tool_calls = parsed_output["response"]["tool_calls"]
-                    ai_message.content = parsed_output["thinking"]
-
-                for tool in tool_calls:
-                    ai_message.tool_calls.append(
-                        {
-                            "name": tool["name"],
-                            "args": tool["arguments"],
-                            "type": "tool_call",
-                            "id": f'{tool["name"]}_{uuid.uuid4()}',
-                        }
-                    )
-
-            else:
-                ai_message.content = parsed_output["response"]["text"]
-
-            chat_gen = ChatGeneration(message=ai_message)
-        else:
-            chat_gen = ChatGeneration(message=AIMessage(content=response.text))
-
-        return ChatResult(generations=[chat_gen])
-
-    def _generate(
+    def _get_request_payload(
         self,
-        messages: List[BaseMessage],
+        input_: LanguageModelInput,
+        *,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> dict:
+        messages = self._convert_input(input_).to_messages()
+        if stop is not None:
+            kwargs["stop"] = stop
 
-        dict_messages = []
-        for message in messages:
-            dict_messages.extend(self._convert_message_to_dict(message))
+        return {
+            "messages": [self._convert_message_to_dict(m) for m in messages],
+            **self._default_params,
+            **kwargs,
+        }
 
-        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
+    def _create_chat_result(
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
+    ) -> ChatResult:
+        generations = []
 
-        formatted_prompt = self._generate_prompt(chat_messages, **kwargs)
-
-        goal_action = self._create_action_goal(
-            formatted_prompt, stop, image_url, image, **kwargs
+        response_dict = (
+            response if isinstance(response, dict) else response.model_dump()
         )
+        if response_dict.get("error"):
+            raise ValueError(response_dict.get("error"))
 
-        result, status = self.llama_client.generate_response(goal_action)
+        token_usage = response_dict.get("usage")
+        for res in response_dict["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = _create_usage_metadata(token_usage)
+            generation_info = generation_info or {}
+            generation_info["finish_reason"] = (
+                res.get("finish_reason")
+                if res.get("finish_reason") is not None
+                else generation_info.get("finish_reason")
+            )
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
+            gen = ChatGeneration(message=message, generation_info=generation_info)
+            generations.append(gen)
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": response_dict.get("model", self.model_name),
+            "system_fingerprint": response_dict.get("system_fingerprint", ""),
+        }
+
+        if isinstance(response, openai.BaseModel) and getattr(
+            response, "choices", None
+        ):
+            message = response.choices[0].message  # type: ignore[attr-defined]
+            if hasattr(message, "parsed"):
+                generations[0].message.additional_kwargs["parsed"] = message.parsed
+            if hasattr(message, "refusal"):
+                generations[0].message.additional_kwargs["refusal"] = message.refusal
+
+        return ChatResult(generations=generations, llm_output=llm_output)
+
+    def _send_llama_request(self, payload: Dict[str, Any]) -> Any:
+        chat_request = GenerateChatCompletions.Goal()
+        chat_request.messages = []
+        
+        print(payload)
+
+        for message in payload["messages"]:
+            print(f'message: {message}')
+            chat_message = ChatMessage()
+            chat_message.role = message["role"]
+            if type(message["content"]) == str:
+                chat_message.content = message["content"]
+            elif type(message["content"]) == list:
+                for content in message["content"]:
+                    chat_content = Content()
+                    chat_content.text = content["text"]
+                    chat_content.type = content["type"]
+                    chat_message.content_parts.append(chat_content)
+            chat_request.messages.append(chat_message)
+        
+        sampling_config = self.llama_client._create_sampling_config("")
+        chat_request.sampling_config = sampling_config
+
+        result, status = self.llama_client.generate_chat_completions(chat_request)
         response = result.response
 
-        if status != GoalStatus.STATUS_SUCCEEDED:
-            return ""
+        print(response)
+        return {}
 
-        return self._create_chat_generations(response, kwargs.get("method", "chat"))
-
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-
-        if kwargs.get("method") == "function_calling":
-            raise ValueError(
-                "Streaming is not supported when using 'function_calling' method."
-            )
-
-        dict_messages = []
-        for message in messages:
-            dict_messages.extend(self._convert_message_to_dict(message))
-
-        chat_messages, image_url, image = self._extract_data_from_messages(dict_messages)
-
-        formatted_prompt = self._generate_prompt(chat_messages)
-
-        goal_action = self._create_action_goal(
-            formatted_prompt, stop, image_url, image, **kwargs
-        )
-
-        for pt in self.llama_client.generate_response(goal_action, stream=True):
-
-            if run_manager:
-                run_manager.on_llm_new_token(
-                    pt.text,
-                    verbose=self.verbose,
-                )
-
-            yield ChatGenerationChunk(message=AIMessageChunk(content=pt.text))
-
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "all", "one", "any"], bool]
-        ] = "auto",
-        method: Literal[
-            "function_calling", "json_schema", "json_mode"
-        ] = "function_calling",
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-
-        formatted_tools = [convert_to_openai_tool(tool)["function"] for tool in tools]
-        tool_names = [ft["name"] for ft in formatted_tools]
-        valid_choices = ["auto", "all", "one", "any"]
-
-        is_valid_choice = tool_choice in valid_choices
-        chosen_tool = [f for f in formatted_tools if f["name"] == tool_choice]
-
-        if not chosen_tool and not is_valid_choice:
-            raise ValueError(
-                f"Tool choice {tool_choice} was specified, but the only "
-                f"provided tools were {tool_names}."
-            )
-
-        grammar = {}
-
-        if method == "json_mode" or method == "json_schema":
-            grammar = chosen_tool[0]["parameters"]
-
-        else:
-            grammar = {
-                "type": "object",
-                "properties": {
-                    "thinking": {"type": "string"},
-                    "response": {
-                        "type": "object",
-                        "oneOf": [
-                            {
-                                "properties": {"text": {"type": "string"}},
-                                "required": ["text"],
-                            },
-                        ],
-                    },
-                },
-                "required": ["thinking", "response"],
-            }
-
-            tool_calls = {
-                "type": "object",
-                "properties": {
-                    "tool_calls": {
-                        "type": "array",
-                        "items": {"type": "object"},
-                        "maxItems": 10,
-                    }
-                },
-                "required": ["tool_calls"],
-            }
-
-            if chosen_tool:
-                tool_calls["properties"]["tool_calls"]["items"]["oneOf"] = [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string", "const": chosen_tool[0]["name"]},
-                            "arguments": chosen_tool[0]["parameters"],
-                        },
-                        "required": ["name", "arguments"],
-                    }
-                ]
-
-            else:
-                only_tool_calling = tool_choice != "auto"
-                tool_choice = "any" if not only_tool_calling else tool_choice
-                tool_calls["properties"]["tool_calls"]["items"][f"{tool_choice}Of"] = []
-
-                for tool in formatted_tools:
-                    new_tool = {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string", "const": tool["name"]},
-                            "arguments": tool["parameters"],
-                        },
-                        "required": ["name", "arguments"],
-                    }
-                    tool_calls["properties"]["tool_calls"]["items"][
-                        f"{tool_choice}Of"
-                    ].append(new_tool)
-
-            if only_tool_calling:
-                grammar = tool_calls
-            else:
-                grammar["properties"]["response"]["oneOf"].append(tool_calls)
-
-        return super().bind(
-            tools_grammar=json.dumps(grammar), tools=tools, method=method, **kwargs
-        )
-
-    def with_structured_output(
-        self,
-        schema: Optional[Union[Dict, Type[BaseModel], Type]] = None,
-        *,
-        include_raw: bool = False,
-        method: Literal[
-            "function_calling", "json_schema", "json_mode"
-        ] = "function_calling",
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
-
-        if method == "json_mode" or method == "json_schema":
-            tool_name = schema.__name__
-
-            llm = self.bind_tools([schema], tool_choice=tool_name, method=method)
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-
-        elif method == "function_calling":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is not 'json_mode'. "
-                    "Received None."
-                )
-            schema = convert_to_openai_tool(schema)["function"]
-            tool_name = schema["name"]
-
-            llm = self.bind_tools([schema], tool_choice=tool_name, method=method)
-            if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
-                    first_tool_only=True,  # type: ignore[list-item]
-                )
-            else:
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=tool_name, first_tool_only=True
-                )
-        else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
-            )
-
-        if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-            )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=llm) | parser_with_fallback
-
-        else:
-            return llm | output_parser
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        generation_info = None
+        response = self._send_llama_request(payload)
+        return self._create_chat_result(response, generation_info)

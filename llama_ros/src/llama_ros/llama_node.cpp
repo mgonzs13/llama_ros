@@ -659,8 +659,12 @@ void LlamaNode::execute_chat_completions(
   auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
 
   // Update sampling config
+  RCLCPP_INFO(this->get_logger(), "Chat params received");
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
+
+  RCLCPP_INFO(this->get_logger(), "Chat params parsed");
+
   sparams.grammar = chat_params.grammar;
   sparams.grammar_lazy = chat_params.grammar_lazy;
   for (const auto &ele : sparams.grammar_trigger_words) {
@@ -670,6 +674,8 @@ void LlamaNode::execute_chat_completions(
   for (common_grammar_trigger t : chat_params.grammar_triggers) {
     sparams.grammar_trigger_words.push_back({t.word, t.at_start});
   }
+
+  RCLCPP_INFO(this->get_logger(), "Chat params updated");
 
   // call llama
   struct ResponseOutput output = this->llama->generate_response(

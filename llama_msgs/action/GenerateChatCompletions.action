@@ -4,7 +4,7 @@ string json_schema
 bool add_generation_prompt
 bool use_jinja
 ChatTool[] tools
-string tool_choice
+string tool_choice "none"
 bool extract_reasoning
 SamplingConfig sampling_config
 ---

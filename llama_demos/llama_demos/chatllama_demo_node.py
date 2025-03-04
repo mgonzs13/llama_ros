@@ -41,7 +41,7 @@ class ChatLlamaDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
-        self.declare_parameter("prompt", "Who is the character in the middle?")
+        self.declare_parameter("prompt", "What is ROS2?")
         self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.cv_bridge = CvBridge()
@@ -60,7 +60,6 @@ class ChatLlamaDemoNode(Node):
                 HumanMessagePromptTemplate.from_template(
                     template=[
                         {"type": "text", "text": f"<image>{self.prompt}"},
-                        {"type": "image_url", "image_url": "{image_url}"},
                     ]
                 ),
             ]
@@ -70,24 +69,8 @@ class ChatLlamaDemoNode(Node):
 
         self.initial_time = time.time()
 
-        for text in self.chain.stream(
-            {
-                "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
-            }
-        ):
-            self.tokens += 1
-            print(text, end="", flush=True)
-            if self.eval_time < 0:
-                self.eval_time = time.time()
-
-        print("", end="\n", flush=True)
-        self.get_logger().info("END")
-
-        end_time = time.time()
-        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
-        self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
-        )
+        response = self.chain.invoke({})
+        print(response)
 
 
 def main():
