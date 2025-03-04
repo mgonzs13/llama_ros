@@ -58,44 +58,16 @@ static ggml_type kv_cache_type_from_str(const std::string &s) {
   throw std::runtime_error("Unsupported cache type: " + s);
 }
 
-std::string hf_hub_download(const std::string &repo_id,
-                            const std::string &filename) {
+std::string download_model(const std::string &repo_id,
+                           const std::string &filename) {
 
-  auto result = huggingface_hub::hf_hub_download(repo_id, filename);
+  auto result = huggingface_hub::hf_hub_download_with_shards(repo_id, filename);
 
-  if (!result.success) {
-    LLAMA_LOG_ERROR("Failed to download file '%s' from repo '%s'",
-                    filename.c_str(), repo_id.c_str());
+  if (result.success) {
+    return result.path;
+  } else {
     return "";
   }
-
-  return result.path;
-}
-
-std::string download_model(const std::string &repo, const std::string &file) {
-  std::regex pattern(R"(-([0-9]+)-of-([0-9]+)\.gguf)");
-  std::smatch match;
-
-  if (std::regex_search(file, match, pattern)) {
-    int total_shards = std::stoi(match[2]);
-    std::string base_name = file.substr(0, match.position(0));
-
-    // Download shards
-    for (int i = 1; i <= total_shards; ++i) {
-      char shard_file[256];
-      snprintf(shard_file, sizeof(shard_file), "%s-%05d-of-%05d.gguf",
-               base_name.c_str(), i, total_shards);
-      hf_hub_download(repo, shard_file);
-    }
-
-    // Return first shard
-    char first_shard[256];
-    snprintf(first_shard, sizeof(first_shard), "%s-00001-of-%05d.gguf",
-             base_name.c_str(), total_shards);
-    return hf_hub_download(repo, first_shard);
-  }
-
-  return hf_hub_download(repo, file);
 }
 
 void llama_utils::declare_llama_params(
