@@ -93,11 +93,21 @@ def generate_launch_description():
             "n_keep": LaunchConfiguration("n_keep", default=-1),
             # paths params
             "model": LaunchConfiguration("model", default=""),
+            "model_repo": LaunchConfiguration("model_repo", default=""),
+            "model_filename": LaunchConfiguration("model_filename", default=""),
+            "mmproj": LaunchConfiguration("mmproj", default=""),
+            "mmproj_repo": LaunchConfiguration("mmproj_repo", default=""),
+            "mmproj_filename": LaunchConfiguration("mmproj_filename", default=""),
             "lora_adapters": LaunchConfiguration("lora_adapters", default="['']"),
+            "lora_adapters_repos": LaunchConfiguration(
+                "lora_adapters_repos", default="['']"
+            ),
+            "lora_adapters_filenames": LaunchConfiguration(
+                "lora_adapters_filenames", default="['']"
+            ),
             "lora_adapters_scales": LaunchConfiguration(
                 "lora_adapters_scales", default="[0.0]"
             ),
-            "mmproj": LaunchConfiguration("mmproj", default=""),
             "numa": LaunchConfiguration("numa", default="none"),
             "pooling_type": LaunchConfiguration("pooling_type", default=""),
             # prefix/suffix
