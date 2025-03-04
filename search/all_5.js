@@ -23,7 +23,7 @@ var searchData=
   ['docs_20',['docs',['../namespacellama__demos_1_1llama__rag__demo__node.html#a041abe55c7a19c326978e94879829f81',1,'llama_demos::llama_rag_demo_node']]],
   ['documents_21',['documents',['../namespacellama__demos_1_1llama__rerank__demo__node.html#ae584ce92dedb5d48796814473662f57a',1,'llama_demos::llama_rerank_demo_node']]],
   ['doi_22',['doi',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a566748f4a385b3bae261c0553121f050',1,'llama_ros::Metadata::GeneralInfo']]],
-  ['download_5fmodel_23',['download_model',['../namespacellama__bringup_1_1utils.html#ae86af060ede032c800e4ef5d4b1951c6',1,'llama_bringup::utils']]],
+  ['download_5fmodel_23',['download_model',['../llama__params_8cpp.html#a2d3996bd542a4a2b433b610d13faf5a3',1,'llama_params.cpp']]],
   ['dry_5fallowed_5flength_24',['dry_allowed_length',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#ab47daa47f95aab4996a09e80a92a6789',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
   ['dry_5fbase_25',['dry_base',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#add2cb64d3b1801c680c46eab8e121bdb',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
   ['dry_5fmultiplier_26',['dry_multiplier',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#a73c2fac7ba904796fdd6723e58c1d593',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
