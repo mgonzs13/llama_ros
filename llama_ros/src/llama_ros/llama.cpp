@@ -559,28 +559,6 @@ Llama::rank_documents(const std::string &query,
 }
 
 /*
-*****************************
-*    FORMAT CHAT SERVICE    *
-*****************************
-*/
-std::string
-Llama::format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
-                          bool add_ass, bool use_minja, bool use_tools) {
-  auto chat_templates = common_chat_templates_from_model(this->get_model(), "");
-
-  const common_chat_template *selected_template;
-
-  if (use_tools) {
-    selected_template = chat_templates.template_tool_use.get();
-  } else {
-    selected_template = chat_templates.template_default.get();
-  }
-
-  return common_chat_apply_template(*selected_template, chat_msgs, add_ass,
-                                    use_minja);
-}
-
-/*
 *******************************
 *            LORAS            *
 *******************************
@@ -1082,4 +1060,22 @@ struct CompletionOutput Llama::sample() {
 
   // return result
   return result;
+}
+
+/*
+*****************************
+*   CHAT COMPLETION FUNCS   *
+*****************************
+*/
+struct std::unique_ptr<struct common_chat_templates,
+                       common_chat_templates_deleter>
+Llama::get_chat_templates() {
+  return std::unique_ptr<struct common_chat_templates,
+                         common_chat_templates_deleter>(
+      common_chat_templates_init(this->get_model(), nullptr));
+}
+struct common_chat_params
+Llama::get_chat_params(struct common_chat_templates *tmpls,
+                       common_chat_templates_inputs inputs) {
+  return common_chat_templates_apply(tmpls, inputs);
 }

@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "chat.h"
 #include "common.h"
 #include "llama.h"
 
@@ -115,11 +116,6 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
             "detokenize",
             std::bind(&LlamaNode::detokenize_service_callback, this, _1, _2));
 
-    this->format_chat_service_ =
-        this->create_service<llama_msgs::srv::FormatChatMessages>(
-            "format_chat_prompt",
-            std::bind(&LlamaNode::format_chat_service_callback, this, _1, _2));
-
     this->list_loras_service_ =
         this->create_service<llama_msgs::srv::ListLoRAs>(
             "list_loras",
@@ -137,6 +133,14 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
             std::bind(&LlamaNode::handle_goal, this, _1, _2),
             std::bind(&LlamaNode::handle_cancel, this, _1),
             std::bind(&LlamaNode::handle_accepted, this, _1));
+
+    this->goal_handle_chat_ = nullptr;
+    this->generate_chat_completions_action_server_ =
+        rclcpp_action::create_server<GenerateChatCompletions>(
+            this, "generate_chat_completions",
+            std::bind(&LlamaNode::handle_goal_chat_completions, this, _1, _2),
+            std::bind(&LlamaNode::handle_cancel_chat_completions, this, _1),
+            std::bind(&LlamaNode::handle_accepted_chat_completions, this, _1));
   }
 
   RCLCPP_INFO(get_logger(), "[%s] Activated", this->get_name());
@@ -172,9 +176,6 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
     this->detokenize_service_.reset();
     this->detokenize_service_ = nullptr;
 
-    this->format_chat_service_.reset();
-    this->format_chat_service_ = nullptr;
-
     this->list_loras_service_.reset();
     this->list_loras_service_ = nullptr;
 
@@ -184,6 +185,10 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
     this->goal_handle_ = nullptr;
     this->generate_response_action_server_.reset();
     this->generate_response_action_server_ = nullptr;
+
+    this->goal_handle_chat_ = nullptr;
+    this->generate_chat_completions_action_server_.reset();
+    this->generate_chat_completions_action_server_ = nullptr;
   }
 
   RCLCPP_INFO(get_logger(), "[%s] Deactivated", this->get_name());
@@ -374,31 +379,6 @@ void LlamaNode::rerank_documents_service_callback(
 }
 
 /*
-*****************************
-*    FORMAT CHAT SERVICE    *
-*****************************
-*/
-void LlamaNode::format_chat_service_callback(
-    const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request> request,
-    std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response) {
-
-  std::vector<struct common_chat_msg> converted_messages;
-  for (auto message : request->messages) {
-    struct common_chat_msg aux;
-    aux.role = message.role;
-    aux.content = message.content;
-
-    converted_messages.push_back(aux);
-  }
-
-  std::string formatted_chat =
-      this->llama->format_chat_prompt(converted_messages, request->add_ass,
-                                      request->use_minja, request->use_tools);
-
-  response->formatted_prompt = formatted_chat;
-}
-
-/*
 *******************************
 *            LORAS            *
 *******************************
@@ -567,5 +547,187 @@ void LlamaNode::send_text(const struct CompletionOutput &completion) {
     }
 
     this->goal_handle_->publish_feedback(feedback);
+  }
+}
+
+/*
+*****************************
+*     GENERATE CHAT         *
+*****************************
+*/
+
+rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
+    const rclcpp_action::GoalUUID &uuid,
+    std::shared_ptr<const GenerateChatCompletions::Goal> goal) {
+  (void)uuid;
+  (void)goal;
+
+  if (this->goal_handle_chat_ != nullptr &&
+      this->goal_handle_chat_->is_active()) {
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse LlamaNode::handle_cancel_chat_completions(
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+  (void)goal_handle;
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel Llama node");
+  this->llama->cancel();
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void LlamaNode::handle_accepted_chat_completions(
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+  this->goal_handle_chat_ = goal_handle;
+  std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1),
+              goal_handle}
+      .detach();
+}
+
+bool LlamaNode::goal_empty_chat_completions(
+    std::shared_ptr<const GenerateChatCompletions::Goal> goal) {
+  return goal->messages.size() == 0;
+}
+
+void LlamaNode::execute_chat_completions(
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+
+  // get goal data
+  this->goal_handle_chat_ = goal_handle;
+  auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<GenerateChatCompletions::Result>();
+
+  // check if goal is empty
+  if (this->goal_empty_chat_completions(goal)) {
+    this->goal_handle_chat_->abort(result);
+    return;
+  }
+
+  this->llama->reset();
+  RCLCPP_INFO(this->get_logger(), "Chat messages received");
+
+  struct common_chat_templates_inputs inputs;
+  std::vector<common_chat_msg> messages;
+  for (auto message : goal->messages) {
+    struct common_chat_msg msg;
+    msg.role = message.role;
+    msg.content = message.content;
+    std::vector<common_chat_msg_content_part> content_parts;
+    for (auto content_part : message.content_parts) {
+      struct common_chat_msg_content_part part;
+      part.type = content_part.type;
+      part.text = content_part.text;
+      content_parts.push_back(part);
+    }
+    msg.content_parts = content_parts;
+
+    std::vector<common_chat_tool_call> tool_calls;
+    for (auto tool_call : message.tool_calls) {
+      struct common_chat_tool_call call;
+      call.name = tool_call.name;
+      call.arguments = tool_call.arguments;
+      call.id = tool_call.id;
+      tool_calls.push_back(call);
+    }
+    msg.tool_calls = tool_calls;
+    messages.push_back(msg);
+  }
+  inputs.messages = messages;
+  inputs.grammar = goal->grammar;
+  inputs.json_schema = goal->json_schema;
+  inputs.add_generation_prompt = goal->add_generation_prompt;
+  inputs.use_jinja = goal->use_jinja;
+
+  std::vector<common_chat_tool> tools;
+  for (auto tool : goal->tools) {
+    struct common_chat_tool t;
+    t.name = tool.name;
+    t.description = tool.description;
+    t.parameters = tool.parameters;
+    tools.push_back(t);
+  }
+
+  inputs.tools = tools;
+  inputs.tool_choice =
+      common_chat_tool_choice_parse_oaicompat(goal->tool_choice);
+  inputs.extract_reasoning = goal->extract_reasoning;
+
+  // Get model chat template
+  auto tmpls = this->llama->get_chat_templates();
+  auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
+
+  // Update sampling config
+  auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
+                                                    this->llama->get_n_vocab());
+  sparams.grammar = chat_params.grammar;
+  sparams.grammar_lazy = chat_params.grammar_lazy;
+  for (const auto &ele : sparams.grammar_trigger_words) {
+    sparams.grammar_trigger_words.push_back({ele.word, ele.at_start});
+  }
+
+  for (common_grammar_trigger t : chat_params.grammar_triggers) {
+    sparams.grammar_trigger_words.push_back({t.word, t.at_start});
+  }
+
+  // call llama
+  struct ResponseOutput output = this->llama->generate_response(
+      chat_params.prompt, sparams,
+      std::bind(&LlamaNode::send_text_chat_completions, this, _1));
+  if (output.stop == StopType::FULL_STOP) {
+    auto completion_results = output.completions;
+
+    for (auto completion : completion_results) {
+      result->response.text.append(this->llama->detokenize({completion.token}));
+      result->response.tokens.push_back(completion.token);
+
+      llama_msgs::msg::TokenProbArray probs_msg;
+      for (auto prob : completion.probs) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = prob.token;
+        aux.probability = prob.probability;
+        aux.token_text = this->llama->detokenize({prob.token});
+        probs_msg.data.push_back(aux);
+      }
+      result->response.probs.push_back(probs_msg);
+    }
+  }
+
+  if (rclcpp::ok()) {
+
+    if (output.stop == StopType::CANCEL) {
+      this->goal_handle_chat_->canceled(result);
+
+    } else if (output.stop == StopType::ABORT) {
+      this->goal_handle_chat_->abort(result);
+
+    } else {
+      this->goal_handle_chat_->succeed(result);
+    }
+
+    this->goal_handle_ = nullptr;
+  }
+}
+
+void LlamaNode::send_text_chat_completions(
+    const struct CompletionOutput &completion) {
+  if (this->goal_handle_chat_ != nullptr) {
+    auto feedback = std::make_shared<GenerateChatCompletions::Feedback>();
+
+    feedback->partial_response.text =
+        this->llama->detokenize({completion.token});
+    feedback->partial_response.token = completion.token;
+    feedback->partial_response.probs.chosen_token = completion.token;
+
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llama->detokenize({prob.token});
+      feedback->partial_response.probs.data.push_back(aux);
+    }
+
+    this->goal_handle_chat_->publish_feedback(feedback);
   }
 }

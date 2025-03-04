@@ -1,0 +1,13 @@
+ChatMessage[] messages            # List of chat messages
+string grammar
+string json_schema
+bool add_generation_prompt
+bool use_jinja
+ChatTool[] tools
+string tool_choice
+bool extract_reasoning
+SamplingConfig sampling_config
+---
+Response response                   # final response
+---
+PartialResponse partial_response    # partial response
