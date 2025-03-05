@@ -1,0 +1,3 @@
+int32 completion_tokens
+int32 prompt_tokens
+int32 total_tokens

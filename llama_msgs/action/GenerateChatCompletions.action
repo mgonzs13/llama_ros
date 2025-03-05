@@ -4,10 +4,16 @@ string json_schema
 bool add_generation_prompt
 bool use_jinja
 ChatTool[] tools
-string tool_choice "none"
+string tool_choice "auto"
 bool extract_reasoning
 SamplingConfig sampling_config
 ---
-Response response                   # final response
+string id
+Choice[] choices
+int32 created
+string model
+string object "chat.completion"
+string system_fingerprint
+UsageStats usage
 ---
 PartialResponse partial_response    # partial response

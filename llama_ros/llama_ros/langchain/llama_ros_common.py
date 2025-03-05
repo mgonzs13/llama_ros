@@ -36,6 +36,7 @@ from llama_msgs.action import GenerateResponse
 from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
 from llama_msgs.msg import Metadata
+from llama_msgs.msg import SamplingConfig
 from llama_msgs.msg import GrammarTrigger
 
 
@@ -141,58 +142,64 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
             goal.stop = stop
 
         # sampling params
-        goal.sampling_config.n_prev = self.n_prev
-        goal.sampling_config.n_probs = self.n_probs
-        goal.sampling_config.min_keep = self.min_keep
+        goal.sampling_config = self._set_sampling_config()
 
-        goal.sampling_config.ignore_eos = self.ignore_eos
+        return goal
+    
+    def _set_sampling_config(self):
+        sampling_config = SamplingConfig()
+        sampling_config.n_prev = self.n_prev
+        sampling_config.n_probs = self.n_probs
+        sampling_config.min_keep = self.min_keep
+        
+        sampling_config.ignore_eos = self.ignore_eos
         for key in self.logit_bias:
             lb = LogitBias()
             lb.token = key
             lb.bias = self.logit_bias[key]
-            goal.sampling_config.logit_bias.data.append(lb)
+            sampling_config.logit_bias.data.append(lb)
+            
+        sampling_config.temp = self.temp
+        sampling_config.dynatemp_range = self.dynatemp_range
+        sampling_config.dynatemp_exponent = self.dynatemp_exponent
+        
+        sampling_config.top_k = self.top_k
+        sampling_config.top_p = self.top_p
+        sampling_config.min_p = self.min_p
+        sampling_config.xtc_probability = self.xtc_probability
+        sampling_config.xtc_threshold = self.xtc_threshold
+        sampling_config.typical_p = self.typical_p
+        
+        sampling_config.penalty_last_n = self.penalty_last_n
+        sampling_config.penalty_repeat = self.penalty_repeat
+        sampling_config.penalty_freq = self.penalty_freq
+        sampling_config.penalty_present = self.penalty_present
+        
+        sampling_config.dry_multiplier = self.dry_multiplier
+        sampling_config.dry_base = self.dry_base
+        sampling_config.dry_allowed_length = self.dry_allowed_length
+        sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
+        sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
+        
+        sampling_config.mirostat = self.mirostat
+        sampling_config.mirostat_eta = self.mirostat_eta
+        sampling_config.mirostat_tau = self.mirostat_tau
 
-        goal.sampling_config.temp = self.temp
-        goal.sampling_config.dynatemp_range = self.dynatemp_range
-        goal.sampling_config.dynatemp_exponent = self.dynatemp_exponent
-
-        goal.sampling_config.top_k = self.top_k
-        goal.sampling_config.top_p = self.top_p
-        goal.sampling_config.min_p = self.min_p
-        goal.sampling_config.xtc_probability = self.xtc_probability
-        goal.sampling_config.xtc_threshold = self.xtc_threshold
-        goal.sampling_config.typical_p = self.typical_p
-
-        goal.sampling_config.penalty_last_n = self.penalty_last_n
-        goal.sampling_config.penalty_repeat = self.penalty_repeat
-        goal.sampling_config.penalty_freq = self.penalty_freq
-        goal.sampling_config.penalty_present = self.penalty_present
-
-        goal.sampling_config.dry_multiplier = self.dry_multiplier
-        goal.sampling_config.dry_base = self.dry_base
-        goal.sampling_config.dry_allowed_length = self.dry_allowed_length
-        goal.sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
-        goal.sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
-
-        goal.sampling_config.mirostat = self.mirostat
-        goal.sampling_config.mirostat_eta = self.mirostat_eta
-        goal.sampling_config.mirostat_tau = self.mirostat_tau
-
-        goal.sampling_config.samplers_sequence = self.samplers_sequence
-
-        goal.sampling_config.grammar = self.grammar
-        goal.sampling_config.grammar_schema = (
-            tools_grammar if tools_grammar else self.grammar_schema
-        )
-        goal.sampling_config.grammar_lazy = self.grammar_lazy
-        goal.sampling_config.grammar_trigger_words = [
+        sampling_config.samplers_sequence = self.samplers_sequence
+        
+        sampling_config.grammar = self.grammar
+        sampling_config.grammar_schema = self.grammar_schema
+        sampling_config.grammar_lazy = self.grammar_lazy
+        sampling_config.grammar_trigger_words = [
             GrammarTrigger(word=pair[0], at_start=pair[1])
             for pair in self.grammar_trigger_words
         ]
-        goal.sampling_config.grammar_trigger_tokens = self.grammar_trigger_tokens
-        goal.sampling_config.preserved_tokens = self.preserved_tokens
-
-        goal.sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
-        goal.sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
-
-        return goal
+        sampling_config.grammar_trigger_tokens = self.grammar_trigger_tokens
+        sampling_config.preserved_tokens = self.preserved_tokens
+        
+        sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
+        sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
+        
+        return sampling_config
+        
+        

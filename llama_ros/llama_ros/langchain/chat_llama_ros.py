@@ -239,8 +239,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     chat_message.content_parts.append(chat_content)
             chat_request.messages.append(chat_message)
         
-        sampling_config = self.llama_client._create_sampling_config("")
-        chat_request.sampling_config = sampling_config
+        chat_request.sampling_config = self._set_sampling_config()
 
         result, status = self.llama_client.generate_chat_completions(chat_request)
         response = result.response

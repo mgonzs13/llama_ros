@@ -33,6 +33,7 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
+#include "llama_utils/chat_utils.hpp"
 #include "llama_utils/llama_params.hpp"
 
 using namespace llama_ros;
@@ -606,64 +607,16 @@ void LlamaNode::execute_chat_completions(
   }
 
   this->llama->reset();
-  RCLCPP_INFO(this->get_logger(), "Chat messages received");
 
-  struct common_chat_templates_inputs inputs;
-  std::vector<common_chat_msg> messages;
-  for (auto message : goal->messages) {
-    struct common_chat_msg msg;
-    msg.role = message.role;
-    msg.content = message.content;
-    std::vector<common_chat_msg_content_part> content_parts;
-    for (auto content_part : message.content_parts) {
-      struct common_chat_msg_content_part part;
-      part.type = content_part.type;
-      part.text = content_part.text;
-      content_parts.push_back(part);
-    }
-    msg.content_parts = content_parts;
-
-    std::vector<common_chat_tool_call> tool_calls;
-    for (auto tool_call : message.tool_calls) {
-      struct common_chat_tool_call call;
-      call.name = tool_call.name;
-      call.arguments = tool_call.arguments;
-      call.id = tool_call.id;
-      tool_calls.push_back(call);
-    }
-    msg.tool_calls = tool_calls;
-    messages.push_back(msg);
-  }
-  inputs.messages = messages;
-  inputs.grammar = goal->grammar;
-  inputs.json_schema = goal->json_schema;
-  inputs.add_generation_prompt = goal->add_generation_prompt;
-  inputs.use_jinja = goal->use_jinja;
-
-  std::vector<common_chat_tool> tools;
-  for (auto tool : goal->tools) {
-    struct common_chat_tool t;
-    t.name = tool.name;
-    t.description = tool.description;
-    t.parameters = tool.parameters;
-    tools.push_back(t);
-  }
-
-  inputs.tools = tools;
-  inputs.tool_choice =
-      common_chat_tool_choice_parse_oaicompat(goal->tool_choice);
-  inputs.extract_reasoning = goal->extract_reasoning;
-
+  struct common_chat_templates_inputs inputs =
+      llama_utils::parse_chat_completions_goal(goal);
   // Get model chat template
   auto tmpls = this->llama->get_chat_templates();
+
   auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
 
-  // Update sampling config
-  RCLCPP_INFO(this->get_logger(), "Chat params received");
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
-
-  RCLCPP_INFO(this->get_logger(), "Chat params parsed");
 
   sparams.grammar = chat_params.grammar;
   sparams.grammar_lazy = chat_params.grammar_lazy;
@@ -675,29 +628,16 @@ void LlamaNode::execute_chat_completions(
     sparams.grammar_trigger_words.push_back({t.word, t.at_start});
   }
 
-  RCLCPP_INFO(this->get_logger(), "Chat params updated");
-
   // call llama
   struct ResponseOutput output = this->llama->generate_response(
       chat_params.prompt, sparams,
       std::bind(&LlamaNode::send_text_chat_completions, this, _1));
+
+  llama_utils::ResponseResult response_result;
+  // TODO: Fill response_result with the data
+
   if (output.stop == StopType::FULL_STOP) {
-    auto completion_results = output.completions;
-
-    for (auto completion : completion_results) {
-      result->response.text.append(this->llama->detokenize({completion.token}));
-      result->response.tokens.push_back(completion.token);
-
-      llama_msgs::msg::TokenProbArray probs_msg;
-      for (auto prob : completion.probs) {
-        llama_msgs::msg::TokenProb aux;
-        aux.token = prob.token;
-        aux.probability = prob.probability;
-        aux.token_text = this->llama->detokenize({prob.token});
-        probs_msg.data.push_back(aux);
-      }
-      result->response.probs.push_back(probs_msg);
-    }
+    *result = llama_utils::generate_chat_completions_result(response_result);
   }
 
   if (rclcpp::ok()) {

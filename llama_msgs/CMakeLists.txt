@@ -30,6 +30,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ChatTool.msg"
   "msg/Content.msg"
   "msg/ToolCall.msg"
+  "msg/Choice.msg"
+  "msg/UsageStats.msg"
 
   "action/GenerateResponse.action"
   "action/GenerateChatCompletions.action"
