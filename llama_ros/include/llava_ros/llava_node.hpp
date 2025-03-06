@@ -32,6 +32,7 @@
 #include "common.h"
 
 #include "llama_msgs/action/generate_response.hpp"
+#include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_ros/llama_node.hpp"
 #include "llava_ros/llava.hpp"
 
@@ -42,6 +43,10 @@ class LlavaNode : public llama_ros::LlamaNode {
   using GenerateResponse = llama_msgs::action::GenerateResponse;
   using GoalHandleGenerateResponse =
       rclcpp_action::ServerGoalHandle<GenerateResponse>;
+  using GenerateChatCompletions = llama_msgs::action::GenerateChatCompletions;
+  using GoalHandleGenerateChatCompletions =
+      rclcpp_action::ServerGoalHandle<GenerateChatCompletions>;
+    
 
 public:
   LlavaNode();
@@ -54,6 +59,12 @@ protected:
   bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
   void execute(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
+
+  bool goal_empty_chat_completions(
+      std::shared_ptr<const GenerateChatCompletions::Goal> goal) override;
+  void execute_chat_completions(
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle)
+      override;
 };
 
 } // namespace llava_ros

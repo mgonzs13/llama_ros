@@ -86,9 +86,13 @@ from llama_msgs.msg import ChatMessage, Content
 from llama_msgs.srv import Detokenize
 from llama_msgs.action import GenerateChatCompletions
 import openai
+from pydantic import Field
 
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
+    image_data: Optional[str] = Field(default=None, exclude=True)
+    image_url: Optional[str] = Field(default=None, exclude=True)
+    
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -107,24 +111,20 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if type(contents) == list:
             for content in contents:
                 if content["type"] == "image_url":
-                    image_url = content["image_url"]
+                    self.image_url = content["image_url"]['url']
                     contents.remove(content)
-                    super().bind(image_url=image_url)
                     return contents
                 elif content["type"] == "image":
-                    image_data = content["image"]
-                    super().bind(image_data=image_data)
+                    self.image_data = content["image"]
                     contents.remove(content)
                     return contents
         elif type(contents) == dict:
             if contents["type"] == "image_url":
-                image_url = contents["image_url"]
-                super().bind(image_url=image_url)
+                self.image_url = contents["image_url"]['url']
                 return {"type": "text", "text": ""}
 
             elif contents["type"] == "image":
-                image_data = contents["image"]
-                super().bind(image_data=image_data)
+                self.image_data = contents["image"]
                 return {"type": "text", "text": ""}     
 
         return contents
@@ -255,17 +255,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
-    def _send_llama_request(self, payload: Dict[str, Any]) -> Any:
+    def _send_llama_request(self, payload: Dict[str, Any], **kwargs) -> Any:
         chat_request = GenerateChatCompletions.Goal()
         chat_request.add_generation_prompt = True
         chat_request.use_jinja = True
         chat_request.messages = []
-        
-        image_data = self.configurable_fields.get("image_data")
-        image_url = self.configurable_fields.get("image_url")
 
-        if (image_url or image_data) is not None:
-            chat_request.image = self._get_image(image_url, image_data)
+        if (self.image_url or self.image_data) is not None:
+            chat_request.image = self._get_image(self.image_url, self.image_data)
 
         for message in payload["messages"]:
             chat_message = ChatMessage()
@@ -287,6 +284,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        self.image_url = None
+        self.image_data = None
+
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_request(payload)
