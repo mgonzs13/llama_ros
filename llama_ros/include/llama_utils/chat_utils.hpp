@@ -88,6 +88,8 @@ static std::string gen_chatcmplid() {
   return "chatcmpl-" + random_string();
 }
 
+common_chat_tool_choice parse_chat_tool_choice(int choice);
+
 common_chat_templates_inputs parse_chat_completions_goal(
     const std::shared_ptr<
         const llama_msgs::action::GenerateChatCompletions::Goal>

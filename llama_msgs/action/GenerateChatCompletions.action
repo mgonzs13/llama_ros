@@ -4,9 +4,10 @@ string json_schema
 bool add_generation_prompt
 bool use_jinja
 ChatTool[] tools
-string tool_choice "auto"
+int32 tool_choice
 bool extract_reasoning
 SamplingConfig sampling_config
+sensor_msgs/Image image
 ---
 string id
 Choice[] choices

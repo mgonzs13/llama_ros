@@ -620,13 +620,7 @@ void LlamaNode::execute_chat_completions(
                                                     this->llama->get_n_vocab());
   sparams.grammar = chat_params.grammar;
   sparams.grammar_lazy = chat_params.grammar_lazy;
-  for (const auto &ele : sparams.grammar_trigger_words) {
-    sparams.grammar_trigger_words.push_back({ele.word, ele.at_start});
-  }
-
-  for (common_grammar_trigger t : chat_params.grammar_triggers) {
-    sparams.grammar_trigger_words.push_back({t.word, t.at_start});
-  }
+  sparams.grammar_triggers = chat_params.grammar_triggers;
 
   // call llama
   struct ResponseOutput output = this->llama->generate_response(

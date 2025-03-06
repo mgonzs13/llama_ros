@@ -85,8 +85,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     grammar: str = ""
     grammar_schema: str = ""
     grammar_lazy: bool = False
-    grammar_trigger_words: List[List[Union[int, bool]]] = []
-    grammar_trigger_tokens: List[int] = []
+    grammar_triggers: List[List[Union[int, str]]] = []
     preserved_tokens: List[int] = []
 
     penalty_prompt_tokens: List[int] = []
@@ -190,11 +189,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar = self.grammar
         sampling_config.grammar_schema = self.grammar_schema
         sampling_config.grammar_lazy = self.grammar_lazy
-        sampling_config.grammar_trigger_words = [
-            GrammarTrigger(word=pair[0], at_start=pair[1])
-            for pair in self.grammar_trigger_words
-        ]
-        sampling_config.grammar_trigger_tokens = self.grammar_trigger_tokens
+        sampling_config.grammar_triggers = self.grammar_triggers
         sampling_config.preserved_tokens = self.preserved_tokens
         
         sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens

@@ -25,6 +25,18 @@
 #include "llama_msgs/msg/choice.h"
 #include "llama_msgs/msg/tool_call.h"
 
+common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
+  if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO) {
+    return COMMON_CHAT_TOOL_CHOICE_AUTO;
+  } else if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_REQUIRED) {
+    return COMMON_CHAT_TOOL_CHOICE_REQUIRED;
+  } else if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_NONE) {
+    return COMMON_CHAT_TOOL_CHOICE_NONE;
+  } else {
+    throw std::runtime_error("Unsupported chat tool choice: " + std::to_string(type));
+  }
+}
+
 common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
     const std::shared_ptr<
         const llama_msgs::action::GenerateChatCompletions::Goal>
@@ -61,6 +73,7 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
   inputs.json_schema = goal->json_schema;
   inputs.add_generation_prompt = goal->add_generation_prompt;
   inputs.use_jinja = goal->use_jinja;
+  inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);
 
   return inputs;
 }
