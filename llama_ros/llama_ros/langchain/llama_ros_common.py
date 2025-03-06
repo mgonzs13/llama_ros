@@ -37,7 +37,7 @@ from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
 from llama_msgs.msg import Metadata
 from llama_msgs.msg import SamplingConfig
-from llama_msgs.msg import GrammarTrigger
+from sensor_msgs.msg import Image
 
 
 class LlamaROSCommon(BaseLanguageModel, ABC):
@@ -109,13 +109,21 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     def cancel(self) -> None:
         self.llama_client.cancel_generate_text()
 
+    def _get_image(self, image_url: str, image: np.ndarray) -> Image:
+        if image_url and image is None:
+            req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
+            response = urllib.request.urlopen(req)
+            arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
+            image = cv2.imdecode(arr, -1)
+
+        return self.cv_bridge.cv2_to_imgmsg(image)
+
     def _create_action_goal(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         image_url: Optional[str] = None,
         image: Optional[np.ndarray] = None,
-        tools_grammar: Optional[str] = None,
         **kwargs,
     ) -> GenerateResponse.Result:
 
@@ -125,16 +133,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
         # load image
         if image_url or image is not None:
-
-            if image_url and image is None:
-                req = urllib.request.Request(
-                    image_url, headers={"User-Agent": "Mozilla/5.0"}
-                )
-                response = urllib.request.urlopen(req)
-                arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-                image = cv2.imdecode(arr, -1)
-
-            goal.image = self.cv_bridge.cv2_to_imgmsg(image)
+            goal.image = self._get_image(image_url, image)
 
         # add stop
         if stop:

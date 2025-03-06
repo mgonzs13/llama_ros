@@ -41,7 +41,7 @@ class ChatLlamaDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
-        self.declare_parameter("prompt", "What is ROS2?")
+        self.declare_parameter("prompt", "Who is the character in the middle?")
         self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.cv_bridge = CvBridge()
@@ -60,6 +60,7 @@ class ChatLlamaDemoNode(Node):
                 HumanMessagePromptTemplate.from_template(
                     template=[
                         {"type": "text", "text": f"<image>{self.prompt}"},
+                        {"type": "image_url", "image_url": "{image_url}"},
                     ]
                 ),
             ]
@@ -69,7 +70,12 @@ class ChatLlamaDemoNode(Node):
 
         self.initial_time = time.time()
 
-        response = self.chain.invoke({})
+        response = self.chain.invoke(
+            {
+                "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
+            }
+        )
+        
         print(response)
 
 

@@ -96,11 +96,47 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     @property
     def _llm_type(self) -> str:
         return "chatllamaros"
+    
+    def _extract_image_data(self, contents: Union[List[Dict[str, str]], str, Dict[str, str]]) -> Tuple[str, str]:
+        image_data = None
+        image_url = None
+
+        if type(contents) == str:
+            return contents
+
+        if type(contents) == list:
+            for content in contents:
+                if content["type"] == "image_url":
+                    image_url = content["image_url"]
+                    contents.remove(content)
+                    super().bind(image_url=image_url)
+                    return contents
+                elif content["type"] == "image":
+                    image_data = content["image"]
+                    super().bind(image_data=image_data)
+                    contents.remove(content)
+                    return contents
+        elif type(contents) == dict:
+            if contents["type"] == "image_url":
+                image_url = contents["image_url"]
+                super().bind(image_url=image_url)
+                return {"type": "text", "text": ""}
+
+            elif contents["type"] == "image":
+                image_data = contents["image"]
+                super().bind(image_data=image_data)
+                return {"type": "text", "text": ""}     
+
+        return contents
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict:
+        message_content = _format_message_content(message.content)
+        content = self._extract_image_data(message_content)
+                
         message_dict: Dict[str, Any] = {
-            "content": _format_message_content(message.content)
+            "content": content,
         }
+        
         if (name := message.name or message.additional_kwargs.get("name")) is not None:
             message_dict["name"] = name
 
@@ -224,6 +260,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.add_generation_prompt = True
         chat_request.use_jinja = True
         chat_request.messages = []
+        
+        image_data = self.configurable_fields.get("image_data")
+        image_url = self.configurable_fields.get("image_url")
+
+        if (image_url or image_data) is not None:
+            chat_request.image = self._get_image(image_url, image_data)
 
         for message in payload["messages"]:
             chat_message = ChatMessage()
@@ -233,8 +275,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             elif type(message["content"]) == list:
                 for content in message["content"]:
                     chat_content = Content()
-                    chat_content.text = content["text"]
                     chat_content.type = content["type"]
+                    chat_content.text = content[content["type"]]
                     chat_message.content_parts.append(chat_content)
             chat_request.messages.append(chat_message)
         
