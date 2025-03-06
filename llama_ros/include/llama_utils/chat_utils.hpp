@@ -27,6 +27,7 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <random>
 
 #include "chat.h"
 #include "common.h"
@@ -67,6 +68,25 @@ struct ResponseResult {
   std::string oaicompat_model;
   std::string oaicompat_cmpl_id;
 };
+
+static std::string random_string() {
+  static const std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
+  std::string result(32, ' ');
+
+  for (int i = 0; i < 32; ++i) {
+      result[i] = str[generator() % str.size()];
+  }
+
+  return result;
+}
+
+static std::string gen_chatcmplid() {
+  return "chatcmpl-" + random_string();
+}
 
 common_chat_templates_inputs parse_chat_completions_goal(
     const std::shared_ptr<

@@ -204,7 +204,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": response_dict.get("model", self.model_name),
+            "model_name": response_dict.get("model", response['model']),
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
 
@@ -221,12 +221,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     def _send_llama_request(self, payload: Dict[str, Any]) -> Any:
         chat_request = GenerateChatCompletions.Goal()
+        chat_request.add_generation_prompt = True
+        chat_request.use_jinja = True
         chat_request.messages = []
-        
-        print(payload)
 
         for message in payload["messages"]:
-            print(f'message: {message}')
             chat_message = ChatMessage()
             chat_message.role = message["role"]
             if type(message["content"]) == str:
@@ -241,14 +240,55 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         
         chat_request.sampling_config = self._set_sampling_config()
 
-        result, status = self.llama_client.generate_chat_completions(chat_request)
-        response = result.response
+        result, _ = self.llama_client.generate_chat_completions(chat_request)
 
-        print(response)
-        return {}
+        return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_request(payload)
         return self._create_chat_result(response, generation_info)
+    
+    def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
+        result_dict = {}
+
+        result_dict['id'] = result.id
+        result_dict['created'] = result.created
+        result_dict['model'] = result.model
+        result_dict['object'] = result.object
+        result_dict['system_fingerprint'] = result.system_fingerprint
+        result_dict['choices'] = []
+
+        for choice in result.choices:
+            choice_dict = {}
+            choice_dict['finish_reason'] = choice.finish_reason
+            choice_dict['index'] = choice.index
+
+            msg_dict = {}
+            msg_dict['content'] = choice.message.content
+            msg_dict['role'] = choice.message.role
+            msg_dict['reasoning_content'] = choice.message.reasoning_content
+            msg_dict['tool_name'] = choice.message.tool_name
+            msg_dict['tool_call_id'] = choice.message.tool_call_id
+            msg_dict['content_parts'] = []
+            msg_dict['tool_calls'] = []
+            
+            for content in choice.message.content_parts:
+                content_dict = {}
+                content_dict['type'] = content.type
+                content_dict['text'] = content.text
+
+                msg_dict['content_parts'].append(content_dict)
+            for tool_call in choice.message.tool_calls:
+                tool_call_dict = {}
+                tool_call_dict['name'] = tool_call.name
+                tool_call_dict['arguments'] = tool_call.arguments
+                tool_call_dict['id'] = tool_call.id
+
+                msg_dict['tool_calls'].append(tool_call_dict)
+
+            choice_dict['message'] = msg_dict
+            result_dict['choices'].append(choice_dict)
+
+        return result_dict

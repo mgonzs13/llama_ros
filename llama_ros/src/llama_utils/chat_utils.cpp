@@ -75,7 +75,7 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   //   msg = common_chat_parse(result.content, result.oaicompat_chat_format);
   //   finish_reason = msg.tool_calls.empty() ? "stop" : "tool_calls";
   // } else {
-  //   msg.content = result.content;
+    msg.content = result.content;
   // }
 
   llama_msgs::msg::ChatMessage chat_msg;
