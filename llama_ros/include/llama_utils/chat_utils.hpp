@@ -69,7 +69,7 @@ struct ResponseResult {
   std::string oaicompat_cmpl_id;
 };
 
-static std::string random_string() {
+inline std::string random_string() {
   static const std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
   std::random_device rd;
@@ -84,7 +84,7 @@ static std::string random_string() {
   return result;
 }
 
-static std::string gen_chatcmplid() {
+inline std::string gen_chatcmplid() {
   return "chatcmpl-" + random_string();
 }
 

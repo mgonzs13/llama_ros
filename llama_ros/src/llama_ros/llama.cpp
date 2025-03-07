@@ -1074,6 +1074,10 @@ Llama::get_chat_templates() {
                          common_chat_templates_deleter>(
       common_chat_templates_init(this->get_model(), ""));
 }
+struct llama_perf_context_data Llama::get_perf_data() {
+  return llama_perf_context(this->ctx);
+} 
+
 struct common_chat_params
 Llama::get_chat_params(struct common_chat_templates *tmpls,
                        common_chat_templates_inputs inputs) {

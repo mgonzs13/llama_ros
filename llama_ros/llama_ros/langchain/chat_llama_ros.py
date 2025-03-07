@@ -36,12 +36,15 @@ from typing import (
     Dict,
     Iterator,
     Sequence,
+    TypeVar,
     Type,
     Union,
     Tuple,
+    cast,
 )
 from operator import itemgetter
-
+from functools import partial
+import warnings
 from pydantic import BaseModel, model_validator
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from langchain_core.output_parsers import (
@@ -55,7 +58,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables import RunnablePassthrough, RunnableMap
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
@@ -78,20 +81,28 @@ from langchain_openai.chat_models.base import (
     _lc_tool_call_to_openai_tool_call,
     _format_message_content,
     _convert_dict_to_message,
+    _convert_to_openai_response_format,
+    _oai_structured_outputs_parser,
+    _is_pydantic_class,
 )
 
 from action_msgs.msg import GoalStatus
 from llama_ros.langchain import LlamaROSCommon
-from llama_msgs.msg import ChatMessage, Content
+from llama_msgs.msg import ChatMessage, Content, ChatTool
 from llama_msgs.srv import Detokenize
 from llama_msgs.action import GenerateChatCompletions
 import openai
+import json
 from pydantic import Field
 
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
+_DictOrPydantic = Union[Dict, _BM]
 
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     image_data: Optional[str] = Field(default=None, exclude=True)
     image_url: Optional[str] = Field(default=None, exclude=True)
+    disabled_params: Optional[Dict[str, Any]] = Field(default=None)
     
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -102,9 +113,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return "chatllamaros"
     
     def _extract_image_data(self, contents: Union[List[Dict[str, str]], str, Dict[str, str]]) -> Tuple[str, str]:
-        image_data = None
-        image_url = None
-
         if type(contents) == str:
             return contents
 
@@ -260,9 +268,15 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.add_generation_prompt = True
         chat_request.use_jinja = True
         chat_request.messages = []
+        chat_request.tools = []
+        
+        print(f'Payload: {payload}')
 
         if (self.image_url or self.image_data) is not None:
             chat_request.image = self._get_image(self.image_url, self.image_data)
+            
+        if (payload["tool_choice"]):
+            chat_request.tool_choice = ChatTool.TOOL_CHOICE_REQUIRED
 
         for message in payload["messages"]:
             chat_message = ChatMessage()
@@ -276,20 +290,26 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     chat_content.text = content[content["type"]]
                     chat_message.content_parts.append(chat_content)
             chat_request.messages.append(chat_message)
+            
+        for tool in payload.get("tools", []):
+            chat_tool = ChatTool()
+            chat_tool.name = tool["function"]["name"]
+            chat_tool.description = tool["function"]["description"]
+            chat_tool.parameters = json.dumps(tool["function"]["parameters"])
+            chat_request.tools.append(chat_tool)
         
         chat_request.sampling_config = self._set_sampling_config()
 
         result, _ = self.llama_client.generate_chat_completions(chat_request)
+        
+        print(f'Result: {result}')
 
         return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
-        self.image_url = None
-        self.image_data = None
-
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        response = self._send_llama_request(payload)
+        response = self._send_llama_request(payload, **kwargs)
         return self._create_chat_result(response, generation_info)
     
     def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
@@ -334,3 +354,180 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             result_dict['choices'].append(choice_dict)
 
         return result_dict
+    
+    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+        if not self.disabled_params:
+            return kwargs
+        filtered = {}
+        for k, v in kwargs.items():
+            # Skip param
+            if k in self.disabled_params and (
+                self.disabled_params[k] is None or v in self.disabled_params[k]
+            ):
+                continue
+            # Keep param
+            else:
+                filtered[k] = v
+        return filtered
+    
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        strict: Optional[bool] = None,
+        parallel_tool_calls: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
+        formatted_tools = [
+            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        ]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "any", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                # 'any' is not natively supported by OpenAI API.
+                # We support 'any' since other models use this instead of 'required'.
+                if tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+    
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
+        include_raw: bool = False,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        if strict is not None and method == "json_mode":
+            raise ValueError(
+                "Argument `strict` is not supported with `method`='json_mode'"
+            )
+        is_pydantic_schema = _is_pydantic_class(schema)
+
+        if method == "json_schema":
+            # Check for Pydantic BaseModel V1
+            if (
+                is_pydantic_schema and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
+            ):
+                warnings.warn(
+                    "Received a Pydantic BaseModel V1 schema. This is not supported by "
+                    'method="json_schema". Please use method="function_calling" '
+                    "or specify schema via JSON Schema or Pydantic V2 BaseModel. "
+                    'Overriding to method="function_calling".'
+                )
+                method = "function_calling"
+
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            bind_kwargs = self._filter_disabled_params(
+                tool_choice=tool_name,
+                parallel_tool_calls=False,
+                strict=strict,
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": schema,
+                },
+            )
+
+            llm = self.bind_tools([schema], **bind_kwargs)
+            if is_pydantic_schema:
+                output_parser: Runnable = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        elif method == "json_schema":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            response_format = _convert_to_openai_response_format(schema, strict=strict)
+            llm = self.bind(
+                response_format=response_format,
+                structured_output_format={
+                    "kwargs": {"method": method},
+                    "schema": convert_to_openai_tool(schema),
+                },
+            )
+            if is_pydantic_schema:
+                output_parser = RunnableLambda(
+                    partial(_oai_structured_outputs_parser, schema=cast(type, schema))
+                ).with_types(output_type=cast(type, schema))
+            else:
+                output_parser = JsonOutputParser()
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
+

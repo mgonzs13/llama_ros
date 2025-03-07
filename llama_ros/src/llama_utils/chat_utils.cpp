@@ -69,8 +69,8 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
   }
 
   inputs.messages = messages;
-  inputs.grammar = goal->grammar;
-  inputs.json_schema = goal->json_schema;
+  inputs.grammar = goal->sampling_config.grammar;
+  inputs.json_schema = goal->sampling_config.grammar_schema;
   inputs.add_generation_prompt = goal->add_generation_prompt;
   inputs.use_jinja = goal->use_jinja;
   inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);

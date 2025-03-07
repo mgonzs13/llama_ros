@@ -1,6 +1,4 @@
 ChatMessage[] messages            # List of chat messages
-string grammar
-string json_schema
 bool add_generation_prompt
 bool use_jinja
 ChatTool[] tools

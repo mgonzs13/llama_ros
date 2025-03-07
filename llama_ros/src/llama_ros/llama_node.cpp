@@ -614,8 +614,8 @@ void LlamaNode::execute_chat_completions(
 
   // Get model chat template
   auto tmpls = this->llama->get_chat_templates();
-
   auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
+  RCLCPP_INFO(this->get_logger(), "Params.format: %d", chat_params.format);
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
   sparams.grammar = chat_params.grammar;
@@ -637,9 +637,11 @@ void LlamaNode::execute_chat_completions(
     response_result.prompt = chat_params.prompt;
     response_result.build_info = "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
-    response_result.n_decoded = 0;
-    response_result.n_prompt_tokens = 0;
-    response_result.n_tokens_cached = 0;
+    auto stat_usage = this->llama->get_perf_data();
+
+    response_result.n_decoded = stat_usage.n_eval;
+    response_result.n_prompt_tokens = stat_usage.n_p_eval;
+    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
     response_result.stop = llama_ros::StopType::FULL_STOP;
     response_result.post_sampling_probs = false;
 
@@ -651,7 +653,6 @@ void LlamaNode::execute_chat_completions(
       response_result.content.append(this->llama->detokenize({completion.token}));
       response_result.tokens.push_back(completion.token);
     }
-
 
     *result = llama_utils::generate_chat_completions_result(response_result);
   }
