@@ -23,7 +23,9 @@
 #include "llama_utils/chat_utils.hpp"
 #include "llama_msgs/msg/chat_message.h"
 #include "llama_msgs/msg/choice.h"
-#include "llama_msgs/msg/tool_call.h"
+#include "llama_msgs/msg/chat_req_tool.h"
+#include "llama_msgs/msg/chat_tool_call.h"
+#include "llama_ros/llama.hpp"
 
 common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO) {
@@ -68,12 +70,23 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
     messages.push_back(msg);
   }
 
+  std::vector<common_chat_tool> tools;
+  for (auto tool : goal->tools) {
+    struct common_chat_tool t;
+    t.name = tool.function.name;
+    t.description = tool.function.description;
+    t.parameters = tool.function.parameters;
+    tools.push_back(t);
+  }
+
   inputs.messages = messages;
+  inputs.tools = tools;
   inputs.grammar = goal->sampling_config.grammar;
   inputs.json_schema = goal->sampling_config.grammar_schema;
   inputs.add_generation_prompt = goal->add_generation_prompt;
   inputs.use_jinja = goal->use_jinja;
   inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);
+  inputs.parallel_tool_calls = goal->parallel_tool_calls;
 
   return inputs;
 }
@@ -83,13 +96,12 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   std::string finish_reason = "length";
   common_chat_msg msg;
 
-  // TODO: Implement this
-  // if (result.stop == STOP_TYPE_WORD || result.stop == STOP_TYPE_EOS) {
-  //   msg = common_chat_parse(result.content, result.oaicompat_chat_format);
-  //   finish_reason = msg.tool_calls.empty() ? "stop" : "tool_calls";
-  // } else {
+  if (result.stop == llama_ros::FULL_STOP || result.stop == llama_ros::ABORT) {
+    msg = common_chat_parse(result.content, result.oaicompat_chat_format);
+    finish_reason = msg.tool_calls.empty() ? "stop" : "tool_calls";
+  } else {
     msg.content = result.content;
-  // }
+  }
 
   llama_msgs::msg::ChatMessage chat_msg;
 
@@ -100,15 +112,16 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
     chat_msg.content = msg.content;
   }
   if (!msg.tool_calls.empty()) {
-    std::vector<llama_msgs::msg::ToolCall> tool_calls;
+    std::vector<llama_msgs::msg::ChatToolCall> tool_calls;
     for (const auto &tc : msg.tool_calls) {
-      llama_msgs::msg::ToolCall tool_call;
+      llama_msgs::msg::ChatToolCall tool_call;
       tool_call.name = tc.name;
       tool_call.arguments = tc.arguments;
-      tool_call.id = tc.id;
+      tool_call.id = "call_" + llama_utils::random_string(8);
       tool_calls.push_back(tool_call);
     }
     chat_msg.tool_calls = tool_calls;
+    chat_msg.role = msg.role;
   }
 
   llama_msgs::msg::Choice choice;

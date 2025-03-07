@@ -69,15 +69,15 @@ struct ResponseResult {
   std::string oaicompat_cmpl_id;
 };
 
-inline std::string random_string() {
+inline std::string random_string(int string_size = 32) {
   static const std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
   std::random_device rd;
   std::mt19937 generator(rd());
 
-  std::string result(32, ' ');
+  std::string result(string_size, ' ');
 
-  for (int i = 0; i < 32; ++i) {
+  for (int i = 0; i < string_size; ++i) {
       result[i] = str[generator() % str.size()];
   }
 

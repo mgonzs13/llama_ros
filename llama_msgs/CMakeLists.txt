@@ -29,7 +29,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ChatMessage.msg"
   "msg/ChatTool.msg"
   "msg/Content.msg"
-  "msg/ToolCall.msg"
+  "msg/ChatToolCall.msg"
+  "msg/ChatReqTool.msg"
   "msg/Choice.msg"
   "msg/UsageStats.msg"
 

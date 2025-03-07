@@ -610,12 +610,9 @@ void LlamaNode::execute_chat_completions(
 
   struct common_chat_templates_inputs inputs =
       llama_utils::parse_chat_completions_goal(goal);
-  // TODO: Fill inputs with the data
-
   // Get model chat template
   auto tmpls = this->llama->get_chat_templates();
   auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
-  RCLCPP_INFO(this->get_logger(), "Params.format: %d", chat_params.format);
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
   sparams.grammar = chat_params.grammar;
@@ -648,6 +645,8 @@ void LlamaNode::execute_chat_completions(
     response_result.oaicompat_chat_format = chat_params.format;
     response_result.oaicompat_model = this->llama->get_metadata().general.name;
     response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
+
+    std::string result_content;
 
     for (auto completion : completion_results) {
       response_result.content.append(this->llama->detokenize({completion.token}));

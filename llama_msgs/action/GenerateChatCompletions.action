@@ -1,11 +1,12 @@
 ChatMessage[] messages            # List of chat messages
 bool add_generation_prompt
 bool use_jinja
-ChatTool[] tools
+ChatReqTool[] tools
 int32 tool_choice
 bool extract_reasoning
 SamplingConfig sampling_config
 sensor_msgs/Image image
+bool parallel_tool_calls
 ---
 string id
 Choice[] choices

@@ -92,10 +92,8 @@ class ChatLlamaToolsDemoNode(Node):
             tool_msg.additional_kwargs = {"args": tool["args"]}
             messages.append(tool_msg)
 
-        res = self.chat.invoke(messages)
-
+        res = llm_tools.invoke(messages)
         self.eval_time = time.time()
-
         self.get_logger().info(f"\nResponse: {res.content}")
 
         time_generate_tools = self.tools_time - self.initial_time

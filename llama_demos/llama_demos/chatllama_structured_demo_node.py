@@ -77,9 +77,9 @@ class ChatLlamaStructuredDemoNode(Node):
             ]
         )
         
-        structured_chat = self.chat.with_structured_output(Joke)
+        structured_chat = self.chat.with_structured_output(Joke, method="function_calling")
 
-        self.chain = self.prompt | structured_chat | StrOutputParser()
+        self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
 
@@ -89,6 +89,8 @@ class ChatLlamaStructuredDemoNode(Node):
             }
         )
         
+        
+        print("Tell me a joke about cats")
         print(response)
 
 

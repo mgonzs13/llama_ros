@@ -88,7 +88,7 @@ from langchain_openai.chat_models.base import (
 
 from action_msgs.msg import GoalStatus
 from llama_ros.langchain import LlamaROSCommon
-from llama_msgs.msg import ChatMessage, Content, ChatTool
+from llama_msgs.msg import ChatMessage, Content, ChatReqTool, ChatTool, ChatToolCall
 from llama_msgs.srv import Detokenize
 from llama_msgs.action import GenerateChatCompletions
 import openai
@@ -269,18 +269,25 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.use_jinja = True
         chat_request.messages = []
         chat_request.tools = []
-        
-        print(f'Payload: {payload}')
+        chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
 
         if (self.image_url or self.image_data) is not None:
             chat_request.image = self._get_image(self.image_url, self.image_data)
             
         if (payload["tool_choice"]):
-            chat_request.tool_choice = ChatTool.TOOL_CHOICE_REQUIRED
+            chat_request.tool_choice = ChatTool.TOOL_CHOICE_AUTO
 
         for message in payload["messages"]:
             chat_message = ChatMessage()
             chat_message.role = message["role"]
+            
+            for tool_call in message.get("tool_calls", []):
+                chat_tool_call = ChatToolCall()
+                chat_tool_call.id = tool_call["id"]
+                chat_tool_call.name = tool_call["function"]["name"]
+                chat_tool_call.arguments = json.dumps(tool_call["function"]["arguments"])
+                chat_message.tool_calls.append(chat_tool_call)
+
             if type(message["content"]) == str:
                 chat_message.content = message["content"]
             elif type(message["content"]) == list:
@@ -292,25 +299,28 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_request.messages.append(chat_message)
             
         for tool in payload.get("tools", []):
+            chat_req_tool = ChatReqTool()
+            chat_req_tool.type = "function"
             chat_tool = ChatTool()
             chat_tool.name = tool["function"]["name"]
             chat_tool.description = tool["function"]["description"]
             chat_tool.parameters = json.dumps(tool["function"]["parameters"])
-            chat_request.tools.append(chat_tool)
+            chat_req_tool.function = chat_tool
+            chat_request.tools.append(chat_req_tool)
         
         chat_request.sampling_config = self._set_sampling_config()
-
+        
         result, _ = self.llama_client.generate_chat_completions(chat_request)
         
-        print(f'Result: {result}')
-
         return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_request(payload, **kwargs)
-        return self._create_chat_result(response, generation_info)
+        result = self._create_chat_result(response, generation_info)
+                
+        return result
     
     def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
         result_dict = {}
@@ -344,9 +354,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 msg_dict['content_parts'].append(content_dict)
             for tool_call in choice.message.tool_calls:
                 tool_call_dict = {}
-                tool_call_dict['name'] = tool_call.name
-                tool_call_dict['arguments'] = tool_call.arguments
                 tool_call_dict['id'] = tool_call.id
+                tool_call_dict['type'] = 'function'
+                tool_call_dict['function'] = {}
+                tool_call_dict['function']['name'] = tool_call.name
+                tool_call_dict['function']['arguments'] = tool_call.arguments
 
                 msg_dict['tool_calls'].append(tool_call_dict)
 
@@ -464,7 +476,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 tool_choice=tool_name,
                 parallel_tool_calls=False,
                 strict=strict,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": schema,
                 },
@@ -483,7 +495,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": schema,
                 },
@@ -502,7 +514,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             response_format = _convert_to_openai_response_format(schema, strict=strict)
             llm = self.bind(
                 response_format=response_format,
-                structured_output_format={
+                ls_structured_output_format={
                     "kwargs": {"method": method},
                     "schema": convert_to_openai_tool(schema),
                 },
