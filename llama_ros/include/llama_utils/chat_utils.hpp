@@ -88,6 +88,10 @@ inline std::string gen_chatcmplid() {
   return "chatcmpl-" + random_string();
 }
 
+inline float logit(float x) {
+  return x == 0.0f ? std::numeric_limits<float>::lowest() : std::log(x);
+}
+
 common_chat_tool_choice parse_chat_tool_choice(int choice);
 
 common_chat_templates_inputs parse_chat_completions_goal(

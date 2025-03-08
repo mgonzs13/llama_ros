@@ -505,7 +505,7 @@ void LlamaNode::execute(
       for (auto prob : completion.probs) {
         llama_msgs::msg::TokenProb aux;
         aux.token = prob.token;
-        aux.probability = prob.probability;
+        aux.probability = llama_utils::logit(prob.probability);
         aux.token_text = this->llama->detokenize({prob.token});
         probs_msg.data.push_back(aux);
       }
