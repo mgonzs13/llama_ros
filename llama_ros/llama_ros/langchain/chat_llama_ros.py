@@ -371,6 +371,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 msg_dict['tool_calls'].append(tool_call_dict)
 
             choice_dict['message'] = msg_dict
+
+            logprob_list = []
+            for logprob in choice.logprobs:
+                logprob_obj = {}
+                logprob_obj['token'] = logprob.data[0].token_text
+                logprob_obj['logprob'] = logprob.data[0].probability
+                logprob_obj['bytes'] = [logprob.data[0].token]
+                logprob_obj['top_logprobs'] = []
+                for i_logprob in logprob.data:
+                    logprob_obj['top_logprobs'].append({
+                        'token': i_logprob.token_text,
+                        'logprob': i_logprob.probability,
+                        'bytes': [i_logprob.token]
+                    })
+                logprob_list.append(logprob_obj)
+            choice_dict['logprobs'] = logprob_list
             result_dict['choices'].append(choice_dict)
 
         return result_dict

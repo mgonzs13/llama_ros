@@ -1,3 +1,4 @@
 string finish_reason
 int32 index
 ChatMessage message
+TokenProbArray[] logprobs

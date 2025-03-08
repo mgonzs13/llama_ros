@@ -651,6 +651,19 @@ void LlamaNode::execute_chat_completions(
     for (auto completion : completion_results) {
       response_result.content.append(this->llama->detokenize({completion.token}));
       response_result.tokens.push_back(completion.token);
+
+      struct llama_utils::SelectedLogProb probs_msg;
+
+      for (auto prob_cmpl : completion.probs) {
+        struct llama_utils::LogProb prob;
+        prob.token = prob_cmpl.token;
+        prob.probability = prob_cmpl.probability;
+        prob.text = this->llama->detokenize({prob.token});
+        probs_msg.data.push_back(prob);
+      }
+      probs_msg.chosen_token = probs_msg.data[0];
+
+      response_result.probs_output.push_back(probs_msg);
     }
 
     *result = llama_utils::generate_chat_completions_result(response_result);

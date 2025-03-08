@@ -129,18 +129,26 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   choice.index = 0;
   choice.message = chat_msg;
 
-  // TODO: Logprobs
-  // if (!stream && probs_output.size() > 0) {
-  //     choice["logprobs"] = json{
-  //         {"content",
-  //         completion_token_output::probs_vector_to_json(probs_output,
-  //         post_sampling_probs)},
-  //     };
-  // }
+
+  if (!result.stream && result.probs_output.size() > 0) {
+    for (const auto &prob : result.probs_output) {
+      llama_msgs::msg::TokenProbArray probs_msg;
+      probs_msg.chosen_token = prob.chosen_token.token;
+      for (const auto &p : prob.data) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = p.token;
+        aux.probability = p.probability;
+        aux.token_text = p.text;
+        probs_msg.data.push_back(aux);
+      }
+      choice.logprobs.push_back(probs_msg);
+    }
+  }
 
   std::time_t t = std::time(0);
 
   llama_msgs::action::GenerateChatCompletions::Result res;
+
   res.choices.push_back(choice);
   res.created = t;
   res.model = result.oaicompat_model;

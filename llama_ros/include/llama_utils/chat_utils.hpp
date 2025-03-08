@@ -36,7 +36,7 @@
 
 namespace llama_utils {
 struct LogProb {
-  std::string token;
+  int token;
   float probability;
   std::string text;
 };
