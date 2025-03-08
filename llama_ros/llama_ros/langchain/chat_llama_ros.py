@@ -262,6 +262,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
         return ChatResult(generations=generations, llm_output=llm_output)
+    
+    def _parse_tool_choice(self, tool_choice: str) -> dict:
+        if tool_choice == "auto":
+            return ChatTool.TOOL_CHOICE_AUTO
+        elif tool_choice == "required":
+            return ChatTool.TOOL_CHOICE_REQUIRED
+        else:
+            return ChatTool.TOOL_CHOICE_NONE
 
     def _send_llama_request(self, payload: Dict[str, Any], **kwargs) -> Any:
         chat_request = GenerateChatCompletions.Goal()
@@ -274,10 +282,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if (self.image_url or self.image_data) is not None:
             chat_request.image = self._get_image(self.image_url, self.image_data)
             
-        if (payload["tool_choice"]):
-            chat_request.tool_choice = ChatTool.TOOL_CHOICE_AUTO
+        # TODO: get tool_choice from payload or kwargs
+        chat_request.tool_choice = ChatTool.TOOL_CHOICE_AUTO
 
-        for message in payload["messages"]:
+        for message in payload.get("messages", []):
             chat_message = ChatMessage()
             chat_message.role = message["role"]
             
