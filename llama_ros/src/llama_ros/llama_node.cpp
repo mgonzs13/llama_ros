@@ -701,18 +701,19 @@ void LlamaNode::send_text_chat_completions(
   if (this->goal_handle_chat_ != nullptr) {
     auto feedback = std::make_shared<GenerateChatCompletions::Feedback>();
 
-    feedback->partial_response.text =
-        this->llama->detokenize({completion.token});
-    feedback->partial_response.token = completion.token;
-    feedback->partial_response.probs.chosen_token = completion.token;
+    // TODO: Fill feedback with the data
+    // feedback->partial_response.text =
+    //     this->llama->detokenize({completion.token});
+    // feedback->partial_response.token = completion.token;
+    // feedback->partial_response.probs.chosen_token = completion.token;
 
-    for (auto prob : completion.probs) {
-      llama_msgs::msg::TokenProb aux;
-      aux.token = prob.token;
-      aux.probability = prob.probability;
-      aux.token_text = this->llama->detokenize({prob.token});
-      feedback->partial_response.probs.data.push_back(aux);
-    }
+    // for (auto prob : completion.probs) {
+    //   llama_msgs::msg::TokenProb aux;
+    //   aux.token = prob.token;
+    //   aux.probability = prob.probability;
+    //   aux.token_text = this->llama->detokenize({prob.token});
+    //   feedback->partial_response.probs.data.push_back(aux);
+    // }
 
     this->goal_handle_chat_->publish_feedback(feedback);
   }

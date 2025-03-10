@@ -124,7 +124,7 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
     chat_msg.role = msg.role;
   }
 
-  llama_msgs::msg::Choice choice;
+  llama_msgs::msg::ChatChoice choice;
   choice.finish_reason = finish_reason;
   choice.index = 0;
   choice.message = chat_msg;
