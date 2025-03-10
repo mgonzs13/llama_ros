@@ -608,31 +608,41 @@ void LlamaNode::execute_chat_completions(
 
   this->llama->reset();
 
-  struct common_chat_templates_inputs inputs =
+  struct common_chat_templates_inputs prompt_format_config =
       llama_utils::parse_chat_completions_goal(goal);
   // Get model chat template
   auto tmpls = this->llama->get_chat_templates();
-  auto chat_params = this->llama->get_chat_params(tmpls.get(), inputs);
+  auto chat_prompt_instance =
+      this->llama->get_chat_params(tmpls.get(), prompt_format_config);
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
-  sparams.grammar = chat_params.grammar;
-  sparams.grammar_lazy = chat_params.grammar_lazy;
-  sparams.grammar_triggers = chat_params.grammar_triggers;
+
+  if (goal->sampling_config.grammar.empty()) {
+    sparams.grammar = chat_prompt_instance.grammar;
+  }
+
+  if (goal->sampling_config.grammar_triggers.empty()) {
+    sparams.grammar_triggers = chat_prompt_instance.grammar_triggers;
+  }
+
+  sparams.grammar_lazy =
+      chat_prompt_instance.grammar_lazy || goal->sampling_config.grammar_lazy;
 
   // call llama
-  struct ResponseOutput output = this->llama->generate_response(
-      chat_params.prompt, sparams,
+  struct ResponseOutput chat_output = this->llama->generate_response(
+      chat_prompt_instance.prompt, sparams,
       std::bind(&LlamaNode::send_text_chat_completions, this, _1));
 
   llama_utils::ResponseResult response_result;
   // TODO: Fill response_result with the data
   response_result.index = 0;
 
-  if (output.stop == StopType::FULL_STOP) {
-    auto completion_results = output.completions;
+  if (chat_output.stop == StopType::FULL_STOP) {
+    auto completion_results = chat_output.completions;
     response_result.stream = false;
-    response_result.prompt = chat_params.prompt;
-    response_result.build_info = "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+    response_result.prompt = chat_prompt_instance.prompt;
+    response_result.build_info =
+        "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
     auto stat_usage = this->llama->get_perf_data();
 
@@ -642,14 +652,15 @@ void LlamaNode::execute_chat_completions(
     response_result.stop = llama_ros::StopType::FULL_STOP;
     response_result.post_sampling_probs = false;
 
-    response_result.oaicompat_chat_format = chat_params.format;
+    response_result.oaicompat_chat_format = chat_prompt_instance.format;
     response_result.oaicompat_model = this->llama->get_metadata().general.name;
     response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
 
     std::string result_content;
 
     for (auto completion : completion_results) {
-      response_result.content.append(this->llama->detokenize({completion.token}));
+      response_result.content.append(
+          this->llama->detokenize({completion.token}));
       response_result.tokens.push_back(completion.token);
 
       struct llama_utils::SelectedLogProb probs_msg;
@@ -671,10 +682,10 @@ void LlamaNode::execute_chat_completions(
 
   if (rclcpp::ok()) {
 
-    if (output.stop == StopType::CANCEL) {
+    if (chat_output.stop == StopType::CANCEL) {
       this->goal_handle_chat_->canceled(result);
 
-    } else if (output.stop == StopType::ABORT) {
+    } else if (chat_output.stop == StopType::ABORT) {
       this->goal_handle_chat_->abort(result);
 
     } else {

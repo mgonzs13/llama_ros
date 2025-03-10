@@ -23,8 +23,6 @@
 
 import cv2
 import json
-import uuid
-import jinja2
 import base64
 import numpy as np
 from typing import (
@@ -34,19 +32,16 @@ from typing import (
     Literal,
     Optional,
     Dict,
-    Iterator,
     Sequence,
     TypeVar,
     Type,
     Union,
-    Tuple,
     cast,
 )
 from operator import itemgetter
 from functools import partial
 import warnings
 from pydantic import BaseModel, model_validator
-from jinja2.sandbox import ImmutableSandboxedEnvironment
 from langchain_core.output_parsers import (
     PydanticToolsParser,
     JsonOutputKeyToolsParser,
@@ -56,20 +51,15 @@ from langchain_core.output_parsers import (
 
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables import RunnablePassthrough, RunnableMap
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
-    InvalidToolCall,
     FunctionMessage,
-    ToolCall,
     BaseMessage,
     HumanMessage,
     SystemMessage,
@@ -86,24 +76,22 @@ from langchain_openai.chat_models.base import (
     _is_pydantic_class,
 )
 
-from action_msgs.msg import GoalStatus
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import ChatMessage, Content, ChatReqTool, ChatTool, ChatToolCall
-from llama_msgs.srv import Detokenize
 from llama_msgs.action import GenerateChatCompletions
 import openai
 import json
 from pydantic import Field
+from pydantic.v1 import BaseModel as BaseModelV1
 
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 _DictOrPydantic = Union[Dict, _BM]
 
+
 class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
-    image_data: Optional[str] = Field(default=None, exclude=True)
-    image_url: Optional[str] = Field(default=None, exclude=True)
     disabled_params: Optional[Dict[str, Any]] = Field(default=None)
-    
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         return {}
@@ -111,40 +99,33 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     @property
     def _llm_type(self) -> str:
         return "chatllamaros"
-    
-    def _extract_image_data(self, contents: Union[List[Dict[str, str]], str, Dict[str, str]]) -> Tuple[str, str]:
-        if type(contents) == str:
-            return contents
 
-        if type(contents) == list:
-            for content in contents:
-                if content["type"] == "image_url":
-                    self.image_url = content["image_url"]['url']
-                    contents.remove(content)
-                    return contents
-                elif content["type"] == "image":
-                    self.image_data = content["image"]
-                    contents.remove(content)
-                    return contents
-        elif type(contents) == dict:
-            if contents["type"] == "image_url":
-                self.image_url = contents["image_url"]['url']
-                return {"type": "text", "text": ""}
+    def _remove_image_url(self, data):
+        image_url = None
 
-            elif contents["type"] == "image":
-                self.image_data = contents["image"]
-                return {"type": "text", "text": ""}     
+        for message in data.get("messages", []):
+            if isinstance(message.get("content"), list):
+                # Extract the URL if an image_url exists
+                for item in message["content"]:
+                    if item.get("type") == "image_url":
+                        image_url = item["image_url"]["url"]
 
-        return contents
+                # Remove all 'image_url' type items
+                message["content"] = [
+                    item
+                    for item in message["content"]
+                    if item.get("type") != "image_url"
+                ]
+
+        return data, image_url
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict:
         message_content = _format_message_content(message.content)
-        content = self._extract_image_data(message_content)
-                
+
         message_dict: Dict[str, Any] = {
-            "content": content,
+            "content": message_content,
         }
-        
+
         if (name := message.name or message.additional_kwargs.get("name")) is not None:
             message_dict["name"] = name
 
@@ -248,7 +229,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": response_dict.get("model", response['model']),
+            "model_name": response_dict.get("model", response["model"]),
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
 
@@ -262,7 +243,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
         return ChatResult(generations=generations, llm_output=llm_output)
-    
+
     def _parse_tool_choice(self, tool_choice: str) -> dict:
         if tool_choice == "auto":
             return ChatTool.TOOL_CHOICE_AUTO
@@ -279,21 +260,35 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.tools = []
         chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
 
-        if (self.image_url or self.image_data) is not None:
-            chat_request.image = self._get_image(self.image_url, self.image_data)
-            
-        # TODO: get tool_choice from payload or kwargs
-        chat_request.tool_choice = ChatTool.TOOL_CHOICE_AUTO
+        payload, image_url = self._remove_image_url(payload)
+
+        if image_url:
+            image = None
+            if "data:image" in image_url:
+                image_data = image_url.split(",")[-1]
+                decoded_image = base64.b64decode(image_data)
+                np_image = np.frombuffer(decoded_image, np.uint8)
+                image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
+                image_url = None
+
+            chat_request.image = self._get_image(image_url, image)
+
+        if "tool_choice" in kwargs:
+            chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])
+        else:
+            chat_request.tool_choice = self._parse_tool_choice("none")
 
         for message in payload.get("messages", []):
             chat_message = ChatMessage()
             chat_message.role = message["role"]
-            
+
             for tool_call in message.get("tool_calls", []):
                 chat_tool_call = ChatToolCall()
                 chat_tool_call.id = tool_call["id"]
                 chat_tool_call.name = tool_call["function"]["name"]
-                chat_tool_call.arguments = json.dumps(tool_call["function"]["arguments"])
+                chat_tool_call.arguments = json.dumps(
+                    tool_call["function"]["arguments"]
+                )
                 chat_message.tool_calls.append(chat_tool_call)
 
             if type(message["content"]) == str:
@@ -305,7 +300,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     chat_content.text = content[content["type"]]
                     chat_message.content_parts.append(chat_content)
             chat_request.messages.append(chat_message)
-            
+
         for tool in payload.get("tools", []):
             chat_req_tool = ChatReqTool()
             chat_req_tool.type = "function"
@@ -315,11 +310,11 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_tool.parameters = json.dumps(tool["function"]["parameters"])
             chat_req_tool.function = chat_tool
             chat_request.tools.append(chat_req_tool)
-        
+
         chat_request.sampling_config = self._set_sampling_config()
-        
+
         result, _ = self.llama_client.generate_chat_completions(chat_request)
-        
+
         return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
@@ -327,70 +322,73 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         generation_info = None
         response = self._send_llama_request(payload, **kwargs)
         result = self._create_chat_result(response, generation_info)
-                
         return result
-    
-    def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
+
+    def _parse_chat_generation_response(
+        self, result: GenerateChatCompletions.Result
+    ) -> dict:
         result_dict = {}
 
-        result_dict['id'] = result.id
-        result_dict['created'] = result.created
-        result_dict['model'] = result.model
-        result_dict['object'] = result.object
-        result_dict['system_fingerprint'] = result.system_fingerprint
-        result_dict['choices'] = []
+        result_dict["id"] = result.id
+        result_dict["created"] = result.created
+        result_dict["model"] = result.model
+        result_dict["object"] = result.object
+        result_dict["system_fingerprint"] = result.system_fingerprint
+        result_dict["choices"] = []
 
         for choice in result.choices:
             choice_dict = {}
-            choice_dict['finish_reason'] = choice.finish_reason
-            choice_dict['index'] = choice.index
+            choice_dict["finish_reason"] = choice.finish_reason
+            choice_dict["index"] = choice.index
 
             msg_dict = {}
-            msg_dict['content'] = choice.message.content
-            msg_dict['role'] = choice.message.role
-            msg_dict['reasoning_content'] = choice.message.reasoning_content
-            msg_dict['tool_name'] = choice.message.tool_name
-            msg_dict['tool_call_id'] = choice.message.tool_call_id
-            msg_dict['content_parts'] = []
-            msg_dict['tool_calls'] = []
-            
+            msg_dict["content"] = choice.message.content
+            msg_dict["role"] = choice.message.role
+            msg_dict["reasoning_content"] = choice.message.reasoning_content
+            msg_dict["tool_name"] = choice.message.tool_name
+            msg_dict["tool_call_id"] = choice.message.tool_call_id
+            msg_dict["content_parts"] = []
+            msg_dict["tool_calls"] = []
+
             for content in choice.message.content_parts:
                 content_dict = {}
-                content_dict['type'] = content.type
-                content_dict['text'] = content.text
+                content_dict["type"] = content.type
+                content_dict["text"] = content.text
 
-                msg_dict['content_parts'].append(content_dict)
+                msg_dict["content_parts"].append(content_dict)
             for tool_call in choice.message.tool_calls:
                 tool_call_dict = {}
-                tool_call_dict['id'] = tool_call.id
-                tool_call_dict['type'] = 'function'
-                tool_call_dict['function'] = {}
-                tool_call_dict['function']['name'] = tool_call.name
-                tool_call_dict['function']['arguments'] = tool_call.arguments
+                tool_call_dict["id"] = tool_call.id
+                tool_call_dict["type"] = "function"
+                tool_call_dict["function"] = {}
+                tool_call_dict["function"]["name"] = tool_call.name
+                tool_call_dict["function"]["arguments"] = tool_call.arguments
 
-                msg_dict['tool_calls'].append(tool_call_dict)
+                msg_dict["tool_calls"].append(tool_call_dict)
 
-            choice_dict['message'] = msg_dict
+            choice_dict["message"] = msg_dict
 
             logprob_list = []
             for logprob in choice.logprobs:
                 logprob_obj = {}
-                logprob_obj['token'] = logprob.data[0].token_text
-                logprob_obj['logprob'] = logprob.data[0].probability
-                logprob_obj['bytes'] = [logprob.data[0].token]
-                logprob_obj['top_logprobs'] = []
+                logprob_obj["token"] = logprob.data[0].token_text
+                logprob_obj["logprob"] = logprob.data[0].probability
+                logprob_obj["bytes"] = [logprob.data[0].token]
+                logprob_obj["top_logprobs"] = []
                 for i_logprob in logprob.data:
-                    logprob_obj['top_logprobs'].append({
-                        'token': i_logprob.token_text,
-                        'logprob': i_logprob.probability,
-                        'bytes': [i_logprob.token]
-                    })
+                    logprob_obj["top_logprobs"].append(
+                        {
+                            "token": i_logprob.token_text,
+                            "logprob": i_logprob.probability,
+                            "bytes": [i_logprob.token],
+                        }
+                    )
                 logprob_list.append(logprob_obj)
-            choice_dict['logprobs'] = logprob_list
-            result_dict['choices'].append(choice_dict)
+            choice_dict["logprobs"] = logprob_list
+            result_dict["choices"].append(choice_dict)
 
         return result_dict
-    
+
     def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
         if not self.disabled_params:
             return kwargs
@@ -405,7 +403,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             else:
                 filtered[k] = v
         return filtered
-    
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
@@ -433,7 +431,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
                 if tool_choice == "any":
-                    tool_choice = "required"
+                    tool_choice = "auto"
             elif isinstance(tool_choice, bool):
                 tool_choice = "required"
             elif isinstance(tool_choice, dict):
@@ -456,7 +454,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
-    
+
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -478,9 +476,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         if method == "json_schema":
             # Check for Pydantic BaseModel V1
-            if (
-                is_pydantic_schema and issubclass(schema, BaseModelV1)  # type: ignore[arg-type]
-            ):
+            if is_pydantic_schema and issubclass(
+                schema, BaseModelV1
+            ):  # type: ignore[arg-type]
                 warnings.warn(
                     "Received a Pydantic BaseModel V1 schema. This is not supported by "
                     'method="json_schema". Please use method="function_calling" '
@@ -566,4 +564,3 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
-
