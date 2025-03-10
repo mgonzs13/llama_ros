@@ -9,11 +9,17 @@ sensor_msgs/Image image
 bool parallel_tool_calls
 ---
 string id
-Choice[] choices
+ChatChoice[] choices
 int32 created
 string model
-string object "chat.completion"
 string system_fingerprint
+string object "chat.completion"
 UsageStats usage
 ---
-PartialResponse partial_response    # partial response
+string id
+ChatChoiceChunk[] choices
+int32 created
+string model
+string system_fingerprint
+string object
+UsageStats usage

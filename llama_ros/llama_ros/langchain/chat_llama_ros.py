@@ -32,6 +32,7 @@ from typing import (
     Literal,
     Optional,
     Dict,
+    Iterator,
     Sequence,
     TypeVar,
     Type,
@@ -48,10 +49,22 @@ from langchain_core.output_parsers import (
     PydanticOutputParser,
     JsonOutputParser,
 )
-
+from langchain_core.language_models.chat_models import (
+    agenerate_from_stream,
+    generate_from_stream,
+)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables import RunnablePassthrough, RunnableMap
 from langchain_core.language_models import BaseChatModel
@@ -59,8 +72,10 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -74,6 +89,8 @@ from langchain_openai.chat_models.base import (
     _convert_to_openai_response_format,
     _oai_structured_outputs_parser,
     _is_pydantic_class,
+    _handle_openai_bad_request,
+    _convert_delta_to_message_chunk
 )
 
 from llama_ros.langchain import LlamaROSCommon
@@ -313,16 +330,75 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         chat_request.sampling_config = self._set_sampling_config()
 
-        result, _ = self.llama_client.generate_chat_completions(chat_request)
-
+        result, _ = self.llama_client.generate_chat_completions(chat_request, kwargs.get("stream", False))
         return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_request(payload, **kwargs)
-        result = self._create_chat_result(response, generation_info)
-        return result
+
+        if kwargs.get("stream"):
+            return (self._create_chat_result(chunk, generation_info) for chunk in response)
+        else:
+            return self._create_chat_result(response, generation_info)
+    
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        base_generation_info = {}
+
+        response = self._send_llama_request(payload, **kwargs)
+        context_manager = response
+
+        try:
+            with context_manager as response:
+                is_first_chunk = True
+                for chunk in response:
+                    if not isinstance(chunk, dict):
+                        chunk = chunk.model_dump()
+                    generation_chunk = self._convert_chunk_to_generation_chunk(
+                        chunk,
+                        default_chunk_class,
+                        base_generation_info if is_first_chunk else {},
+                    )
+                    if generation_chunk is None:
+                        continue
+                    default_chunk_class = generation_chunk.message.__class__
+                    logprobs = (generation_chunk.generation_info or {}).get("logprobs")
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text,
+                            chunk=generation_chunk,
+                            logprobs=logprobs,
+                        )
+                    is_first_chunk = False
+                    yield generation_chunk
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        if hasattr(response, "get_final_completion") and "response_format" in payload:
+            final_completion = response.get_final_completion()
+            generation_chunk = self._get_generation_chunk_from_completion(
+                final_completion
+            )
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk
+                )
+            yield generation_chunk
 
     def _parse_chat_generation_response(
         self, result: GenerateChatCompletions.Result
@@ -564,3 +640,57 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+        
+    def _convert_chunk_to_generation_chunk(
+        self,
+        chunk: dict,
+        default_chunk_class: Type,
+        base_generation_info: Optional[Dict],
+    ) -> Optional[ChatGenerationChunk]:
+        if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
+            return None
+        token_usage = chunk.get("usage")
+        choices = (
+            chunk.get("choices", [])
+            # from beta.chat.completions.stream
+            or chunk.get("chunk", {}).get("choices", [])
+        )
+
+        usage_metadata: Optional[UsageMetadata] = (
+            _create_usage_metadata(token_usage) if token_usage else None
+        )
+        if len(choices) == 0:
+            # logprobs is implicitly None
+            generation_chunk = ChatGenerationChunk(
+                message=default_chunk_class(content="", usage_metadata=usage_metadata)
+            )
+            return generation_chunk
+
+        choice = choices[0]
+        if choice["delta"] is None:
+            return None
+
+        message_chunk = _convert_delta_to_message_chunk(
+            choice["delta"], default_chunk_class
+        )
+        generation_info = {**base_generation_info} if base_generation_info else {}
+
+        if finish_reason := choice.get("finish_reason"):
+            generation_info["finish_reason"] = finish_reason
+            if model_name := chunk.get("model"):
+                generation_info["model_name"] = model_name
+            if system_fingerprint := chunk.get("system_fingerprint"):
+                generation_info["system_fingerprint"] = system_fingerprint
+
+        logprobs = choice.get("logprobs")
+        if logprobs:
+            generation_info["logprobs"] = logprobs
+
+        if usage_metadata and isinstance(message_chunk, AIMessageChunk):
+            message_chunk.usage_metadata = usage_metadata
+
+        generation_chunk = ChatGenerationChunk(
+            message=message_chunk, generation_info=generation_info or None
+        )
+        return generation_chunk
+

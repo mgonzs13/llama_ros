@@ -22,7 +22,7 @@
 
 #include "llama_utils/chat_utils.hpp"
 #include "llama_msgs/msg/chat_message.h"
-#include "llama_msgs/msg/choice.h"
+#include "llama_msgs/msg/chat_choice.h"
 #include "llama_msgs/msg/chat_req_tool.h"
 #include "llama_msgs/msg/chat_tool_call.h"
 #include "llama_ros/llama.hpp"
@@ -153,7 +153,11 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   res.created = t;
   res.model = result.oaicompat_model;
   res.system_fingerprint = result.build_info;
-  res.object = "chat.completion";
+  if (result.stream) {
+    res.object = "chat.completion.chunk";
+  } else {
+    res.object = "chat.completion";
+  }
   res.usage.completion_tokens = result.n_decoded;
   res.usage.prompt_tokens = result.n_prompt_tokens;
   res.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
