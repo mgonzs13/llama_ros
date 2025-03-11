@@ -42,7 +42,6 @@ from llama_msgs.action import GenerateResponse
 from llama_msgs.action import GenerateChatCompletions
 from llama_msgs.msg import PartialResponse
 
-
 class LlamaClientNode(Node):
 
     _instance: "LlamaClientNode" = None
@@ -152,7 +151,7 @@ class LlamaClientNode(Node):
         self, goal: GenerateChatCompletions.Goal, feedback_cb: Callable = None, stream: bool = False
     ) -> Union[
         Tuple[GenerateChatCompletions.Result, GoalStatus],
-        Generator[PartialResponse, None, None],
+        Generator[GenerateChatCompletions.Feedback, None, None],
     ]:
         self._action_done = False
         self._action_result = None
@@ -161,7 +160,7 @@ class LlamaClientNode(Node):
         self._action_chat_client.wait_for_server()
 
         if feedback_cb is None and stream:
-            feedback_cb = self._feedback_callback
+            feedback_cb = self._feedback_callback_chat
 
         send_goal_future = self._action_chat_client.send_goal_async(
             goal, feedback_callback=feedback_cb
@@ -254,6 +253,12 @@ class LlamaClientNode(Node):
 
         with self._goal_handle_lock:
             self._goal_handle = None
+            
+    def _feedback_callback_chat(self, feedback) -> None:
+        self._partial_results.append(feedback.feedback)
+
+        with self._action_done_cond:
+            self._action_done_cond.notify()
 
     def _feedback_callback(self, feedback) -> None:
         self._partial_results.append(feedback.feedback.partial_response)

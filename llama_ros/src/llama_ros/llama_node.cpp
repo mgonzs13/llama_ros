@@ -637,7 +637,7 @@ void LlamaNode::execute_chat_completions(
   // call llama
   struct ResponseOutput chat_output = this->llama->generate_response(
       chat_prompt_instance.prompt, sparams,
-      std::bind(&LlamaNode::send_text_chat_completions, this, std::placeholders::_1, std::ref(response_result)));
+      std::bind(&LlamaNode::send_text_chat_completions, this, std::placeholders::_1));
 
   if (chat_output.stop == StopType::FULL_STOP) {
     response_result.index = 0;
@@ -695,14 +695,22 @@ void LlamaNode::execute_chat_completions(
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion, struct llama_utils::ResponseResult &response_result) {
+    const struct CompletionOutput &completion) {
   if (this->goal_handle_chat_ != nullptr) {
     auto stat_usage = this->llama->get_perf_data();
+
+    llama_utils::ResponseResult response_result;
+
+    response_result.oaicompat_model = this->llama->get_metadata().general.name;
+    response_result.oaicompat_cmpl_id = "chatcmplid-0";
+    response_result.build_info =
+      "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
     response_result.n_decoded = stat_usage.n_eval;
     response_result.n_prompt_tokens = stat_usage.n_p_eval;
     response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
     response_result.content = this->llama->detokenize({completion.token});
+    response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 
     for (auto prob_cmpl : completion.probs) {
       struct llama_utils::LogProb lobprob;

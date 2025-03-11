@@ -92,7 +92,7 @@ protected:
       std::shared_ptr<const GenerateChatCompletions::Goal> goal);
   virtual void execute_chat_completions(
       const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
-  void send_text_chat_completions(const struct CompletionOutput &completion, struct llama_utils::ResponseResult &response_result);
+  void send_text_chat_completions(const struct CompletionOutput &completion);
 
 private:
   // ros2

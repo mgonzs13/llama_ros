@@ -49,6 +49,8 @@ from langchain_core.output_parsers import (
     PydanticOutputParser,
     JsonOutputParser,
 )
+from contextlib import contextmanager
+
 from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
@@ -329,20 +331,29 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_request.tools.append(chat_req_tool)
 
         chat_request.sampling_config = self._set_sampling_config()
-        result, _ = self.llama_client.generate_chat_completions(chat_request, kwargs.get("stream", False))
-        
-        if kwargs.get("stream"):
-            return (self._parse_chat_generation_chunk(chunk) for chunk in result)
+
+        result = None
+        stream = kwargs.get("stream", False)
+
+        if stream:
+            result = self.llama_client.generate_chat_completions(chat_request, stream=True)
+        else:
+            result, _ = self.llama_client.generate_chat_completions(chat_request)
+
+        if stream:
+            return self._return_context_manager(result)
         else:
             return self._parse_chat_generation_response(result)
+    
+    @contextmanager
+    def _return_context_manager(self, response):
+        gen = (self._parse_chat_generation_chunk(chunk) for chunk in response)
+        try:
+            yield gen
+        finally:
+            pass
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
-        if self.streaming:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_chat_request(payload, **kwargs)
@@ -483,23 +494,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             choice_dict['delta']['role'] = choice.delta.role
             
             if choice.logprobs and len(choice.logprobs.data) > 0:
-                logprob_list = []
-                for logprob in choice.logprobs:
-                    logprob_obj = {}
-                    logprob_obj["token"] = logprob.data[0].token_text
-                    logprob_obj["logprob"] = logprob.data[0].probability
-                    logprob_obj["bytes"] = [logprob.data[0].token]
-                    logprob_obj["top_logprobs"] = []
-                    for i_logprob in logprob.data:
-                        logprob_obj["top_logprobs"].append(
-                            {
-                                "token": i_logprob.token_text,
-                                "logprob": i_logprob.probability,
-                                "bytes": [i_logprob.token],
-                            }
-                        )
-                    logprob_list.append(logprob_obj)
-                choice_dict["logprobs"] = logprob_list
+                logprob = choice.logprobs
+                logprob_obj = {}
+                logprob_obj["token"] = logprob.data[0].token_text
+                logprob_obj["logprob"] = logprob.data[0].probability
+                logprob_obj["bytes"] = [logprob.data[0].token]
+                logprob_obj["top_logprobs"] = []
+                for i_logprob in logprob.data:
+                    logprob_obj["top_logprobs"].append(
+                        {
+                            "token": i_logprob.token_text,
+                            "logprob": i_logprob.probability,
+                            "bytes": [i_logprob.token],
+                        }
+                    )
+                # TODO: logprobs chunks
+                # choice_dict["logprobs"] = logprob_obj
             result_dict["choices"].append(choice_dict)
 
         return result_dict

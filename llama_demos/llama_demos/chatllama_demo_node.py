@@ -70,13 +70,12 @@ class ChatLlamaDemoNode(Node):
 
         self.initial_time = time.time()
 
-        response = self.chain.invoke(
+        for response in self.chain.stream(
             {
                 "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
             }
-        )
-        
-        print(response)
+        ):
+            print(response, end="", flush=True)
 
 
 def main():
