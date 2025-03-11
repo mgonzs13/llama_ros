@@ -111,7 +111,7 @@ class LlamaClientNode(Node):
             "generate_response",
             callback_group=self._callback_group,
         )
-        
+
         self._action_chat_client = ActionClient(
             self,
             GenerateChatCompletions,
@@ -148,7 +148,10 @@ class LlamaClientNode(Node):
         return self._rerank_srv_client.call(req)
 
     def generate_chat_completions(
-        self, goal: GenerateChatCompletions.Goal, feedback_cb: Callable = None, stream: bool = False
+        self,
+        goal: GenerateChatCompletions.Goal,
+        feedback_cb: Callable = None,
+        stream: bool = False
     ) -> Union[
         Tuple[GenerateChatCompletions.Result, GoalStatus],
         Generator[GenerateChatCompletions.Feedback, None, None],

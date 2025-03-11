@@ -42,7 +42,7 @@ from typing import (
 from operator import itemgetter
 from functools import partial
 import warnings
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 from langchain_core.output_parsers import (
     PydanticToolsParser,
     JsonOutputKeyToolsParser,
@@ -51,17 +51,10 @@ from langchain_core.output_parsers import (
 )
 from contextlib import contextmanager
 
-from langchain_core.language_models.chat_models import (
-    agenerate_from_stream,
-    generate_from_stream,
-)
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.messages.ai import (
-    InputTokenDetails,
-    OutputTokenDetails,
     UsageMetadata,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -92,7 +85,7 @@ from langchain_openai.chat_models.base import (
     _oai_structured_outputs_parser,
     _is_pydantic_class,
     _handle_openai_bad_request,
-    _convert_delta_to_message_chunk
+    _convert_delta_to_message_chunk,
 )
 
 from llama_ros.langchain import LlamaROSCommon

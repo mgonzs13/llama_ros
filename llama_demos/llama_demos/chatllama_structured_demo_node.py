@@ -37,6 +37,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+
 # Pydantic
 class Joke(BaseModel):
     """Joke to tell user."""
@@ -46,7 +47,6 @@ class Joke(BaseModel):
     rating: Optional[int] = Field(
         default=None, description="How funny the joke is, from 1 to 10"
     )
-
 
 
 class ChatLlamaStructuredDemoNode(Node):
@@ -76,20 +76,17 @@ class ChatLlamaStructuredDemoNode(Node):
                 ),
             ]
         )
-        
-        structured_chat = self.chat.with_structured_output(Joke, method="function_calling")
+
+        structured_chat = self.chat.with_structured_output(
+            Joke, method="function_calling"
+        )
 
         self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
 
-        response = self.chain.invoke(
-            {
-                "prompt": "Tell me a joke about cats"
-            }
-        )
-        
-        
+        response = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+
         print("Tell me a joke about cats")
         print(response)
 

@@ -143,7 +143,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         goal.sampling_config = self._set_sampling_config()
 
         return goal
-    
+
     def _set_sampling_config(self):
         sampling_config = SamplingConfig()
         sampling_config.n_prev = self.n_prev
@@ -156,35 +156,35 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
             lb.token = key
             lb.bias = self.logit_bias[key]
             sampling_config.logit_bias.data.append(lb)
-            
+
         sampling_config.temp = self.temp
         sampling_config.dynatemp_range = self.dynatemp_range
         sampling_config.dynatemp_exponent = self.dynatemp_exponent
-        
+
         sampling_config.top_k = self.top_k
         sampling_config.top_p = self.top_p
         sampling_config.min_p = self.min_p
         sampling_config.xtc_probability = self.xtc_probability
         sampling_config.xtc_threshold = self.xtc_threshold
         sampling_config.typical_p = self.typical_p
-        
+
         sampling_config.penalty_last_n = self.penalty_last_n
         sampling_config.penalty_repeat = self.penalty_repeat
         sampling_config.penalty_freq = self.penalty_freq
         sampling_config.penalty_present = self.penalty_present
-        
+
         sampling_config.dry_multiplier = self.dry_multiplier
         sampling_config.dry_base = self.dry_base
         sampling_config.dry_allowed_length = self.dry_allowed_length
         sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
         sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
-        
+
         sampling_config.mirostat = self.mirostat
         sampling_config.mirostat_eta = self.mirostat_eta
         sampling_config.mirostat_tau = self.mirostat_tau
 
         sampling_config.samplers_sequence = self.samplers_sequence
-        
+
         sampling_config.grammar = self.grammar
         sampling_config.grammar_schema = self.grammar_schema
         sampling_config.grammar_lazy = self.grammar_lazy
@@ -193,7 +193,5 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         
         sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
-        
+
         return sampling_config
-        
-        
