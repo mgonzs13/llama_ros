@@ -269,7 +269,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         else:
             return ChatTool.TOOL_CHOICE_NONE
 
-    def _send_llama_request(self, payload: Dict[str, Any], **kwargs) -> Any:
+    def _send_llama_chat_request(self, payload: Dict[str, Any], **kwargs) -> Any:
         chat_request = GenerateChatCompletions.Goal()
         chat_request.add_generation_prompt = True
         chat_request.use_jinja = True
@@ -329,9 +329,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             chat_request.tools.append(chat_req_tool)
 
         chat_request.sampling_config = self._set_sampling_config()
-
         result, _ = self.llama_client.generate_chat_completions(chat_request, kwargs.get("stream", False))
-        return self._parse_chat_generation_response(result)
+        
+        if kwargs.get("stream"):
+            return (self._parse_chat_generation_chunk(chunk) for chunk in result)
+        else:
+            return self._parse_chat_generation_response(result)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         if self.streaming:
@@ -342,12 +345,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        response = self._send_llama_request(payload, **kwargs)
+        response = self._send_llama_chat_request(payload, **kwargs)
 
-        if kwargs.get("stream"):
-            return (self._create_chat_result(chunk, generation_info) for chunk in response)
-        else:
-            return self._create_chat_result(response, generation_info)
+        return self._create_chat_result(response, generation_info)
     
     def _stream(
         self,
@@ -361,7 +361,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         base_generation_info = {}
 
-        response = self._send_llama_request(payload, **kwargs)
+        response = self._send_llama_chat_request(payload, **kwargs)
         context_manager = response
 
         try:
@@ -464,7 +464,46 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             result_dict["choices"].append(choice_dict)
 
         return result_dict
+    
+    def _parse_chat_generation_chunk(self, chunk: GenerateChatCompletions.Feedback) -> ChatGenerationChunk:
+        result_dict = {}
+        result_dict["id"] = chunk.id
+        result_dict["created"] = chunk.created
+        result_dict["model"] = chunk.model
+        result_dict["object"] = chunk.object
+        result_dict["system_fingerprint"] = chunk.system_fingerprint
+        result_dict["choices"] = []
+        
+        for choice in chunk.choices:
+            choice_dict = {}
+            choice_dict["finish_reason"] = choice.finish_reason
+            choice_dict["index"] = choice.index
+            choice_dict['delta'] = {}
+            choice_dict['delta']['content'] = choice.delta.content
+            choice_dict['delta']['role'] = choice.delta.role
+            
+            if choice.logprobs and len(choice.logprobs.data) > 0:
+                logprob_list = []
+                for logprob in choice.logprobs:
+                    logprob_obj = {}
+                    logprob_obj["token"] = logprob.data[0].token_text
+                    logprob_obj["logprob"] = logprob.data[0].probability
+                    logprob_obj["bytes"] = [logprob.data[0].token]
+                    logprob_obj["top_logprobs"] = []
+                    for i_logprob in logprob.data:
+                        logprob_obj["top_logprobs"].append(
+                            {
+                                "token": i_logprob.token_text,
+                                "logprob": i_logprob.probability,
+                                "bytes": [i_logprob.token],
+                            }
+                        )
+                    logprob_list.append(logprob_obj)
+                choice_dict["logprobs"] = logprob_list
+            result_dict["choices"].append(choice_dict)
 
+        return result_dict
+        
     def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
         if not self.disabled_params:
             return kwargs
