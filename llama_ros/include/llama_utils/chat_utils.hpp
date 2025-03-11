@@ -25,9 +25,9 @@
 
 #include <llama_msgs/action/generate_chat_completions.hpp>
 #include <memory>
+#include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include <random>
 
 #include "chat.h"
 #include "common.h"
@@ -70,7 +70,8 @@ struct ResponseResult {
 };
 
 inline std::string random_string(int string_size = 32) {
-  static const std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+  static const std::string str(
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
   std::random_device rd;
   std::mt19937 generator(rd());
@@ -78,15 +79,13 @@ inline std::string random_string(int string_size = 32) {
   std::string result(string_size, ' ');
 
   for (int i = 0; i < string_size; ++i) {
-      result[i] = str[generator() % str.size()];
+    result[i] = str[generator() % str.size()];
   }
 
   return result;
 }
 
-inline std::string gen_chatcmplid() {
-  return "chatcmpl-" + random_string();
-}
+inline std::string gen_chatcmplid() { return "chatcmpl-" + random_string(); }
 
 inline float logit(float x) {
   return x == 0.0f ? std::numeric_limits<float>::lowest() : std::log(x);

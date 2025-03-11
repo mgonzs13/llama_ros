@@ -1076,7 +1076,7 @@ Llama::get_chat_templates() {
 }
 struct llama_perf_context_data Llama::get_perf_data() {
   return llama_perf_context(this->ctx);
-} 
+}
 
 struct common_chat_params
 Llama::get_chat_params(struct common_chat_templates *tmpls,

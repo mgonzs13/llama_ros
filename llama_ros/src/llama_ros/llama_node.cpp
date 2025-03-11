@@ -632,12 +632,13 @@ void LlamaNode::execute_chat_completions(
   response_result.oaicompat_model = this->llama->get_metadata().general.name;
   response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
   response_result.build_info =
-    "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+      "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
   // call llama
   struct ResponseOutput chat_output = this->llama->generate_response(
       chat_prompt_instance.prompt, sparams,
-      std::bind(&LlamaNode::send_text_chat_completions, this, std::placeholders::_1));
+      std::bind(&LlamaNode::send_text_chat_completions, this,
+                std::placeholders::_1));
 
   if (chat_output.stop == StopType::FULL_STOP) {
     response_result.index = 0;
@@ -704,7 +705,7 @@ void LlamaNode::send_text_chat_completions(
     response_result.oaicompat_model = this->llama->get_metadata().general.name;
     response_result.oaicompat_cmpl_id = "chatcmplid-0";
     response_result.build_info =
-      "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+        "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
     response_result.n_decoded = stat_usage.n_eval;
     response_result.n_prompt_tokens = stat_usage.n_p_eval;
@@ -720,10 +721,12 @@ void LlamaNode::send_text_chat_completions(
       response_result.probs_output[0].data.push_back(lobprob);
     }
 
-    auto feedbacks = llama_utils::generate_chat_completions_feedback(response_result);
+    auto feedbacks =
+        llama_utils::generate_chat_completions_feedback(response_result);
 
     for (auto &feedback : feedbacks) {
-      this->goal_handle_chat_->publish_feedback(std::make_shared<GenerateChatCompletions::Feedback>(feedback));
+      this->goal_handle_chat_->publish_feedback(
+          std::make_shared<GenerateChatCompletions::Feedback>(feedback));
     }
   }
 }

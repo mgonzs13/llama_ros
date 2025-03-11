@@ -126,7 +126,6 @@ void LlavaNode::execute_chat_completions(
   llama_ros::LlamaNode::execute_chat_completions(goal_handle);
 }
 
-
 // https://renenyffenegger.ch/notes/development/Base64/Encoding-and-decoding-base-64-with-cpp/
 std::string LlavaNode::base64_encode(unsigned char const *bytes_to_encode,
                                      size_t in_len, bool url) {

@@ -31,8 +31,8 @@
 
 #include "common.h"
 
-#include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/action/generate_chat_completions.hpp"
+#include "llama_msgs/action/generate_response.hpp"
 #include "llama_ros/llama_node.hpp"
 #include "llava_ros/llava.hpp"
 
@@ -46,7 +46,6 @@ class LlavaNode : public llama_ros::LlamaNode {
   using GenerateChatCompletions = llama_msgs::action::GenerateChatCompletions;
   using GoalHandleGenerateChatCompletions =
       rclcpp_action::ServerGoalHandle<GenerateChatCompletions>;
-    
 
 public:
   LlavaNode();
