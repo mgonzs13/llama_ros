@@ -628,21 +628,22 @@ void LlamaNode::execute_chat_completions(
   sparams.grammar_lazy =
       chat_prompt_instance.grammar_lazy || goal->sampling_config.grammar_lazy;
 
+  llama_utils::ResponseResult response_result;
+  response_result.oaicompat_model = this->llama->get_metadata().general.name;
+  response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
+  response_result.build_info =
+    "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+
   // call llama
   struct ResponseOutput chat_output = this->llama->generate_response(
       chat_prompt_instance.prompt, sparams,
-      std::bind(&LlamaNode::send_text_chat_completions, this, _1));
-
-  llama_utils::ResponseResult response_result;
-  // TODO: Fill response_result with the data
-  response_result.index = 0;
+      std::bind(&LlamaNode::send_text_chat_completions, this, std::placeholders::_1, std::ref(response_result)));
 
   if (chat_output.stop == StopType::FULL_STOP) {
+    response_result.index = 0;
     auto completion_results = chat_output.completions;
-    response_result.stream = false;
+    response_result.stream = goal->stream;
     response_result.prompt = chat_prompt_instance.prompt;
-    response_result.build_info =
-        "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
     auto stat_usage = this->llama->get_perf_data();
 
@@ -653,9 +654,6 @@ void LlamaNode::execute_chat_completions(
     response_result.post_sampling_probs = false;
 
     response_result.oaicompat_chat_format = chat_prompt_instance.format;
-    response_result.oaicompat_model = this->llama->get_metadata().general.name;
-    response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
-
     std::string result_content;
 
     for (auto completion : completion_results) {
@@ -697,24 +695,27 @@ void LlamaNode::execute_chat_completions(
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion) {
+    const struct CompletionOutput &completion, struct llama_utils::ResponseResult &response_result) {
   if (this->goal_handle_chat_ != nullptr) {
-    auto feedback = std::make_shared<GenerateChatCompletions::Feedback>();
+    auto stat_usage = this->llama->get_perf_data();
 
-    // TODO: Fill feedback with the data
-    // feedback->partial_response.text =
-    //     this->llama->detokenize({completion.token});
-    // feedback->partial_response.token = completion.token;
-    // feedback->partial_response.probs.chosen_token = completion.token;
+    response_result.n_decoded = stat_usage.n_eval;
+    response_result.n_prompt_tokens = stat_usage.n_p_eval;
+    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
+    response_result.content = this->llama->detokenize({completion.token});
 
-    // for (auto prob : completion.probs) {
-    //   llama_msgs::msg::TokenProb aux;
-    //   aux.token = prob.token;
-    //   aux.probability = prob.probability;
-    //   aux.token_text = this->llama->detokenize({prob.token});
-    //   feedback->partial_response.probs.data.push_back(aux);
-    // }
+    for (auto prob_cmpl : completion.probs) {
+      struct llama_utils::LogProb lobprob;
+      lobprob.token = prob_cmpl.token;
+      lobprob.probability = prob_cmpl.probability;
+      lobprob.text = this->llama->detokenize({lobprob.token});
+      response_result.probs_output[0].data.push_back(lobprob);
+    }
 
-    this->goal_handle_chat_->publish_feedback(feedback);
+    auto feedbacks = llama_utils::generate_chat_completions_feedback(response_result);
+
+    for (auto &feedback : feedbacks) {
+      this->goal_handle_chat_->publish_feedback(std::make_shared<GenerateChatCompletions::Feedback>(feedback));
+    }
   }
 }

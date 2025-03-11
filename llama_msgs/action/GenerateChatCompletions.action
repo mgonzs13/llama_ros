@@ -7,6 +7,7 @@ bool extract_reasoning
 SamplingConfig sampling_config
 sensor_msgs/Image image
 bool parallel_tool_calls
+bool stream
 ---
 string id
 ChatChoice[] choices

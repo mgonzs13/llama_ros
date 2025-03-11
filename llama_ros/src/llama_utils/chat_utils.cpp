@@ -21,8 +21,8 @@
 // SOFTWARE.
 
 #include "llama_utils/chat_utils.hpp"
-#include "llama_msgs/msg/chat_message.h"
 #include "llama_msgs/msg/chat_choice.h"
+#include "llama_msgs/msg/chat_message.h"
 #include "llama_msgs/msg/chat_req_tool.h"
 #include "llama_msgs/msg/chat_tool_call.h"
 #include "llama_ros/llama.hpp"
@@ -35,7 +35,8 @@ common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   } else if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_NONE) {
     return COMMON_CHAT_TOOL_CHOICE_NONE;
   } else {
-    throw std::runtime_error("Unsupported chat tool choice: " + std::to_string(type));
+    throw std::runtime_error("Unsupported chat tool choice: " +
+                             std::to_string(type));
   }
 }
 
@@ -129,7 +130,6 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   choice.index = 0;
   choice.message = chat_msg;
 
-
   if (!result.stream && result.probs_output.size() > 0) {
     for (const auto &prob : result.probs_output) {
       llama_msgs::msg::TokenProbArray probs_msg;
@@ -153,15 +153,94 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   res.created = t;
   res.model = result.oaicompat_model;
   res.system_fingerprint = result.build_info;
-  if (result.stream) {
-    res.object = "chat.completion.chunk";
-  } else {
-    res.object = "chat.completion";
-  }
+  res.object = "chat.completion";
   res.usage.completion_tokens = result.n_decoded;
   res.usage.prompt_tokens = result.n_prompt_tokens;
   res.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
   res.id = result.oaicompat_cmpl_id;
 
   return res;
+}
+
+std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
+llama_utils::generate_chat_completions_feedback(const ResponseResult &result) {
+  bool first = result.n_decoded == 0;
+
+  std::vector<llama_msgs::msg::ChatChoiceChunk> choices;
+
+  if (!first) {
+    llama_msgs::msg::ChatChoiceChunk choice;
+    choice.finish_reason = "";
+    choice.index = 0;
+    choice.delta.role = "assistant";
+    choice.delta.content = result.content;
+    choices.push_back(choice);
+  } else {
+    if (result.content.empty()) {
+      auto choice = llama_msgs::msg::ChatChoiceChunk();
+      choice.finish_reason = "";
+      choice.index = 0;
+      choice.delta.role = "assistant";
+      choices.push_back(choice);
+    } else {
+      llama_msgs::action::GenerateChatCompletions::Feedback first_ret;
+      first_ret.created = std::time(0);
+      first_ret.object = "chat.completion.chunk";
+      first_ret.model = result.oaicompat_model;
+      first_ret.usage.completion_tokens = result.n_decoded;
+      first_ret.usage.prompt_tokens = result.n_prompt_tokens;
+      first_ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
+      first_ret.system_fingerprint = result.build_info;
+
+      llama_msgs::msg::ChatChoiceChunk choice;
+      choice.finish_reason = "";
+      choice.index = 0;
+      choice.delta.role = "assistant";
+      first_ret.choices.push_back(choice);
+
+      llama_msgs::action::GenerateChatCompletions::Feedback second_ret;
+      second_ret.created = std::time(0);
+      second_ret.object = "chat.completion.chunk";
+      second_ret.model = result.oaicompat_model;
+      second_ret.usage.completion_tokens = result.n_decoded;
+      second_ret.usage.prompt_tokens = result.n_prompt_tokens;
+      second_ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
+      second_ret.system_fingerprint = result.build_info;
+
+      llama_msgs::msg::ChatChoiceChunk choice2;
+      choice2.finish_reason = "";
+      choice2.index = 0;
+      choice2.delta.role = "assistant";
+      choice2.delta.content = result.content;
+
+      second_ret.choices.push_back(choice2);
+      return {first_ret, second_ret};
+    }
+  }
+
+  llama_msgs::action::GenerateChatCompletions::Feedback ret;
+  ret.created = std::time(0);
+  ret.object = "chat.completion.chunk";
+  ret.model = result.oaicompat_model;
+  ret.usage.completion_tokens = result.n_decoded;
+  ret.usage.prompt_tokens = result.n_prompt_tokens;
+  ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
+  ret.system_fingerprint = result.build_info;
+
+  if (result.probs_output.size() > 0) {
+    auto prob = result.probs_output[0];
+    llama_msgs::msg::TokenProbArray probs_msg;
+    probs_msg.chosen_token = prob.chosen_token.token;
+    for (const auto &p : prob.data) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = p.token;
+      aux.probability = p.probability;
+      aux.token_text = p.text;
+      probs_msg.data.push_back(aux);
+    }
+    choices[0].logprobs = probs_msg;
+  }
+
+  ret.choices = choices;
+  return {ret};
 }

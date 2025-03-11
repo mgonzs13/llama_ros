@@ -101,5 +101,8 @@ common_chat_templates_inputs parse_chat_completions_goal(
 
 llama_msgs::action::GenerateChatCompletions::Result
 generate_chat_completions_result(const ResponseResult &result);
+
+std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
+generate_chat_completions_feedback(const ResponseResult &result);
 } // namespace llama_utils
 #endif
