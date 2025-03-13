@@ -237,6 +237,8 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
+            if "reasoning_content" in res["message"] and res["message"]["reasoning_content"] != "":
+                message.additional_kwargs["reasoning_content"] = res["message"]["reasoning_content"]
             gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         llm_output = {
@@ -346,7 +348,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         finally:
             pass
 
-    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_chat_request(payload, **kwargs)
