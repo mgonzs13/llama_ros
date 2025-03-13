@@ -84,11 +84,12 @@ class ChatLlamaStructuredDemoNode(Node):
         self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
-
         response = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+        self.final_time = time.time()
 
-        print("Tell me a joke about cats")
+        print("Prompt: Tell me a joke about cats")
         print(response)
+        print(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
 
 
 def main():
