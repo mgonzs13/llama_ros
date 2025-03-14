@@ -92,7 +92,7 @@ from langchain_openai.chat_models.base import (
 from llama_ros.langchain import LlamaROSCommon
 from llama_msgs.msg import (
     ChatMessage as RChatMessage,
-    Content,
+    ChatContent,
     ChatReqTool,
     ChatTool,
     ChatToolCall,
@@ -597,7 +597,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             msg_dict["content_parts"] = []
             msg_dict["tool_calls"] = []
 
-            content: Content
+            content: ChatContent
             for content in choice.message.content_parts:
                 content_dict = {}
                 content_dict["type"] = content.type
@@ -738,7 +738,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 chat_message.content = message["content"]
             elif type(message["content"]) == list:
                 for content in message["content"]:
-                    chat_content = Content()
+                    chat_content = ChatContent()
                     chat_content.type = content["type"]
                     chat_content.text = content[content["type"]]
                     chat_message.content_parts.append(chat_content)

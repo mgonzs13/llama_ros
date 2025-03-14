@@ -28,7 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GrammarTrigger.msg"
   "msg/ChatMessage.msg"
   "msg/ChatTool.msg"
-  "msg/Content.msg"
+  "msg/ChatContent.msg"
   "msg/ChatToolCall.msg"
   "msg/ChatReqTool.msg"
   "msg/ChatChoice.msg"

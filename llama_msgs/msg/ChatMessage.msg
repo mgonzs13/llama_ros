@@ -1,6 +1,6 @@
 string role
 string content
-Content[] content_parts
+ChatContent[] content_parts
 ChatToolCall[] tool_calls
 string reasoning_content
 string tool_name
