@@ -699,7 +699,7 @@ void LlamaNode::execute_chat_completions(
 void LlamaNode::send_text_chat_completions(
     const struct CompletionOutput &completion) {
   if (this->goal_handle_chat_ != nullptr) {
-    auto stat_usage = this->llama->get_perf_data();
+    // auto stat_usage = this->llama->get_perf_data();
 
     llama_utils::ResponseResult response_result;
 
