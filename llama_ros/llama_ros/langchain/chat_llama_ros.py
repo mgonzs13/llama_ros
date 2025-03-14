@@ -71,6 +71,7 @@ from langchain_core.messages import (
     FunctionMessage,
     BaseMessage,
     BaseMessageChunk,
+    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -89,7 +90,17 @@ from langchain_openai.chat_models.base import (
 )
 
 from llama_ros.langchain import LlamaROSCommon
-from llama_msgs.msg import ChatMessage, Content, ChatReqTool, ChatTool, ChatToolCall
+from llama_msgs.msg import (
+    ChatMessage as RChatMessage,
+    Content,
+    ChatReqTool,
+    ChatTool,
+    ChatToolCall,
+    ChatChoice,
+    ChatChoiceChunk,
+    TokenProbArray,
+    TokenProb,
+)
 from llama_msgs.action import GenerateChatCompletions
 import openai
 import json
@@ -112,249 +123,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def _llm_type(self) -> str:
         return "chatllamaros"
 
-    def _remove_image_url(self, data):
-        image_url = None
-
-        for message in data.get("messages", []):
-            if isinstance(message.get("content"), list):
-                # Extract the URL if an image_url exists
-                for item in message["content"]:
-                    if item.get("type") == "image_url":
-                        image_url = item["image_url"]["url"]
-
-                # Remove all 'image_url' type items
-                message["content"] = [
-                    item
-                    for item in message["content"]
-                    if item.get("type") != "image_url"
-                ]
-
-        return data, image_url
-
-    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
-        message_content = _format_message_content(message.content)
-
-        message_dict: Dict[str, Any] = {
-            "content": message_content,
-        }
-
-        if (name := message.name or message.additional_kwargs.get("name")) is not None:
-            message_dict["name"] = name
-
-        # populate role and additional message data
-        if isinstance(message, ChatMessage):
-            message_dict["role"] = message.role
-        elif isinstance(message, HumanMessage):
-            message_dict["role"] = "user"
-        elif isinstance(message, AIMessage):
-            message_dict["role"] = "assistant"
-            if "function_call" in message.additional_kwargs:
-                message_dict["function_call"] = message.additional_kwargs[
-                    "function_call"
-                ]
-            if message.tool_calls or message.invalid_tool_calls:
-                message_dict["tool_calls"] = [
-                    _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
-                ] + [
-                    _lc_invalid_tool_call_to_openai_tool_call(tc)
-                    for tc in message.invalid_tool_calls
-                ]
-            elif "tool_calls" in message.additional_kwargs:
-                message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-                tool_call_supported_props = {"id", "type", "function"}
-                message_dict["tool_calls"] = [
-                    {
-                        k: v
-                        for k, v in tool_call.items()
-                        if k in tool_call_supported_props
-                    }
-                    for tool_call in message_dict["tool_calls"]
-                ]
-            else:
-                pass
-            # If tool calls present, content null value should be None not empty string.
-            if "function_call" in message_dict or "tool_calls" in message_dict:
-                message_dict["content"] = message_dict["content"] or None
-
-        elif isinstance(message, SystemMessage):
-            message_dict["role"] = message.additional_kwargs.get(
-                "__openai_role__", "system"
-            )
-        elif isinstance(message, FunctionMessage):
-            message_dict["role"] = "function"
-        elif isinstance(message, ToolMessage):
-            message_dict["role"] = "tool"
-            message_dict["tool_call_id"] = message.tool_call_id
-
-            supported_props = {"content", "role", "tool_call_id"}
-            message_dict = {
-                k: v for k, v in message_dict.items() if k in supported_props
-            }
-        else:
-            raise TypeError(f"Got unknown type {message}")
-        return message_dict
-
-    def _get_request_payload(
-        self,
-        input_: LanguageModelInput,
-        *,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> dict:
-        messages = self._convert_input(input_).to_messages()
-        if stop is not None:
-            kwargs["stop"] = stop
-
-        return {
-            "messages": [self._convert_message_to_dict(m) for m in messages],
-            **self._default_params,
-            **kwargs,
-        }
-
-    def _create_chat_result(
-        self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[Dict] = None,
-    ) -> ChatResult:
-        generations = []
-
-        response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
-        )
-        if response_dict.get("error"):
-            raise ValueError(response_dict.get("error"))
-
-        token_usage = response_dict.get("usage")
-        for res in response_dict["choices"]:
-            message = _convert_dict_to_message(res["message"])
-            if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = _create_usage_metadata(token_usage)
-            generation_info = generation_info or {}
-            generation_info["finish_reason"] = (
-                res.get("finish_reason")
-                if res.get("finish_reason") is not None
-                else generation_info.get("finish_reason")
-            )
-            if "logprobs" in res:
-                generation_info["logprobs"] = res["logprobs"]
-            if "reasoning_content" in res["message"] and res["message"]["reasoning_content"] != "":
-                message.additional_kwargs["reasoning_content"] = res["message"]["reasoning_content"]
-            gen = ChatGeneration(message=message, generation_info=generation_info)
-            generations.append(gen)
-        llm_output = {
-            "token_usage": token_usage,
-            "model_name": response_dict.get("model", response["model"]),
-            "system_fingerprint": response_dict.get("system_fingerprint", ""),
-        }
-
-        if isinstance(response, openai.BaseModel) and getattr(
-            response, "choices", None
-        ):
-            message = response.choices[0].message  # type: ignore[attr-defined]
-            if hasattr(message, "parsed"):
-                generations[0].message.additional_kwargs["parsed"] = message.parsed
-            if hasattr(message, "refusal"):
-                generations[0].message.additional_kwargs["refusal"] = message.refusal
-
-        return ChatResult(generations=generations, llm_output=llm_output)
-
-    def _parse_tool_choice(self, tool_choice: str) -> dict:
-        if tool_choice == "auto":
-            return ChatTool.TOOL_CHOICE_AUTO
-        elif tool_choice == "required":
-            return ChatTool.TOOL_CHOICE_REQUIRED
-        else:
-            return ChatTool.TOOL_CHOICE_NONE
-
-    def _send_llama_chat_request(self, payload: Dict[str, Any], **kwargs) -> Any:
-        chat_request = GenerateChatCompletions.Goal()
-        chat_request.add_generation_prompt = True
-        chat_request.use_jinja = True
-        chat_request.messages = []
-        chat_request.tools = []
-        chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
-
-        payload, image_url = self._remove_image_url(payload)
-
-        if image_url:
-            image = None
-            if "data:image" in image_url:
-                image_data = image_url.split(",")[-1]
-                decoded_image = base64.b64decode(image_data)
-                np_image = np.frombuffer(decoded_image, np.uint8)
-                image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-                image_url = None
-
-            chat_request.image = self._get_image(image_url, image)
-
-        if "tool_choice" in kwargs:
-            chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])
-        else:
-            chat_request.tool_choice = self._parse_tool_choice("none")
-
-        for message in payload.get("messages", []):
-            chat_message = ChatMessage()
-            chat_message.role = message["role"]
-
-            for tool_call in message.get("tool_calls", []):
-                chat_tool_call = ChatToolCall()
-                chat_tool_call.id = tool_call["id"]
-                chat_tool_call.name = tool_call["function"]["name"]
-                chat_tool_call.arguments = json.dumps(
-                    tool_call["function"]["arguments"]
-                )
-                chat_message.tool_calls.append(chat_tool_call)
-
-            if type(message["content"]) == str:
-                chat_message.content = message["content"]
-            elif type(message["content"]) == list:
-                for content in message["content"]:
-                    chat_content = Content()
-                    chat_content.type = content["type"]
-                    chat_content.text = content[content["type"]]
-                    chat_message.content_parts.append(chat_content)
-            chat_request.messages.append(chat_message)
-
-        for tool in payload.get("tools", []):
-            chat_req_tool = ChatReqTool()
-            chat_req_tool.type = "function"
-            chat_tool = ChatTool()
-            chat_tool.name = tool["function"]["name"]
-            chat_tool.description = tool["function"]["description"]
-            chat_tool.parameters = json.dumps(tool["function"]["parameters"])
-            chat_req_tool.function = chat_tool
-            chat_request.tools.append(chat_req_tool)
-
-        chat_request.sampling_config = self._set_sampling_config()
-
-        result = None
-        stream = kwargs.get("stream", False)
-
-        if stream:
-            result = self.llama_client.generate_chat_completions(chat_request, stream=True)
-        else:
-            result, _ = self.llama_client.generate_chat_completions(chat_request)
-
-        if stream:
-            return self._return_context_manager(result)
-        else:
-            return self._parse_chat_generation_response(result)
-    
-    @contextmanager
-    def _return_context_manager(self, response):
-        gen = (self._parse_chat_generation_chunk(chunk) for chunk in response)
-        try:
-            yield gen
-        finally:
-            pass
-
     def _generate(self, messages, stop=None, run_manager=None, **kwargs) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         response = self._send_llama_chat_request(payload, **kwargs)
-
         return self._create_chat_result(response, generation_info)
-    
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -405,124 +179,6 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     generation_chunk.text, chunk=generation_chunk
                 )
             yield generation_chunk
-
-    def _parse_chat_generation_response(
-        self, result: GenerateChatCompletions.Result
-    ) -> dict:
-        result_dict = {}
-
-        result_dict["id"] = result.id
-        result_dict["created"] = result.created
-        result_dict["model"] = result.model
-        result_dict["object"] = result.object
-        result_dict["system_fingerprint"] = result.system_fingerprint
-        result_dict["choices"] = []
-
-        for choice in result.choices:
-            choice_dict = {}
-            choice_dict["finish_reason"] = choice.finish_reason
-            choice_dict["index"] = choice.index
-
-            msg_dict = {}
-            msg_dict["content"] = choice.message.content
-            msg_dict["role"] = choice.message.role
-            msg_dict["reasoning_content"] = choice.message.reasoning_content
-            msg_dict["tool_name"] = choice.message.tool_name
-            msg_dict["tool_call_id"] = choice.message.tool_call_id
-            msg_dict["content_parts"] = []
-            msg_dict["tool_calls"] = []
-
-            for content in choice.message.content_parts:
-                content_dict = {}
-                content_dict["type"] = content.type
-                content_dict["text"] = content.text
-
-                msg_dict["content_parts"].append(content_dict)
-            for tool_call in choice.message.tool_calls:
-                tool_call_dict = {}
-                tool_call_dict["id"] = tool_call.id
-                tool_call_dict["type"] = "function"
-                tool_call_dict["function"] = {}
-                tool_call_dict["function"]["name"] = tool_call.name
-                tool_call_dict["function"]["arguments"] = tool_call.arguments
-
-                msg_dict["tool_calls"].append(tool_call_dict)
-
-            choice_dict["message"] = msg_dict
-
-            logprob_list = []
-            for logprob in choice.logprobs:
-                logprob_obj = {}
-                logprob_obj["token"] = logprob.data[0].token_text
-                logprob_obj["logprob"] = logprob.data[0].probability
-                logprob_obj["bytes"] = [logprob.data[0].token]
-                logprob_obj["top_logprobs"] = []
-                for i_logprob in logprob.data:
-                    logprob_obj["top_logprobs"].append(
-                        {
-                            "token": i_logprob.token_text,
-                            "logprob": i_logprob.probability,
-                            "bytes": [i_logprob.token],
-                        }
-                    )
-                logprob_list.append(logprob_obj)
-            choice_dict["logprobs"] = logprob_list
-            result_dict["choices"].append(choice_dict)
-
-        return result_dict
-    
-    def _parse_chat_generation_chunk(self, chunk: GenerateChatCompletions.Feedback) -> ChatGenerationChunk:
-        result_dict = {}
-        result_dict["id"] = chunk.id
-        result_dict["created"] = chunk.created
-        result_dict["model"] = chunk.model
-        result_dict["object"] = chunk.object
-        result_dict["system_fingerprint"] = chunk.system_fingerprint
-        result_dict["choices"] = []
-        
-        for choice in chunk.choices:
-            choice_dict = {}
-            choice_dict["finish_reason"] = choice.finish_reason
-            choice_dict["index"] = choice.index
-            choice_dict['delta'] = {}
-            choice_dict['delta']['content'] = choice.delta.content
-            choice_dict['delta']['role'] = choice.delta.role
-            
-            if choice.logprobs and len(choice.logprobs.data) > 0:
-                logprob = choice.logprobs
-                logprob_obj = {}
-                logprob_obj["token"] = logprob.data[0].token_text
-                logprob_obj["logprob"] = logprob.data[0].probability
-                logprob_obj["bytes"] = [logprob.data[0].token]
-                logprob_obj["top_logprobs"] = []
-                for i_logprob in logprob.data:
-                    logprob_obj["top_logprobs"].append(
-                        {
-                            "token": i_logprob.token_text,
-                            "logprob": i_logprob.probability,
-                            "bytes": [i_logprob.token],
-                        }
-                    )
-                # TODO: logprobs chunks
-                # choice_dict["logprobs"] = logprob_obj
-            result_dict["choices"].append(choice_dict)
-
-        return result_dict
-        
-    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
-        if not self.disabled_params:
-            return kwargs
-        filtered = {}
-        for k, v in kwargs.items():
-            # Skip param
-            if k in self.disabled_params and (
-                self.disabled_params[k] is None or v in self.disabled_params[k]
-            ):
-                continue
-            # Keep param
-            else:
-                filtered[k] = v
-        return filtered
 
     def bind_tools(
         self,
@@ -684,7 +340,154 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
-        
+
+    def _convert_message_to_dict(self, message: BaseMessage) -> dict:
+        message_content = _format_message_content(message.content)
+
+        message_dict: Dict[str, Any] = {
+            "content": message_content,
+        }
+
+        if (name := message.name or message.additional_kwargs.get("name")) is not None:
+            message_dict["name"] = name
+
+        # populate role and additional message data
+        if isinstance(message, ChatMessage):
+            message_dict["role"] = message.role
+        elif isinstance(message, HumanMessage):
+            message_dict["role"] = "user"
+        elif isinstance(message, AIMessage):
+            message_dict["role"] = "assistant"
+            if "function_call" in message.additional_kwargs:
+                message_dict["function_call"] = message.additional_kwargs[
+                    "function_call"
+                ]
+            if message.tool_calls or message.invalid_tool_calls:
+                message_dict["tool_calls"] = [
+                    _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+                ] + [
+                    _lc_invalid_tool_call_to_openai_tool_call(tc)
+                    for tc in message.invalid_tool_calls
+                ]
+            elif "tool_calls" in message.additional_kwargs:
+                message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+                tool_call_supported_props = {"id", "type", "function"}
+                message_dict["tool_calls"] = [
+                    {
+                        k: v
+                        for k, v in tool_call.items()
+                        if k in tool_call_supported_props
+                    }
+                    for tool_call in message_dict["tool_calls"]
+                ]
+            else:
+                pass
+            # If tool calls present, content null value should be None not empty string.
+            if "function_call" in message_dict or "tool_calls" in message_dict:
+                message_dict["content"] = message_dict["content"] or None
+
+        elif isinstance(message, SystemMessage):
+            message_dict["role"] = message.additional_kwargs.get(
+                "__openai_role__", "system"
+            )
+        elif isinstance(message, FunctionMessage):
+            message_dict["role"] = "function"
+        elif isinstance(message, ToolMessage):
+            message_dict["role"] = "tool"
+            message_dict["tool_call_id"] = message.tool_call_id
+
+            supported_props = {"content", "role", "tool_call_id"}
+            message_dict = {
+                k: v for k, v in message_dict.items() if k in supported_props
+            }
+        else:
+            raise TypeError(f"Got unknown type {message}")
+        return message_dict
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        messages = self._convert_input(input_).to_messages()
+        if stop is not None:
+            kwargs["stop"] = stop
+
+        return {
+            "messages": [self._convert_message_to_dict(m) for m in messages],
+            **self._default_params,
+            **kwargs,
+        }
+
+    def _create_chat_result(
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
+    ) -> ChatResult:
+        generations = []
+
+        response_dict = (
+            response if isinstance(response, dict) else response.model_dump()
+        )
+        if response_dict.get("error"):
+            raise ValueError(response_dict.get("error"))
+
+        token_usage = response_dict.get("usage")
+        for res in response_dict["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = _create_usage_metadata(token_usage)
+            generation_info = generation_info or {}
+            generation_info["finish_reason"] = (
+                res.get("finish_reason")
+                if res.get("finish_reason") is not None
+                else generation_info.get("finish_reason")
+            )
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
+            if (
+                "reasoning_content" in res["message"]
+                and res["message"]["reasoning_content"] != ""
+            ):
+                message.additional_kwargs["reasoning_content"] = res["message"][
+                    "reasoning_content"
+                ]
+            gen = ChatGeneration(message=message, generation_info=generation_info)
+            generations.append(gen)
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": response_dict.get("model", response["model"]),
+            "system_fingerprint": response_dict.get("system_fingerprint", ""),
+        }
+
+        if isinstance(response, openai.BaseModel) and getattr(
+            response, "choices", None
+        ):
+            message = response.choices[0].message  # type: ignore[attr-defined]
+            if hasattr(message, "parsed"):
+                generations[0].message.additional_kwargs["parsed"] = message.parsed
+            if hasattr(message, "refusal"):
+                generations[0].message.additional_kwargs["refusal"] = message.refusal
+
+        return ChatResult(generations=generations, llm_output=llm_output)
+
+    def _filter_disabled_params(self, **kwargs: Any) -> Dict[str, Any]:
+        if not self.disabled_params:
+            return kwargs
+        filtered = {}
+        for k, v in kwargs.items():
+            # Skip param
+            if k in self.disabled_params and (
+                self.disabled_params[k] is None or v in self.disabled_params[k]
+            ):
+                continue
+            # Keep param
+            else:
+                filtered[k] = v
+        return filtered
+
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,
@@ -738,3 +541,240 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         )
         return generation_chunk
 
+    ###############################
+    #                             #
+    #     ROS related code        #
+    #                             #
+    ###############################
+
+    def _remove_image_url(self, data):
+        image_url = None
+
+        for message in data.get("messages", []):
+            if isinstance(message.get("content"), list):
+                # Extract the URL if an image_url exists
+                for item in message["content"]:
+                    if item.get("type") == "image_url":
+                        image_url = item["image_url"]["url"]
+
+                # Remove all 'image_url' type items
+                message["content"] = [
+                    item
+                    for item in message["content"]
+                    if item.get("type") != "image_url"
+                ]
+
+        return data, image_url
+
+    def _parse_chat_generation_response(
+        self, result: GenerateChatCompletions.Result
+    ) -> dict:
+        result_dict = {}
+
+        result_dict["id"] = result.id
+        result_dict["created"] = result.created
+        result_dict["model"] = result.model
+        result_dict["object"] = result.object
+        result_dict["system_fingerprint"] = result.system_fingerprint
+        result_dict["choices"] = []
+        result_dict["usage"] = {}
+        result_dict["usage"]["completion_tokens"] = result.usage.completion_tokens
+        result_dict["usage"]["prompt_tokens"] = result.usage.prompt_tokens
+        result_dict["usage"]["total_tokens"] = result.usage.total_tokens
+
+        choice: ChatChoice
+        for choice in result.choices:
+            choice_dict = {}
+            choice_dict["finish_reason"] = choice.finish_reason
+            choice_dict["index"] = choice.index
+
+            msg_dict = {}
+            msg_dict["content"] = choice.message.content
+            msg_dict["role"] = choice.message.role
+            msg_dict["reasoning_content"] = choice.message.reasoning_content
+            msg_dict["tool_name"] = choice.message.tool_name
+            msg_dict["tool_call_id"] = choice.message.tool_call_id
+            msg_dict["content_parts"] = []
+            msg_dict["tool_calls"] = []
+
+            content: Content
+            for content in choice.message.content_parts:
+                content_dict = {}
+                content_dict["type"] = content.type
+                content_dict["text"] = content.text
+
+                msg_dict["content_parts"].append(content_dict)
+            
+            tool_call: ChatToolCall
+            for tool_call in choice.message.tool_calls:
+                tool_call_dict = {}
+                tool_call_dict["id"] = tool_call.id
+                tool_call_dict["type"] = "function"
+                tool_call_dict["function"] = {}
+                tool_call_dict["function"]["name"] = tool_call.name
+                tool_call_dict["function"]["arguments"] = tool_call.arguments
+
+                msg_dict["tool_calls"].append(tool_call_dict)
+
+            choice_dict["message"] = msg_dict
+
+            logprob_list = []
+            logprob: TokenProbArray
+            for logprob in choice.logprobs:
+                logprob_obj = {}
+                logprob_obj["token"] = logprob.data[0].token_text
+                logprob_obj["logprob"] = logprob.data[0].probability
+                logprob_obj["bytes"] = [logprob.data[0].token]
+                logprob_obj["top_logprobs"] = []
+                i_logprob: TokenProb
+                for i_logprob in logprob.data:
+                    logprob_obj["top_logprobs"].append(
+                        {
+                            "token": i_logprob.token_text,
+                            "logprob": i_logprob.probability,
+                            "bytes": [i_logprob.token],
+                        }
+                    )
+                logprob_list.append(logprob_obj)
+            choice_dict["logprobs"] = logprob_list
+            result_dict["choices"].append(choice_dict)
+
+        return result_dict
+
+    def _parse_chat_generation_chunk(
+        self, chunk: GenerateChatCompletions.Feedback
+    ) -> ChatGenerationChunk:
+        result_dict = {}
+        result_dict["id"] = chunk.id
+        result_dict["created"] = chunk.created
+        result_dict["model"] = chunk.model
+        result_dict["object"] = chunk.object
+        result_dict["system_fingerprint"] = chunk.system_fingerprint
+        result_dict["choices"] = []
+        result_dict["usage"] = {}
+        result_dict["usage"]["completion_tokens"] = chunk.usage.completion_tokens
+        result_dict["usage"]["prompt_tokens"] = chunk.usage.prompt_tokens
+        result_dict["usage"]["total_tokens"] = chunk.usage.total_tokens
+
+        choice: ChatChoiceChunk
+        for choice in chunk.choices:
+            choice_dict = {}
+            choice_dict["finish_reason"] = choice.finish_reason
+            choice_dict["index"] = choice.index
+            choice_dict["delta"] = {}
+            choice_dict["delta"]["content"] = choice.delta.content
+            choice_dict["delta"]["role"] = choice.delta.role
+
+            if choice.logprobs and len(choice.logprobs.data) > 0:
+                logprob = choice.logprobs
+                logprob_obj = {}
+                logprob_obj["token"] = logprob.data[0].token_text
+                logprob_obj["logprob"] = logprob.data[0].probability
+                logprob_obj["bytes"] = [logprob.data[0].token]
+                logprob_obj["top_logprobs"] = []
+                i_logprob: TokenProb
+                for i_logprob in logprob.data:
+                    logprob_obj["top_logprobs"].append(
+                        {
+                            "token": i_logprob.token_text,
+                            "logprob": i_logprob.probability,
+                            "bytes": [i_logprob.token],
+                        }
+                    )
+                # TODO: logprobs chunks
+                # choice_dict["logprobs"] = logprob_obj
+            result_dict["choices"].append(choice_dict)
+
+        return result_dict
+
+    def _parse_tool_choice(self, tool_choice: str) -> dict:
+        if tool_choice == "auto":
+            return ChatTool.TOOL_CHOICE_AUTO
+        elif tool_choice == "required":
+            return ChatTool.TOOL_CHOICE_REQUIRED
+        else:
+            return ChatTool.TOOL_CHOICE_NONE
+
+    def _send_llama_chat_request(self, payload: Dict[str, Any], **kwargs) -> Any:
+        chat_request = GenerateChatCompletions.Goal()
+        chat_request.add_generation_prompt = True
+        chat_request.use_jinja = True
+        chat_request.messages = []
+        chat_request.tools = []
+        chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
+
+        payload, image_url = self._remove_image_url(payload)
+
+        if image_url:
+            image = None
+            if "data:image" in image_url:
+                image_data = image_url.split(",")[-1]
+                decoded_image = base64.b64decode(image_data)
+                np_image = np.frombuffer(decoded_image, np.uint8)
+                image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
+                image_url = None
+
+            chat_request.image = self._get_image(image_url, image)
+
+        if "tool_choice" in kwargs:
+            chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])
+        else:
+            chat_request.tool_choice = self._parse_tool_choice("none")
+
+        for message in payload.get("messages", []):
+            chat_message = RChatMessage()
+            chat_message.role = message["role"]
+
+            for tool_call in message.get("tool_calls", []):
+                chat_tool_call = ChatToolCall()
+                chat_tool_call.id = tool_call["id"]
+                chat_tool_call.name = tool_call["function"]["name"]
+                chat_tool_call.arguments = json.dumps(
+                    tool_call["function"]["arguments"]
+                )
+                chat_message.tool_calls.append(chat_tool_call)
+
+            if type(message["content"]) == str:
+                chat_message.content = message["content"]
+            elif type(message["content"]) == list:
+                for content in message["content"]:
+                    chat_content = Content()
+                    chat_content.type = content["type"]
+                    chat_content.text = content[content["type"]]
+                    chat_message.content_parts.append(chat_content)
+            chat_request.messages.append(chat_message)
+
+        for tool in payload.get("tools", []):
+            chat_req_tool = ChatReqTool()
+            chat_req_tool.type = "function"
+            chat_tool = ChatTool()
+            chat_tool.name = tool["function"]["name"]
+            chat_tool.description = tool["function"]["description"]
+            chat_tool.parameters = json.dumps(tool["function"]["parameters"])
+            chat_req_tool.function = chat_tool
+            chat_request.tools.append(chat_req_tool)
+
+        chat_request.sampling_config = self._set_sampling_config()
+
+        result = None
+        stream = kwargs.get("stream", False)
+
+        if stream:
+            result = self.llama_client.generate_chat_completions(
+                chat_request, stream=True
+            )
+        else:
+            result, _ = self.llama_client.generate_chat_completions(chat_request)
+
+        if stream:
+            return self._return_context_manager(result)
+        else:
+            return self._parse_chat_generation_response(result)
+
+    @contextmanager
+    def _return_context_manager(self, response):
+        gen = (self._parse_chat_generation_chunk(chunk) for chunk in response)
+        try:
+            yield gen
+        finally:
+            pass

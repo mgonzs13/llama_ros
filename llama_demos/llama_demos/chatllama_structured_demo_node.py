@@ -31,7 +31,7 @@ import rclpy
 from rclpy.node import Node
 
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import AIMessage
 from llama_ros.langchain import ChatLlamaROS
 from typing import Optional
 
@@ -84,12 +84,13 @@ class ChatLlamaStructuredDemoNode(Node):
         self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
-        response = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+        response: AIMessage = self.chain.invoke({"prompt": "Tell me a joke about cats"})
         self.final_time = time.time()
 
-        print("Prompt: Tell me a joke about cats")
-        print(response)
-        print(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
+        self.get_logger().info(f"Prompt: Tell me a joke about cats")
+        self.get_logger().info(f"Response: {response.content.strip()}")
+        self.get_logger().info(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
+        self.get_logger().info(f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s")
 
 
 def main():

@@ -635,6 +635,7 @@ void LlamaNode::execute_chat_completions(
       "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
   // call llama
+  auto prev_stat_usage = this->llama->get_perf_data();
   struct ResponseOutput chat_output = this->llama->generate_response(
       chat_prompt_instance.prompt, sparams,
       std::bind(&LlamaNode::send_text_chat_completions, this,
@@ -648,9 +649,9 @@ void LlamaNode::execute_chat_completions(
 
     auto stat_usage = this->llama->get_perf_data();
 
-    response_result.n_decoded = stat_usage.n_eval;
-    response_result.n_prompt_tokens = stat_usage.n_p_eval;
-    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
+    response_result.n_decoded = stat_usage.n_eval - prev_stat_usage.n_eval;
+    response_result.n_prompt_tokens = stat_usage.n_p_eval - prev_stat_usage.n_p_eval;
+    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval - prev_stat_usage.n_eval - prev_stat_usage.n_p_eval;
     response_result.stop = llama_ros::StopType::FULL_STOP;
     response_result.post_sampling_probs = false;
 
@@ -707,9 +708,10 @@ void LlamaNode::send_text_chat_completions(
     response_result.build_info =
         "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
-    response_result.n_decoded = stat_usage.n_eval;
-    response_result.n_prompt_tokens = stat_usage.n_p_eval;
-    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
+    // TODO: have some type of storage for single calls
+    // response_result.n_decoded = stat_usage.n_eval;
+    // response_result.n_prompt_tokens = stat_usage.n_p_eval;
+    // response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
     response_result.content = this->llama->detokenize({completion.token});
     response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 

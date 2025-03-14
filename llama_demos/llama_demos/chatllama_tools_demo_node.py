@@ -31,7 +31,7 @@ import rclpy
 from rclpy.node import Node
 
 from langchain.tools import tool
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from llama_ros.langchain import ChatLlamaROS
 
 
@@ -71,7 +71,7 @@ class ChatLlamaToolsDemoNode(Node):
         )
 
         self.initial_time = time.time()
-        all_tools_res = llm_tools.invoke(messages)
+        all_tools_res: AIMessage = llm_tools.invoke(messages)
         self.tools_time = time.time()
 
         messages.append(all_tools_res)
@@ -92,14 +92,17 @@ class ChatLlamaToolsDemoNode(Node):
             tool_msg.additional_kwargs = {"args": tool["args"]}
             messages.append(tool_msg)
 
-        res = llm_tools.invoke(messages)
+        res: AIMessage = llm_tools.invoke(messages)
         self.eval_time = time.time()
         self.get_logger().info(f"\nResponse: {res.content}")
 
         time_generate_tools = self.tools_time - self.initial_time
         time_last_response = self.eval_time - self.tools_time
         self.get_logger().info(f"Time to generate tools: {time_generate_tools:.2f} s")
+        self.get_logger().info(f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / time_generate_tools:.2f} t/s")
+
         self.get_logger().info(f"Time to generate last response: {time_last_response:.2f} s")
+        self.get_logger().info(f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / time_last_response:.2f} t/s")
 
 
 def main():

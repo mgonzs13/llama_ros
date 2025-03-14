@@ -32,6 +32,7 @@ from rclpy.node import Node
 
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from llama_ros.langchain import ChatLlamaROS
+from langchain_core.messages import AIMessage
 
 class ChatLlamaReasoningDemoNode(Node):
 
@@ -63,14 +64,14 @@ class ChatLlamaReasoningDemoNode(Node):
         self.chain = self.prompt | self.chat
 
         self.initial_time = time.time()
-        response = self.chain.invoke({})
+        response: AIMessage = self.chain.invoke({})
         self.final_time = time.time()
 
-        print(f'Prompt: {self.str_prompt}')
-        print(f'Response: {response.content.strip()}')
-        print(f'Reasoning char size: {len(response.additional_kwargs["reasoning_content"])}')
-
-        print(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
+        self.get_logger().info(f'Prompt: {self.str_prompt}')
+        self.get_logger().info(f'Response: {response.content.strip()}')
+        self.get_logger().info(f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters')
+        self.get_logger().info(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
+        self.get_logger().info(f'Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s')
 
 def main():
     rclpy.init()
