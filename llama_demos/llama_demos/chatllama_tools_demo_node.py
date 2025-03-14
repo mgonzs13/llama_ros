@@ -99,10 +99,16 @@ class ChatLlamaToolsDemoNode(Node):
         time_generate_tools = self.tools_time - self.initial_time
         time_last_response = self.eval_time - self.tools_time
         self.get_logger().info(f"Time to generate tools: {time_generate_tools:.2f} s")
-        self.get_logger().info(f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / time_generate_tools:.2f} t/s")
+        self.get_logger().info(
+            f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / time_generate_tools:.2f} t/s"
+        )
 
-        self.get_logger().info(f"Time to generate last response: {time_last_response:.2f} s")
-        self.get_logger().info(f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / time_last_response:.2f} t/s")
+        self.get_logger().info(
+            f"Time to generate last response: {time_last_response:.2f} s"
+        )
+        self.get_logger().info(
+            f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / time_last_response:.2f} t/s"
+        )
 
 
 def main():

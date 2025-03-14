@@ -34,13 +34,19 @@ from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplat
 from llama_ros.langchain import ChatLlamaROS
 from langchain_core.messages import AIMessage
 
+
 class ChatLlamaReasoningDemoNode(Node):
 
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
-        self.declare_parameter("prompt", "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner.")
-        self.str_prompt = self.get_parameter("prompt").get_parameter_value().string_value
+        self.declare_parameter(
+            "prompt",
+            "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner.",
+        )
+        self.str_prompt = (
+            self.get_parameter("prompt").get_parameter_value().string_value
+        )
 
         self.cv_bridge = CvBridge()
 
@@ -67,11 +73,18 @@ class ChatLlamaReasoningDemoNode(Node):
         response: AIMessage = self.chain.invoke({})
         self.final_time = time.time()
 
-        self.get_logger().info(f'Prompt: {self.str_prompt}')
-        self.get_logger().info(f'Response: {response.content.strip()}')
-        self.get_logger().info(f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters')
-        self.get_logger().info(f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds")
-        self.get_logger().info(f'Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s')
+        self.get_logger().info(f"Prompt: {self.str_prompt}")
+        self.get_logger().info(f"Response: {response.content.strip()}")
+        self.get_logger().info(
+            f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
+        )
+        self.get_logger().info(
+            f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
+        )
+        self.get_logger().info(
+            f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
+        )
+
 
 def main():
     rclpy.init()

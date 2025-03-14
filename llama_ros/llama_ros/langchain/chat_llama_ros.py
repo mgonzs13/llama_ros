@@ -193,9 +193,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
-        formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
-        ]
+        formatted_tools = [convert_to_openai_tool(tool, strict=strict) for tool in tools]
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -359,9 +357,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         elif isinstance(message, AIMessage):
             message_dict["role"] = "assistant"
             if "function_call" in message.additional_kwargs:
-                message_dict["function_call"] = message.additional_kwargs[
-                    "function_call"
-                ]
+                message_dict["function_call"] = message.additional_kwargs["function_call"]
             if message.tool_calls or message.invalid_tool_calls:
                 message_dict["tool_calls"] = [
                     _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
@@ -373,11 +369,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
                 tool_call_supported_props = {"id", "type", "function"}
                 message_dict["tool_calls"] = [
-                    {
-                        k: v
-                        for k, v in tool_call.items()
-                        if k in tool_call_supported_props
-                    }
+                    {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
                     for tool_call in message_dict["tool_calls"]
                 ]
             else:
@@ -397,9 +389,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             message_dict["tool_call_id"] = message.tool_call_id
 
             supported_props = {"content", "role", "tool_call_id"}
-            message_dict = {
-                k: v for k, v in message_dict.items() if k in supported_props
-            }
+            message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
         else:
             raise TypeError(f"Got unknown type {message}")
         return message_dict
@@ -428,9 +418,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     ) -> ChatResult:
         generations = []
 
-        response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
-        )
+        response_dict = response if isinstance(response, dict) else response.model_dump()
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
 
@@ -462,9 +450,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
 
-        if isinstance(response, openai.BaseModel) and getattr(
-            response, "choices", None
-        ):
+        if isinstance(response, openai.BaseModel) and getattr(response, "choices", None):
             message = response.choices[0].message  # type: ignore[attr-defined]
             if hasattr(message, "parsed"):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
@@ -559,9 +545,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
                 # Remove all 'image_url' type items
                 message["content"] = [
-                    item
-                    for item in message["content"]
-                    if item.get("type") != "image_url"
+                    item for item in message["content"] if item.get("type") != "image_url"
                 ]
 
         return data, image_url
@@ -604,7 +588,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 content_dict["text"] = content.text
 
                 msg_dict["content_parts"].append(content_dict)
-            
+
             tool_call: ChatToolCall
             for tool_call in choice.message.tool_calls:
                 tool_call_dict = {}
@@ -729,9 +713,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 chat_tool_call = ChatToolCall()
                 chat_tool_call.id = tool_call["id"]
                 chat_tool_call.name = tool_call["function"]["name"]
-                chat_tool_call.arguments = json.dumps(
-                    tool_call["function"]["arguments"]
-                )
+                chat_tool_call.arguments = json.dumps(tool_call["function"]["arguments"])
                 chat_message.tool_calls.append(chat_tool_call)
 
             if type(message["content"]) == str:
