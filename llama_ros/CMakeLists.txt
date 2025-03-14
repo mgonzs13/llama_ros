@@ -15,6 +15,7 @@ find_package(llama_cpp_vendor REQUIRED)
 find_package(Threads REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(llama_hfhub_vendor REQUIRED)
 
 include_directories(
   include
@@ -62,6 +63,7 @@ ament_target_dependencies(llama_node
   rclcpp_lifecycle
   llama_msgs
   llama_cpp_vendor
+  llama_hfhub_vendor
 )
 
 add_executable(llava_node
@@ -88,6 +90,7 @@ ament_target_dependencies(llava_node
   llama_msgs
   llama_cpp_vendor
   cv_bridge
+  llama_hfhub_vendor
 )
 
 ament_export_dependencies(llama_cpp_vendor)
