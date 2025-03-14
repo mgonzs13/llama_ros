@@ -149,7 +149,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.n_prev = self.n_prev
         sampling_config.n_probs = self.n_probs
         sampling_config.min_keep = self.min_keep
-        
+
         sampling_config.ignore_eos = self.ignore_eos
         for key in self.logit_bias:
             lb = LogitBias()
@@ -190,7 +190,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar_lazy = self.grammar_lazy
         sampling_config.grammar_triggers = self.grammar_triggers
         sampling_config.preserved_tokens = self.preserved_tokens
-        
+
         sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
         sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
 

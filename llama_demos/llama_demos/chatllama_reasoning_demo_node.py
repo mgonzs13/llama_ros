@@ -44,9 +44,7 @@ class ChatLlamaReasoningDemoNode(Node):
             "prompt",
             "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner.",
         )
-        self.str_prompt = (
-            self.get_parameter("prompt").get_parameter_value().string_value
-        )
+        self.str_prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.cv_bridge = CvBridge()
 
