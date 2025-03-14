@@ -766,7 +766,7 @@ rclpy.init()
 # create chat
 chat = ChatLlamaROS(
     temp=0.2,
-    penalty_last_n=8,
+    penalty_last_n=8
 )
 
 # create prompt template with messages
@@ -792,6 +792,58 @@ rclpy.shutdown()
 
 </details>
 
+</details>
+
+#### chat_llama_ros (Structured output)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import rclpy
+
+from langchain_core.messages import HumanMessage
+from llama_ros.langchain import ChatLlamaROS
+from pydantic import BaseModel, Field
+
+rclpy.init()
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
+    rating: Optional[int] = Field(
+        default=None, description="How funny the joke is, from 1 to 10"
+    )
+
+chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)
+
+structured_chat = chat.with_structured_output(
+    Joke, method="function_calling"
+)
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        HumanMessagePromptTemplate.from_template(
+            template=[
+                {"type": "text", "text": "{prompt}"},
+            ]
+        ),
+    ]
+)
+
+chain = prompt | structured_chat
+
+res = chain.invoke({"prompt": "Tell me a joke about cats"})
+
+print(f"Response: {response.content.strip()}")
+
+rclpy.shutdown()
+```
+
+</details>
+
 #### chat_llama_ros (Tools)
 
 <details>
@@ -800,7 +852,6 @@ rclpy.shutdown()
 The current implementation of Tools allows executing tools without requiring a model trained for that task.
 
 ```python
-import time
 from random import randint
 
 import rclpy
@@ -822,7 +873,7 @@ def get_curr_temperature(city: str) -> int:
     """Get the current temperature of a city"""
     return randint(20, 30)
 
-chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, template_method="jinja")
+chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)
 
 messages = [
     HumanMessage(
@@ -849,9 +900,45 @@ for tool in all_tools_res.tool_calls:
     tool_msg.additional_kwargs = {'args': tool['args']}
     messages.append(tool_msg)
 
-res = chat.invoke(messages)
+res = llm_tools.invoke(messages)
 
 print(f"Response: {res.content}")
+
+rclpy.shutdown()
+```
+
+</details>
+
+#### chat_llama_ros (Reasoning)
+
+<details>
+<summary>Click to expand</summary>
+
+A reasoning model is required, such as Deepseek R1
+
+```python
+import time
+from random import randint
+
+import rclpy
+
+from langchain_core.messages import HumanMessage
+from llama_ros.langchain import ChatLlamaROS
+
+rclpy.init()
+
+chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)
+
+messages = [
+    HumanMessage(
+        "Here we have a book, a laptop, 9 eggs and a nail. Please tell me how to stack them onto each other in a stable manner."
+    )
+]
+
+res = chat.invoke(messages)
+
+print(f"Response: {res.content.strip()}")
+print(f"Reasoning: {res.additional_kwargs["reasoning_content"]}")
 
 rclpy.shutdown()
 ```
@@ -887,7 +974,7 @@ def get_curr_temperature(city: str) -> int:
     """Get the current temperature of a city"""
     return randint(20, 30)
 
-chat = ChatLlamaROS(temp=0.0, template_method="jinja")
+chat = ChatLlamaROS(temp=0.0)
 
 agent_executor = create_react_agent(
     self.chat, [get_inhabitants, get_curr_temperature]
@@ -988,8 +1075,6 @@ model_filename: "ggml-model-Q4_K_M.gguf"
 
 mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
 mmproj_filename: "mmproj-model-f16.gguf"
-
-stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1030,8 +1115,6 @@ n_predict: -1
 
 model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF"
 model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf"
-
-stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1068,8 +1151,6 @@ n_predict: -1
 
 model_repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
 model_filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
-
-stopping_words: ["<|im_end|>"]
 ```
 
 </details>

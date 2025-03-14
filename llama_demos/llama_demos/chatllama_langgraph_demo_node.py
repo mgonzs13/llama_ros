@@ -75,7 +75,7 @@ class ChatLlamaLanggraphDemoNode(Node):
         end_time = time.time()
 
         self.get_logger().info(f"\nResponse: {response['messages'][-1].content}")
-        self.get_logger().info(f"Time to run the agent: {end_time - initial_time} s")
+        self.get_logger().info(f"Time to run the agent: {(end_time - initial_time):.2f} s")
 
 
 def main():

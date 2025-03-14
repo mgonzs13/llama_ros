@@ -54,9 +54,6 @@ class ChatLlamaStructuredDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
-        self.declare_parameter("prompt", "Who is the character in the middle?")
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
-
         self.cv_bridge = CvBridge()
 
         self.tokens = 0
@@ -65,7 +62,7 @@ class ChatLlamaStructuredDemoNode(Node):
 
     def send_prompt(self) -> None:
 
-        self.chat = ChatLlamaROS(temp=0.2, penalty_last_n=8, template_method="jinja")
+        self.chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
