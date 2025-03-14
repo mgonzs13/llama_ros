@@ -106,6 +106,7 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
 
   llama_msgs::msg::ChatMessage chat_msg;
 
+  chat_msg.role = msg.role;
   if (!msg.reasoning_content.empty()) {
     chat_msg.reasoning_content = msg.reasoning_content;
   }
@@ -122,7 +123,6 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
       tool_calls.push_back(tool_call);
     }
     chat_msg.tool_calls = tool_calls;
-    chat_msg.role = msg.role;
   }
 
   llama_msgs::msg::ChatChoice choice;
