@@ -650,8 +650,11 @@ void LlamaNode::execute_chat_completions(
     auto stat_usage = this->llama->get_perf_data();
 
     response_result.n_decoded = stat_usage.n_eval - prev_stat_usage.n_eval;
-    response_result.n_prompt_tokens = stat_usage.n_p_eval - prev_stat_usage.n_p_eval;
-    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval - prev_stat_usage.n_eval - prev_stat_usage.n_p_eval;
+    response_result.n_prompt_tokens =
+        stat_usage.n_p_eval - prev_stat_usage.n_p_eval;
+    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval -
+                                      prev_stat_usage.n_eval -
+                                      prev_stat_usage.n_p_eval;
     response_result.stop = llama_ros::StopType::FULL_STOP;
     response_result.post_sampling_probs = false;
 
@@ -711,7 +714,8 @@ void LlamaNode::send_text_chat_completions(
     // TODO: have some type of storage for single calls
     // response_result.n_decoded = stat_usage.n_eval;
     // response_result.n_prompt_tokens = stat_usage.n_p_eval;
-    // response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval;
+    // response_result.n_tokens_cached = stat_usage.n_eval +
+    // stat_usage.n_p_eval;
     response_result.content = this->llama->detokenize({completion.token});
     response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 

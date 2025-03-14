@@ -451,14 +451,18 @@ enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
 common_grammar_trigger_type llama_utils::parse_grammar_trigger_type(int type) {
   if (type == llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_WORD) {
     return COMMON_GRAMMAR_TRIGGER_TYPE_WORD;
-  } else if (type == llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_TOKEN) {
+  } else if (type ==
+             llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_TOKEN) {
     return COMMON_GRAMMAR_TRIGGER_TYPE_TOKEN;
-  } else if (type == llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_PATTERN) {
+  } else if (type ==
+             llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_PATTERN) {
     return COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN;
-  } else if (type == llama_msgs::msg::GrammarTrigger::GRAMMAR_TRIGGER_TYPE_PATTERN_START) {
+  } else if (type == llama_msgs::msg::GrammarTrigger::
+                         GRAMMAR_TRIGGER_TYPE_PATTERN_START) {
     return COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN_START;
   } else {
-    throw std::runtime_error("Unsupported grammar trigger type: " + std::to_string(type));
+    throw std::runtime_error("Unsupported grammar trigger type: " +
+                             std::to_string(type));
   }
 }
 
@@ -492,10 +496,11 @@ struct common_params_sampling llama_utils::parse_sampling_params(
   sparams.grammar = sampling_config.grammar;
   sparams.grammar_lazy = sampling_config.grammar_lazy;
 
-  for(auto grammar_trigger : sampling_config.grammar_triggers) {
+  for (auto grammar_trigger : sampling_config.grammar_triggers) {
     struct common_grammar_trigger trigger;
     trigger.token = grammar_trigger.token;
-    trigger.type = llama_utils::parse_grammar_trigger_type(grammar_trigger.type);
+    trigger.type =
+        llama_utils::parse_grammar_trigger_type(grammar_trigger.type);
     trigger.value = grammar_trigger.value;
     sparams.grammar_triggers.push_back(trigger);
   }
