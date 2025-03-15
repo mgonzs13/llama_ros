@@ -4,7 +4,7 @@ n_gpu_layers: 0
 n_threads: 1
 n_predict: 2048
 
-model_repo: "bartowski/phi-4-GGUF"
-model_filename: "phi-4-IQ4_XS.gguf"
+model_repo: "bartowski/microsoft_Phi-4-mini-instruct-GGUF"
+model_filename: "microsoft_Phi-4-mini-instruct-Q4_K_M.gguf"
 
 system_prompt_type: "Phi-4"
