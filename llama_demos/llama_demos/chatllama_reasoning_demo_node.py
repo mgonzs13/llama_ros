@@ -79,7 +79,9 @@ class ChatLlamaReasoningDemoNode(Node):
                 f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
             )
         else:
-            self.get_logger().info("No reasoning content. Are you sure you are using a reasoning model?")
+            self.get_logger().info(
+                "No reasoning content. Are you sure you are using a reasoning model?"
+            )
 
         self.get_logger().info(
             f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
