@@ -232,10 +232,8 @@ Static Public Attributes</h2></td></tr>
 <tr class="separator:a1d20a56a804da875f9a0a6791ac3d376"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11f901d3abd0c0d89cb12f8fda1ac7e2" id="r_a11f901d3abd0c0d89cb12f8fda1ac7e2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a11f901d3abd0c0d89cb12f8fda1ac7e2">grammar_lazy</a> = False</td></tr>
 <tr class="separator:a11f901d3abd0c0d89cb12f8fda1ac7e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8dcad5dfa61d77a43939f0a332d299b7" id="r_a8dcad5dfa61d77a43939f0a332d299b7"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8dcad5dfa61d77a43939f0a332d299b7">grammar_trigger_words</a> = []</td></tr>
-<tr class="separator:a8dcad5dfa61d77a43939f0a332d299b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af1f113454abf13b3d2913dd55ecca2da" id="r_af1f113454abf13b3d2913dd55ecca2da"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af1f113454abf13b3d2913dd55ecca2da">grammar_trigger_tokens</a> = []</td></tr>
-<tr class="separator:af1f113454abf13b3d2913dd55ecca2da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1baa6818630f8ebe8851477180e1112e" id="r_a1baa6818630f8ebe8851477180e1112e"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1baa6818630f8ebe8851477180e1112e">grammar_triggers</a> = []</td></tr>
+<tr class="separator:a1baa6818630f8ebe8851477180e1112e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac12f10f0601e421949f10ef2989d51a7" id="r_ac12f10f0601e421949f10ef2989d51a7"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac12f10f0601e421949f10ef2989d51a7">preserved_tokens</a> = []</td></tr>
 <tr class="separator:ac12f10f0601e421949f10ef2989d51a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90f85076e9c281d581f438783d6695ca" id="r_a90f85076e9c281d581f438783d6695ca"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a90f85076e9c281d581f438783d6695ca">penalty_prompt_tokens</a> = []</td></tr>
@@ -245,12 +243,16 @@ Static Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a1f9e914a4070025b4c1b703c7a4489a9" id="r_a1f9e914a4070025b4c1b703c7a4489a9"><td class="memItemLeft" align="right" valign="top">GenerateResponse.Result&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1f9e914a4070025b4c1b703c7a4489a9">_create_action_goal</a> (self, str prompt, Optional[List[str]] stop=None, Optional[str] image_url=None, Optional[np.ndarray] image=None, Optional[str] tools_grammar=None, **kwargs)</td></tr>
-<tr class="separator:a1f9e914a4070025b4c1b703c7a4489a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39f5005d60d959a1a8ef0d1221563a34" id="r_a39f5005d60d959a1a8ef0d1221563a34"><td class="memItemLeft" align="right" valign="top">Image&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39f5005d60d959a1a8ef0d1221563a34">_get_image</a> (self, str image_url, np.ndarray image)</td></tr>
+<tr class="separator:a39f5005d60d959a1a8ef0d1221563a34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0d27421b9a3031719d9dcbb97e3ab52" id="r_ac0d27421b9a3031719d9dcbb97e3ab52"><td class="memItemLeft" align="right" valign="top">GenerateResponse.Result&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac0d27421b9a3031719d9dcbb97e3ab52">_create_action_goal</a> (self, str prompt, Optional[List[str]] stop=None, Optional[str] image_url=None, Optional[np.ndarray] image=None, **kwargs)</td></tr>
+<tr class="separator:ac0d27421b9a3031719d9dcbb97e3ab52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a519d836a81cf12a74cbea446e15089cb" id="r_a519d836a81cf12a74cbea446e15089cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a519d836a81cf12a74cbea446e15089cb">_set_sampling_config</a> (self)</td></tr>
+<tr class="separator:a519d836a81cf12a74cbea446e15089cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a1f9e914a4070025b4c1b703c7a4489a9" name="a1f9e914a4070025b4c1b703c7a4489a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f9e914a4070025b4c1b703c7a4489a9">&#9670;&#160;</a></span>_create_action_goal()</h2>
+<a id="ac0d27421b9a3031719d9dcbb97e3ab52" name="ac0d27421b9a3031719d9dcbb97e3ab52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0d27421b9a3031719d9dcbb97e3ab52">&#9670;&#160;</a></span>_create_action_goal()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -286,12 +288,66 @@ Protected Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Optional[str] </td>          <td class="paramname"><span class="paramname"><em>tools_grammar</em></span><span class="paramdefsep"> = </span><span class="paramdefval">None</span>, </td>
+          <td class="paramtype">**</td>          <td class="paramname"><span class="paramname"><em>kwargs</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a39f5005d60d959a1a8ef0d1221563a34" name="a39f5005d60d959a1a8ef0d1221563a34"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39f5005d60d959a1a8ef0d1221563a34">&#9670;&#160;</a></span>_get_image()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"> Image llama_ros.langchain.llama_ros_common.LlamaROSCommon._get_image </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">**</td>          <td class="paramname"><span class="paramname"><em>kwargs</em></span>&#160;)</td>
+          <td class="paramtype">str</td>          <td class="paramname"><span class="paramname"><em>image_url</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">np.ndarray</td>          <td class="paramname"><span class="paramname"><em>image</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a519d836a81cf12a74cbea446e15089cb" name="a519d836a81cf12a74cbea446e15089cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a519d836a81cf12a74cbea446e15089cb">&#9670;&#160;</a></span>_set_sampling_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_ros.langchain.llama_ros_common.LlamaROSCommon._set_sampling_config </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span></td><td>)</td>
+          <td></td>
         </tr>
       </table>
   </td>
@@ -584,8 +640,8 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af1f113454abf13b3d2913dd55ecca2da" name="af1f113454abf13b3d2913dd55ecca2da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af1f113454abf13b3d2913dd55ecca2da">&#9670;&#160;</a></span>grammar_trigger_tokens</h2>
+<a id="a1baa6818630f8ebe8851477180e1112e" name="a1baa6818630f8ebe8851477180e1112e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1baa6818630f8ebe8851477180e1112e">&#9670;&#160;</a></span>grammar_triggers</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -594,29 +650,7 @@ Protected Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_trigger_tokens = []</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a8dcad5dfa61d77a43939f0a332d299b7" name="a8dcad5dfa61d77a43939f0a332d299b7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8dcad5dfa61d77a43939f0a332d299b7">&#9670;&#160;</a></span>grammar_trigger_words</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_trigger_words = []</td>
+          <td class="memname">list llama_ros.langchain.llama_ros_common.LlamaROSCommon.grammar_triggers = []</td>
         </tr>
       </table>
   </td>

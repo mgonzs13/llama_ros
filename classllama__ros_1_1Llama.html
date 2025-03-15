@@ -144,8 +144,6 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a7c2cd8a9a1361837e6f7661a4f63910c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a666346d652a0d1de544bb7635eec6e8f" id="r_a666346d652a0d1de544bb7635eec6e8f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a666346d652a0d1de544bb7635eec6e8f">cancel</a> ()</td></tr>
 <tr class="separator:a666346d652a0d1de544bb7635eec6e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac318dd5017f5e26ed0a7ee013cfea908" id="r_ac318dd5017f5e26ed0a7ee013cfea908"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac318dd5017f5e26ed0a7ee013cfea908">format_chat_prompt</a> (std::vector&lt; struct common_chat_msg &gt; chat_msgs, bool add_ass, bool use_minja, bool use_tools)</td></tr>
-<tr class="separator:ac318dd5017f5e26ed0a7ee013cfea908"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa17aaf9615a03f65ead934cd8a3c33e0" id="r_aa17aaf9615a03f65ead934cd8a3c33e0"><td class="memItemLeft" align="right" valign="top">std::vector&lt; struct <a class="el" href="structllama__ros_1_1LoRA.html">LoRA</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa17aaf9615a03f65ead934cd8a3c33e0">list_loras</a> ()</td></tr>
 <tr class="separator:aa17aaf9615a03f65ead934cd8a3c33e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac658780f51b6985d92dfbea69b6a4eab" id="r_ac658780f51b6985d92dfbea69b6a4eab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac658780f51b6985d92dfbea69b6a4eab">update_loras</a> (std::vector&lt; struct <a class="el" href="structllama__ros_1_1LoRA.html">LoRA</a> &gt; loras)</td></tr>
@@ -164,6 +162,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac99d490a42fa33f9a16ca372b97ba070"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc769dd21485387238a382d55eff7f7a" id="r_acc769dd21485387238a382d55eff7f7a"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structllama__ros_1_1ResponseOutput.html">ResponseOutput</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acc769dd21485387238a382d55eff7f7a">generate_response</a> (const std::string &amp;input_prompt, <a class="el" href="namespacellama__ros.html#a3d8aa525b7e539a478a0b86a081e7a68">GenerateResponseCallback</a> callbakc=nullptr, std::vector&lt; std::string &gt; stop={})</td></tr>
 <tr class="separator:acc769dd21485387238a382d55eff7f7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac5ed038402a39af814a29c0a0435a7c" id="r_aac5ed038402a39af814a29c0a0435a7c"><td class="memItemLeft" align="right" valign="top">struct std::unique_ptr&lt; struct common_chat_templates, common_chat_templates_deleter &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aac5ed038402a39af814a29c0a0435a7c">get_chat_templates</a> ()</td></tr>
+<tr class="separator:aac5ed038402a39af814a29c0a0435a7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad952c9208d0f2dd05fca94b1ca8fd44b" id="r_ad952c9208d0f2dd05fca94b1ca8fd44b"><td class="memItemLeft" align="right" valign="top">struct common_chat_params&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad952c9208d0f2dd05fca94b1ca8fd44b">get_chat_params</a> (struct common_chat_templates *tmpls, struct common_chat_templates_inputs inputs)</td></tr>
+<tr class="separator:ad952c9208d0f2dd05fca94b1ca8fd44b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fbea8fca7ce03e1b90ec3ac23293f30" id="r_a8fbea8fca7ce03e1b90ec3ac23293f30"><td class="memItemLeft" align="right" valign="top">struct llama_perf_context_data&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8fbea8fca7ce03e1b90ec3ac23293f30">get_perf_data</a> ()</td></tr>
+<tr class="separator:a8fbea8fca7ce03e1b90ec3ac23293f30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf5404efd113cecb5022bb492565dfb5" id="r_acf5404efd113cecb5022bb492565dfb5"><td class="memItemLeft" align="right" valign="top">const struct llama_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acf5404efd113cecb5022bb492565dfb5">get_ctx</a> ()</td></tr>
 <tr class="separator:acf5404efd113cecb5022bb492565dfb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6acbcaef218f647243cc0074c8ac4811" id="r_a6acbcaef218f647243cc0074c8ac4811"><td class="memItemLeft" align="right" valign="top">const struct llama_model *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6acbcaef218f647243cc0074c8ac4811">get_model</a> ()</td></tr>
@@ -594,37 +598,6 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="ac318dd5017f5e26ed0a7ee013cfea908" name="ac318dd5017f5e26ed0a7ee013cfea908"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac318dd5017f5e26ed0a7ee013cfea908">&#9670;&#160;</a></span>format_chat_prompt()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::string Llama::format_chat_prompt </td>
-          <td>(</td>
-          <td class="paramtype">std::vector&lt; struct common_chat_msg &gt;</td>          <td class="paramname"><span class="paramname"><em>chat_msgs</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>add_ass</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>use_minja</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>use_tools</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a3b06bcd98d8557ae8f62669a3f04a254" name="a3b06bcd98d8557ae8f62669a3f04a254"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3b06bcd98d8557ae8f62669a3f04a254">&#9670;&#160;</a></span>generate_embeddings() <span class="overload">[1/2]</span></h2>
 
@@ -718,6 +691,44 @@ Private Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">std::vector&lt; std::string &gt;</td>          <td class="paramname"><span class="paramname"><em>stop</em></span><span class="paramdefsep"> = </span><span class="paramdefval">{}</span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad952c9208d0f2dd05fca94b1ca8fd44b" name="ad952c9208d0f2dd05fca94b1ca8fd44b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad952c9208d0f2dd05fca94b1ca8fd44b">&#9670;&#160;</a></span>get_chat_params()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct common_chat_params Llama::get_chat_params </td>
+          <td>(</td>
+          <td class="paramtype">struct common_chat_templates *</td>          <td class="paramname"><span class="paramname"><em>tmpls</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">struct common_chat_templates_inputs</td>          <td class="paramname"><span class="paramname"><em>inputs</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aac5ed038402a39af814a29c0a0435a7c" name="aac5ed038402a39af814a29c0a0435a7c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac5ed038402a39af814a29c0a0435a7c">&#9670;&#160;</a></span>get_chat_templates()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct std::unique_ptr&lt; struct common_chat_templates, common_chat_templates_deleter &gt; Llama::get_chat_templates </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1028,6 +1039,23 @@ Private Attributes</h2></td></tr>
 <span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
   </tr>
 </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8fbea8fca7ce03e1b90ec3ac23293f30" name="a8fbea8fca7ce03e1b90ec3ac23293f30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8fbea8fca7ce03e1b90ec3ac23293f30">&#9670;&#160;</a></span>get_perf_data()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct llama_perf_context_data Llama::get_perf_data </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
 </div><div class="memdoc">
 
 </div>

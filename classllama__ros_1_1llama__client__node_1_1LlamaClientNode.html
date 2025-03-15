@@ -133,8 +133,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a389dcee61a5087b1d3ddc42d05dfad6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a14d2cbeae980c6811349e5c946f5a452" id="r_a14d2cbeae980c6811349e5c946f5a452"><td class="memItemLeft" align="right" valign="top">RerankDocuments.Response&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a14d2cbeae980c6811349e5c946f5a452">rerank_documents</a> (self, RerankDocuments.Request req)</td></tr>
 <tr class="separator:a14d2cbeae980c6811349e5c946f5a452"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ce2aeedb87a4b37820c72c582b35160" id="r_a3ce2aeedb87a4b37820c72c582b35160"><td class="memItemLeft" align="right" valign="top">FormatChatMessages.Response&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ce2aeedb87a4b37820c72c582b35160">format_chat_prompt</a> (self, FormatChatMessages.Request req)</td></tr>
-<tr class="separator:a3ce2aeedb87a4b37820c72c582b35160"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadf085f7b84dce712d896cb2729f28b6" id="r_aadf085f7b84dce712d896cb2729f28b6"><td class="memItemLeft" align="right" valign="top">Union[ Tuple[GenerateChatCompletions.Result, GoalStatus], Generator[GenerateChatCompletions.Feedback, None, None],]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aadf085f7b84dce712d896cb2729f28b6">generate_chat_completions</a> (self, GenerateChatCompletions.Goal goal, Callable feedback_cb=None, bool stream=False)</td></tr>
+<tr class="separator:aadf085f7b84dce712d896cb2729f28b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d30a1cca0751639629c717538ff5d68" id="r_a4d30a1cca0751639629c717538ff5d68"><td class="memItemLeft" align="right" valign="top">Union[ Tuple[GenerateResponse.Result, GoalStatus], Generator[PartialResponse, None, None],]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4d30a1cca0751639629c717538ff5d68">generate_response</a> (self, GenerateResponse.Goal goal, Callable feedback_cb=None, bool stream=False)</td></tr>
 <tr class="separator:a4d30a1cca0751639629c717538ff5d68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe39c35d7fd2a1062cfb24c9d9742873" id="r_abe39c35d7fd2a1062cfb24c9d9742873"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abe39c35d7fd2a1062cfb24c9d9742873">cancel_generate_text</a> (self)</td></tr>
@@ -151,6 +151,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a294e9e2e683dcc99c81ecbe98c86186a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c59fd0302df5315a71ef1f6e57ba296" id="r_a8c59fd0302df5315a71ef1f6e57ba296"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8c59fd0302df5315a71ef1f6e57ba296">_get_result_callback</a> (self, future)</td></tr>
 <tr class="separator:a8c59fd0302df5315a71ef1f6e57ba296"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6221839f37a9dd57f58aae0806dd3e15" id="r_a6221839f37a9dd57f58aae0806dd3e15"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6221839f37a9dd57f58aae0806dd3e15">_feedback_callback_chat</a> (self, feedback)</td></tr>
+<tr class="separator:a6221839f37a9dd57f58aae0806dd3e15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad13c281633f5a05f436438ce8028e59e" id="r_ad13c281633f5a05f436438ce8028e59e"><td class="memItemLeft" align="right" valign="top">None&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad13c281633f5a05f436438ce8028e59e">_feedback_callback</a> (self, feedback)</td></tr>
 <tr class="separator:ad13c281633f5a05f436438ce8028e59e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -162,8 +164,6 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a11dd99138275c8ac797aba8275bc795f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a751dfc50fb54823090320cdc200fc381" id="r_a751dfc50fb54823090320cdc200fc381"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a751dfc50fb54823090320cdc200fc381">_rerank_srv_client</a></td></tr>
 <tr class="separator:a751dfc50fb54823090320cdc200fc381"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04171bfccd17e6d98b478ad41a5f105e" id="r_a04171bfccd17e6d98b478ad41a5f105e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a04171bfccd17e6d98b478ad41a5f105e">_format_chat_srv_client</a></td></tr>
-<tr class="separator:a04171bfccd17e6d98b478ad41a5f105e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9897a90f700287eb51810380aaa205ed" id="r_a9897a90f700287eb51810380aaa205ed"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9897a90f700287eb51810380aaa205ed">_goal_response_callback</a></td></tr>
 <tr class="separator:a9897a90f700287eb51810380aaa205ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07f2a88213c5f8c4562259be2df0004b" id="r_a07f2a88213c5f8c4562259be2df0004b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a07f2a88213c5f8c4562259be2df0004b">_get_result_callback</a> = self._goal_handle.get_result_async()</td></tr>
@@ -177,6 +177,8 @@ Static Protected Attributes</h2></td></tr>
 <tr class="separator:a22914c7a290c6df4dde5585ec8d4664f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a711b667a77e722436772056496c6a394" id="r_a711b667a77e722436772056496c6a394"><td class="memItemLeft" align="right" valign="top">ActionClient&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a711b667a77e722436772056496c6a394">_action_client</a> = None</td></tr>
 <tr class="separator:a711b667a77e722436772056496c6a394"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaeaa451bb1aa563a62a867ecc44f7be7" id="r_aaeaa451bb1aa563a62a867ecc44f7be7"><td class="memItemLeft" align="right" valign="top">ActionClient&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaeaa451bb1aa563a62a867ecc44f7be7">_action_chat_client</a> = None</td></tr>
+<tr class="separator:aaeaa451bb1aa563a62a867ecc44f7be7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac47ae7d1b27382e95259ef599a581f36" id="r_ac47ae7d1b27382e95259ef599a581f36"><td class="memItemLeft" align="right" valign="top">Client&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac47ae7d1b27382e95259ef599a581f36">_tokenize_srv_client</a> = None</td></tr>
 <tr class="separator:ac47ae7d1b27382e95259ef599a581f36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6261a1798a0b40892b7b6d91673d8d5a" id="r_a6261a1798a0b40892b7b6d91673d8d5a"><td class="memItemLeft" align="right" valign="top">Client&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6261a1798a0b40892b7b6d91673d8d5a">_embeddings_srv_client</a> = None</td></tr>
@@ -185,7 +187,7 @@ Static Protected Attributes</h2></td></tr>
 <tr class="separator:aecd614dffbba0a81a1a4a56a4dcf9e54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a381c5b8bfc0c1c2fc09745fe031072ac" id="r_a381c5b8bfc0c1c2fc09745fe031072ac"><td class="memItemLeft" align="right" valign="top">Condition&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a381c5b8bfc0c1c2fc09745fe031072ac">_action_done_cond</a> = Condition()</td></tr>
 <tr class="separator:a381c5b8bfc0c1c2fc09745fe031072ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d5a69ea6bf74031698587016083126b" id="r_a9d5a69ea6bf74031698587016083126b"><td class="memItemLeft" align="right" valign="top">GenerateResponse&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9d5a69ea6bf74031698587016083126b">_action_result</a> = None</td></tr>
+<tr class="memitem:a9d5a69ea6bf74031698587016083126b" id="r_a9d5a69ea6bf74031698587016083126b"><td class="memItemLeft" align="right" valign="top">GenerateResponse.Result&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9d5a69ea6bf74031698587016083126b">_action_result</a> = None</td></tr>
 <tr class="separator:a9d5a69ea6bf74031698587016083126b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56670f5724a0df84a7f36088f6919fa8" id="r_a56670f5724a0df84a7f36088f6919fa8"><td class="memItemLeft" align="right" valign="top">GoalStatus&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a56670f5724a0df84a7f36088f6919fa8">_action_status</a> = GoalStatus.STATUS_UNKNOWN</td></tr>
 <tr class="separator:a56670f5724a0df84a7f36088f6919fa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -236,6 +238,35 @@ Static Protected Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"> None llama_ros.llama_client_node.LlamaClientNode._feedback_callback </td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>feedback</em></span>&#160;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6221839f37a9dd57f58aae0806dd3e15" name="a6221839f37a9dd57f58aae0806dd3e15"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6221839f37a9dd57f58aae0806dd3e15">&#9670;&#160;</a></span>_feedback_callback_chat()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"> None llama_ros.llama_client_node.LlamaClientNode._feedback_callback_chat </td>
           <td>(</td>
           <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
         </tr>
@@ -350,22 +381,34 @@ Static Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a3ce2aeedb87a4b37820c72c582b35160" name="a3ce2aeedb87a4b37820c72c582b35160"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3ce2aeedb87a4b37820c72c582b35160">&#9670;&#160;</a></span>format_chat_prompt()</h2>
+<a id="aadf085f7b84dce712d896cb2729f28b6" name="aadf085f7b84dce712d896cb2729f28b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadf085f7b84dce712d896cb2729f28b6">&#9670;&#160;</a></span>generate_chat_completions()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"> FormatChatMessages.Response llama_ros.llama_client_node.LlamaClientNode.format_chat_prompt </td>
+          <td class="memname"> Union[
+        Tuple[GenerateChatCompletions.Result, GoalStatus],
+        Generator[GenerateChatCompletions.Feedback, None, None],
+    ] llama_ros.llama_client_node.LlamaClientNode.generate_chat_completions </td>
           <td>(</td>
           <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>self</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">FormatChatMessages.Request
-    </td>          <td class="paramname"><span class="paramname"><em>req</em></span>&#160;)</td>
+          <td class="paramtype">GenerateChatCompletions.Goal</td>          <td class="paramname"><span class="paramname"><em>goal</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Callable </td>          <td class="paramname"><span class="paramname"><em>feedback_cb</em></span><span class="paramdefsep"> = </span><span class="paramdefval">None</span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool </td>          <td class="paramname"><span class="paramname"><em>stream</em></span><span class="paramdefsep"> = </span><span class="paramdefval">False</span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -517,6 +560,28 @@ Static Protected Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="aaeaa451bb1aa563a62a867ecc44f7be7" name="aaeaa451bb1aa563a62a867ecc44f7be7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaeaa451bb1aa563a62a867ecc44f7be7">&#9670;&#160;</a></span>_action_chat_client</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">ActionClient llama_ros.llama_client_node.LlamaClientNode._action_chat_client = None</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a711b667a77e722436772056496c6a394" name="a711b667a77e722436772056496c6a394"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a711b667a77e722436772056496c6a394">&#9670;&#160;</a></span>_action_client</h2>
 
@@ -718,33 +783,6 @@ Static Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a04171bfccd17e6d98b478ad41a5f105e" name="a04171bfccd17e6d98b478ad41a5f105e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04171bfccd17e6d98b478ad41a5f105e">&#9670;&#160;</a></span>_format_chat_srv_client</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">llama_ros.llama_client_node.LlamaClientNode._format_chat_srv_client</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">=  self.create_client(</div>
-<div class="line">            FormatChatMessages,</div>
-<div class="line">            <span class="stringliteral">&quot;format_chat_prompt&quot;</span>,</div>
-<div class="line">            callback_group=self._callback_group,</div>
-<div class="line">        )</div>
-</div><!-- fragment -->
-</div>
-</div>
 <a id="a88a1951bd82fd93c61378de6d6495014" name="a88a1951bd82fd93c61378de6d6495014"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a88a1951bd82fd93c61378de6d6495014">&#9670;&#160;</a></span>_get_metadata_srv_client</h2>
 
@@ -855,7 +893,7 @@ Static Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">=  self._action_client.send_goal_async(</div>
+<b>Initial value:</b><div class="fragment"><div class="line">=  self._action_chat_client.send_goal_async(</div>
 <div class="line">            goal, feedback_callback=feedback_cb</div>
 <div class="line">        )</div>
 </div><!-- fragment -->

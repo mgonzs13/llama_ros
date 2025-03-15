@@ -7,11 +7,8 @@ var searchData=
   ['url_4',['url',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a39e51b97a1c2e97ed3dfcc54434b0d07',1,'llama_ros::Metadata::GeneralInfo']]],
   ['usage_5',['Usage',['../index.html#autotoc_md5',1,'']]],
   ['use_5fimage_6',['use_image',['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#ac4d9014a7b28bc3356f8d73079e9ad6b',1,'llama_demos::llava_demo_node::LlavaDemoNode']]],
-  ['use_5fjinja_5ftemplate_7',['USE_JINJA_TEMPLATE',['../namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a23962160d350bcfe1b8f9416b6bba950',1,'llama_ros::langchain::chat_llama_ros']]],
-  ['use_5fllama_5ftemplate_8',['USE_LLAMA_TEMPLATE',['../namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#a74d7268f1bfeefbeca1ee76e7a310db3',1,'llama_ros::langchain::chat_llama_ros']]],
-  ['use_5fminja_5ftemplate_9',['USE_MINJA_TEMPLATE',['../namespacellama__ros_1_1langchain_1_1chat__llama__ros.html#aaa0bd9c5b99209e2ea71b5d7ee96b72d',1,'llama_ros::langchain::chat_llama_ros']]],
-  ['use_5fparallel_5fresidual_10',['use_parallel_residual',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a502b50f9c2b8a7fa60d69b51c17eed0e',1,'llama_ros::Metadata::ModelInfo']]],
-  ['use_5fpenalty_5fprompt_5ftokens_11',['use_penalty_prompt_tokens',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aa42948543e6dbb4f4068c0c08abda38d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['utils_2epy_12',['utils.py',['../utils_8py.html',1,'']]],
-  ['uuid_13',['uuid',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a9dc4d8b30688d638b5e6b9efeb2730e1',1,'llama_ros::Metadata::GeneralInfo']]]
+  ['use_5fparallel_5fresidual_7',['use_parallel_residual',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a502b50f9c2b8a7fa60d69b51c17eed0e',1,'llama_ros::Metadata::ModelInfo']]],
+  ['use_5fpenalty_5fprompt_5ftokens_8',['use_penalty_prompt_tokens',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aa42948543e6dbb4f4068c0c08abda38d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
+  ['utils_2epy_9',['utils.py',['../utils_8py.html',1,'']]],
+  ['uuid_10',['uuid',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a9dc4d8b30688d638b5e6b9efeb2730e1',1,'llama_ros::Metadata::GeneralInfo']]]
 ];

@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['responseoutput_0',['ResponseOutput',['../structllama__ros_1_1ResponseOutput.html',1,'llama_ros']]],
-  ['ropeinfo_1',['RoPEInfo',['../structllama__ros_1_1Metadata_1_1RoPEInfo.html',1,'llama_ros::Metadata']]]
+  ['promptverb_0',['PromptVerb',['../classllama__cli_1_1verb_1_1prompt_1_1PromptVerb.html',1,'llama_cli::verb::prompt']]]
 ];

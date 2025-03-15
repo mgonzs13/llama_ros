@@ -102,91 +102,76 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ac299d7f9a96d431972de765bef13a770" id="r_ac299d7f9a96d431972de765bef13a770"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac299d7f9a96d431972de765bef13a770">DEFAULT_TEMPLATE</a></td></tr>
-<tr class="separator:ac299d7f9a96d431972de765bef13a770"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a23962160d350bcfe1b8f9416b6bba950" id="r_a23962160d350bcfe1b8f9416b6bba950"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a23962160d350bcfe1b8f9416b6bba950">USE_JINJA_TEMPLATE</a> = &quot;jinja&quot;</td></tr>
-<tr class="separator:a23962160d350bcfe1b8f9416b6bba950"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa0bd9c5b99209e2ea71b5d7ee96b72d" id="r_aaa0bd9c5b99209e2ea71b5d7ee96b72d"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa0bd9c5b99209e2ea71b5d7ee96b72d">USE_MINJA_TEMPLATE</a> = &quot;minja&quot;</td></tr>
-<tr class="separator:aaa0bd9c5b99209e2ea71b5d7ee96b72d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74d7268f1bfeefbeca1ee76e7a310db3" id="r_a74d7268f1bfeefbeca1ee76e7a310db3"><td class="memItemLeft" align="right" valign="top">str&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a74d7268f1bfeefbeca1ee76e7a310db3">USE_LLAMA_TEMPLATE</a> = &quot;llama&quot;</td></tr>
-<tr class="separator:a74d7268f1bfeefbeca1ee76e7a310db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a566e82ce99012c50eb4bde7940de1989" id="r_a566e82ce99012c50eb4bde7940de1989"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a566e82ce99012c50eb4bde7940de1989">_BM</a> = TypeVar(&quot;_BM&quot;, bound=BaseModel)</td></tr>
+<tr class="separator:a566e82ce99012c50eb4bde7940de1989"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26faff59a9746cb012dc62e8c4c79e57" id="r_a26faff59a9746cb012dc62e8c4c79e57"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a26faff59a9746cb012dc62e8c4c79e57">_DictOrPydanticClass</a> = Union[Dict[str, Any], Type[<a class="el" href="#a566e82ce99012c50eb4bde7940de1989">_BM</a>], Type]</td></tr>
+<tr class="separator:a26faff59a9746cb012dc62e8c4c79e57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa677bff7417807f0bd6a1967a4783f71" id="r_aa677bff7417807f0bd6a1967a4783f71"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa677bff7417807f0bd6a1967a4783f71">_DictOrPydantic</a> = Union[Dict, <a class="el" href="#a566e82ce99012c50eb4bde7940de1989">_BM</a>]</td></tr>
+<tr class="separator:aa677bff7417807f0bd6a1967a4783f71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Variable Documentation</h2>
-<a id="ac299d7f9a96d431972de765bef13a770" name="ac299d7f9a96d431972de765bef13a770"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac299d7f9a96d431972de765bef13a770">&#9670;&#160;</a></span>DEFAULT_TEMPLATE</h2>
+<a id="a566e82ce99012c50eb4bde7940de1989" name="a566e82ce99012c50eb4bde7940de1989"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a566e82ce99012c50eb4bde7940de1989">&#9670;&#160;</a></span>_BM</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">str llama_ros.langchain.chat_llama_ros.DEFAULT_TEMPLATE</td>
+          <td class="memname">llama_ros.langchain.chat_llama_ros._BM = TypeVar(&quot;_BM&quot;, bound=BaseModel)</td>
         </tr>
       </table>
-</div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line"><span class="lineno">    1</span>=  <span class="stringliteral">&quot;&quot;&quot;{% if tools_grammar %}</span></div>
-<div class="line"><span class="lineno">    2</span><span class="stringliteral">    {{- &#39;&lt;|im_start|&gt;assistant\n&#39; }}</span></div>
-<div class="line"><span class="lineno">    3</span><span class="stringliteral">    {{- &#39;You are an AI assistant that outputs in JSON format. Think about your tools, your previous data and your next step. Available tools are:&#39; }}</span></div>
-<div class="line"><span class="lineno">    4</span><span class="stringliteral">    {% for tool in tools_grammar %}</span></div>
-<div class="line"><span class="lineno">    5</span><span class="stringliteral">        {% if not loop.last %}</span></div>
-<div class="line"><span class="lineno">    6</span><span class="stringliteral">            {{- tool }}</span></div>
-<div class="line"><span class="lineno">    7</span><span class="stringliteral">        {% else %}</span></div>
-<div class="line"><span class="lineno">    8</span><span class="stringliteral">            {{- tool + &#39;&lt;|im_end|&gt;&#39; }}</span></div>
-<div class="line"><span class="lineno">    9</span><span class="stringliteral">        {% endif %}</span></div>
-<div class="line"><span class="lineno">   10</span><span class="stringliteral">    {% endfor %}</span></div>
-<div class="line"><span class="lineno">   11</span><span class="stringliteral">{% endif %}</span></div>
-<div class="line"><span class="lineno">   12</span><span class="stringliteral"></span> </div>
-<div class="line"><span class="lineno">   13</span><span class="stringliteral">{% for message in messages %}</span></div>
-<div class="line"><span class="lineno">   14</span><span class="stringliteral">    {% if (loop.last and add_generation_prompt) or not loop.last %}</span></div>
-<div class="line"><span class="lineno">   15</span><span class="stringliteral">        {{- &#39;&lt;|im_start|&gt;&#39; + message[&#39;role&#39;] + &#39;\n&#39; + message[&#39;content&#39;] + &#39;&lt;|im_end|&gt;\n&#39; }}</span></div>
-<div class="line"><span class="lineno">   16</span><span class="stringliteral">    {% else %}</span></div>
-<div class="line"><span class="lineno">   17</span><span class="stringliteral">        {{- &#39;&lt;|im_start|&gt;&#39; + message[&#39;role&#39;] + &#39;\n&#39; + message[&#39;content&#39;] }}</span></div>
-<div class="line"><span class="lineno">   18</span><span class="stringliteral">    {% endif %}</span></div>
-<div class="line"><span class="lineno">   19</span><span class="stringliteral">{% endfor %}</span></div>
-<div class="line"><span class="lineno">   20</span><span class="stringliteral">{% if add_generation_prompt and messages[-1][&#39;role&#39;] != &#39;assistant&#39; %}</span></div>
-<div class="line"><span class="lineno">   21</span><span class="stringliteral">    {{- &#39;&lt;|im_start|&gt;assistant&#39; }}</span></div>
-<div class="line"><span class="lineno">   22</span><span class="stringliteral">{% endif %}</span></div>
-<div class="line"><span class="lineno">   23</span><span class="stringliteral">&quot;&quot;&quot;</span></div>
-</div><!-- fragment -->
-</div>
-</div>
-<a id="a23962160d350bcfe1b8f9416b6bba950" name="a23962160d350bcfe1b8f9416b6bba950"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a23962160d350bcfe1b8f9416b6bba950">&#9670;&#160;</a></span>USE_JINJA_TEMPLATE</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">str llama_ros.langchain.chat_llama_ros.USE_JINJA_TEMPLATE = &quot;jinja&quot;</td>
-        </tr>
-      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="a74d7268f1bfeefbeca1ee76e7a310db3" name="a74d7268f1bfeefbeca1ee76e7a310db3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a74d7268f1bfeefbeca1ee76e7a310db3">&#9670;&#160;</a></span>USE_LLAMA_TEMPLATE</h2>
+<a id="aa677bff7417807f0bd6a1967a4783f71" name="aa677bff7417807f0bd6a1967a4783f71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa677bff7417807f0bd6a1967a4783f71">&#9670;&#160;</a></span>_DictOrPydantic</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">str llama_ros.langchain.chat_llama_ros.USE_LLAMA_TEMPLATE = &quot;llama&quot;</td>
+          <td class="memname">llama_ros.langchain.chat_llama_ros._DictOrPydantic = Union[Dict, <a class="el" href="#a566e82ce99012c50eb4bde7940de1989">_BM</a>]</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="aaa0bd9c5b99209e2ea71b5d7ee96b72d" name="aaa0bd9c5b99209e2ea71b5d7ee96b72d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aaa0bd9c5b99209e2ea71b5d7ee96b72d">&#9670;&#160;</a></span>USE_MINJA_TEMPLATE</h2>
+<a id="a26faff59a9746cb012dc62e8c4c79e57" name="a26faff59a9746cb012dc62e8c4c79e57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26faff59a9746cb012dc62e8c4c79e57">&#9670;&#160;</a></span>_DictOrPydanticClass</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">str llama_ros.langchain.chat_llama_ros.USE_MINJA_TEMPLATE = &quot;minja&quot;</td>
+          <td class="memname">llama_ros.langchain.chat_llama_ros._DictOrPydanticClass = Union[Dict[str, Any], Type[<a class="el" href="#a566e82ce99012c50eb4bde7940de1989">_BM</a>], Type]</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel protected">protected</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>

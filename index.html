@@ -772,7 +772,7 @@ Click to expand</summary>
 <div class="line"><span class="comment"># create chat</span></div>
 <div class="line">chat = ChatLlamaROS(</div>
 <div class="line">    temp=0.2,</div>
-<div class="line">    penalty_last_n=8,</div>
+<div class="line">    penalty_last_n=8</div>
 <div class="line">)</div>
 <div class="line"> </div>
 <div class="line"><span class="comment"># create prompt template with messages</span></div>
@@ -797,14 +797,61 @@ Click to expand</summary>
 </div><!-- fragment --><p></p>
 </details>
 <h3><a class="anchor" id="autotoc_md30"></a>
+chat_llama_ros (Structured output)</h3>
+<details >
+<summary >
+Click to expand</summary>
+<p></p>
+<div class="fragment"><div class="line"><span class="keyword">import</span> rclpy</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</div>
+<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> ChatLlamaROS</div>
+<div class="line"><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel, Field</div>
+<div class="line"> </div>
+<div class="line">rclpy.init()</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">class </span>Joke(BaseModel):</div>
+<div class="line">    <span class="stringliteral">&quot;&quot;&quot;Joke to tell user.&quot;&quot;&quot;</span></div>
+<div class="line"> </div>
+<div class="line">    setup: str = Field(description=<span class="stringliteral">&quot;The setup of the joke&quot;</span>)</div>
+<div class="line">    punchline: str = Field(description=<span class="stringliteral">&quot;The punchline to the joke&quot;</span>)</div>
+<div class="line">    rating: Optional[int] = Field(</div>
+<div class="line">        default=<span class="keywordtype">None</span>, description=<span class="stringliteral">&quot;How funny the joke is, from 1 to 10&quot;</span></div>
+<div class="line">    )</div>
+<div class="line"> </div>
+<div class="line">chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)</div>
+<div class="line"> </div>
+<div class="line">structured_chat = chat.with_structured_output(</div>
+<div class="line">    Joke, method=<span class="stringliteral">&quot;function_calling&quot;</span></div>
+<div class="line">)</div>
+<div class="line"> </div>
+<div class="line">prompt = ChatPromptTemplate.from_messages(</div>
+<div class="line">    [</div>
+<div class="line">        HumanMessagePromptTemplate.from_template(</div>
+<div class="line">            template=[</div>
+<div class="line">                {<span class="stringliteral">&quot;type&quot;</span>: <span class="stringliteral">&quot;text&quot;</span>, <span class="stringliteral">&quot;text&quot;</span>: <span class="stringliteral">&quot;{prompt}&quot;</span>},</div>
+<div class="line">            ]</div>
+<div class="line">        ),</div>
+<div class="line">    ]</div>
+<div class="line">)</div>
+<div class="line"> </div>
+<div class="line">chain = prompt | structured_chat</div>
+<div class="line"> </div>
+<div class="line">res = chain.invoke({<span class="stringliteral">&quot;prompt&quot;</span>: <span class="stringliteral">&quot;Tell me a joke about cats&quot;</span>})</div>
+<div class="line"> </div>
+<div class="line">print(f<span class="stringliteral">&quot;Response: {response.content.strip()}&quot;</span>)</div>
+<div class="line"> </div>
+<div class="line">rclpy.shutdown()</div>
+</div><!-- fragment --><p></p>
+</details>
+<h3><a class="anchor" id="autotoc_md31"></a>
 chat_llama_ros (Tools)</h3>
 <details >
 <summary >
 Click to expand</summary>
 <p></p>
 <p>The current implementation of Tools allows executing tools without requiring a model trained for that task.</p>
-<div class="fragment"><div class="line"><span class="keyword">import</span> time</div>
-<div class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</div>
+<div class="fragment"><div class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">import</span> rclpy</div>
 <div class="line"> </div>
@@ -825,7 +872,7 @@ Click to expand</summary>
 <div class="line">    <span class="stringliteral">&quot;&quot;&quot;Get the current temperature of a city&quot;&quot;&quot;</span></div>
 <div class="line">    <span class="keywordflow">return</span> randint(20, 30)</div>
 <div class="line"> </div>
-<div class="line">chat = ChatLlamaROS(temp=0.6, penalty_last_n=8, template_method=<span class="stringliteral">&quot;jinja&quot;</span>)</div>
+<div class="line">chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)</div>
 <div class="line"> </div>
 <div class="line">messages = [</div>
 <div class="line">    HumanMessage(</div>
@@ -852,14 +899,47 @@ Click to expand</summary>
 <div class="line">    tool_msg.additional_kwargs = {<span class="stringliteral">&#39;args&#39;</span>: tool[<span class="stringliteral">&#39;args&#39;</span>]}</div>
 <div class="line">    messages.append(tool_msg)</div>
 <div class="line"> </div>
-<div class="line">res = chat.invoke(messages)</div>
+<div class="line">res = llm_tools.invoke(messages)</div>
 <div class="line"> </div>
 <div class="line">print(f<span class="stringliteral">&quot;Response: {res.content}&quot;</span>)</div>
 <div class="line"> </div>
 <div class="line">rclpy.shutdown()</div>
 </div><!-- fragment --><p></p>
 </details>
-<h3><a class="anchor" id="autotoc_md31"></a>
+<h3><a class="anchor" id="autotoc_md32"></a>
+chat_llama_ros (Reasoning)</h3>
+<details >
+<summary >
+Click to expand</summary>
+<p></p>
+<p>A reasoning model is required, such as Deepseek R1</p>
+<div class="fragment"><div class="line"><span class="keyword">import</span> time</div>
+<div class="line"><span class="keyword">from</span> random <span class="keyword">import</span> randint</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">import</span> rclpy</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</div>
+<div class="line"><span class="keyword">from</span> <a class="code hl_namespace" href="namespacellama__ros_1_1langchain.html">llama_ros.langchain</a> <span class="keyword">import</span> ChatLlamaROS</div>
+<div class="line"> </div>
+<div class="line">rclpy.init()</div>
+<div class="line"> </div>
+<div class="line">chat = ChatLlamaROS(temp=0.6, penalty_last_n=8)</div>
+<div class="line"> </div>
+<div class="line">messages = [</div>
+<div class="line">    HumanMessage(</div>
+<div class="line">        <span class="stringliteral">&quot;Here we have a book, a laptop, 9 eggs and a nail. Please tell me how to stack them onto each other in a stable manner.&quot;</span></div>
+<div class="line">    )</div>
+<div class="line">]</div>
+<div class="line"> </div>
+<div class="line">res = chat.invoke(messages)</div>
+<div class="line"> </div>
+<div class="line">print(f<span class="stringliteral">&quot;Response: {res.content.strip()}&quot;</span>)</div>
+<div class="line">print(f<span class="stringliteral">&quot;Reasoning: {res.additional_kwargs[&quot;</span>reasoning_content<span class="stringliteral">&quot;]}&quot;</span>)</div>
+<div class="line"> </div>
+<div class="line">rclpy.shutdown()</div>
+</div><!-- fragment --><p></p>
+</details>
+<h3><a class="anchor" id="autotoc_md33"></a>
 chat_llama_ros (langgraph)</h3>
 <details >
 <summary >
@@ -888,7 +968,7 @@ Click to expand</summary>
 <div class="line">    <span class="stringliteral">&quot;&quot;&quot;Get the current temperature of a city&quot;&quot;&quot;</span></div>
 <div class="line">    <span class="keywordflow">return</span> randint(20, 30)</div>
 <div class="line"> </div>
-<div class="line">chat = ChatLlamaROS(temp=0.0, template_method=<span class="stringliteral">&quot;jinja&quot;</span>)</div>
+<div class="line">chat = ChatLlamaROS(temp=0.0)</div>
 <div class="line"> </div>
 <div class="line">agent_executor = create_react_agent(</div>
 <div class="line">    self.chat, [get_inhabitants, get_curr_temperature]</div>
@@ -909,29 +989,29 @@ Click to expand</summary>
 <div class="line">rclpy.shutdown()</div>
 </div><!-- fragment --><p></p>
 </details>
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md34"></a>
 Demos</h1>
-<h2><a class="anchor" id="autotoc_md33"></a>
+<h2><a class="anchor" id="autotoc_md35"></a>
 LLM Demo</h2>
 <div class="fragment"><div class="line">ros2 launch llama_bringup spaetzle.launch.py</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_demo_node --ros-args -p prompt:=&quot;your prompt&quot;</div>
 </div><!-- fragment --><p><a href="https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4">https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4</a></p>
-<h2><a class="anchor" id="autotoc_md34"></a>
+<h2><a class="anchor" id="autotoc_md36"></a>
 Embeddings Generation Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_embeddings_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced">https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced</a></p>
-<h2><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md37"></a>
 Reranking Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llama_rerank_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484">https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484</a></p>
-<h2><a class="anchor" id="autotoc_md36"></a>
+<h2><a class="anchor" id="autotoc_md38"></a>
 VLM Demo</h2>
 <div class="fragment"><div class="line">ros2 launch llama_bringup minicpm-2.6.launch.py</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos llava_demo_node --ros-args -p prompt:=&quot;your prompt&quot; -p image_url:=&quot;url of the image&quot; -p use_image:=&quot;whether to send the image&quot;</div>
 </div><!-- fragment --><p><a href="https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c">https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c</a></p>
-<h2><a class="anchor" id="autotoc_md37"></a>
+<h2><a class="anchor" id="autotoc_md39"></a>
 Chat Template Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch MiniCPM-2.6.yaml</div>
 </div><!-- fragment --><details >
@@ -954,18 +1034,16 @@ Click to expand MiniCPM-2.6.yaml</summary>
 <div class="line"> </div>
 <div class="line">mmproj_repo: &quot;openbmb/MiniCPM-V-2_6-gguf&quot;</div>
 <div class="line">mmproj_filename: &quot;mmproj-model-f16.gguf&quot;</div>
-<div class="line"> </div>
-<div class="line">stopping_words: [&quot;&lt;|im_end|&gt;&quot;]</div>
 </div><!-- fragment --><p></p>
 </details>
 <div class="fragment"><div class="line">ros2 run llama_demos chatllama_demo_node</div>
 </div><!-- fragment --><p><a href="https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20240830T081232Z&amp;X-Amz-Expires=300&amp;X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&amp;X-Amz-SignedHeaders=host&amp;actor_id=55236157&amp;key_id=0&amp;repo_id=622137360">ChatLlamaROS demo</a></p>
-<h2><a class="anchor" id="autotoc_md38"></a>
+<h2><a class="anchor" id="autotoc_md40"></a>
 Tools Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch MiniCPM-2.6.yaml</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 run llama_demos chatllama_tools_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d">Tools ChatLlama</a></p>
-<h2><a class="anchor" id="autotoc_md39"></a>
+<h2><a class="anchor" id="autotoc_md41"></a>
 Langgraph Demo</h2>
 <div class="fragment"><div class="line">ros2 llama launch Qwen2.yaml</div>
 </div><!-- fragment --><details >
@@ -980,13 +1058,11 @@ Click to expand Qwen2.yaml</summary>
 <div class="line"> </div>
 <div class="line">model_repo: &quot;Qwen/Qwen2.5-Coder-7B-Instruct-GGUF&quot;</div>
 <div class="line">model_filename: &quot;qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf&quot;</div>
-<div class="line"> </div>
-<div class="line">stopping_words: [&quot;&lt;|im_end|&gt;&quot;]</div>
 </div><!-- fragment --><p></p>
 </details>
 <div class="fragment"><div class="line">ros2 run llama_demos chatllama_langgraph_demo_node</div>
 </div><!-- fragment --><p><a href="https://github.com/user-attachments/assets/a0991cb4-f7f4-43d5-b629-3b1819aead0d">Langgraph ChatLlama</a></p>
-<h2><a class="anchor" id="autotoc_md40"></a>
+<h2><a class="anchor" id="autotoc_md42"></a>
 RAG Demo (LLM + chat template + RAG + Reranking + Stream)</h2>
 <div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml</div>
 </div><!-- fragment --><div class="fragment"><div class="line">ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml</div>
@@ -1003,8 +1079,6 @@ Click to expand Qwen2.yaml</summary>
 <div class="line"> </div>
 <div class="line">model_repo: &quot;Qwen/Qwen2.5-Coder-3B-Instruct-GGUF&quot;</div>
 <div class="line">model_filename: &quot;qwen2.5-coder-3b-instruct-q4_k_m.gguf&quot;</div>
-<div class="line"> </div>
-<div class="line">stopping_words: [&quot;&lt;|im_end|&gt;&quot;]</div>
 </div><!-- fragment --><p></p>
 </details>
 <div class="fragment"><div class="line">ros2 run llama_demos llama_rag_demo_node</div>

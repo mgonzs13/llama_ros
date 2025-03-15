@@ -98,6 +98,12 @@ $(function(){ initResizable(false); });
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__utils_1_1LogProb.html">LogProb</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__utils_1_1ResponseResult.html">ResponseResult</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structllama__utils_1_1SelectedLogProb.html">SelectedLogProb</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classllama__utils_1_1Spinner.html">Spinner</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -119,12 +125,28 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:acb21d1f124bb802d4450742d7577253f" id="r_acb21d1f124bb802d4450742d7577253f"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acb21d1f124bb802d4450742d7577253f">random_string</a> (int string_size=32)</td></tr>
+<tr class="separator:acb21d1f124bb802d4450742d7577253f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17e111b22a24b785912bd910e6e2744c" id="r_a17e111b22a24b785912bd910e6e2744c"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a17e111b22a24b785912bd910e6e2744c">gen_chatcmplid</a> ()</td></tr>
+<tr class="separator:a17e111b22a24b785912bd910e6e2744c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad789d8dfa8e54aedb238027ee7c74e6d" id="r_ad789d8dfa8e54aedb238027ee7c74e6d"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad789d8dfa8e54aedb238027ee7c74e6d">logit</a> (float x)</td></tr>
+<tr class="separator:ad789d8dfa8e54aedb238027ee7c74e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35cbbcee87226d4797bd09b1fb4577e6" id="r_a35cbbcee87226d4797bd09b1fb4577e6"><td class="memItemLeft" align="right" valign="top">common_chat_tool_choice&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a35cbbcee87226d4797bd09b1fb4577e6">parse_chat_tool_choice</a> (int choice)</td></tr>
+<tr class="separator:a35cbbcee87226d4797bd09b1fb4577e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a8b1f0959abfca2192efa9f3c5cbf85" id="r_a3a8b1f0959abfca2192efa9f3c5cbf85"><td class="memItemLeft" align="right" valign="top">common_chat_templates_inputs&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3a8b1f0959abfca2192efa9f3c5cbf85">parse_chat_completions_goal</a> (const std::shared_ptr&lt; const llama_msgs::action::GenerateChatCompletions::Goal &gt; goal)</td></tr>
+<tr class="separator:a3a8b1f0959abfca2192efa9f3c5cbf85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20d3d3a61ed3e85adddd6a3a81c88c9e" id="r_a20d3d3a61ed3e85adddd6a3a81c88c9e"><td class="memItemLeft" align="right" valign="top">llama_msgs::action::GenerateChatCompletions::Result&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a20d3d3a61ed3e85adddd6a3a81c88c9e">generate_chat_completions_result</a> (const <a class="el" href="structllama__utils_1_1ResponseResult.html">ResponseResult</a> &amp;result)</td></tr>
+<tr class="separator:a20d3d3a61ed3e85adddd6a3a81c88c9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a4bf43657cece84eced857e47618049" id="r_a9a4bf43657cece84eced857e47618049"><td class="memItemLeft" align="right" valign="top">std::vector&lt; llama_msgs::action::GenerateChatCompletions::Feedback &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9a4bf43657cece84eced857e47618049">generate_chat_completions_feedback</a> (const <a class="el" href="structllama__utils_1_1ResponseResult.html">ResponseResult</a> &amp;result)</td></tr>
+<tr class="separator:a9a4bf43657cece84eced857e47618049"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e3b2181ccb7818a8a8498ffdbd1309a" id="r_a4e3b2181ccb7818a8a8498ffdbd1309a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a4e3b2181ccb7818a8a8498ffdbd1309a">declare_llama_params</a> (const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</td></tr>
 <tr class="separator:a4e3b2181ccb7818a8a8498ffdbd1309a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf837a2a370882bdf2f841fad0582ea9" id="r_acf837a2a370882bdf2f841fad0582ea9"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#acf837a2a370882bdf2f841fad0582ea9">get_llama_params</a> (const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;node)</td></tr>
 <tr class="separator:acf837a2a370882bdf2f841fad0582ea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15366a6874997fa374cefb55bea95dd1" id="r_a15366a6874997fa374cefb55bea95dd1"><td class="memItemLeft" align="right" valign="top">enum ggml_sched_priority&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a15366a6874997fa374cefb55bea95dd1">parse_priority</a> (std::string priority)</td></tr>
 <tr class="separator:a15366a6874997fa374cefb55bea95dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34174fa3ec3ae949970d19d2dac404d7" id="r_a34174fa3ec3ae949970d19d2dac404d7"><td class="memItemLeft" align="right" valign="top">common_grammar_trigger_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a34174fa3ec3ae949970d19d2dac404d7">parse_grammar_trigger_type</a> (int type)</td></tr>
+<tr class="separator:a34174fa3ec3ae949970d19d2dac404d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7123c0ccc68853d01feaa11bc6aa2e0f" id="r_a7123c0ccc68853d01feaa11bc6aa2e0f"><td class="memItemLeft" align="right" valign="top">struct common_params_sampling&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7123c0ccc68853d01feaa11bc6aa2e0f">parse_sampling_params</a> (const llama_msgs::msg::SamplingConfig &amp;sampling_config, int n_vocab)</td></tr>
 <tr class="separator:a7123c0ccc68853d01feaa11bc6aa2e0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4d621875ec0cce3dfa49cf6f687c8c0" id="r_ad4d621875ec0cce3dfa49cf6f687c8c0"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad4d621875ec0cce3dfa49cf6f687c8c0">extract_filename</a> (const char *path)</td></tr>
@@ -469,6 +491,65 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a17e111b22a24b785912bd910e6e2744c" name="a17e111b22a24b785912bd910e6e2744c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17e111b22a24b785912bd910e6e2744c">&#9670;&#160;</a></span>gen_chatcmplid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llama_utils::gen_chatcmplid </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9a4bf43657cece84eced857e47618049" name="a9a4bf43657cece84eced857e47618049"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a4bf43657cece84eced857e47618049">&#9670;&#160;</a></span>generate_chat_completions_feedback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; llama_msgs::action::GenerateChatCompletions::Feedback &gt; llama_utils::generate_chat_completions_feedback </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structllama__utils_1_1ResponseResult.html">ResponseResult</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>result</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a20d3d3a61ed3e85adddd6a3a81c88c9e" name="a20d3d3a61ed3e85adddd6a3a81c88c9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a20d3d3a61ed3e85adddd6a3a81c88c9e">&#9670;&#160;</a></span>generate_chat_completions_result()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llama_msgs::action::GenerateChatCompletions::Result llama_utils::generate_chat_completions_result </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structllama__utils_1_1ResponseResult.html">ResponseResult</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>result</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="acf837a2a370882bdf2f841fad0582ea9" name="acf837a2a370882bdf2f841fad0582ea9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acf837a2a370882bdf2f841fad0582ea9">&#9670;&#160;</a></span>get_llama_params()</h2>
 
@@ -479,6 +560,82 @@ Variables</h2></td></tr>
           <td class="memname">struct <a class="el" href="structllama__utils_1_1LlamaParams.html">LlamaParams</a> llama_utils::get_llama_params </td>
           <td>(</td>
           <td class="paramtype">const rclcpp_lifecycle::LifecycleNode::SharedPtr &amp;</td>          <td class="paramname"><span class="paramname"><em>node</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad789d8dfa8e54aedb238027ee7c74e6d" name="ad789d8dfa8e54aedb238027ee7c74e6d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad789d8dfa8e54aedb238027ee7c74e6d">&#9670;&#160;</a></span>logit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float llama_utils::logit </td>
+          <td>(</td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>x</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3a8b1f0959abfca2192efa9f3c5cbf85" name="a3a8b1f0959abfca2192efa9f3c5cbf85"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a8b1f0959abfca2192efa9f3c5cbf85">&#9670;&#160;</a></span>parse_chat_completions_goal()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">common_chat_templates_inputs llama_utils::parse_chat_completions_goal </td>
+          <td>(</td>
+          <td class="paramtype">const std::shared_ptr&lt; const llama_msgs::action::GenerateChatCompletions::Goal &gt;</td>          <td class="paramname"><span class="paramname"><em>goal</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a35cbbcee87226d4797bd09b1fb4577e6" name="a35cbbcee87226d4797bd09b1fb4577e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35cbbcee87226d4797bd09b1fb4577e6">&#9670;&#160;</a></span>parse_chat_tool_choice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">common_chat_tool_choice llama_utils::parse_chat_tool_choice </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>choice</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a34174fa3ec3ae949970d19d2dac404d7" name="a34174fa3ec3ae949970d19d2dac404d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34174fa3ec3ae949970d19d2dac404d7">&#9670;&#160;</a></span>parse_grammar_trigger_type()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">common_grammar_trigger_type llama_utils::parse_grammar_trigger_type </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>type</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -520,6 +677,31 @@ Variables</h2></td></tr>
           <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>n_vocab</em></span>&#160;)</td>
         </tr>
       </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acb21d1f124bb802d4450742d7577253f" name="acb21d1f124bb802d4450742d7577253f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb21d1f124bb802d4450742d7577253f">&#9670;&#160;</a></span>random_string()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string llama_utils::random_string </td>
+          <td>(</td>
+          <td class="paramtype">int</td>          <td class="paramname"><span class="paramname"><em>string_size</em></span><span class="paramdefsep"> = </span><span class="paramdefval">32</span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
