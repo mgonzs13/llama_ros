@@ -30,23 +30,24 @@ from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 
-from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 from llama_ros.langchain import ChatLlamaROS
+from langchain_core.messages import AIMessage
 
 
-class ChatLlamaDemoNode(Node):
+class ChatLlamaReasoningDemoNode(Node):
 
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
 
-        self.declare_parameter("prompt", "Who is the character in the middle?")
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
+        self.declare_parameter(
+            "prompt",
+            "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner.",
+        )
+        self.str_prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.cv_bridge = CvBridge()
 
-        self.tokens = 0
         self.initial_time = -1
         self.eval_time = -1
 
@@ -56,43 +57,36 @@ class ChatLlamaDemoNode(Node):
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                SystemMessage("You are an IA that answer questions."),
                 HumanMessagePromptTemplate.from_template(
                     template=[
-                        {"type": "text", "text": f"<image>{self.prompt}"},
-                        {"type": "image_url", "image_url": "{image_url}"},
+                        {"type": "text", "text": f"{self.str_prompt}"},
                     ]
                 ),
             ]
         )
 
-        self.chain = self.prompt | self.chat | StrOutputParser()
+        self.chain = self.prompt | self.chat
 
         self.initial_time = time.time()
+        response: AIMessage = self.chain.invoke({})
+        self.final_time = time.time()
 
-        for text in self.chain.stream(
-            {
-                "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
-            }
-        ):
-            self.tokens += 1
-            print(text, end="", flush=True)
-            if self.eval_time < 0:
-                self.eval_time = time.time()
-
-        print("", end="\n", flush=True)
-        self.get_logger().info("END")
-
-        end_time = time.time()
-        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
+        self.get_logger().info(f"Prompt: {self.str_prompt}")
+        self.get_logger().info(f"Response: {response.content.strip()}")
         self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
+            f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
+        )
+        self.get_logger().info(
+            f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
+        )
+        self.get_logger().info(
+            f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
         )
 
 
 def main():
     rclpy.init()
-    node = ChatLlamaDemoNode()
+    node = ChatLlamaReasoningDemoNode()
     node.send_prompt()
     rclpy.shutdown()
 

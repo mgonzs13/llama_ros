@@ -30,19 +30,29 @@ from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 
-from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import AIMessage
 from llama_ros.langchain import ChatLlamaROS
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
-class ChatLlamaDemoNode(Node):
+# Pydantic
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
+    rating: Optional[int] = Field(
+        default=None, description="How funny the joke is, from 1 to 10"
+    )
+
+
+class ChatLlamaStructuredDemoNode(Node):
 
     def __init__(self) -> None:
         super().__init__("chat_llama_demo_node")
-
-        self.declare_parameter("prompt", "Who is the character in the middle?")
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
 
         self.cv_bridge = CvBridge()
 
@@ -56,43 +66,37 @@ class ChatLlamaDemoNode(Node):
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
-                SystemMessage("You are an IA that answer questions."),
                 HumanMessagePromptTemplate.from_template(
                     template=[
-                        {"type": "text", "text": f"<image>{self.prompt}"},
-                        {"type": "image_url", "image_url": "{image_url}"},
+                        {"type": "text", "text": "{prompt}"},
                     ]
                 ),
             ]
         )
 
-        self.chain = self.prompt | self.chat | StrOutputParser()
+        structured_chat = self.chat.with_structured_output(
+            Joke, method="function_calling"
+        )
+
+        self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
+        response: AIMessage = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+        self.final_time = time.time()
 
-        for text in self.chain.stream(
-            {
-                "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
-            }
-        ):
-            self.tokens += 1
-            print(text, end="", flush=True)
-            if self.eval_time < 0:
-                self.eval_time = time.time()
-
-        print("", end="\n", flush=True)
-        self.get_logger().info("END")
-
-        end_time = time.time()
-        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
+        self.get_logger().info(f"Prompt: Tell me a joke about cats")
+        self.get_logger().info(f"Response: {response.content.strip()}")
         self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
+            f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
+        )
+        self.get_logger().info(
+            f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
         )
 
 
 def main():
     rclpy.init()
-    node = ChatLlamaDemoNode()
+    node = ChatLlamaStructuredDemoNode()
     node.send_prompt()
     rclpy.shutdown()
 

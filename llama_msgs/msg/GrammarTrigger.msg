@@ -1,2 +1,8 @@
-string word         # trigger words to trigger lazy grammar
-bool at_start       # trigger word at start
+int32 GRAMMAR_TRIGGER_TYPE_TOKEN = 0
+int32 GRAMMAR_TRIGGER_TYPE_WORD = 1
+int32 GRAMMAR_TRIGGER_TYPE_PATTERN = 2
+int32 GRAMMAR_TRIGGER_TYPE_PATTERN_START = 3
+
+int32 type
+string value
+int32 token

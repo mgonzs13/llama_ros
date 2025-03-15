@@ -53,7 +53,7 @@ class ChatLlamaLanggraphDemoNode(Node):
     def __init__(self) -> None:
         super().__init__("chatllama_langgraph_demo_node")
 
-        self.chat = ChatLlamaROS(temp=0.0, template_method="jinja")
+        self.chat = ChatLlamaROS(temp=0.0)
         self.agent_executor = create_react_agent(
             self.chat, [get_inhabitants, get_curr_temperature]
         )
@@ -75,7 +75,9 @@ class ChatLlamaLanggraphDemoNode(Node):
         end_time = time.time()
 
         self.get_logger().info(f"\nResponse: {response['messages'][-1].content}")
-        self.get_logger().info(f"Time to run the agent: {end_time - initial_time} s")
+        self.get_logger().info(
+            f"Time to run the agent: {(end_time - initial_time):.2f} s"
+        )
 
 
 def main():

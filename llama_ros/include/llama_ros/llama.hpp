@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "chat.h"
 #include "common.h"
 #include "json.hpp"
 #include "llama.h"
@@ -180,8 +181,6 @@ public:
   virtual void reset();
   void cancel();
 
-  std::string format_chat_prompt(std::vector<struct common_chat_msg> chat_msgs,
-                                 bool add_ass, bool use_minja, bool use_tools);
   std::vector<struct LoRA> list_loras();
   void update_loras(std::vector<struct LoRA> loras);
 
@@ -206,6 +205,14 @@ public:
   generate_response(const std::string &input_prompt,
                     GenerateResponseCallback callbakc = nullptr,
                     std::vector<std::string> stop = {});
+
+  struct std::unique_ptr<struct common_chat_templates,
+                         common_chat_templates_deleter>
+  get_chat_templates();
+  struct common_chat_params
+  get_chat_params(struct common_chat_templates *tmpls,
+                  struct common_chat_templates_inputs inputs);
+  struct llama_perf_context_data get_perf_data();
 
   const struct llama_context *get_ctx() { return this->ctx; }
   const struct llama_model *get_model() { return this->model; }

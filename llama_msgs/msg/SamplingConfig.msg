@@ -36,8 +36,7 @@ string samplers_sequence            "edkypmxt"                       # PENALTIES
 string grammar                      ""                              # optional BNF-like grammar to constrain sampling
 string grammar_schema               ""                              # grammar schema that defines a JSON BNF grammar
 bool grammar_lazy                                                   # whether to use lazy grammar
-GrammarTrigger[] grammar_trigger_words                              # trigger words for lazy grammar
-int32[] grammar_trigger_tokens                                      # trigger tokens for lazy grammar
+GrammarTrigger[] grammar_triggers                                   # triggers for lazy grammar
 int32[] preserved_tokens                                            # tokens to preserve
 
 int32[] penalty_prompt_tokens                                       # list of tokens to penalize

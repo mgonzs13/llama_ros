@@ -33,9 +33,9 @@
 #include "common.h"
 #include "llama.h"
 
+#include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/srv/detokenize.hpp"
-#include "llama_msgs/srv/format_chat_messages.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/get_metadata.hpp"
 #include "llama_msgs/srv/list_lo_r_as.hpp"
@@ -55,6 +55,9 @@ class LlamaNode : public rclcpp_lifecycle::LifecycleNode {
   using GenerateResponse = llama_msgs::action::GenerateResponse;
   using GoalHandleGenerateResponse =
       rclcpp_action::ServerGoalHandle<GenerateResponse>;
+  using GenerateChatCompletions = llama_msgs::action::GenerateChatCompletions;
+  using GoalHandleGenerateChatCompletions =
+      rclcpp_action::ServerGoalHandle<GenerateChatCompletions>;
 
 public:
   LlamaNode();
@@ -75,6 +78,7 @@ protected:
   bool params_declared;
   struct llama_utils::LlamaParams params;
   std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
+  std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle_chat_;
 
   virtual void create_llama();
   void destroy_llama();
@@ -83,6 +87,12 @@ protected:
   virtual void
   execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
   void send_text(const struct CompletionOutput &completion);
+
+  virtual bool goal_empty_chat_completions(
+      std::shared_ptr<const GenerateChatCompletions::Goal> goal);
+  virtual void execute_chat_completions(
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
+  void send_text_chat_completions(const struct CompletionOutput &completion);
 
 private:
   // ros2
@@ -94,13 +104,13 @@ private:
       generate_embeddings_service_;
   rclcpp::Service<llama_msgs::srv::RerankDocuments>::SharedPtr
       rerank_documents_service_;
-  rclcpp::Service<llama_msgs::srv::FormatChatMessages>::SharedPtr
-      format_chat_service_;
   rclcpp::Service<llama_msgs::srv::ListLoRAs>::SharedPtr list_loras_service_;
   rclcpp::Service<llama_msgs::srv::UpdateLoRAs>::SharedPtr
       update_loras_service_;
   rclcpp_action::Server<GenerateResponse>::SharedPtr
       generate_response_action_server_;
+  rclcpp_action::Server<GenerateChatCompletions>::SharedPtr
+      generate_chat_completions_action_server_;
 
   // methods
   void get_metadata_service_callback(
@@ -121,10 +131,6 @@ private:
   void rerank_documents_service_callback(
       const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
       std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response);
-  void format_chat_service_callback(
-      const std::shared_ptr<llama_msgs::srv::FormatChatMessages::Request>
-          request,
-      std::shared_ptr<llama_msgs::srv::FormatChatMessages::Response> response);
 
   void list_loras_service_callback(
       const std::shared_ptr<llama_msgs::srv::ListLoRAs::Request> request,
@@ -140,6 +146,14 @@ private:
   handle_cancel(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
   void handle_accepted(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
+
+  rclcpp_action::GoalResponse handle_goal_chat_completions(
+      const rclcpp_action::GoalUUID &uuid,
+      std::shared_ptr<const GenerateChatCompletions::Goal> goal);
+  rclcpp_action::CancelResponse handle_cancel_chat_completions(
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
+  void handle_accepted_chat_completions(
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
 };
 
 } // namespace llama_ros

@@ -38,8 +38,8 @@ from llama_msgs.srv import Tokenize
 from llama_msgs.srv import Detokenize
 from llama_msgs.srv import GenerateEmbeddings
 from llama_msgs.srv import RerankDocuments
-from llama_msgs.srv import FormatChatMessages
 from llama_msgs.action import GenerateResponse
+from llama_msgs.action import GenerateChatCompletions
 from llama_msgs.msg import PartialResponse
 
 
@@ -49,13 +49,14 @@ class LlamaClientNode(Node):
     _lock: RLock = RLock()
 
     _action_client: ActionClient = None
+    _action_chat_client: ActionClient = None
     _tokenize_srv_client: Client = None
     _embeddings_srv_client: Client = None
 
     _action_done: bool = False
     _action_done_cond: Condition = Condition()
 
-    _action_result: GenerateResponse.Result = None
+    _action_result = None
     _action_status: GoalStatus = GoalStatus.STATUS_UNKNOWN
     _partial_results: List[PartialResponse] = []
     _goal_handle: ClientGoalHandle = None
@@ -105,16 +106,17 @@ class LlamaClientNode(Node):
             RerankDocuments, "rerank_documents", callback_group=self._callback_group
         )
 
-        self._format_chat_srv_client = self.create_client(
-            FormatChatMessages,
-            "format_chat_prompt",
-            callback_group=self._callback_group,
-        )
-
         self._action_client = ActionClient(
             self,
             GenerateResponse,
             "generate_response",
+            callback_group=self._callback_group,
+        )
+
+        self._action_chat_client = ActionClient(
+            self,
+            GenerateChatCompletions,
+            "generate_chat_completions",
             callback_group=self._callback_group,
         )
 
@@ -146,11 +148,50 @@ class LlamaClientNode(Node):
         self._rerank_srv_client.wait_for_service()
         return self._rerank_srv_client.call(req)
 
-    def format_chat_prompt(
-        self, req: FormatChatMessages.Request
-    ) -> FormatChatMessages.Response:
-        self._format_chat_srv_client.wait_for_service()
-        return self._format_chat_srv_client.call(req)
+    def generate_chat_completions(
+        self,
+        goal: GenerateChatCompletions.Goal,
+        feedback_cb: Callable = None,
+        stream: bool = False,
+    ) -> Union[
+        Tuple[GenerateChatCompletions.Result, GoalStatus],
+        Generator[GenerateChatCompletions.Feedback, None, None],
+    ]:
+        self._action_done = False
+        self._action_result = None
+        self._action_status = GoalStatus.STATUS_UNKNOWN
+        self._partial_results = []
+        self._action_chat_client.wait_for_server()
+
+        if feedback_cb is None and stream:
+            feedback_cb = self._feedback_callback_chat
+
+        send_goal_future = self._action_chat_client.send_goal_async(
+            goal, feedback_callback=feedback_cb
+        )
+        send_goal_future.add_done_callback(self._goal_response_callback)
+
+        # Wait for action to be done
+        def generator():
+            with self._action_done_cond:
+                while not self._action_done:
+
+                    while self._partial_results:
+                        yield self._partial_results.pop(0)
+
+                    self._action_done_cond.wait()
+
+            if self._partial_results:
+                yield from self._partial_results
+
+        if stream:
+            return generator()
+
+        else:
+            with self._action_done_cond:
+                while not self._action_done:
+                    self._action_done_cond.wait()
+            return self._action_result, self._action_status
 
     def generate_response(
         self,
@@ -216,6 +257,12 @@ class LlamaClientNode(Node):
 
         with self._goal_handle_lock:
             self._goal_handle = None
+
+    def _feedback_callback_chat(self, feedback) -> None:
+        self._partial_results.append(feedback.feedback)
+
+        with self._action_done_cond:
+            self._action_done_cond.notify()
 
     def _feedback_callback(self, feedback) -> None:
         self._partial_results.append(feedback.feedback.partial_response)

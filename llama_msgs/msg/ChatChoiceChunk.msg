@@ -1,0 +1,4 @@
+ChatDeltaChunk delta
+TokenProbArray logprobs
+string finish_reason
+int32 index 0

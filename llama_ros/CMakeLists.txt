@@ -46,6 +46,7 @@ endif()
 add_executable(llama_node
   src/llama_ros/llama.cpp
   src/llama_utils/logs.cpp
+  src/llama_utils/chat_utils.cpp
   src/llama_utils/llama_params.cpp
   src/llama_ros/llama_node.cpp
   src/llama_main.cpp
@@ -69,6 +70,7 @@ add_executable(llava_node
   src/llama_ros/llama.cpp
   src/llava_ros/llava.cpp
   src/llama_utils/logs.cpp
+  src/llama_utils/chat_utils.cpp
   src/llama_utils/llama_params.cpp
   src/llama_ros/llama_node.cpp
   src/llava_ros/llava_node.cpp

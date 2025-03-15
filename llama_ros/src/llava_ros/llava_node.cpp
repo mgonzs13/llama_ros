@@ -82,6 +82,50 @@ void LlavaNode::execute(
   llama_ros::LlamaNode::execute(goal_handle);
 }
 
+/*
+************************
+*    CHAT COMPLETIONS  *
+************************
+*/
+bool LlavaNode::goal_empty_chat_completions(
+    std::shared_ptr<const GenerateChatCompletions::Goal> goal) {
+  return goal->messages.size() == 0 && goal->image.data.size() == 0;
+}
+
+void LlavaNode::execute_chat_completions(
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+
+  auto result = std::make_shared<GenerateChatCompletions::Result>();
+  auto image_msg = goal_handle->get_goal()->image;
+
+  RCLCPP_INFO(this->get_logger(), "Executing chat completions");
+
+  // load image
+  if (image_msg.data.size() > 0) {
+
+    RCLCPP_INFO(this->get_logger(), "Loading image...");
+
+    cv_bridge::CvImagePtr cv_ptr =
+        cv_bridge::toCvCopy(image_msg, image_msg.encoding);
+
+    std::vector<uchar> buf;
+    cv::imencode(".jpg", cv_ptr->image, buf);
+    auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
+    std::string encoded_image = this->base64_encode(enc_msg, buf.size());
+
+    if (!static_cast<Llava *>(this->llama.get())->load_image(encoded_image)) {
+      this->goal_handle_chat_->abort(result);
+      RCLCPP_ERROR(this->get_logger(), "Failed to load image");
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Image loaded");
+  }
+
+  // llama_node execute_chat_completions
+  llama_ros::LlamaNode::execute_chat_completions(goal_handle);
+}
+
 // https://renenyffenegger.ch/notes/development/Base64/Encoding-and-decoding-base-64-with-cpp/
 std::string LlavaNode::base64_encode(unsigned char const *bytes_to_encode,
                                      size_t in_len, bool url) {
