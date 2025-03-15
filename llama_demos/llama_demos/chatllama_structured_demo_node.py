@@ -75,23 +75,24 @@ class ChatLlamaStructuredDemoNode(Node):
         )
 
         structured_chat = self.chat.with_structured_output(
-            Joke, method="function_calling"
+            Joke, method="function_calling", include_raw=True
         )
 
         self.chain = self.prompt | structured_chat
 
         self.initial_time = time.time()
-        response: AIMessage = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+        response = self.chain.invoke({"prompt": "Tell me a joke about cats"})
+        message: AIMessage = response["raw"]
         self.final_time = time.time()
 
         self.get_logger().info(f"Prompt: Tell me a joke about cats")
-        self.get_logger().info(f"Response: {response}")
+        self.get_logger().info(response["parsed"])
         self.get_logger().info(
             f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
         )
-        # self.get_logger().info(
-        #     f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
-        # )
+        self.get_logger().info(
+            f"Tokens per second: {message.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
+        )
 
 
 def main():
