@@ -38,59 +38,67 @@ from langchain.retrievers import ContextualCompressionRetriever
 from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 
 
-rclpy.init()
+def main():
+    rclpy.init()
 
-# load, chunk and index the contents of the blog
-loader = WebBaseLoader(
-    web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
-    bs_kwargs=dict(
-        parse_only=bs4.SoupStrainer(class_=("post-content", "post-title", "post-header"))
-    ),
-)
-docs = loader.load()
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-splits = text_splitter.split_documents(docs)
-vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())
-
-# retrieve and generate using the relevant snippets of the blog
-retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
-
-# create prompt
-prompt = ChatPromptTemplate.from_messages(
-    [
-        SystemMessage("You are an AI assistant that answer questions briefly."),
-        HumanMessagePromptTemplate.from_template(
-            "Taking into account the following information:{context}\n\n{question}"
+    # load, chunk and index the contents of the blog
+    loader = WebBaseLoader(
+        web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
+        bs_kwargs=dict(
+            parse_only=bs4.SoupStrainer(
+                class_=("post-content", "post-title", "post-header")
+            )
         ),
-    ]
-)
+    )
+    docs = loader.load()
 
-# create rerank compression retriever
-compressor = LlamaROSReranker(top_n=3)
-compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compressor, base_retriever=retriever
-)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = text_splitter.split_documents(docs)
+    vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())
+
+    # retrieve and generate using the relevant snippets of the blog
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 20})
+
+    # create prompt
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage("You are an AI assistant that answer questions briefly."),
+            HumanMessagePromptTemplate.from_template(
+                "Taking into account the following information:{context}\n\n{question}"
+            ),
+        ]
+    )
+
+    # create rerank compression retriever
+    compressor = LlamaROSReranker(top_n=3)
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=retriever
+    )
+
+    def format_docs(docs):
+        formated_docs = ""
+
+        for d in docs:
+            formated_docs += f"\n\n\t- {d.page_content}"
+
+        return formated_docs
+
+    # create and use the chain
+    rag_chain = (
+        {
+            "context": compression_retriever | format_docs,
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | ChatLlamaROS(temp=0.0)
+        | StrOutputParser()
+    )
+
+    for c in rag_chain.stream("What is Task Decomposition?"):
+        print(c, flush=True, end="")
+
+    rclpy.shutdown()
 
 
-def format_docs(docs):
-    formated_docs = ""
-
-    for d in docs:
-        formated_docs += f"\n\n\t- {d.page_content}"
-
-    return formated_docs
-
-
-# create and use the chain
-rag_chain = (
-    {"context": compression_retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | ChatLlamaROS(temp=0.0)
-    | StrOutputParser()
-)
-
-for c in rag_chain.stream("What is Task Decomposition?"):
-    print(c, flush=True, end="")
-
-rclpy.shutdown()
+if __name__ == "__main__":
+    main()

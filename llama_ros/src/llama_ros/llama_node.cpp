@@ -610,6 +610,7 @@ void LlamaNode::execute_chat_completions(
 
   struct common_chat_templates_inputs prompt_format_config =
       llama_utils::parse_chat_completions_goal(goal);
+
   // Get model chat template
   auto tmpls = this->llama->get_chat_templates();
   auto chat_prompt_instance =

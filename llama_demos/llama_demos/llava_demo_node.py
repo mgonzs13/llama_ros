@@ -23,87 +23,68 @@
 # SOFTWARE.
 
 
+import sys
 import time
 import cv2
 import numpy as np
 import urllib.request
 
-from cv_bridge import CvBridge
-
 import rclpy
-from rclpy.node import Node
+from cv_bridge import CvBridge
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
 
 
-class LlavaDemoNode(Node):
+def load_image_from_url(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    response = urllib.request.urlopen(req)
+    arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
+    img = cv2.imdecode(arr, -1)
+    return img
 
-    def __init__(self) -> None:
-        super().__init__("llava_demo_node")
 
-        self.cv_bridge = CvBridge()
-
-        self.declare_parameter("prompt", "What type of food is the girl holding?")
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
-
-        self.declare_parameter("use_image", True)
-        self.use_image = self.get_parameter("use_image").get_parameter_value().bool_value
-
-        self.declare_parameter(
-            "image_url",
-            "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg",
-        )
-        self.image = self.load_image_from_url(
-            self.get_parameter("image_url").get_parameter_value().string_value
-        )
-
-        self.tokens = 0
-        self.initial_time = -1
-        self.eval_time = -1
-
-        self._llama_client = LlamaClientNode.get_instance()
-
-    @staticmethod
-    def load_image_from_url(url):
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        response = urllib.request.urlopen(req)
-        arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-        img = cv2.imdecode(arr, -1)
-        return img
-
-    def text_cb(self, feedback) -> None:
-
-        if self.eval_time < 0:
-            self.eval_time = time.time()
-
-        self.tokens += 1
-        print(feedback.feedback.partial_response.text, end="", flush=True)
-
-    def send_prompt(self) -> None:
-
-        goal = GenerateResponse.Goal()
-        goal.prompt = self.prompt
-        goal.sampling_config.temp = 0.2
-        goal.sampling_config.penalty_last_n = 8
-
-        if self.use_image:
-            goal.image = self.cv_bridge.cv2_to_imgmsg(self.image)
-
-        self.initial_time = time.time()
-        self._llama_client.generate_response(goal, self.text_cb)
-
-        self.get_logger().info("END")
-        end_time = time.time()
-        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
-        self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
-        )
+def text_cb(feedback):
+    global eval_time, tokens
+    if eval_time < 0:
+        eval_time = time.time()
+    tokens += 1
+    print(feedback.feedback.partial_response.text, end="", flush=True)
 
 
 def main():
+    prompt = "What type of food is the girl holding?"
+    use_image = True
+    image_url = "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
+
+    if len(sys.argv) > 1:
+        prompt = sys.argv[1]
+    if len(sys.argv) > 2:
+        use_image = sys.argv[2].lower() in ["true", "1", "yes"]
+    if len(sys.argv) > 3:
+        image_url = sys.argv[3]
+
+    global tokens, eval_time
+    tokens = 0
+    eval_time = -1
+
     rclpy.init()
-    node = LlavaDemoNode()
-    node.send_prompt()
+    cv_bridge = CvBridge()
+    image = load_image_from_url(image_url) if use_image else None
+    llama_client = LlamaClientNode.get_instance()
+
+    goal = GenerateResponse.Goal()
+    goal.prompt = prompt
+    goal.sampling_config.temp = 0.2
+
+    if use_image and image is not None:
+        goal.image = cv_bridge.cv2_to_imgmsg(image)
+
+    initial_time = time.time()
+    llama_client.generate_response(goal, text_cb)
+    end_time = time.time()
+
+    print(f"Time to eval: {eval_time - initial_time} s")
+    print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
     rclpy.shutdown()
 
 

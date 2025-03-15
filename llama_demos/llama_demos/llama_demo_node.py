@@ -23,60 +23,44 @@
 # SOFTWARE.
 
 
+import sys
 import time
 import rclpy
-from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
 
 
-class LlamaDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("llama_demo_node")
-
-        self.declare_parameter(
-            "prompt",
-            "Do you know the city of León from Spain? Can you tell me a bit about its history?",
-        )
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
-
-        self.tokens = 0
-        self.initial_time = -1
-        self.eval_time = -1
-
-        self._llama_client = LlamaClientNode.get_instance()
-
-    def text_cb(self, feedback) -> None:
-
-        if self.eval_time < 0:
-            self.eval_time = time.time()
-
-        self.tokens += 1
-        print(feedback.feedback.partial_response.text, end="", flush=True)
-
-    def send_prompt(self) -> None:
-
-        goal = GenerateResponse.Goal()
-        goal.prompt = self.prompt
-        goal.sampling_config.temp = 0.2
-        goal.sampling_config.penalty_last_n = 8
-
-        self.initial_time = time.time()
-        self._llama_client.generate_response(goal, self.text_cb)
-
-        self.get_logger().info("END")
-        end_time = time.time()
-        self.get_logger().info(f"Time to eval: {self.eval_time - self.initial_time} s")
-        self.get_logger().info(
-            f"Prediction speed: {self.tokens / (end_time - self.eval_time)} t/s"
-        )
+def text_cb(feedback):
+    global eval_time, tokens
+    if eval_time < 0:
+        eval_time = time.time()
+    tokens += 1
+    print(feedback.feedback.partial_response.text, end="", flush=True)
 
 
 def main():
+    if len(sys.argv) < 2:
+        prompt = "Do you know the city of León from Spain? Can you tell me a bit about its history?"
+    else:
+        prompt = " ".join(sys.argv[1:])
+
+    global tokens, eval_time
+    tokens = 0
+    eval_time = -1
+
     rclpy.init()
-    node = LlamaDemoNode()
-    node.send_prompt()
+    llama_client = LlamaClientNode.get_instance()
+
+    goal = GenerateResponse.Goal()
+    goal.prompt = prompt
+    goal.sampling_config.temp = 0.2
+
+    initial_time = time.time()
+    llama_client.generate_response(goal, text_cb)
+    end_time = time.time()
+
+    print(f"Time to eval: {eval_time - initial_time:.4f} s")
+    print(f"Prediction speed: {tokens / (end_time - eval_time):.4f} t/s")
     rclpy.shutdown()
 
 

@@ -23,37 +23,27 @@
 # SOFTWARE.
 
 
+import sys
 import rclpy
-from rclpy.node import Node
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.srv import GenerateEmbeddings
 
 
-class LlamaEmbeddinsDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("llama_embeddings_demo_node")
-
-        self.declare_parameter(
-            "prompt", "This is the test to create embeddings using llama_ros"
-        )
-        self.prompt = self.get_parameter("prompt").get_parameter_value().string_value
-
-        self._llama_client = LlamaClientNode.get_instance()
-
-    def send_rerank(self) -> None:
-
-        emb_req = GenerateEmbeddings.Request()
-        emb_req.prompt = self.prompt
-
-        emb = self._llama_client.generate_embeddings(emb_req).embeddings
-        self.get_logger().info(f"{emb}")
-
-
 def main():
+    if len(sys.argv) < 2:
+        prompt = "This is the test to create embeddings using llama_ros"
+    else:
+        prompt = " ".join(sys.argv[1:])
+
     rclpy.init()
-    node = LlamaEmbeddinsDemoNode()
-    node.send_rerank()
+
+    llama_client = LlamaClientNode.get_instance()
+
+    emb_req = GenerateEmbeddings.Request()
+    emb_req.prompt = prompt
+
+    emb = llama_client.generate_embeddings(emb_req).embeddings
+    print(f"{emb}")
     rclpy.shutdown()
 
 
