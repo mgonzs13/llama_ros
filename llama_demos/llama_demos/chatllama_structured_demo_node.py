@@ -83,10 +83,11 @@ class ChatLlamaStructuredDemoNode(Node):
         self.initial_time = time.time()
         response = self.chain.invoke({"prompt": "Tell me a joke about cats"})
         message: AIMessage = response["raw"]
+        joke: Joke = response["parsed"]
         self.final_time = time.time()
 
         self.get_logger().info(f"Prompt: Tell me a joke about cats")
-        self.get_logger().info(response["parsed"])
+        self.get_logger().info(joke.model_dump_json())
         self.get_logger().info(
             f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
         )
