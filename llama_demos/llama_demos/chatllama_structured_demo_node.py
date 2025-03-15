@@ -85,13 +85,13 @@ class ChatLlamaStructuredDemoNode(Node):
         self.final_time = time.time()
 
         self.get_logger().info(f"Prompt: Tell me a joke about cats")
-        self.get_logger().info(f"Response: {response.content.strip()}")
+        self.get_logger().info(f"Response: {response}")
         self.get_logger().info(
             f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
         )
-        self.get_logger().info(
-            f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
-        )
+        # self.get_logger().info(
+        #     f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
+        # )
 
 
 def main():
