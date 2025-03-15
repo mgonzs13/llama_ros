@@ -73,9 +73,14 @@ class ChatLlamaReasoningDemoNode(Node):
 
         self.get_logger().info(f"Prompt: {self.str_prompt}")
         self.get_logger().info(f"Response: {response.content.strip()}")
-        self.get_logger().info(
-            f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
-        )
+
+        if "reasoning_content" in response.additional_kwargs:
+            self.get_logger().info(
+                f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
+            )
+        else:
+            self.get_logger().info("No reasoning content. Are you sure you are using a reasoning model?")
+
         self.get_logger().info(
             f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
         )
