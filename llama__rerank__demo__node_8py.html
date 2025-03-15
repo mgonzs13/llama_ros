@@ -90,7 +90,7 @@ $(function(){ initResizable(false); });
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">llama_rerank_demo_node.py File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -102,20 +102,10 @@ Namespaces</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html">llama_demos.llama_rerank_demo_node</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:a8f4bde90b23213523efe65f1e13bfadd" id="r_a8f4bde90b23213523efe65f1e13bfadd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#a8f4bde90b23213523efe65f1e13bfadd">llama_demos.llama_rerank_demo_node.rerank_req</a> = RerankDocuments.Request()</td></tr>
-<tr class="separator:a8f4bde90b23213523efe65f1e13bfadd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab327fc3491ec5896465407a03326b2ef" id="r_ab327fc3491ec5896465407a03326b2ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#ab327fc3491ec5896465407a03326b2ef">llama_demos.llama_rerank_demo_node.query</a></td></tr>
-<tr class="separator:ab327fc3491ec5896465407a03326b2ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae584ce92dedb5d48796814473662f57a" id="r_ae584ce92dedb5d48796814473662f57a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#ae584ce92dedb5d48796814473662f57a">llama_demos.llama_rerank_demo_node.documents</a></td></tr>
-<tr class="separator:ae584ce92dedb5d48796814473662f57a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac62ab3b7a9ddff2773d3c1e94e6a17dd" id="r_ac62ab3b7a9ddff2773d3c1e94e6a17dd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#ac62ab3b7a9ddff2773d3c1e94e6a17dd">llama_demos.llama_rerank_demo_node.scores</a> = <a class="el" href="classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html#a779586e6651a3775c1078313bd7d79b7">LlamaClientNode.get_instance</a>().rerank_documents(<a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#a8f4bde90b23213523efe65f1e13bfadd">rerank_req</a>).scores</td></tr>
-<tr class="separator:ac62ab3b7a9ddff2773d3c1e94e6a17dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee3e84de10bdecaf27bfe6fc39ba29b3" id="r_aee3e84de10bdecaf27bfe6fc39ba29b3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#aee3e84de10bdecaf27bfe6fc39ba29b3">llama_demos.llama_rerank_demo_node.scored_docs</a> = list(zip(rerank_req.documents, <a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#ac62ab3b7a9ddff2773d3c1e94e6a17dd">scores</a>))</td></tr>
-<tr class="separator:aee3e84de10bdecaf27bfe6fc39ba29b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a817f1adaa50e516face31c67afa28f" id="r_a6a817f1adaa50e516face31c67afa28f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#a6a817f1adaa50e516face31c67afa28f">llama_demos.llama_rerank_demo_node.result</a> = sorted(<a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#aee3e84de10bdecaf27bfe6fc39ba29b3">scored_docs</a>, key=operator.itemgetter(1), reverse=True)</td></tr>
-<tr class="separator:a6a817f1adaa50e516face31c67afa28f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a9bc9e0094efed61de31d33948da6c709" id="r_a9bc9e0094efed61de31d33948da6c709"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rerank__demo__node.html#a9bc9e0094efed61de31d33948da6c709">llama_demos.llama_rerank_demo_node.main</a> ()</td></tr>
+<tr class="separator:a9bc9e0094efed61de31d33948da6c709"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

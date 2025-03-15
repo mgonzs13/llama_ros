@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['parse_5fchat_5fcompletions_5fgoal_0',['parse_chat_completions_goal',['../namespacellama__utils.html#a3a8b1f0959abfca2192efa9f3c5cbf85',1,'llama_utils']]],
+  ['parse_5fchat_5fcompletions_5fgoal_0',['parse_chat_completions_goal',['../namespacellama__utils.html#a018d5f62a0a90475d9f96ec7c227bef2',1,'llama_utils']]],
   ['parse_5fchat_5ftool_5fchoice_1',['parse_chat_tool_choice',['../namespacellama__utils.html#a35cbbcee87226d4797bd09b1fb4577e6',1,'llama_utils']]],
   ['parse_5fgrammar_5ftrigger_5ftype_2',['parse_grammar_trigger_type',['../namespacellama__utils.html#a34174fa3ec3ae949970d19d2dac404d7',1,'llama_utils']]],
   ['parse_5fpriority_3',['parse_priority',['../namespacellama__utils.html#a15366a6874997fa374cefb55bea95dd1',1,'llama_utils']]],

@@ -6,9 +6,8 @@ var searchData=
   ['update_5floras_5fservice_5fcallback_3',['update_loras_service_callback',['../classllama__ros_1_1LlamaNode.html#a869ec6fd977319df6a97133c0d2e23de',1,'llama_ros::LlamaNode']]],
   ['url_4',['url',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a39e51b97a1c2e97ed3dfcc54434b0d07',1,'llama_ros::Metadata::GeneralInfo']]],
   ['usage_5',['Usage',['../index.html#autotoc_md5',1,'']]],
-  ['use_5fimage_6',['use_image',['../classllama__demos_1_1llava__demo__node_1_1LlavaDemoNode.html#ac4d9014a7b28bc3356f8d73079e9ad6b',1,'llama_demos::llava_demo_node::LlavaDemoNode']]],
-  ['use_5fparallel_5fresidual_7',['use_parallel_residual',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a502b50f9c2b8a7fa60d69b51c17eed0e',1,'llama_ros::Metadata::ModelInfo']]],
-  ['use_5fpenalty_5fprompt_5ftokens_8',['use_penalty_prompt_tokens',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aa42948543e6dbb4f4068c0c08abda38d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
-  ['utils_2epy_9',['utils.py',['../utils_8py.html',1,'']]],
-  ['uuid_10',['uuid',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a9dc4d8b30688d638b5e6b9efeb2730e1',1,'llama_ros::Metadata::GeneralInfo']]]
+  ['use_5fparallel_5fresidual_6',['use_parallel_residual',['../structllama__ros_1_1Metadata_1_1ModelInfo.html#a502b50f9c2b8a7fa60d69b51c17eed0e',1,'llama_ros::Metadata::ModelInfo']]],
+  ['use_5fpenalty_5fprompt_5ftokens_7',['use_penalty_prompt_tokens',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#aa42948543e6dbb4f4068c0c08abda38d',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
+  ['utils_2epy_8',['utils.py',['../utils_8py.html',1,'']]],
+  ['uuid_9',['uuid',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a9dc4d8b30688d638b5e6b9efeb2730e1',1,'llama_ros::Metadata::GeneralInfo']]]
 ];

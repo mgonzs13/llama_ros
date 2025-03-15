@@ -90,8 +90,7 @@ $(function(){ initResizable(false); });
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#func-members">Functions</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">llama_rag_demo_node.py File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -105,39 +104,8 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:af29df7f614d317e934367879b9349119" id="r_af29df7f614d317e934367879b9349119"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#af29df7f614d317e934367879b9349119">llama_demos.llama_rag_demo_node.format_docs</a> (<a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a041abe55c7a19c326978e94879829f81">docs</a>)</td></tr>
-<tr class="separator:af29df7f614d317e934367879b9349119"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:ae54d07ee5b138bd488cf2855403b33c2" id="r_ae54d07ee5b138bd488cf2855403b33c2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#ae54d07ee5b138bd488cf2855403b33c2">llama_demos.llama_rag_demo_node.loader</a></td></tr>
-<tr class="separator:ae54d07ee5b138bd488cf2855403b33c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a041abe55c7a19c326978e94879829f81" id="r_a041abe55c7a19c326978e94879829f81"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a041abe55c7a19c326978e94879829f81">llama_demos.llama_rag_demo_node.docs</a> = loader.load()</td></tr>
-<tr class="separator:a041abe55c7a19c326978e94879829f81"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff62f027bcf523e7af06398d035b0374" id="r_aff62f027bcf523e7af06398d035b0374"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#aff62f027bcf523e7af06398d035b0374">llama_demos.llama_rag_demo_node.text_splitter</a> = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)</td></tr>
-<tr class="separator:aff62f027bcf523e7af06398d035b0374"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34fb77601e84c7dec99c9fb16734d55a" id="r_a34fb77601e84c7dec99c9fb16734d55a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a34fb77601e84c7dec99c9fb16734d55a">llama_demos.llama_rag_demo_node.splits</a> = text_splitter.split_documents(<a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a041abe55c7a19c326978e94879829f81">docs</a>)</td></tr>
-<tr class="separator:a34fb77601e84c7dec99c9fb16734d55a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e75aa82ea58d750b97bc8aea2263c50" id="r_a1e75aa82ea58d750b97bc8aea2263c50"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a1e75aa82ea58d750b97bc8aea2263c50">llama_demos.llama_rag_demo_node.vectorstore</a> = Chroma.from_documents(documents=<a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a34fb77601e84c7dec99c9fb16734d55a">splits</a>, embedding=<a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__embeddings_1_1LlamaROSEmbeddings.html">LlamaROSEmbeddings</a>())</td></tr>
-<tr class="separator:a1e75aa82ea58d750b97bc8aea2263c50"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af864b42feb34ddfa99f1dae9721e3724" id="r_af864b42feb34ddfa99f1dae9721e3724"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#af864b42feb34ddfa99f1dae9721e3724">llama_demos.llama_rag_demo_node.retriever</a> = vectorstore.as_retriever(search_kwargs={&quot;k&quot;: 20})</td></tr>
-<tr class="separator:af864b42feb34ddfa99f1dae9721e3724"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a734260f0a917f8f79e7cec0b5ce9f1cb" id="r_a734260f0a917f8f79e7cec0b5ce9f1cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a734260f0a917f8f79e7cec0b5ce9f1cb">llama_demos.llama_rag_demo_node.prompt</a></td></tr>
-<tr class="separator:a734260f0a917f8f79e7cec0b5ce9f1cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14a64e42e347ad809e50fed92cfdfab9" id="r_a14a64e42e347ad809e50fed92cfdfab9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a14a64e42e347ad809e50fed92cfdfab9">llama_demos.llama_rag_demo_node.compressor</a> = <a class="el" href="classllama__ros_1_1langchain_1_1llama__ros__reranker_1_1LlamaROSReranker.html">LlamaROSReranker</a>(top_n=3)</td></tr>
-<tr class="separator:a14a64e42e347ad809e50fed92cfdfab9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fafe478fb500fa40865eb3db57f02f2" id="r_a9fafe478fb500fa40865eb3db57f02f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a9fafe478fb500fa40865eb3db57f02f2">llama_demos.llama_rag_demo_node.compression_retriever</a></td></tr>
-<tr class="separator:a9fafe478fb500fa40865eb3db57f02f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a150d0295fb05e135b1f2a5daa17dad33" id="r_a150d0295fb05e135b1f2a5daa17dad33"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a150d0295fb05e135b1f2a5daa17dad33">llama_demos.llama_rag_demo_node.rag_chain</a></td></tr>
-<tr class="separator:a150d0295fb05e135b1f2a5daa17dad33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee18f77a0a6d72e5b0934bc8f81316a3" id="r_aee18f77a0a6d72e5b0934bc8f81316a3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#aee18f77a0a6d72e5b0934bc8f81316a3">llama_demos.llama_rag_demo_node.c</a></td></tr>
-<tr class="separator:aee18f77a0a6d72e5b0934bc8f81316a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41975238da28b9c91bc04b7fc0551fdd" id="r_a41975238da28b9c91bc04b7fc0551fdd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#a41975238da28b9c91bc04b7fc0551fdd">llama_demos.llama_rag_demo_node.flush</a></td></tr>
-<tr class="separator:a41975238da28b9c91bc04b7fc0551fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab8e9150ae02eed74a01c118150107022" id="r_ab8e9150ae02eed74a01c118150107022"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#ab8e9150ae02eed74a01c118150107022">llama_demos.llama_rag_demo_node.True</a></td></tr>
-<tr class="separator:ab8e9150ae02eed74a01c118150107022"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab39ebb28fd63ca5fb5c48d5fff93ac85" id="r_ab39ebb28fd63ca5fb5c48d5fff93ac85"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#ab39ebb28fd63ca5fb5c48d5fff93ac85">llama_demos.llama_rag_demo_node.end</a></td></tr>
-<tr class="separator:ab39ebb28fd63ca5fb5c48d5fff93ac85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada38812dda11fb9b86b9e280237d7e21" id="r_ada38812dda11fb9b86b9e280237d7e21"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacellama__demos_1_1llama__rag__demo__node.html#ada38812dda11fb9b86b9e280237d7e21">llama_demos.llama_rag_demo_node.main</a> ()</td></tr>
+<tr class="separator:ada38812dda11fb9b86b9e280237d7e21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
