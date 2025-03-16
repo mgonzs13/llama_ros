@@ -25,11 +25,8 @@
 
 
 import time
-from random import randint
-
 import rclpy
-from rclpy.node import Node
-
+from random import randint
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
 from llama_ros.langchain import ChatLlamaROS
@@ -47,74 +44,57 @@ def get_curr_temperature(city: str) -> int:
     return randint(20, 30)
 
 
-class ChatLlamaToolsDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("chatllama_tools_demo_node")
-
-        self.initial_time = -1
-        self.tools_time = -1
-        self.eval_time = -1
-
-    def send_prompt(self) -> None:
-        self.chat = ChatLlamaROS(temp=0.0)
-
-        messages = [
-            HumanMessage(
-                "What is the current temperature in Madrid? And its inhabitants?"
-            )
-        ]
-
-        self.get_logger().info(f"\nPrompt: {messages[0].content}")
-        llm_tools = self.chat.bind_tools(
-            [get_inhabitants, get_curr_temperature], tool_choice="any"
-        )
-
-        self.initial_time = time.time()
-        all_tools_res: AIMessage = llm_tools.invoke(messages)
-        self.tools_time = time.time()
-
-        messages.append(all_tools_res)
-
-        for tool in all_tools_res.tool_calls:
-            selected_tool = {
-                "get_inhabitants": get_inhabitants,
-                "get_curr_temperature": get_curr_temperature,
-            }[tool["name"]]
-
-            tool_msg = selected_tool.invoke(tool)
-
-            formatted_output = (
-                f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
-            )
-            self.get_logger().info(f"Calling tool: {formatted_output}")
-
-            tool_msg.additional_kwargs = {"args": tool["args"]}
-            messages.append(tool_msg)
-
-        res: AIMessage = llm_tools.invoke(messages)
-        self.eval_time = time.time()
-        self.get_logger().info(f"\nResponse: {res.content}")
-
-        time_generate_tools = self.tools_time - self.initial_time
-        time_last_response = self.eval_time - self.tools_time
-        self.get_logger().info(f"Time to generate tools: {time_generate_tools:.2f} s")
-        self.get_logger().info(
-            f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / time_generate_tools:.2f} t/s"
-        )
-
-        self.get_logger().info(
-            f"Time to generate last response: {time_last_response:.2f} s"
-        )
-        self.get_logger().info(
-            f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / time_last_response:.2f} t/s"
-        )
-
-
 def main():
     rclpy.init()
-    node = ChatLlamaToolsDemoNode()
-    node.send_prompt()
+    chat = ChatLlamaROS(temp=0.0)
+
+    messages = [
+        HumanMessage("What is the current temperature in Madrid? And its inhabitants?")
+    ]
+
+    print(f"\nPrompt: {messages[0].content}")
+    llm_tools = chat.bind_tools(
+        [get_inhabitants, get_curr_temperature], tool_choice="any"
+    )
+
+    initial_time = time.time()
+    all_tools_res: AIMessage = llm_tools.invoke(messages)
+    tools_time = time.time()
+
+    messages.append(all_tools_res)
+
+    for tool in all_tools_res.tool_calls:
+        selected_tool = {
+            "get_inhabitants": get_inhabitants,
+            "get_curr_temperature": get_curr_temperature,
+        }[tool["name"]]
+
+        tool_msg = selected_tool.invoke(tool)
+
+        formatted_output = (
+            f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
+        )
+        print(f"Calling tool: {formatted_output}")
+
+        tool_msg.additional_kwargs = {"args": tool["args"]}
+        messages.append(tool_msg)
+
+    res: AIMessage = llm_tools.invoke(messages)
+    eval_time = time.time()
+    print(f"\nResponse: {res.content}")
+
+    time_generate_tools = tools_time - initial_time
+    time_last_response = eval_time - tools_time
+    print(f"Time to generate tools: {time_generate_tools:.2f} s")
+    print(
+        f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / time_generate_tools:.2f} t/s"
+    )
+
+    print(f"Time to generate last response: {time_last_response:.2f} s")
+    print(
+        f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / time_last_response:.2f} t/s"
+    )
+
     rclpy.shutdown()
 
 

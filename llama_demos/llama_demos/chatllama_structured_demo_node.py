@@ -25,17 +25,12 @@
 
 
 import time
-from cv_bridge import CvBridge
-
 import rclpy
-from rclpy.node import Node
-
+from typing import Optional
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import AIMessage
 from llama_ros.langchain import ChatLlamaROS
-from typing import Optional
-
-from pydantic import BaseModel, Field
 
 
 # Pydantic
@@ -49,55 +44,31 @@ class Joke(BaseModel):
     )
 
 
-class ChatLlamaStructuredDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("chat_llama_demo_node")
-
-        self.cv_bridge = CvBridge()
-
-        self.tokens = 0
-        self.initial_time = -1
-        self.eval_time = -1
-
-    def send_prompt(self) -> None:
-
-        self.chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
-
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                HumanMessagePromptTemplate.from_template(
-                    template=[
-                        {"type": "text", "text": "{prompt}"},
-                    ]
-                ),
-            ]
-        )
-
-        structured_chat = self.chat.with_structured_output(
-            Joke, method="function_calling"
-        )
-
-        self.chain = self.prompt | structured_chat
-
-        self.initial_time = time.time()
-        response: AIMessage = self.chain.invoke({"prompt": "Tell me a joke about cats"})
-        self.final_time = time.time()
-
-        self.get_logger().info(f"Prompt: Tell me a joke about cats")
-        self.get_logger().info(f"Response: {response}")
-        self.get_logger().info(
-            f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
-        )
-        # self.get_logger().info(
-        #     f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
-        # )
-
-
 def main():
     rclpy.init()
-    node = ChatLlamaStructuredDemoNode()
-    node.send_prompt()
+    chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {"type": "text", "text": "{prompt}"},
+                ]
+            ),
+        ]
+    )
+
+    chain = prompt | chat.with_structured_output(Joke, method="function_calling")
+    initial_time = time.time()
+    response: AIMessage = chain.invoke({"prompt": "Tell me a joke about cats"})
+    final_time = time.time()
+
+    print(f"Prompt: Tell me a joke about cats")
+    print(f"Response: {response}")
+    print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
+    # self.get_logger().info(
+    #     f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
+    # )
     rclpy.shutdown()
 
 

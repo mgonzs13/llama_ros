@@ -25,11 +25,8 @@
 
 
 import time
-from random import randint
-
 import rclpy
-from rclpy.node import Node
-
+from random import randint
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import create_react_agent
@@ -48,42 +45,26 @@ def get_curr_temperature(city: str) -> int:
     return randint(20, 30)
 
 
-class ChatLlamaLanggraphDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("chatllama_langgraph_demo_node")
-
-        self.chat = ChatLlamaROS(temp=0.0)
-        self.agent_executor = create_react_agent(
-            self.chat, [get_inhabitants, get_curr_temperature]
-        )
-
-    def send_prompt(self) -> None:
-
-        initial_time = time.time()
-
-        response = self.agent_executor.invoke(
-            {
-                "messages": [
-                    HumanMessage(
-                        content="What is the current temperature in Madrid? And its inhabitants?"
-                    )
-                ]
-            }
-        )
-
-        end_time = time.time()
-
-        self.get_logger().info(f"\nResponse: {response['messages'][-1].content}")
-        self.get_logger().info(
-            f"Time to run the agent: {(end_time - initial_time):.2f} s"
-        )
-
-
 def main():
     rclpy.init()
-    node = ChatLlamaLanggraphDemoNode()
-    node.send_prompt()
+    chat = ChatLlamaROS(temp=0.0)
+    agent_executor = create_react_agent(chat, [get_inhabitants, get_curr_temperature])
+
+    initial_time = time.time()
+    response = agent_executor.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content="What is the current temperature in Madrid? And its inhabitants?"
+                )
+            ]
+        }
+    )
+
+    end_time = time.time()
+    print(f"\nResponse: {response['messages'][-1].content}")
+    print(f"Time to run the agent: {(end_time - initial_time):.2f} s")
+
     rclpy.shutdown()
 
 
