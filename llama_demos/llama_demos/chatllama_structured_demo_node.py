@@ -58,21 +58,21 @@ def main():
         ]
     )
 
-    chain = prompt | chat.with_structured_output(Joke, method="function_calling")
+    chain = prompt | chat.with_structured_output(
+        Joke, method="function_calling", include_raw=True
+    )
     initial_time = time.time()
-    response: AIMessage = chain.invoke({"prompt": "Tell me a joke about cats"})
+    response = chain.invoke({"prompt": "Tell me a joke about cats"})
     message: AIMessage = response["raw"]
     joke: Joke = response["parsed"]
-
     final_time = time.time()
 
     print(f"Prompt: Tell me a joke about cats")
-    print(f"Response: {joke.model_dump_json()}")
+    print(joke.model_dump_json())
     print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
     print(
         f"Tokens per second: {message.usage_metadata['output_tokens'] / (final_time - initial_time):.2f} t/s"
     )
-
     rclpy.shutdown()
 
 
