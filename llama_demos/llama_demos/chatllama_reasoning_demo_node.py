@@ -24,77 +24,53 @@
 # SOFTWARE.
 
 
+import sys
 import time
-from cv_bridge import CvBridge
-
 import rclpy
-from rclpy.node import Node
-
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from llama_ros.langchain import ChatLlamaROS
 from langchain_core.messages import AIMessage
 
 
-class ChatLlamaReasoningDemoNode(Node):
-
-    def __init__(self) -> None:
-        super().__init__("chat_llama_demo_node")
-
-        self.declare_parameter(
-            "prompt",
-            "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner.",
-        )
-        self.str_prompt = self.get_parameter("prompt").get_parameter_value().string_value
-
-        self.cv_bridge = CvBridge()
-
-        self.initial_time = -1
-        self.eval_time = -1
-
-    def send_prompt(self) -> None:
-
-        self.chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
-
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                HumanMessagePromptTemplate.from_template(
-                    template=[
-                        {"type": "text", "text": f"{self.str_prompt}"},
-                    ]
-                ),
-            ]
-        )
-
-        self.chain = self.prompt | self.chat
-
-        self.initial_time = time.time()
-        response: AIMessage = self.chain.invoke({})
-        self.final_time = time.time()
-
-        self.get_logger().info(f"Prompt: {self.str_prompt}")
-        self.get_logger().info(f"Response: {response.content.strip()}")
-
-        if "reasoning_content" in response.additional_kwargs:
-            self.get_logger().info(
-                f'Reasoning length: {len(response.additional_kwargs["reasoning_content"])} characters'
-            )
-        else:
-            self.get_logger().info(
-                "No reasoning content. Are you sure you are using a reasoning model?"
-            )
-
-        self.get_logger().info(
-            f"Time elapsed: {self.final_time - self.initial_time:.2f} seconds"
-        )
-        self.get_logger().info(
-            f"Tokens per second: {response.usage_metadata['output_tokens'] / (self.final_time - self.initial_time):.2f} t/s"
-        )
-
-
 def main():
+    if len(sys.argv) < 2:
+        prompt = "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner."
+    else:
+        prompt = " ".join(sys.argv[1:])
+
     rclpy.init()
-    node = ChatLlamaReasoningDemoNode()
-    node.send_prompt()
+    initial_time = -1
+    chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {"type": "text", "text": f"{prompt}"},
+                ]
+            ),
+        ]
+    )
+    chain = prompt | chat
+
+    initial_time = time.time()
+    response: AIMessage = chain.invoke({})
+    final_time = time.time()
+
+    print(f"Prompt: {prompt}")
+    print(f"Response: {response.content.strip()}")
+
+    if "reasoning_content" in response.additional_kwargs:
+        print(
+            f"Reasoning length: {len(response.additional_kwargs['reasoning_content'])} characters"
+        )
+    else:
+        print("No reasoning content. Are you sure you are using a reasoning model?")
+
+    print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
+    print(
+        f"Tokens per second: {response.usage_metadata['output_tokens'] / (final_time - initial_time):.2f} t/s"
+    )
     rclpy.shutdown()
 
 
