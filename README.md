@@ -1006,7 +1006,7 @@ ros2 launch llama_bringup spaetzle.launch.py
 ```
 
 ```shell
-ros2 run llama_demos llama_demo_node --ros-args -p prompt:="your prompt"
+ros2 run llama_demos llama_demo_node
 ```
 
 <!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->

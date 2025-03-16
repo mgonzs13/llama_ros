@@ -40,17 +40,20 @@ common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   }
 }
 
-common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
+struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
     const std::shared_ptr<
         const llama_msgs::action::GenerateChatCompletions::Goal>
         goal) {
+
   struct common_chat_templates_inputs inputs;
+
   std::vector<common_chat_msg> messages;
   for (auto message : goal->messages) {
     struct common_chat_msg msg;
     msg.role = message.role;
     msg.content = message.content;
     std::vector<common_chat_msg_content_part> content_parts;
+
     for (auto content_part : message.content_parts) {
       struct common_chat_msg_content_part part;
       part.type = content_part.type;
@@ -67,6 +70,7 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
       call.id = tool_call.id;
       tool_calls.push_back(call);
     }
+
     msg.tool_calls = tool_calls;
     messages.push_back(msg);
   }
@@ -94,6 +98,7 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 
 llama_msgs::action::GenerateChatCompletions::Result
 llama_utils::generate_chat_completions_result(const ResponseResult &result) {
+
   std::string finish_reason = "length";
   common_chat_msg msg;
 
