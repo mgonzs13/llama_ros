@@ -23,7 +23,7 @@ var searchData=
   ['probs_20',['probs',['../structllama__ros_1_1CompletionOutput.html#a75954cc2e20c6965f99f5a5b9ea252ca',1,'llama_ros::CompletionOutput']]],
   ['probs_5foutput_21',['probs_output',['../structllama__utils_1_1ResponseResult.html#afaa30ca6dc28c8a174c7081b8aea33d5',1,'llama_utils::ResponseResult']]],
   ['projects_22',['Related Projects',['../index.html#autotoc_md2',1,'']]],
-  ['prompt_23',['prompt',['../structllama__utils_1_1ResponseResult.html#ae881121067de79a7abeef704887bd031',1,'llama_utils::ResponseResult::prompt'],['../classllama__demos_1_1chatllama__demo__node_1_1ChatLlamaDemoNode.html#a6096558068777f9be57043805ed5a4eb',1,'llama_demos.chatllama_demo_node.ChatLlamaDemoNode.prompt'],['../classllama__demos_1_1chatllama__reasoning__demo__node_1_1ChatLlamaReasoningDemoNode.html#a34feb24142e75f036de4bd03e90ad5d6',1,'llama_demos.chatllama_reasoning_demo_node.ChatLlamaReasoningDemoNode.prompt'],['../classllama__demos_1_1chatllama__structured__demo__node_1_1ChatLlamaStructuredDemoNode.html#a1195f3e2233532f5ebf069a888c638ae',1,'llama_demos.chatllama_structured_demo_node.ChatLlamaStructuredDemoNode.prompt'],['../index.html#autotoc_md8',1,'prompt']]],
+  ['prompt_23',['prompt',['../structllama__utils_1_1ResponseResult.html#ae881121067de79a7abeef704887bd031',1,'llama_utils::ResponseResult::prompt'],['../index.html#autotoc_md8',1,'prompt']]],
   ['prompt_2epy_24',['prompt.py',['../prompt_8py.html',1,'']]],
   ['prompt_5fllm_25',['prompt_llm',['../namespacellama__cli_1_1api.html#a031893e5ca6efc3b26717938eec0e178',1,'llama_cli::api']]],
   ['prompt_5ftokens_26',['prompt_tokens',['../classllama__ros_1_1Llama.html#a92008039dc5f28e20f0b61c28227f760',1,'llama_ros::Llama']]],
