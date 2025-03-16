@@ -64,6 +64,8 @@ def main():
         print(
             f"Reasoning length: {len(response.additional_kwargs['reasoning_content'])} characters"
         )
+    else:
+        print("No reasoning content. Are you sure you are using a reasoning model?")
 
     print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
     print(

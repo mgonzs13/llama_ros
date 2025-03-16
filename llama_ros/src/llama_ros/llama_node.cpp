@@ -618,7 +618,7 @@ void LlamaNode::execute_chat_completions(
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
 
-  if (goal->sampling_config.grammar.empty()) {
+  if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
     sparams.grammar = chat_prompt_instance.grammar;
   }
 
