@@ -1085,10 +1085,22 @@ ros2 run llama_demos chatllama_demo_node
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
 
-### Tools Demo
+### Chat Structed Output Demo
 
 ```shell
-ros2 llama launch MiniCPM-2.6.yaml
+ros2 llama launch Qwen2.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_structured_demo_node
+```
+
+[Structured Output ChatLlama](https://github.com/user-attachments/assets/e0bf4031-50c0-4790-94a0-1f6aed5734ec)
+
+### Chat Tools Demo
+
+```shell
+ros2 llama launch Qwen2.yaml
 ```
 
 ```shell
@@ -1096,6 +1108,18 @@ ros2 run llama_demos chatllama_tools_demo_node
 ```
 
 [Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
+
+### Chat Reasoning Demo (DeepSeek-R1)
+
+```shell
+ros2 llama launch DeepSeek-R1.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_reasoning_demo_node
+```
+
+[DeepSeekR1 ChatLlama](https://github.com/user-attachments/assets/3f268614-eabc-4499-b50f-a76d76908d9d)
 
 ### Langgraph Demo
 

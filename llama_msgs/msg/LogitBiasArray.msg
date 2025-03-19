@@ -1,1 +1,1 @@
-LogitBias[] data
+LogitBias[] data                    # The array of logit biases

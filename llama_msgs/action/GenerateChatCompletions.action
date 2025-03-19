@@ -17,10 +17,10 @@ string system_fingerprint           # System fingerprint
 string object "chat.completion"     # Object type
 UsageStats usage                    # Usage statistics
 ---
-string id                           # Unique ID for the chat completion
-ChatChoiceChunk[] choices           # List of chat chunks
-int32 created                       # Time of creation
-string model                        # Model used for the chat completion
-string system_fingerprint           # System fingerprint
-string object                       # Object type
-UsageStats usage                    # Usage statistics
+string id                               # Unique ID for the chat completion
+ChatChoiceChunk[] choices               # List of chat chunks
+int32 created                           # Time of creation
+string model                            # Model used for the chat completion
+string system_fingerprint               # System fingerprint
+string object "chat.completion.chunk"   # Object type
+UsageStats usage                        # Usage statistics
