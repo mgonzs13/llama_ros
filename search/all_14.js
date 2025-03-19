@@ -26,8 +26,9 @@ var searchData=
   ['st_5fpos_5fid_23',['st_pos_id',['../classllava__ros_1_1Llava.html#a818a8f591e619f89aa77241742578aa9',1,'llava_ros::Llava']]],
   ['stop_24',['stop',['../structllama__ros_1_1ResponseOutput.html#a2b4cf7d6cb0d2d5a02c3b605fe5e7729',1,'llama_ros::ResponseOutput::stop'],['../structllama__utils_1_1ResponseResult.html#a116416db86355446ebe3668cbd99c1d5',1,'llama_utils::ResponseResult::stop']]],
   ['stoptype_25',['StopType',['../namespacellama__ros.html#aa0ac7656a188e47404db8ced957790d0',1,'llama_ros']]],
-  ['stream_26',['Stream',['../index.html#autotoc_md24',1,'llama_ros (Stream)'],['../index.html#autotoc_md42',1,'RAG Demo (LLM + chat template + RAG + Reranking + Stream)']]],
+  ['stream_26',['Stream',['../index.html#autotoc_md24',1,'llama_ros (Stream)'],['../index.html#autotoc_md44',1,'RAG Demo (LLM + chat template + RAG + Reranking + Stream)']]],
   ['stream_27',['stream',['../structllama__utils_1_1ResponseResult.html#a9766fcf897c2397d577c3db3c431ef45',1,'llama_utils::ResponseResult']]],
-  ['structured_20output_28',['chat_llama_ros (Structured output)',['../index.html#autotoc_md30',1,'']]],
-  ['system_5fprompt_29',['system_prompt',['../classllama__ros_1_1Llama.html#a2159f2355b8f059933f59d1138e1d3c2',1,'llama_ros::Llama::system_prompt'],['../structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01',1,'llama_utils::LlamaParams::system_prompt']]]
+  ['structed_20output_20demo_28',['Chat Structed Output Demo',['../index.html#autotoc_md40',1,'']]],
+  ['structured_20output_29',['chat_llama_ros (Structured output)',['../index.html#autotoc_md30',1,'']]],
+  ['system_5fprompt_30',['system_prompt',['../classllama__ros_1_1Llama.html#a2159f2355b8f059933f59d1138e1d3c2',1,'llama_ros::Llama::system_prompt'],['../structllama__utils_1_1LlamaParams.html#a89a676517fb802fced98ede2c3796a01',1,'llama_utils::LlamaParams::system_prompt']]]
 ];

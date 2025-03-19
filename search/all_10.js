@@ -10,5 +10,6 @@ var searchData=
   ['on_5fdeactivate_7',['on_deactivate',['../classllama__ros_1_1LlamaNode.html#a7c1dc5128348d1434cb6acff2129b1b5',1,'llama_ros::LlamaNode']]],
   ['on_5fshutdown_8',['on_shutdown',['../classllama__ros_1_1LlamaNode.html#abf3951e3985f72f9dd6450fd5aa7c3e7',1,'llama_ros::LlamaNode']]],
   ['organization_9',['organization',['../structllama__ros_1_1Metadata_1_1GeneralInfo.html#a666b53f31e70096f8dd15858c73f947d',1,'llama_ros::Metadata::GeneralInfo']]],
-  ['output_10',['chat_llama_ros (Structured output)',['../index.html#autotoc_md30',1,'']]]
+  ['output_10',['chat_llama_ros (Structured output)',['../index.html#autotoc_md30',1,'']]],
+  ['output_20demo_11',['Chat Structed Output Demo',['../index.html#autotoc_md40',1,'']]]
 ];
