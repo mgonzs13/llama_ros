@@ -166,7 +166,14 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(
       tree_->rootNode()->getInput<std::string>("prompt").value().empty());
+#if defined(BTV3)
   EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop"));
+#else
+  EXPECT_TRUE(tree_->rootNode()
+                  ->getInput<std::vector<std::string>>("stop")
+                  .value()
+                  .empty());
+#endif
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
 #if defined(BTV3)
@@ -174,7 +181,7 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <GenerateResponse prompt="This is a test" stop="This;te,st" reset="true" response="{response}"/>
+            <GenerateResponse prompt="This is a test" stop="This;test" reset="true" response="{response}"/>
         </BehaviorTree>
       </root>)";
 #else
@@ -231,9 +238,16 @@ TEST_F(GenerateResponseActionTestFixture, test_tick) {
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(
       tree_->rootNode()->getInput<std::string>("prompt").value().empty());
+#if defined(BTV3)
   EXPECT_FALSE(tree_->rootNode()
                    ->getInput<std::vector<std::string>>("stop")
                    .has_value());
+#else
+  EXPECT_TRUE(tree_->rootNode()
+                  ->getInput<std::vector<std::string>>("stop")
+                  .value()
+                  .empty());
+#endif
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
