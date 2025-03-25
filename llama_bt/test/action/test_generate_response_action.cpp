@@ -199,14 +199,23 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("prompt"),
             "This is a test");
 
-#if not defined(BTV3)
-  std::optional<std::vector<std::string>> stop_optional =
-      tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
+#if defined(BTV3)
+  // auto stop_optional =
+  //     tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
+  // ASSERT_TRUE(stop_optional.has_value());
+  // std::vector<std::string> stop = stop_optional.value();
+  // EXPECT_EQ(stop.size(), 2);
+  // EXPECT_EQ(stop[0], "This");
+  // EXPECT_EQ(stop[1], "test");
+#else
+  auto stop_optional =
+      tree_->rootNode()->getInput<std::vector<std::string>>("stop");
   ASSERT_TRUE(stop_optional.has_value());
   std::vector<std::string> stop = stop_optional.value();
   EXPECT_EQ(stop.size(), 2);
   EXPECT_EQ(stop[0], "This");
   EXPECT_EQ(stop[1], "test");
+  EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
 #endif
 
   EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
