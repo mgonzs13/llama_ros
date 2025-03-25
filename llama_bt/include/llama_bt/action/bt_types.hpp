@@ -72,13 +72,11 @@ inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
 }
 
 template <>
-inline std::vector<std::string> convertFromString(BT::StringView str)
-{
+inline std::vector<std::string> convertFromString(BT::StringView str) {
   auto parts = splitString(str, ';');
   std::vector<std::string> output;
   output.reserve(parts.size());
-  for(const StringView& part : parts)
-  {
+  for (const StringView &part : parts) {
     output.push_back(convertFromString<std::string>(part));
   }
   return output;
