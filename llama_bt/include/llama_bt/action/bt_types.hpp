@@ -70,6 +70,19 @@ inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
   }
   return output;
 }
+
+template <>
+inline std::vector<std::string> convertFromString(BT::StringView str)
+{
+  auto parts = splitString(str, ';');
+  std::vector<std::string> output;
+  output.reserve(parts.size());
+  for(const StringView& part : parts)
+  {
+    output.push_back(convertFromString<std::string>(part));
+  }
+  return output;
+}
 } // namespace BT
 
 #endif // LLAMA_BT__ACTION__BT_TYPES_HPP_

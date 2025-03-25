@@ -166,14 +166,12 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(
       tree_->rootNode()->getInput<std::string>("prompt").value().empty());
-#if defined(BTV3)
-  EXPECT_FALSE(tree_->rootNode()->getInput<std::vector<std::string>>("stop"));
-#else
+
   EXPECT_TRUE(tree_->rootNode()
                   ->getInput<std::vector<std::string>>("stop")
                   .value()
                   .empty());
-#endif
+
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
 #if defined(BTV3)
@@ -199,15 +197,6 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("prompt"),
             "This is a test");
 
-#if defined(BTV3)
-  // auto stop_optional =
-  //     tree_->rootBlackboard()->get<std::vector<std::string>>("stop");
-  // ASSERT_TRUE(stop_optional.has_value());
-  // std::vector<std::string> stop = stop_optional.value();
-  // EXPECT_EQ(stop.size(), 2);
-  // EXPECT_EQ(stop[0], "This");
-  // EXPECT_EQ(stop[1], "test");
-#else
   auto stop_optional =
       tree_->rootNode()->getInput<std::vector<std::string>>("stop");
   ASSERT_TRUE(stop_optional.has_value());
@@ -215,9 +204,6 @@ TEST_F(GenerateResponseActionTestFixture, test_ports) {
   EXPECT_EQ(stop.size(), 2);
   EXPECT_EQ(stop[0], "This");
   EXPECT_EQ(stop[1], "test");
-  EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
-#endif
-
   EXPECT_TRUE(tree_->rootNode()->getInput<bool>("reset").value());
 }
 
@@ -247,16 +233,10 @@ TEST_F(GenerateResponseActionTestFixture, test_tick) {
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(
       tree_->rootNode()->getInput<std::string>("prompt").value().empty());
-#if defined(BTV3)
-  EXPECT_FALSE(tree_->rootNode()
-                   ->getInput<std::vector<std::string>>("stop")
-                   .has_value());
-#else
   EXPECT_TRUE(tree_->rootNode()
                   ->getInput<std::vector<std::string>>("stop")
                   .value()
                   .empty());
-#endif
   EXPECT_FALSE(tree_->rootNode()->getInput<bool>("reset").value());
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
