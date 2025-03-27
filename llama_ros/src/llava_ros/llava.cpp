@@ -22,7 +22,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <thread>
 
 #include "base64.hpp"
 #include "common.h"

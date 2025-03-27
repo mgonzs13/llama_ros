@@ -22,11 +22,9 @@
 
 #include <cassert>
 #include <cmath>
-#include <iostream>
+#include <map>
 #include <memory>
-#include <thread>
 
-#include "chat-template.hpp"
 #include "common.h"
 #include "sampling.h"
 

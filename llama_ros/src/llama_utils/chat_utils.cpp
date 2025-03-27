@@ -21,10 +21,6 @@
 // SOFTWARE.
 
 #include "llama_utils/chat_utils.hpp"
-#include "llama_msgs/msg/chat_choice.h"
-#include "llama_msgs/msg/chat_message.h"
-#include "llama_msgs/msg/chat_req_tool.h"
-#include "llama_msgs/msg/chat_tool_call.h"
 #include "llama_ros/llama.hpp"
 
 common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {

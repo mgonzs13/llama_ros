@@ -30,8 +30,6 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include "chat.h"
-#include "common.h"
-#include "llama.h"
 #include "llama_ros/llama.hpp"
 
 namespace llama_utils {

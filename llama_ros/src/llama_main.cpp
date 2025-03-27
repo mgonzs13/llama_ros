@@ -21,10 +21,8 @@
 // SOFTWARE.
 
 #include <memory>
-#include <vector>
 
 #include "llama_ros/llama_node.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 using namespace llama_ros;
 
