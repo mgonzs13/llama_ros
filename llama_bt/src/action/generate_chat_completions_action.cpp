@@ -31,24 +31,25 @@ namespace llama_bt {
 GenerateChatCompletionsAction::GenerateChatCompletionsAction(
     const std::string &xml_tag_name, const std::string &action_name,
     const BT::NodeConfiguration &conf)
-    : nav2_behavior_tree::BtActionNode<llama_msgs::action::GenerateChatCompletions>(
-          xml_tag_name, action_name, conf) {}
+    : nav2_behavior_tree::BtActionNode<
+          llama_msgs::action::GenerateChatCompletions>(xml_tag_name,
+                                                       action_name, conf) {}
 
 void GenerateChatCompletionsAction::on_tick() {
-    std::vector<llama_msgs::msg::ChatMessage> chat_messages;
-    getInput("messages", chat_messages);
-    std::vector<llama_msgs::msg::ChatReqTool> chat_req_tools;
-    getInput("tools", chat_req_tools);
-    int32_t tool_choice;
-    getInput("tool_choice", tool_choice);
+  std::vector<llama_msgs::msg::ChatMessage> chat_messages;
+  getInput("messages", chat_messages);
+  std::vector<llama_msgs::msg::ChatReqTool> chat_req_tools;
+  getInput("tools", chat_req_tools);
+  int32_t tool_choice;
+  getInput("tool_choice", tool_choice);
 
-    goal_.messages = chat_messages;
-    goal_.tools = chat_req_tools;
-    goal_.tool_choice = tool_choice;
-    goal_.add_generation_prompt = true;
-    goal_.use_jinja = true;
-    goal_.parallel_tool_calls = chat_req_tools.size() > 1;
-    goal_.stream = false;
+  goal_.messages = chat_messages;
+  goal_.tools = chat_req_tools;
+  goal_.tool_choice = tool_choice;
+  goal_.add_generation_prompt = true;
+  goal_.use_jinja = true;
+  goal_.parallel_tool_calls = chat_req_tools.size() > 1;
+  goal_.stream = false;
 }
 
 BT::NodeStatus GenerateChatCompletionsAction::on_success() {
@@ -71,6 +72,6 @@ BT_REGISTER_NODES(factory) {
         name, "generate_response", config);
   };
 
-  factory.registerBuilder<llama_bt::GenerateChatCompletionsAction>("GenerateChatCompletions",
-                                                            builder);
+  factory.registerBuilder<llama_bt::GenerateChatCompletionsAction>(
+      "GenerateChatCompletions", builder);
 }

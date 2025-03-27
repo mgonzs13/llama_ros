@@ -34,12 +34,12 @@
 #include "behaviortree_cpp/json_export.h"
 #endif
 
-#include <nlohmann/json.hpp>
 #include "llama_msgs/msg/chat_content.hpp"
-#include "llama_msgs/msg/chat_tool_call.hpp"
 #include "llama_msgs/msg/chat_message.hpp"
 #include "llama_msgs/msg/chat_req_tool.hpp"
+#include "llama_msgs/msg/chat_tool_call.hpp"
 #include "llama_msgs/msg/response.hpp"
+#include <nlohmann/json.hpp>
 
 #if not defined(BTV3)
 // Allow bi-directional convertion to JSON

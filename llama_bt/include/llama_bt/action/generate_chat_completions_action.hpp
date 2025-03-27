@@ -40,8 +40,9 @@ namespace llama_bt {
  * @brief A nav2_behavior_tree::BtActionNode class that wraps
  * llama_msgs::action::GenerateChatCompletions
  */
-class GenerateChatCompletionsAction : public nav2_behavior_tree::BtActionNode<
-                                   llama_msgs::action::GenerateChatCompletions> {
+class GenerateChatCompletionsAction
+    : public nav2_behavior_tree::BtActionNode<
+          llama_msgs::action::GenerateChatCompletions> {
 public:
   /**
    * @brief A constructor for llama_bt::GenerateChatCompletions Service
@@ -49,9 +50,9 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-   GenerateChatCompletionsAction(const std::string &xml_tag_name,
-                         const std::string &action_name,
-                         const BT::NodeConfiguration &conf);
+  GenerateChatCompletionsAction(const std::string &xml_tag_name,
+                                const std::string &action_name,
+                                const BT::NodeConfiguration &conf);
 
   /**
    * @brief Function to perform some user-defined operation on tick
@@ -71,11 +72,14 @@ public:
    */
   static BT::PortsList providedPorts() {
     return providedBasicPorts({
-        BT::InputPort<std::vector<llama_msgs::msg::ChatMessage>>("messages", "Chat messages"),
-        BT::InputPort<std::vector<llama_msgs::msg::ChatReqTool>>("tools", "Chat request tools"),
+        BT::InputPort<std::vector<llama_msgs::msg::ChatMessage>>(
+            "messages", "Chat messages"),
+        BT::InputPort<std::vector<llama_msgs::msg::ChatReqTool>>(
+            "tools", "Chat request tools"),
         BT::InputPort<int32_t>("tool_choice", 0, "Tool choice"),
 
-        BT::OutputPort<llama_msgs::msg::ChatMessage>("choice_message", "Chat choice message"),
+        BT::OutputPort<llama_msgs::msg::ChatMessage>("choice_message",
+                                                     "Chat choice message"),
     });
   }
 };
