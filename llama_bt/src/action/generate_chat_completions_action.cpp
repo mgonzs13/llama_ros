@@ -25,6 +25,7 @@
 #include <string>
 
 #include "llama_bt/action/generate_chat_completions_action.hpp"
+#include "llama_msgs/msg/chat_tool.hpp"
 
 namespace llama_bt {
 
@@ -40,12 +41,20 @@ void GenerateChatCompletionsAction::on_tick() {
   getInput("messages", chat_messages);
   std::vector<llama_msgs::msg::ChatReqTool> chat_req_tools;
   getInput("tools", chat_req_tools);
-  int32_t tool_choice;
+  std::string tool_choice;
   getInput("tool_choice", tool_choice);
 
   goal_.messages = chat_messages;
   goal_.tools = chat_req_tools;
-  goal_.tool_choice = tool_choice;
+  
+  if (tool_choice == "required") {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_REQUIRED;
+  } else if (tool_choice == "none") {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_NONE;
+  } else {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO;
+  }
+
   goal_.add_generation_prompt = true;
   goal_.use_jinja = true;
   goal_.parallel_tool_calls = chat_req_tools.size() > 1;

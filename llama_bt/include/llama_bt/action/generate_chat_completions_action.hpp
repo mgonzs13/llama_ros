@@ -25,7 +25,6 @@
 #define LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
 
 #include <behaviortree_cpp/basic_types.h>
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -76,7 +75,7 @@ public:
             "messages", "Chat messages"),
         BT::InputPort<std::vector<llama_msgs::msg::ChatReqTool>>(
             "tools", "Chat request tools"),
-        BT::InputPort<int32_t>("tool_choice", 0, "Tool choice"),
+        BT::InputPort<std::string>("tool_choice", "auto", "Tool choice"),
 
         BT::OutputPort<llama_msgs::msg::ChatMessage>("choice_message",
                                                      "Chat choice message"),

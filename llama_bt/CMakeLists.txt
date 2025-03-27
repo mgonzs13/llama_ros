@@ -72,6 +72,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(llama_msgs REQUIRED)
+find_package(llama_ros REQUIRED)
 
 # ##########
 # # Build ##
@@ -92,6 +93,7 @@ foreach(bt_plugin ${plugin_libs})
     rclcpp_action::rclcpp_action
     rclcpp_lifecycle::rclcpp_lifecycle
     ${llama_msgs_TARGETS}
+    ${llama_ros_TARGETS}
   )
   ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME} nav2_behavior_tree) # TODO(ajtudela): Fix this in jazzy
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
@@ -142,6 +144,7 @@ ament_export_dependencies(
   rclcpp_action
   rclcpp_lifecycle
   llama_msgs
+  llama_ros
 )
 ament_export_targets()
 ament_package()
