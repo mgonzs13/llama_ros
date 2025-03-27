@@ -79,6 +79,9 @@ find_package(llama_msgs REQUIRED)
 add_library(llama_generate_response_action_bt_node SHARED src/action/generate_response_action.cpp)
 list(APPEND plugin_libs llama_generate_response_action_bt_node)
 
+add_library(llama_generate_chat_completions_action_bt_node SHARED src/action/generate_chat_completions_action.cpp)
+list(APPEND plugin_libs llama_generate_chat_completions_action_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"

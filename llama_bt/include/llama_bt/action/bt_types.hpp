@@ -31,10 +31,14 @@
 #if defined(BTV3)
 #include <behaviortree_cpp_v3/behavior_tree.h>
 #else
-#include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/json_export.h"
 #endif
 
+#include <nlohmann/json.hpp>
+#include "llama_msgs/msg/chat_content.hpp"
+#include "llama_msgs/msg/chat_tool_call.hpp"
+#include "llama_msgs/msg/chat_message.hpp"
+#include "llama_msgs/msg/chat_req_tool.hpp"
 #include "llama_msgs/msg/response.hpp"
 
 #if not defined(BTV3)
@@ -81,6 +85,83 @@ inline std::vector<std::string> convertFromString(BT::StringView str) {
   }
   return output;
 }
+
+// Chat completions parsing
+template <>
+inline std::vector<llama_msgs::msg::ChatMessage>
+convertFromString(BT::StringView str) {
+  std::vector<llama_msgs::msg::ChatMessage> output;
+  if (!str.empty()) {
+    auto data = nlohmann::json::parse(str.data());
+
+    for (size_t i = 0; i < data.size(); i++) {
+      auto message = data[i];
+      llama_msgs::msg::ChatMessage chat_message;
+      chat_message.role = data["role"];
+      if (data.contains("content")) {
+        chat_message.content = data["content"];
+      }
+      if (data.contains("reasoning_content")) {
+        chat_message.reasoning_content = data["reasoning_content"];
+      }
+      if (data.contains("tool_name")) {
+        chat_message.tool_name = data["tool_name"];
+      }
+      if (data.contains("tool_call_id")) {
+        chat_message.tool_call_id = data["tool_call_id"];
+      }
+      if (data.contains("content_parts")) {
+        std::vector<llama_msgs::msg::ChatContent> content_parts;
+        for (const auto &part : data["content_parts"]) {
+          llama_msgs::msg::ChatContent content_part;
+          content_part.type = part["type"];
+          content_part.text = part["text"];
+          content_parts.push_back(content_part);
+        }
+        chat_message.content_parts = content_parts;
+      }
+      if (data.contains("tool_calls")) {
+        std::vector<llama_msgs::msg::ChatToolCall> tool_calls;
+        for (const auto &tool_call : data["tool_calls"]) {
+          llama_msgs::msg::ChatToolCall tool_call_msg;
+          tool_call_msg.name = tool_call["name"];
+          tool_call_msg.id = tool_call["id"];
+          tool_call_msg.arguments = tool_call["arguments"];
+          tool_calls.push_back(tool_call_msg);
+        }
+        chat_message.tool_calls = tool_calls;
+      }
+      output.push_back(chat_message);
+    }
+  }
+  return output;
+}
+
+template <>
+inline std::vector<llama_msgs::msg::ChatReqTool>
+convertFromString(BT::StringView str) {
+  std::vector<llama_msgs::msg::ChatReqTool> output;
+  if (!str.empty()) {
+    auto data = nlohmann::json::parse(str.data());
+
+    for (size_t i = 0; i < data.size(); i++) {
+      auto tool = data[i];
+      llama_msgs::msg::ChatReqTool chat_req_tool;
+
+      if (data.contains("function")) {
+        llama_msgs::msg::ChatTool function;
+        function.name = data["function"]["name"];
+        function.description = data["function"]["description"];
+        function.parameters = data["function"]["parameters"];
+        chat_req_tool.function = function;
+      }
+
+      output.push_back(chat_req_tool);
+    }
+  }
+  return output;
+}
+
 } // namespace BT
 
 #endif // LLAMA_BT__ACTION__BT_TYPES_HPP_

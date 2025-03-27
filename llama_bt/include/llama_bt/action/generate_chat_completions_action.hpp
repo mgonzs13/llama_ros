@@ -1,7 +1,7 @@
 // MIT License
 //
 // Copyright (c) 2025 Alberto J. Tudela Roldán
-// Copyright (c) 2025 Grupo Avispa, DTE, Universidad de Málaga
+// Copyright (c) 2025 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,31 +21,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LLAMA_BT__ACTION__GENERATE_RESPONSE_ACTION_HPP_
-#define LLAMA_BT__ACTION__GENERATE_RESPONSE_ACTION_HPP_
+#ifndef LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
+#define LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
 
+#include <behaviortree_cpp/basic_types.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 
-#include "llama_msgs/action/generate_response.hpp"
+#include "llama_msgs/action/generate_chat_completions.hpp"
+#include "llama_msgs/msg/chat_message.hpp"
+#include "llama_msgs/msg/chat_req_tool.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
 namespace llama_bt {
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps
- * llama_msgs::action::GenerateResponse
+ * llama_msgs::action::GenerateChatCompletions
  */
-class GenerateResponseAction : public nav2_behavior_tree::BtActionNode<
-                                   llama_msgs::action::GenerateResponse> {
+class GenerateChatCompletionsAction : public nav2_behavior_tree::BtActionNode<
+                                   llama_msgs::action::GenerateChatCompletions> {
 public:
   /**
-   * @brief A constructor for llama_bt::GenerateResponse Service
+   * @brief A constructor for llama_bt::GenerateChatCompletions Service
    * @param xml_tag_name Name for the XML tag for this node
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  GenerateResponseAction(const std::string &xml_tag_name,
+   GenerateChatCompletionsAction(const std::string &xml_tag_name,
                          const std::string &action_name,
                          const BT::NodeConfiguration &conf);
 
@@ -67,14 +71,15 @@ public:
    */
   static BT::PortsList providedPorts() {
     return providedBasicPorts({
-        BT::InputPort<std::string>("prompt", "Prompt"),
-        BT::InputPort<std::vector<std::string>>("stop", "Stop list"),
-        BT::InputPort<bool>("reset", false, "Whether to reset the context"),
-        BT::OutputPort<std::string>("response", "Final Response"),
+        BT::InputPort<std::vector<llama_msgs::msg::ChatMessage>>("messages", "Chat messages"),
+        BT::InputPort<std::vector<llama_msgs::msg::ChatReqTool>>("tools", "Chat request tools"),
+        BT::InputPort<int32_t>("tool_choice", 0, "Tool choice"),
+
+        BT::OutputPort<llama_msgs::msg::ChatMessage>("choice_message", "Chat choice message"),
     });
   }
 };
 
 } // namespace llama_bt
 
-#endif // LLAMA_BT__ACTION__GENERATE_RESPONSE_ACTION_HPP_
+#endif // LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
