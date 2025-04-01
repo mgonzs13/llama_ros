@@ -31,7 +31,7 @@
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/msg/chat_message.hpp"
 #include "llama_msgs/msg/chat_req_tool.hpp"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+#include "llama_bt/action/bt_action_node.hpp"
 
 namespace llama_bt {
 
@@ -40,7 +40,7 @@ namespace llama_bt {
  * llama_msgs::action::GenerateChatCompletions
  */
 class GenerateChatCompletionsAction
-    : public nav2_behavior_tree::BtActionNode<
+    : public llama_bt::BtActionNode<
           llama_msgs::action::GenerateChatCompletions> {
 public:
   /**

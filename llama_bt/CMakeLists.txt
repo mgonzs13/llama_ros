@@ -67,7 +67,6 @@ endif()
 # # Find ament macros and libraries
 find_package(ament_cmake REQUIRED)
 find_package(${BT_LIB_NAME} REQUIRED)
-find_package(nav2_behavior_tree REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -95,7 +94,7 @@ foreach(bt_plugin ${plugin_libs})
     ${llama_msgs_TARGETS}
     ${llama_ros_TARGETS}
   )
-  ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME} nav2_behavior_tree) # TODO(ajtudela): Fix this in jazzy
+  ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME}) # TODO(ajtudela): Fix this in jazzy
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
@@ -139,7 +138,6 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries()
 ament_export_dependencies(
   ${BT_LIB_NAME}
-  nav2_behavior_tree
   rclcpp
   rclcpp_action
   rclcpp_lifecycle

@@ -31,7 +31,7 @@ namespace llama_bt {
 GenerateResponseAction::GenerateResponseAction(
     const std::string &xml_tag_name, const std::string &action_name,
     const BT::NodeConfiguration &conf)
-    : nav2_behavior_tree::BtActionNode<llama_msgs::action::GenerateResponse>(
+    : llama_bt::BtActionNode<llama_msgs::action::GenerateResponse>(
           xml_tag_name, action_name, conf) {}
 
 void GenerateResponseAction::on_tick() {
