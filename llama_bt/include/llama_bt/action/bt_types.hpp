@@ -87,9 +87,11 @@ inline std::vector<std::string> convertFromString(BT::StringView str) {
 }
 
 // Chat completions parsing
+// TODO: Not working
 template <>
 inline std::vector<llama_msgs::msg::ChatMessage>
-convertFromString(BT::StringView str) {
+convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
+    BT::StringView str) {
   std::vector<llama_msgs::msg::ChatMessage> output;
   if (!str.empty()) {
     auto data = nlohmann::json::parse(str.data());
@@ -139,7 +141,8 @@ convertFromString(BT::StringView str) {
 
 template <>
 inline std::vector<llama_msgs::msg::ChatReqTool>
-convertFromString(BT::StringView str) {
+convertFromString<std::vector<llama_msgs::msg::ChatReqTool>>(
+    BT::StringView str) {
   std::vector<llama_msgs::msg::ChatReqTool> output;
   if (!str.empty()) {
     auto data = nlohmann::json::parse(str.data());

@@ -32,9 +32,8 @@ namespace llama_bt {
 GenerateChatCompletionsAction::GenerateChatCompletionsAction(
     const std::string &xml_tag_name, const std::string &action_name,
     const BT::NodeConfiguration &conf)
-    : llama_bt::BtActionNode<
-          llama_msgs::action::GenerateChatCompletions>(xml_tag_name,
-                                                       action_name, conf) {}
+    : llama_bt::BtActionNode<llama_msgs::action::GenerateChatCompletions>(
+          xml_tag_name, action_name, conf) {}
 
 void GenerateChatCompletionsAction::on_tick() {
   std::vector<llama_msgs::msg::ChatMessage> chat_messages;
@@ -46,7 +45,7 @@ void GenerateChatCompletionsAction::on_tick() {
 
   goal_.messages = chat_messages;
   goal_.tools = chat_req_tools;
-  
+
   if (tool_choice == "required") {
     goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_REQUIRED;
   } else if (tool_choice == "none") {
@@ -78,7 +77,7 @@ BT_REGISTER_NODES(factory) {
   BT::NodeBuilder builder = [](const std::string &name,
                                const BT::NodeConfiguration &config) {
     return std::make_unique<llama_bt::GenerateChatCompletionsAction>(
-        name, "generate_response", config);
+        name, "generate_chat_completions", config);
   };
 
   factory.registerBuilder<llama_bt::GenerateChatCompletionsAction>(

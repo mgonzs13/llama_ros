@@ -28,10 +28,10 @@
 #include <string>
 #include <vector>
 
+#include "llama_bt/action/bt_action_node.hpp"
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/msg/chat_message.hpp"
 #include "llama_msgs/msg/chat_req_tool.hpp"
-#include "llama_bt/action/bt_action_node.hpp"
 
 namespace llama_bt {
 

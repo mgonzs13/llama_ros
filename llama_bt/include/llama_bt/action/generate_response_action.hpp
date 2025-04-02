@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 
-#include "llama_msgs/action/generate_response.hpp"
 #include "llama_bt/action/bt_action_node.hpp"
+#include "llama_msgs/action/generate_response.hpp"
 
 namespace llama_bt {
 
@@ -36,8 +36,8 @@ namespace llama_bt {
  * @brief A nav2_behavior_tree::BtActionNode class that wraps
  * llama_msgs::action::GenerateResponse
  */
-class GenerateResponseAction : public llama_bt::BtActionNode<
-                                   llama_msgs::action::GenerateResponse> {
+class GenerateResponseAction
+    : public llama_bt::BtActionNode<llama_msgs::action::GenerateResponse> {
 public:
   /**
    * @brief A constructor for llama_bt::GenerateResponse Service
