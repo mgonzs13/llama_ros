@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "llama_msgs/msg/chat_choice.hpp"
+#include "llama_msgs/msg/chat_req_tool.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -160,7 +161,7 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions/>
+            <GenerateChatCompletions messages="" tools=""/>
         </BehaviorTree>
       </root>)";
 #else
@@ -168,20 +169,23 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
       R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions/>
+            <GenerateChatCompletions messages="" tools=""/>
         </BehaviorTree>
       </root>)";
 #endif
 
   tree_ = std::make_shared<BT::Tree>(
       factory_->createTreeFromText(xml_txt, config_->blackboard));
-  //   EXPECT_TRUE(
-  //       tree_->rootNode()->getInput<std::string>("messages").value().empty());
+  EXPECT_TRUE(tree_->rootNode()
+                  ->getInput<std::vector<llama_msgs::msg::ChatReqTool>>("tools")
+                  .value()
+                  .empty());
 
-  //   EXPECT_TRUE(tree_->rootNode()
-  //                   ->getInput<std::vector<std::string>>("tools")
-  //                   .value()
-  //                   .empty());
+  EXPECT_TRUE(
+      tree_->rootNode()
+          ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("messages")
+          .value()
+          .empty());
 
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("tool_choice").value(),
             "auto");
@@ -196,7 +200,7 @@ TEST_F(GenerateChatActionTestFixture, test_chat_tick) {
       R"(
       <root>
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions choice_message="{response}"/>
+            <GenerateChatCompletions messages="" tools="" choice_message="{response}"/>
         </BehaviorTree>
       </root>)";
 #else
@@ -204,22 +208,22 @@ TEST_F(GenerateChatActionTestFixture, test_chat_tick) {
       R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions choice_message="{response}"/>
+            <GenerateChatCompletions messages="" tools="" choice_message="{response}"/>
         </BehaviorTree>
       </root>)";
 #endif
 
   tree_ = std::make_shared<BT::Tree>(
       factory_->createTreeFromText(xml_txt, config_->blackboard));
-  //   EXPECT_TRUE(tree_->rootNode()
-  //                   ->getInput<std::vector<llama_msgs::msg::ChatTool>>("tools")
-  //                   .value()
-  //                   .empty());
-  //   EXPECT_TRUE(
-  //       tree_->rootNode()
-  //           ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("messages")
-  //           .value()
-  //           .empty());
+  EXPECT_TRUE(tree_->rootNode()
+                  ->getInput<std::vector<llama_msgs::msg::ChatReqTool>>("tools")
+                  .value()
+                  .empty());
+  EXPECT_TRUE(
+      tree_->rootNode()
+          ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("messages")
+          .value()
+          .empty());
 
   rclcpp::Rate rate(30);
   auto start_time = node_->now();

@@ -89,8 +89,9 @@ inline std::vector<std::string> convertFromString(BT::StringView str) {
 // Chat completions parsing
 // TODO: Not working
 template <>
-inline std::vector<llama_msgs::msg::ChatMessage>
-convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
+inline std::vector<llama_msgs::msg::ChatMessage> convertFromString<std::vector<
+    llama_msgs::msg::ChatMessage_<std::allocator<void>>,
+    std::allocator<llama_msgs::msg::ChatMessage_<std::allocator<void>>>>>(
     BT::StringView str) {
   std::vector<llama_msgs::msg::ChatMessage> output;
   if (!str.empty()) {
@@ -140,8 +141,9 @@ convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
 }
 
 template <>
-inline std::vector<llama_msgs::msg::ChatReqTool>
-convertFromString<std::vector<llama_msgs::msg::ChatReqTool>>(
+inline std::vector<llama_msgs::msg::ChatReqTool> convertFromString<std::vector<
+    llama_msgs::msg::ChatReqTool_<std::allocator<void>>,
+    std::allocator<llama_msgs::msg::ChatReqTool_<std::allocator<void>>>>>(
     BT::StringView str) {
   std::vector<llama_msgs::msg::ChatReqTool> output;
   if (!str.empty()) {
