@@ -1,6 +1,5 @@
 // MIT License
 //
-// Copyright (c) 2025 Alberto J. Tudela Roldán
 // Copyright (c) 2025 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,11 +23,15 @@
 #ifndef LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
 #define LLAMA_BT__ACTION__GENERATE_CHAT_COMPLETIONS_ACTION_HPP_
 
-#include <behaviortree_cpp/basic_types.h>
 #include <string>
 #include <vector>
 
+#if defined(BTV3)
+#include "llama_bt/action/bt_action_node_v3.hpp"
+#else
 #include "llama_bt/action/bt_action_node.hpp"
+#endif
+
 #include "llama_bt/action/bt_types.hpp"
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/msg/chat_message.hpp"
@@ -37,7 +40,7 @@
 namespace llama_bt {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps
+ * @brief A llama_bt::BtActionNode class that wraps
  * llama_msgs::action::GenerateChatCompletions
  */
 class GenerateChatCompletionsAction

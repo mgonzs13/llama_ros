@@ -16,6 +16,8 @@
     <depend>rclcpp_lifecycle</depend>
     <depend>llama_ros</depend>
     <depend>llama_msgs</depend>
+    <depend>nlohmann-json-dev</depend>
+
     <test_depend>ament_cmake_clang_format</test_depend>
     <test_depend>ament_cmake_gtest</test_depend>
     <export>

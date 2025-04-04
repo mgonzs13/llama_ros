@@ -1,6 +1,5 @@
 // MIT License
 //
-// Copyright (c) 2025 Alberto J. Tudela Roldán
 // Copyright (c) 2025 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy

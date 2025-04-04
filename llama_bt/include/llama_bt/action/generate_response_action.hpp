@@ -27,13 +27,18 @@
 #include <string>
 #include <vector>
 
+#if defined(BTV3)
+#include "llama_bt/action/bt_action_node_v3.hpp"
+#else
 #include "llama_bt/action/bt_action_node.hpp"
+#endif
+
 #include "llama_msgs/action/generate_response.hpp"
 
 namespace llama_bt {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps
+ * @brief A llama_bt::BtActionNode class that wraps
  * llama_msgs::action::GenerateResponse
  */
 class GenerateResponseAction

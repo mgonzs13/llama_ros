@@ -1,7 +1,6 @@
 
 // MIT License
 //
-// Copyright (c) 2025 Alberto J. Tudela Roldán
 // Copyright (c) 2025 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +23,7 @@
 
 #include "llama_msgs/msg/chat_choice.hpp"
 #include "llama_msgs/msg/chat_req_tool.hpp"
+#include <cstdio>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -37,6 +37,7 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "llama_bt/action/generate_chat_completions_action.hpp"
+#include "nlohmann/json.hpp"
 #include "utils/test_action_server.hpp"
 
 class GenerateResponseActionServer
@@ -103,6 +104,11 @@ public:
 
     server_ = std::make_shared<GenerateResponseActionServer>();
     server_thread_ = std::thread([this]() { rclcpp::spin(server_); });
+
+    nlohmann::json messages = {{"role", "user"},
+                               {"content", "Hello, how are you?"}};
+    messages_data = messages.dump();
+    std::replace(messages_data.begin(), messages_data.end(), '"', '\'');
   }
 
   void TearDown() override {
@@ -125,6 +131,7 @@ protected:
   std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   std::shared_ptr<BT::Tree> tree_;
   std::thread server_thread_;
+  std::string messages_data;
 };
 
 TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
@@ -153,7 +160,7 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_FALSE(
       tree_->rootNode()
-          ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("messages")
+          ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("tools")
           .has_value());
 
 #if defined(BTV3)
@@ -165,15 +172,17 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
         </BehaviorTree>
       </root>)";
 #else
-  xml_txt =
-      R"(
+  xml_txt = std::string(R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions messages="" tools=""/>
+            <GenerateChatCompletions messages=")") +
+            messages_data +
+            R"(" tools=""/>
         </BehaviorTree>
       </root>)";
 #endif
 
+  fprintf(stderr, "%s\n", xml_txt.c_str());
   tree_ = std::make_shared<BT::Tree>(
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_TRUE(tree_->rootNode()
@@ -181,11 +190,12 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
                   .value()
                   .empty());
 
-  EXPECT_TRUE(
+  EXPECT_EQ(
       tree_->rootNode()
           ->getInput<std::vector<llama_msgs::msg::ChatMessage>>("messages")
           .value()
-          .empty());
+          .size(),
+      2);
 
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("tool_choice").value(),
             "auto");

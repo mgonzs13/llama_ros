@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LLAMA_BT__ACTION__BT_ACTION_NODE_HPP_
-#define LLAMA_BT__ACTION__BT_ACTION_NODE_HPP_
+#ifndef LLAMA_BT__ACTION__BT_ACTION_NODE_V3_HPP_
+#define LLAMA_BT__ACTION__BT_ACTION_NODE_V3_HPP_
 
-#include "behaviortree_cpp/action_node.h"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include <chrono>
 #include <memory>
-#include <rclcpp/executors.hpp>
 #include <string>
 
+#include "behaviortree_cpp_v3/action_node.h"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+
+namespace BT {
+template <>
+inline std::chrono::milliseconds
+convertFromString<std::chrono::milliseconds>(const StringView key) {
+  return std::chrono::milliseconds(std::stoul(key.data()));
+}
+} // namespace BT
+
 namespace llama_bt {
-// Macro to remove boiler plate when using getInputPortOrBlackboard
-#define getInputOrBlackboard(name, value)                                      \
-  getInputPortOrBlackboard(*this, *(this->config().blackboard), name, value);
 
 using namespace std::chrono_literals; // NOLINT
 
@@ -55,7 +61,10 @@ public:
     auto bt_loop_duration =
         config().blackboard->template get<std::chrono::milliseconds>(
             "bt_loop_duration");
-    getInputOrBlackboard("server_timeout", server_timeout_);
+    server_timeout_ =
+        config().blackboard->template get<std::chrono::milliseconds>(
+            "server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
         config().blackboard->template get<std::chrono::milliseconds>(
             "wait_for_service_timeout");
@@ -181,22 +190,16 @@ public:
    */
   BT::NodeStatus tick() override {
     // first step to be done only at the beginning of the Action
-    if (!BT::isStatusActive(status())) {
+    if (status() == BT::NodeStatus::IDLE) {
+      // setting the status to RUNNING to notify the BT Loggers (if any)
+      setStatus(BT::NodeStatus::RUNNING);
+
       // reset the flag to send the goal or not, allowing the user the option to
       // set it in on_tick
       should_send_goal_ = true;
 
-      // Clear the input and output messages to make sure we have no leftover
-      // from previous calls
-      goal_ = typename ActionT::Goal();
-      result_ =
-          typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
-
       // user defined callback, may modify "should_send_goal_".
       on_tick();
-
-      // setting the status to RUNNING to notify the BT Loggers (if any)
-      setStatus(BT::NodeStatus::RUNNING);
 
       if (!should_send_goal_) {
         return BT::NodeStatus::FAILURE;
@@ -323,9 +326,7 @@ public:
       on_cancelled();
     }
 
-    // this is probably redundant, since the parent node
-    // is supposed to call it, but we keep it, just in case
-    resetStatus();
+    setStatus(BT::NodeStatus::IDLE);
   }
 
 protected:
@@ -379,7 +380,6 @@ protected:
           if (this->goal_handle_->get_goal_id() == result.goal_id) {
             goal_result_available_ = true;
             result_ = result;
-            emitWakeUpSignal();
           }
         };
     send_goal_options.feedback_callback =
@@ -387,7 +387,6 @@ protected:
             typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
             const std::shared_ptr<const typename ActionT::Feedback> feedback) {
           feedback_ = feedback;
-          emitWakeUpSignal();
         };
 
     future_goal_handle_ = std::make_shared<std::shared_future<
@@ -441,10 +440,11 @@ protected:
    */
   void increment_recovery_count() {
     int recovery_count = 0;
-    [[maybe_unused]] auto res =
-        config().blackboard->get("number_recoveries", recovery_count); // NOLINT
+    config().blackboard->template get<int>("number_recoveries",
+                                           recovery_count); // NOLINT
     recovery_count += 1;
-    config().blackboard->set("number_recoveries", recovery_count); // NOLINT
+    config().blackboard->template set<int>("number_recoveries",
+                                           recovery_count); // NOLINT
   }
 
   std::string action_name_;
@@ -486,19 +486,6 @@ protected:
   bool should_send_goal_;
 };
 
-template <typename T>
-inline bool getInputPortOrBlackboard(const BT::TreeNode &bt_node,
-                                     const BT::Blackboard &blackboard,
-                                     const std::string &param_name, T &value) {
-  if (bt_node.getInput<T>(param_name, value)) {
-    return true;
-  }
-  if (blackboard.get<T>(param_name, value)) {
-    return true;
-  }
-  return false;
-}
-
 } // namespace llama_bt
 
-#endif // LLAMA_BT__ACTION__BT_ACTION_NODE_HPP_
+#endif // LLAMA_BT__ACTION__BT_ACTION_NODE_V3_HPP_

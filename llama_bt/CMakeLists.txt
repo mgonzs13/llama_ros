@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(llama_bt)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to Release as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE
@@ -72,6 +74,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(llama_msgs REQUIRED)
 find_package(llama_ros REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # ##########
 # # Build ##
