@@ -38,6 +38,9 @@ TEST(LlamaBT, register_nodes) {
 
   factory.registerFromPlugin(
       loader.getOSName("llama_generate_response_action_bt_node"));
+
+  factory.registerFromPlugin(
+      loader.getOSName("llama_generate_chat_completions_action_bt_node"));
 }
 
 int main(int argc, char **argv) {

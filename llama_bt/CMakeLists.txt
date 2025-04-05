@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(llama_bt)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to Release as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE
@@ -67,17 +69,21 @@ endif()
 # # Find ament macros and libraries
 find_package(ament_cmake REQUIRED)
 find_package(${BT_LIB_NAME} REQUIRED)
-find_package(nav2_behavior_tree REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(llama_msgs REQUIRED)
+find_package(llama_ros REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # ##########
 # # Build ##
 # ##########
 add_library(llama_generate_response_action_bt_node SHARED src/action/generate_response_action.cpp)
 list(APPEND plugin_libs llama_generate_response_action_bt_node)
+
+add_library(llama_generate_chat_completions_action_bt_node SHARED src/action/generate_chat_completions_action.cpp)
+list(APPEND plugin_libs llama_generate_chat_completions_action_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin} PUBLIC
@@ -89,8 +95,9 @@ foreach(bt_plugin ${plugin_libs})
     rclcpp_action::rclcpp_action
     rclcpp_lifecycle::rclcpp_lifecycle
     ${llama_msgs_TARGETS}
+    ${llama_ros_TARGETS}
   )
-  ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME} nav2_behavior_tree) # TODO(ajtudela): Fix this in jazzy
+  ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME}) # TODO(ajtudela): Fix this in jazzy
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
@@ -134,11 +141,11 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries()
 ament_export_dependencies(
   ${BT_LIB_NAME}
-  nav2_behavior_tree
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
   llama_msgs
+  llama_ros
 )
 ament_export_targets()
 ament_package()

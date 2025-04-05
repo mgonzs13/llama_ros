@@ -35,8 +35,6 @@
 #include "llava_ros/llava_node.hpp"
 
 using namespace llava_ros;
-using std::placeholders::_1;
-using std::placeholders::_2;
 
 LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 

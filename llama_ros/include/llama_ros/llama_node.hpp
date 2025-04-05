@@ -28,10 +28,6 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include <memory>
-#include <string>
-
-#include "common.h"
-#include "llama.h"
 
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"

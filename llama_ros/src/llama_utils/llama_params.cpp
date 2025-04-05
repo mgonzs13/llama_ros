@@ -22,7 +22,6 @@
 
 #include <fstream>
 #include <iostream>
-#include <regex>
 
 #include "common.h"
 #include "huggingface_hub.h"

@@ -1,7 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 Alberto J. Tudela Roldán
-// Copyright (c) 2025 Grupo Avispa, DTE, Universidad de Málaga
+// Copyright (c) 2025 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +23,44 @@
 #include <memory>
 #include <string>
 
-#include "llama_bt/action/generate_response_action.hpp"
+#include "llama_bt/action/generate_chat_completions_action.hpp"
+#include "llama_msgs/msg/chat_tool.hpp"
 
 namespace llama_bt {
 
-GenerateResponseAction::GenerateResponseAction(
+GenerateChatCompletionsAction::GenerateChatCompletionsAction(
     const std::string &xml_tag_name, const std::string &action_name,
     const BT::NodeConfiguration &conf)
-    : llama_bt::BtActionNode<llama_msgs::action::GenerateResponse>(
+    : llama_bt::BtActionNode<llama_msgs::action::GenerateChatCompletions>(
           xml_tag_name, action_name, conf) {}
 
-void GenerateResponseAction::on_tick() {
-  std::string prompt;
-  getInput("prompt", prompt);
-  std::vector<std::string> stop;
-  getInput("stop", stop);
-  bool reset;
-  getInput("reset", reset);
+void GenerateChatCompletionsAction::on_tick() {
+  std::vector<llama_msgs::msg::ChatMessage> chat_messages;
+  getInput("messages", chat_messages);
+  std::vector<llama_msgs::msg::ChatReqTool> chat_req_tools;
+  getInput("tools", chat_req_tools);
+  std::string tool_choice;
+  getInput("tool_choice", tool_choice);
 
-  goal_.prompt = prompt;
-  goal_.stop = stop;
-  goal_.reset = reset;
+  goal_.messages = chat_messages;
+  goal_.tools = chat_req_tools;
+
+  if (tool_choice == "required") {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_REQUIRED;
+  } else if (tool_choice == "none") {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_NONE;
+  } else {
+    goal_.tool_choice = llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO;
+  }
+
+  goal_.add_generation_prompt = true;
+  goal_.use_jinja = true;
+  goal_.parallel_tool_calls = chat_req_tools.size() > 1;
+  goal_.stream = false;
 }
 
-BT::NodeStatus GenerateResponseAction::on_success() {
-  setOutput("response", result_.result->response.text);
+BT::NodeStatus GenerateChatCompletionsAction::on_success() {
+  setOutput("choice_message", result_.result->choices[0].message);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -63,10 +75,10 @@ BT::NodeStatus GenerateResponseAction::on_success() {
 BT_REGISTER_NODES(factory) {
   BT::NodeBuilder builder = [](const std::string &name,
                                const BT::NodeConfiguration &config) {
-    return std::make_unique<llama_bt::GenerateResponseAction>(
-        name, "generate_response", config);
+    return std::make_unique<llama_bt::GenerateChatCompletionsAction>(
+        name, "generate_chat_completions", config);
   };
 
-  factory.registerBuilder<llama_bt::GenerateResponseAction>("GenerateResponse",
-                                                            builder);
+  factory.registerBuilder<llama_bt::GenerateChatCompletionsAction>(
+      "GenerateChatCompletions", builder);
 }

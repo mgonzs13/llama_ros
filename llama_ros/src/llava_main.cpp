@@ -21,10 +21,8 @@
 // SOFTWARE.
 
 #include <memory>
-#include <vector>
 
 #include "llava_ros/llava_node.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 using namespace llava_ros;
 
