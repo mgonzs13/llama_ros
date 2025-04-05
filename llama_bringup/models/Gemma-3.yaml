@@ -1,10 +1,10 @@
 n_ctx: 2048
-n_batch: 8
-n_gpu_layers: 0
-n_threads: 1
-n_predict: 2048
+n_batch: 256
+n_gpu_layers: 27
+n_threads: -1
+n_predict: -1
 
-model_repo: "unsloth/gemma-3-1b-it-GGUF"
-model_filename: "gemma-3-1b-it-Q4_K_M.gguf"
+model_repo: "vinimuchulski/gemma-3-1b-it-qat-q4_0-gguf"
+model_filename: "gemma-3-1b-it-q4_0.gguf"
 
-system_prompt_type: "Gemma-2"
+system_prompt_type: "Gemma-3"
