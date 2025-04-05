@@ -37,7 +37,7 @@ Llava::Llava(const struct common_params &params,
       llava_params(llava_params), image_pose(0), st_pos_id(0) {
 
   // load clip model
-  const char *clip_path = this->params.mmproj.c_str();
+  const char *clip_path = this->params.mmproj.path.c_str();
   this->ctx_clip = clip_model_load(clip_path, 1);
   this->image_embed = nullptr;
 

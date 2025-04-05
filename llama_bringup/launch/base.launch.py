@@ -92,10 +92,10 @@ def generate_launch_description():
             "n_predict": LaunchConfiguration("n_predict", default=128),
             "n_keep": LaunchConfiguration("n_keep", default=-1),
             # paths params
-            "model": LaunchConfiguration("model", default=""),
+            "model_path": LaunchConfiguration("model_path", default=""),
             "model_repo": LaunchConfiguration("model_repo", default=""),
             "model_filename": LaunchConfiguration("model_filename", default=""),
-            "mmproj": LaunchConfiguration("mmproj", default=""),
+            "mmproj_path": LaunchConfiguration("mmproj_path", default=""),
             "mmproj_repo": LaunchConfiguration("mmproj_repo", default=""),
             "mmproj_filename": LaunchConfiguration("mmproj_filename", default=""),
             "lora_adapters": LaunchConfiguration("lora_adapters", default="['']"),

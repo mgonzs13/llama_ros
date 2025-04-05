@@ -92,10 +92,10 @@ void llama_utils::declare_llama_params(
                                             {"yarn_orig_ctx", 0},
                                         });
   node->declare_parameters<std::string>("", {
-                                                {"model", ""},
+                                                {"model_path", ""},
                                                 {"model_repo", ""},
                                                 {"model_filename", ""},
-                                                {"mmproj", ""},
+                                                {"mmproj_path", ""},
                                                 {"mmproj_repo", ""},
                                                 {"mmproj_filename", ""},
                                                 {"cpu_mask", ""},
@@ -157,11 +157,6 @@ void llama_utils::declare_llama_params(
 
 struct LlamaParams llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
-
-  std::string model_repo;
-  std::string model_filename;
-  std::string mmproj_repo;
-  std::string mmproj_filename;
 
   int32_t seed;
   int32_t poll;
@@ -254,12 +249,12 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
   node->get_parameter("defrag_thold", params.params.defrag_thold);
 
-  node->get_parameter("model", params.params.model);
-  node->get_parameter("model_repo", model_repo);
-  node->get_parameter("model_filename", model_filename);
-  node->get_parameter("mmproj", params.params.mmproj);
-  node->get_parameter("mmproj_repo", mmproj_repo);
-  node->get_parameter("mmproj_filename", mmproj_filename);
+  node->get_parameter("model_path", params.params.model.path);
+  node->get_parameter("model_repo", params.params.model.hf_repo);
+  node->get_parameter("model_filename", params.params.model.hf_file);
+  node->get_parameter("mmproj_path", params.params.mmproj.path);
+  node->get_parameter("mmproj_repo", params.params.mmproj.hf_repo);
+  node->get_parameter("mmproj_filename", params.params.mmproj.hf_file);
   node->get_parameter("lora_adapters", lora_adapters);
   node->get_parameter("lora_adapters_repos", lora_adapters_repos);
   node->get_parameter("lora_adapters_filenames", lora_adapters_filenames);
@@ -316,12 +311,14 @@ struct LlamaParams llama_utils::get_llama_params(
   }
 
   // models
-  if (params.params.model.empty()) {
-    params.params.model = download_model(model_repo, model_filename);
+  if (params.params.model.path.empty()) {
+    params.params.model.path = download_model(params.params.model.hf_repo,
+                                              params.params.model.hf_file);
   }
 
-  if (params.params.mmproj.empty()) {
-    params.params.mmproj = download_model(mmproj_repo, mmproj_filename);
+  if (params.params.mmproj.path.empty()) {
+    params.params.mmproj.path = download_model(params.params.mmproj.hf_repo,
+                                               params.params.mmproj.hf_file);
   }
 
   // lora_adapters
