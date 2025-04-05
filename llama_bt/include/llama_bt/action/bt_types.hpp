@@ -51,6 +51,19 @@ BT_JSON_CONVERTER(llama_msgs::msg::Response, response) {
 
 // Template specialization
 namespace BT {
+
+/**
+ * @brief Template specialization to convert a string to a
+ * `llama_msgs::msg::Response`.
+ *
+ * This function parses a string and converts it into a
+ * `llama_msgs::msg::Response` object. If the string starts with "json:", it is
+ * parsed as JSON. Otherwise, it expects values separated by '/'.
+ *
+ * @param str The input string to convert.
+ * @return A `llama_msgs::msg::Response` object.
+ * @throws RuntimeError If the input string format is invalid.
+ */
 template <>
 inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
 
@@ -75,6 +88,15 @@ inline llama_msgs::msg::Response convertFromString(BT::StringView str) {
   return output;
 }
 
+/**
+ * @brief Template specialization to convert a string to a vector of strings.
+ *
+ * This function splits the input string by the delimiter `;` and converts each
+ * part into a string. The resulting strings are stored in a vector.
+ *
+ * @param str The input string to convert, with parts separated by `;`.
+ * @return A vector of strings obtained by splitting the input string.
+ */
 template <>
 inline std::vector<std::string> convertFromString(BT::StringView str) {
   auto parts = splitString(str, ';');
@@ -86,7 +108,17 @@ inline std::vector<std::string> convertFromString(BT::StringView str) {
   return output;
 }
 
-// Chat completions parsing
+/**
+ * @brief Template specialization to convert a string to a vector of
+ * `llama_msgs::msg::ChatMessage`.
+ *
+ * This function parses a JSON string and converts it into a vector of
+ * `llama_msgs::msg::ChatMessage` objects. Each chat message contains details
+ * such as role, content, reasoning content, tool calls, and content parts.
+ *
+ * @param str The input JSON string to convert.
+ * @return A vector of `llama_msgs::msg::ChatMessage` objects.
+ */
 template <>
 inline std::vector<llama_msgs::msg::ChatMessage>
 convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
@@ -139,6 +171,17 @@ convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
   return output;
 }
 
+/**
+ * @brief Template specialization to convert a string to a vector of
+ * `llama_msgs::msg::ChatReqTool`.
+ *
+ * This function parses a JSON string and converts it into a vector of
+ * `llama_msgs::msg::ChatReqTool` objects. Each tool request contains details
+ * about the function, including its name, description, and parameters.
+ *
+ * @param str The input JSON string to convert.
+ * @return A vector of `llama_msgs::msg::ChatReqTool` objects.
+ */
 template <>
 inline std::vector<llama_msgs::msg::ChatReqTool>
 convertFromString<std::vector<llama_msgs::msg::ChatReqTool>>(

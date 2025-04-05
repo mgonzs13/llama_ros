@@ -28,24 +28,57 @@
 
 namespace llama_utils {
 
+/**
+ * @class Spinner
+ * @brief A utility class for displaying a spinning animation in the terminal.
+ */
 class Spinner {
 
 public:
+  /**
+   * @brief Constructs a Spinner object.
+   *
+   * Initializes the spinner animation characters and sets the starting index.
+   */
+
   Spinner() {
     this->spinner = "-\\|/";
     this->index = 0;
   }
 
+  /**
+   * @brief Displays the spinner animation with an optional text message.
+   *
+   * @param text The text to display alongside the spinner. Defaults to an empty
+   * string.
+   */
   void spin(std::string text) {
     fprintf(stderr, "%c %s\n", spinner[index], text.c_str());
     fflush(stderr);
     fprintf(stderr, "\033[1A\033[2K");
     index = (index + 1) % 4;
   }
+
+  /**
+   * @brief Displays the spinner animation without any text.
+   */
   void spin() { this->spin(""); }
 
 private:
+  /**
+   * @brief The spinner characters used for the animation.
+   *
+   * The spinner consists of four characters that are displayed in a loop to
+   * create the spinning effect.
+   */
   const char *spinner;
+
+  /**
+   * @brief The current index of the spinner character being displayed.
+   *
+   * This index is used to determine which character from the spinner string to
+   * display next.
+   */
   int index = 0;
 };
 

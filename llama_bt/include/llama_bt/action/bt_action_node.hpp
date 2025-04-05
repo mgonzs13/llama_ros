@@ -81,8 +81,14 @@ public:
                  xml_tag_name.c_str());
   }
 
+  /**
+   * @brief Deleted constructor
+   */
   BtActionNode() = delete;
 
+  /**
+   * @brief Destructor for BtActionNode
+   */
   virtual ~BtActionNode() {}
 
   /**

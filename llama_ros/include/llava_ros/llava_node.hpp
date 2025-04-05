@@ -38,29 +38,123 @@
 
 namespace llava_ros {
 
+/**
+ * @brief Represents a ROS 2 node for managing llava.cpp operations.
+ *
+ * This class extends the LlamaNode to provide additional functionality for
+ * handling Llava-specific operations, such as image processing and chat
+ * completions.
+ */
 class LlavaNode : public llama_ros::LlamaNode {
 
+  /**
+   * @brief Action definition for generating responses.
+   *
+   * This action allows clients to request text responses from the Llava model.
+   */
   using GenerateResponse = llama_msgs::action::GenerateResponse;
+
+  /**
+   * @brief Goal handle for the GenerateResponse action.
+   *
+   * This type is used to manage the lifecycle of a goal for the
+   * GenerateResponse action.
+   */
   using GoalHandleGenerateResponse =
       rclcpp_action::ServerGoalHandle<GenerateResponse>;
+
+  /**
+   * @brief Action definition for generating chat completions.
+   *
+   * This action allows clients to request chat completions from the Llava
+   * model.
+   */
   using GenerateChatCompletions = llama_msgs::action::GenerateChatCompletions;
+
+  /**
+   * @brief Goal handle for the GenerateChatCompletions action.
+   *
+   * This type is used to manage the lifecycle of a goal for the
+   * GenerateChatCompletions action.
+   */
   using GoalHandleGenerateChatCompletions =
       rclcpp_action::ServerGoalHandle<GenerateChatCompletions>;
 
 public:
+  /**
+   * @brief Constructs a new LlavaNode instance.
+   *
+   * Initializes the node and sets up the necessary services and actions for
+   * Llava operations.
+   */
   LlavaNode();
 
+  /**
+   * @brief Encodes data into a Base64 string.
+   *
+   * This method converts a byte array into a Base64-encoded string.
+   *
+   * @param bytes_to_encode A pointer to the byte array to encode.
+   * @param in_len The length of the byte array.
+   * @param url Whether to use URL-safe Base64 encoding.
+   * @return A Base64-encoded string.
+   */
   std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
                             bool url = false);
 
 protected:
+  /**
+   * @brief Creates and initializes the Llava instance.
+   *
+   * This method overrides the base LlamaNode class to create and configure the
+   * Llava model.
+   */
   void create_llama() override;
+
+  /**
+   * @brief Checks if the GenerateResponse goal is empty.
+   *
+   * This method validates whether the provided goal for the GenerateResponse
+   * action is empty.
+   *
+   * @param goal A shared pointer to the GenerateResponse goal.
+   * @return True if the goal is empty, false otherwise.
+   */
   bool goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) override;
+
+  /**
+   * @brief Executes the GenerateResponse action.
+   *
+   * This method handles the execution of the GenerateResponse action for the
+   * provided goal handle.
+   *
+   * @param goal_handle A shared pointer to the goal handle for the
+   * GenerateResponse action.
+   */
   void execute(
       const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
 
+  /**
+   * @brief Checks if the GenerateChatCompletions goal is empty.
+   *
+   * This method validates whether the provided goal for the
+   * GenerateChatCompletions action is empty.
+   *
+   * @param goal A shared pointer to the GenerateChatCompletions goal.
+   * @return True if the goal is empty, false otherwise.
+   */
   bool goal_empty_chat_completions(
       std::shared_ptr<const GenerateChatCompletions::Goal> goal) override;
+
+  /**
+   * @brief Executes the GenerateChatCompletions action.
+   *
+   * This method handles the execution of the GenerateChatCompletions action for
+   * the provided goal handle.
+   *
+   * @param goal_handle A shared pointer to the goal handle for the
+   * GenerateChatCompletions action.
+   */
   void execute_chat_completions(
       const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle)
       override;

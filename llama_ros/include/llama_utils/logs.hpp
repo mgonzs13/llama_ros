@@ -92,21 +92,73 @@ inline const char *extract_filename(const char *path) {
   return filename ? filename + 1 : path;
 }
 
+/**
+ * @brief Logs an error message.
+ *
+ * This function logs an error message with the specified file, function,
+ * line number, and format string.
+ *
+ * @param file The name of the source file where the log function is called.
+ * @param function The name of the function where the log function is called.
+ * @param line The line number in the source file where the log function is
+ * called.
+ * @param text The format string for the log message, similar to printf.
+ * @param ... Additional arguments for the format string.
+ */
 #define LLAMA_LOG_ERROR(text, ...)                                             \
   if (llama_utils::log_level >= llama_utils::ERROR)                            \
   llama_utils::log_error(llama_utils::extract_filename(__FILE__),              \
                          __FUNCTION__, __LINE__, text, ##__VA_ARGS__)
 
+/**
+ * @brief Logs a warning message.
+ *
+ * This function logs a warning message with the specified file, function,
+ * line number, and format string.
+ *
+ * @param file The name of the source file where the log function is called.
+ * @param function The name of the function where the log function is called.
+ * @param line The line number in the source file where the log function is
+ * called.
+ * @param text The format string for the log message, similar to printf.
+ * @param ... Additional arguments for the format string.
+ */
 #define LLAMA_LOG_WARN(text, ...)                                              \
   if (llama_utils::log_level >= llama_utils::WARN)                             \
   llama_utils::log_warn(llama_utils::extract_filename(__FILE__), __FUNCTION__, \
                         __LINE__, text, ##__VA_ARGS__)
 
+/**
+ * @brief Logs a info message.
+ *
+ * This function logs a info message with the specified file, function,
+ * line number, and format string.
+ *
+ * @param file The name of the source file where the log function is called.
+ * @param function The name of the function where the log function is called.
+ * @param line The line number in the source file where the log function is
+ * called.
+ * @param text The format string for the log message, similar to printf.
+ * @param ... Additional arguments for the format string.
+ */
 #define LLAMA_LOG_INFO(text, ...)                                              \
   if (llama_utils::log_level >= llama_utils::INFO)                             \
   llama_utils::log_info(llama_utils::extract_filename(__FILE__), __FUNCTION__, \
                         __LINE__, text, ##__VA_ARGS__)
 
+/**
+ * @brief Logs a debug message.
+ *
+ * This function logs a debug message with the specified file, function,
+ * line number, and format string.
+ *
+ * @param file The name of the source file where the log function is called.
+ * @param function The name of the function where the log function is called.
+ * @param line The line number in the source file where the log function is
+ * called.
+ * @param text The format string for the log message, similar to printf.
+ * @param ... Additional arguments for the format string.
+ */
 #define LLAMA_LOG_DEBUG(text, ...)                                             \
   if (llama_utils::log_level >= llama_utils::DEBUG)                            \
   llama_utils::log_debug(llama_utils::extract_filename(__FILE__),              \
