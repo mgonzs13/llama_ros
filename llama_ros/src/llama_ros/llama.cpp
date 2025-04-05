@@ -696,7 +696,7 @@ struct ResponseOutput Llama::generate_response(
       LLAMA_LOG_INFO("Partial stopping word found");
 
     } else if (stopping == NO_STOP) {
-      if (completion_result_list.size()) {
+      if (!completion_result_list.empty()) {
         for (auto completion_ele : completion_result_list) {
           if (callback != nullptr) {
             callback(completion_ele);
@@ -736,21 +736,21 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params.input_prefix,
-      this->add_bos_token() && !this->prompt_tokens.size(), true);
+      this->add_bos_token() && this->prompt_tokens.empty(), true);
   std::vector<llama_token> inp_sfx =
       this->tokenize(this->params.input_suffix, false, true);
 
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
 
-  if (!this->prompt_tokens.size() && !add_pfx) {
+  if (this->prompt_tokens.empty() && !add_pfx) {
     line_inp = this->tokenize(prompt, this->add_bos_token(), true);
   } else {
     line_inp = this->tokenize(prompt, false, false);
   }
 
   // insert prefix
-  if (add_pfx && this->params.input_prefix.size()) {
+  if (add_pfx && !this->params.input_prefix.empty()) {
 
     const int n_prev = 64;
     const std::string last_output =
@@ -771,7 +771,7 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
                              line_inp.end());
 
   // insert suffix
-  if (add_sfx && this->params.input_suffix.size()) {
+  if (add_sfx && !this->params.input_suffix.empty()) {
     this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
                                inp_sfx.end());
   }
