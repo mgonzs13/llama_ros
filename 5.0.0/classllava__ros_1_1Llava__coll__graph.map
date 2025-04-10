@@ -1,0 +1,20 @@
+<map id="llava_ros::Llava" name="llava_ros::Llava">
+<area shape="rect" id="Node000001" title="Represents the Llava model, extending the Llama model with image processing capabilities." alt="" coords="745,109,856,134"/>
+<area shape="rect" id="Node000002" href="$classllama__ros_1_1Llama.html" title="A class representing a llama.cpp." alt="" coords="479,133,598,158"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="613,136,744,124,745,129,614,141"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="178,90,320,131"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="336,119,479,136,478,141,336,124"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="210,30,288,56"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="303,59,345,74,437,104,504,130,502,135,435,109,343,79,301,64"/>
+<area shape="rect" id="Node000009" href="$structllava__ros_1_1LlavaParams.html" title="Parameters for configuring the Llava model." alt="" coords="460,51,617,77"/>
+<area shape="poly" id="edge9_Node000009_Node000004" title=" " alt="" coords="303,44,460,56,460,61,303,49"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,22,129,63"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="144,40,210,40,210,45,144,45"/>
+<area shape="rect" id="Node000006" href="$classllama__utils_1_1Spinner.html" title="A utility class for displaying a spinning animation in the terminal." alt="" coords="182,205,316,230"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="331,208,383,201,436,189,476,174,511,157,514,161,478,178,437,194,384,206,332,214"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="188,254,311,295"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="325,262,381,249,435,227,462,211,486,192,524,157,527,160,490,196,465,216,438,232,382,254,327,267"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="179,155,319,181"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="335,169,436,165,484,156,485,162,437,170,335,174"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="616,78,745,107,744,112,615,83"/>
+</map>

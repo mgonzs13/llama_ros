@@ -1,0 +1,18 @@
+<map id="llama_bt::GenerateChatCompletionsAction" name="llama_bt::GenerateChatCompletionsAction">
+<area shape="rect" id="Node000001" title="A llama_bt::BtActionNode class that wraps llama_msgs::action::GenerateChatCompletions." alt="" coords="880,90,1108,130"/>
+<area shape="rect" id="Node000002" href="$classllama__bt_1_1BtActionNode.html" title=" " alt="" coords="646,82,831,138"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="846,108,880,108,880,113,846,113"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="258,5,400,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="395,32,502,49,623,76,647,83,645,88,622,81,501,55,394,37"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="416,15,516,28,623,52,698,79,696,84,622,57,515,33,415,20"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="290,55,367,80"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="383,70,646,98,645,103,383,76"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,47,129,88"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="144,65,289,65,289,70,144,70"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="188,105,469,161"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="485,127,622,120,645,118,646,123,623,125,485,132"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="222,184,436,255"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="450,190,622,147,656,136,657,141,623,152,452,196"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="178,279,479,365"/>
+<area shape="poly" id="edge8_Node000002_Node000008" title=" " alt="" coords="468,271,545,237,621,196,664,167,703,136,706,141,668,171,624,201,548,242,470,276"/>
+</map>

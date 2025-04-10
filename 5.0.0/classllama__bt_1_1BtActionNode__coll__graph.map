@@ -1,0 +1,16 @@
+<map id="llama_bt::BtActionNode&lt; ActionT &gt;" name="llama_bt::BtActionNode&lt; ActionT &gt;">
+<area shape="rect" id="Node000001" title="Abstract class representing an action based BT node." alt="" coords="553,82,711,122"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="211,5,353,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="343,32,432,48,530,70,556,79,555,84,529,75,431,53,342,37"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="369,15,448,27,530,46,572,61,608,79,606,84,570,66,529,51,447,32,368,20"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="244,55,321,80"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="336,70,553,92,552,97,336,75"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,47,129,88"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="144,65,243,65,243,70,144,70"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="192,104,372,145"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="387,123,529,116,552,113,553,118,530,121,388,128"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="181,170,383,210"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="399,172,463,159,529,143,586,121,588,126,530,148,465,164,400,177"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="178,235,386,306"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="401,241,465,219,528,190,574,156,610,121,614,125,577,160,531,194,467,224,402,246"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="llama_ros.langchain.llama_ros_reranker.LlamaROSReranker" name="llama_ros.langchain.llama_ros_reranker.LlamaROSReranker">
+<area shape="rect" id="Node000001" title=" " alt="" coords="44,184,264,225"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,88,186,114"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,126,145,182,140,185,108,128"/>
+<area shape="rect" id="Node000003" href="$classllama__ros_1_1llama__client__node_1_1LlamaClientNode.html" title=" " alt="" coords="209,80,368,121"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="253,133,182,186,178,181,249,128"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="263,5,315,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="292,47,292,80,286,80,286,47"/>
+</map>

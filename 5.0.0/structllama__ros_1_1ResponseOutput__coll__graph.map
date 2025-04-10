@@ -1,0 +1,11 @@
+<map id="llama_ros::ResponseOutput" name="llama_ros::ResponseOutput">
+<area shape="rect" id="Node000001" title="Represents the output of a response generation process." alt="" coords="9,390,189,416"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="15,286,183,327"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,342,102,390,96,390,96,342"/>
+<area shape="rect" id="Node000003" href="$structllama__ros_1_1CompletionOutput.html" title="Represents the output of a completion operation." alt="" coords="5,198,193,223"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="102,239,102,286,96,286,96,239"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="36,94,162,135"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="102,150,102,197,96,197,96,150"/>
+<area shape="rect" id="Node000005" href="$structllama__ros_1_1TokenProb.html" title="Represents the probability of a token." alt="" coords="26,5,172,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="102,46,102,93,96,93,96,46"/>
+</map>

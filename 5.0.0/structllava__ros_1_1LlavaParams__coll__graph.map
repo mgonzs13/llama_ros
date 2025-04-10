@@ -1,0 +1,7 @@
+<map id="llava_ros::LlavaParams" name="llava_ros::LlavaParams">
+<area shape="rect" id="Node000001" title="Parameters for configuring the Llava model." alt="" coords="5,214,162,240"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="45,95,122,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,137,86,213,81,213,81,137"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="22,5,145,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="86,61,86,95,81,95,81,61"/>
+</map>
