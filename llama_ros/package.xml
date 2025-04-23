@@ -2,17 +2,14 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>llama_ros</name>
-  <version>5.0.0</version>
+  <version>5.0.1</version>
   <description>llama.cpp for ROS 2</description>
   <maintainer email="mgons@unileon.es">Miguel Ángel González Santamarta</maintainer>
   <license>MIT</license>
-
   <buildtool_depend>ament_cmake</buildtool_depend>
-
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_clang_format</test_depend>
   <test_depend>ament_cmake_clang_format</test_depend>
-
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
@@ -20,7 +17,6 @@
   <depend>llama_msgs</depend>
   <depend>llama_cpp_vendor</depend>
   <depend>llama_hfhub_vendor</depend>
-
   <export>
     <build_type>ament_cmake</build_type>
   </export>

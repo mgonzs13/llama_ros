@@ -2,15 +2,13 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>llama_cli</name>
-  <version>5.0.0</version>
+  <version>5.0.1</version>
   <description>Cli package for llama_ros</description>
   <maintainer email="mgons@unileon.es">Miguel Ángel González Santamarta</maintainer>
   <license>MIT</license>
-
   <depend>ros2cli</depend>
   <depend>llama_ros</depend>
   <depend>llama_bringup</depend>
-
   <export>
     <build_type>ament_python</build_type>
   </export>
