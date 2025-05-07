@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b5219
+  GIT_TAG        b5303
   GIT_SHALLOW    TRUE
 )
 
@@ -55,13 +55,13 @@ set_target_properties(
 
 # llava
 add_library(llava
-  ${llama_SOURCE_DIR}/examples/llava/clip.cpp
-  ${llama_SOURCE_DIR}/examples/llava/llava.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/llava.cpp
 )
 
 target_include_directories(llava
   PUBLIC
-    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/examples/llava;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -76,7 +76,7 @@ file(GLOB COMMON_HEADERS
   ${llama_SOURCE_DIR}/common/*.h
   ${llama_SOURCE_DIR}/common/*.hpp
   ${llama_SOURCE_DIR}/common/minja/*.hpp
-  ${llama_SOURCE_DIR}/examples/llava/*.h
+  ${llama_SOURCE_DIR}/tools/mtmd/*.h
 )
 install(
   FILES ${COMMON_HEADERS}
