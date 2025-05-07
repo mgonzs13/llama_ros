@@ -1,0 +1,5 @@
+<map id="llama_ros::EmbeddingsOuput" name="llama_ros::EmbeddingsOuput">
+<area shape="rect" id="Node000001" title="Represents the output of an embedding generation process." alt="" coords="5,94,195,120"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="36,5,164,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,47,103,94,97,94,97,47"/>
+</map>
