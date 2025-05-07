@@ -12,6 +12,7 @@ float32 dynatemp_exponent           1.0                             # controls h
 int32 top_k                         40                              # top-k sampling (0.0 = disabled)
 float32 top_p                       0.95                            # top-p sampling (1.0 = disabled)
 float32 min_p                       0.05                            # min-p sampling (0.0 = disabled)
+float32 top_n_sigma                 -1.0                            # top-n sampling (-1.0 = disabled)
 float32 xtc_probability             0.00                            # xtc sampling (0.0 = disable)
 float32 xtc_threshold               0.10                            # xtc sampling threshold (> 0.5 disables XTC)
 float32 typical_p                   1.00                            # locally typical sampling, parameter p (1.0 = disabled)
@@ -31,13 +32,10 @@ int32 mirostat                      0                               # Mirostart 
 float32 mirostat_eta                0.10                            # Mirostat learning rate, parameter eta
 float32 mirostat_tau                5.0                             # Mirostat target entropy, parameter tau
 
-string samplers_sequence            "edkypmxt"                       # PENALTIES, DRY, TOP_K, TYPICAL_P, TOP_P, MIN_P, XTC, TEMP
+string samplers_sequence            "edskypmxt"                       # PENALTIES, DRY, TOP_N_SIGMA, TOP_K, TYPICAL_P, TOP_P, MIN_P, XTC, TEMP
 
 string grammar                      ""                              # optional BNF-like grammar to constrain sampling
 string grammar_schema               ""                              # grammar schema that defines a JSON BNF grammar
 bool grammar_lazy                                                   # whether to use lazy grammar
 GrammarTrigger[] grammar_triggers                                   # triggers for lazy grammar
 int32[] preserved_tokens                                            # tokens to preserve
-
-int32[] penalty_prompt_tokens                                       # list of tokens to penalize
-bool use_penalty_prompt_tokens      false                           # whether to penalize tokens

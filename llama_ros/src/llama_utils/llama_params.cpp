@@ -542,18 +542,35 @@ struct common_params_sampling llama_utils::parse_sampling_params(
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
+  sparams.min_keep = sampling_config.min_keep;
+
+  sparams.ignore_eos = sampling_config.ignore_eos;
+  for (auto logit_bias : sampling_config.logit_bias.data) {
+    sparams.logit_bias.push_back({logit_bias.token, logit_bias.bias});
+  }
 
   sparams.temp = sampling_config.temp;
+  sparams.dynatemp_range = sampling_config.dynatemp_range;
+  sparams.dynatemp_exponent = sampling_config.dynatemp_exponent;
 
   sparams.top_k = sampling_config.top_k;
   sparams.top_p = sampling_config.top_p;
   sparams.min_p = sampling_config.min_p;
+  sparams.top_n_sigma = sampling_config.top_n_sigma;
+  sparams.xtc_probability = sampling_config.xtc_probability;
+  sparams.xtc_threshold = sampling_config.xtc_threshold;
   sparams.typ_p = sampling_config.typical_p;
 
   sparams.penalty_last_n = sampling_config.penalty_last_n;
   sparams.penalty_repeat = sampling_config.penalty_repeat;
   sparams.penalty_freq = sampling_config.penalty_freq;
   sparams.penalty_present = sampling_config.penalty_present;
+
+  sparams.dry_multiplier = sampling_config.dry_multiplier;
+  sparams.dry_base = sampling_config.dry_base;
+  sparams.dry_allowed_length = sampling_config.dry_allowed_length;
+  sparams.dry_penalty_last_n = sampling_config.dry_penalty_last_n;
+  sparams.dry_sequence_breakers = sampling_config.dry_sequence_breakers;
 
   sparams.mirostat = sampling_config.mirostat;
   sparams.mirostat_eta = sampling_config.mirostat_eta;
@@ -591,11 +608,6 @@ struct common_params_sampling llama_utils::parse_sampling_params(
 
   // check top_k
   sparams.top_k = sparams.top_k <= 0 ? n_vocab : sparams.top_k;
-
-  // add logit bias
-  for (auto logit_bias : sampling_config.logit_bias.data) {
-    sparams.logit_bias.push_back({logit_bias.token, logit_bias.bias});
-  }
 
   return sparams;
 }

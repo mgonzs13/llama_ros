@@ -61,6 +61,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     top_k: int = 40
     top_p: float = 0.95
     min_p: float = 0.05
+    top_n_sigma: float = -1.0
     xtc_probability: float = 0.0
     xtc_threshold: float = 0.1
     typical_p: float = 1.00
@@ -80,16 +81,13 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     mirostat_eta: float = 0.10
     mirostat_tau: float = 5.0
 
-    samplers_sequence: str = "edkypmxt"
+    samplers_sequence: str = "edskypmxt"
 
     grammar: str = ""
     grammar_schema: str = ""
     grammar_lazy: bool = False
     grammar_triggers: List[List[Union[int, str]]] = []
     preserved_tokens: List[int] = []
-
-    penalty_prompt_tokens: List[int] = []
-    use_penalty_prompt_tokens: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
@@ -190,8 +188,5 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar_lazy = self.grammar_lazy
         sampling_config.grammar_triggers = self.grammar_triggers
         sampling_config.preserved_tokens = self.preserved_tokens
-
-        sampling_config.penalty_prompt_tokens = self.penalty_prompt_tokens
-        sampling_config.use_penalty_prompt_tokens = self.use_penalty_prompt_tokens
 
         return sampling_config
