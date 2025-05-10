@@ -146,7 +146,6 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<bool>("", {
                                          {"embedding", false},
                                          {"reranking", false},
-                                         {"logits_all", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"cont_batching", true},
@@ -208,7 +207,6 @@ struct LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("embedding", params.params.embedding);
   node->get_parameter("reranking", params.params.reranking);
-  node->get_parameter("logits_all", params.params.logits_all);
   node->get_parameter("use_mmap", params.params.use_mmap);
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);

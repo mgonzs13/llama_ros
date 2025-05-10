@@ -64,7 +64,6 @@ def generate_launch_description():
             # bool params
             "embedding": embedding,
             "reranking": reranking,
-            "logits_all": LaunchConfiguration("logits_all", default=False),
             "use_mmap": LaunchConfiguration("use_mmap", default=True),
             "use_mlock": LaunchConfiguration("use_mlock", default=False),
             "warmup": LaunchConfiguration("warmup", default=True),
