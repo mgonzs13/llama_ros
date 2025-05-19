@@ -103,7 +103,7 @@ void LlavaNode::execute_chat_completions(
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(image_msg, image_msg.encoding);
 
-    std::vector<uint8_t> buf;
+    std::vector<uchar> buf;
     cv::imencode(".jpg", cv_ptr->image, buf);
 
     if (!static_cast<Llava *>(this->llama.get())->load_image(buf)) {

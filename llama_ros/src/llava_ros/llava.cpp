@@ -54,7 +54,6 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
 Llava::~Llava() { mtmd_free(this->mtmd_ctx); }
 
 void Llava::reset() {
-  this->bitmaps.entries.clear();
   this->image_chunk = nullptr;
   Llama::reset();
 }
@@ -140,7 +139,7 @@ bool Llava::load_image(std::vector<uint8_t> buf) {
   mtmd::bitmap bmp(mtmd_helper_bitmap_init_from_buf(buf.data(), buf.size()));
 
   if (!bmp.ptr) {
-    LLAMA_LOG_ERROR("Can't load base64 image");
+    LLAMA_LOG_ERROR("Can't load image");
     return false;
   }
 
@@ -179,6 +178,7 @@ bool Llava::eval_prompt() {
         LLAMA_LOG_ERROR("Error evaluating the image");
         return false;
       }
+
     } else {
       LLAMA_LOG_INFO("No image to evaluate");
     }
