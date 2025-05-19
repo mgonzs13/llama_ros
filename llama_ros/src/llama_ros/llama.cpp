@@ -433,7 +433,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
     common_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
   }
 
-  if (llama_decode(this->ctx, batch)) {
+  if (llama_encode(this->ctx, batch)) {
     LLAMA_LOG_ERROR("Failed to eval");
     return output;
   }

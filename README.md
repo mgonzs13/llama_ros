@@ -1172,6 +1172,8 @@ n_predict: -1
 
 model_repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
 model_filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
+
+stopping_words: ["<|im_end|>"]
 ```
 
 </details>
