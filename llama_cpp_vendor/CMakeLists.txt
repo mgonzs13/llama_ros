@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b5338
+  GIT_TAG        b5415
   GIT_SHALLOW    TRUE
 )
 
@@ -53,13 +53,14 @@ set_target_properties(
   CXX_STANDARD 17
 )
 
-# llava
-add_library(llava
+# mtmd
+add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
-  ${llama_SOURCE_DIR}/tools/mtmd/llava.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
 )
 
-target_include_directories(llava
+target_include_directories(mtmd
   PUBLIC
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
     $<INSTALL_INTERFACE:include>
@@ -90,7 +91,7 @@ set(INSTALL_TARGETS
   build_info
   common
   llama
-  llava
+  mtmd
 )
 
 if(GGML_CUDA)

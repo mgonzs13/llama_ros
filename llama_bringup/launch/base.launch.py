@@ -37,6 +37,7 @@ def generate_launch_description():
         reranking = eval(context.perform_substitution(reranking))
 
         params = {
+            "verbosity": LaunchConfiguration("verbosity", default=0),
             "seed": LaunchConfiguration("seed", default=-1),
             "n_ctx": LaunchConfiguration("n_ctx", default=512),
             "n_batch": LaunchConfiguration("n_batch", default=2048),
@@ -70,6 +71,7 @@ def generate_launch_description():
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
             "flash_attn": LaunchConfiguration("flash_attn", default=False),
             # cache params
+            "no_op_offload": LaunchConfiguration("no_op_offload", default=False),
             "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
             "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
             "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
@@ -90,6 +92,9 @@ def generate_launch_description():
             # switch context params
             "n_predict": LaunchConfiguration("n_predict", default=128),
             "n_keep": LaunchConfiguration("n_keep", default=-1),
+            # multimodal params
+            "mmproj_use_gpu": LaunchConfiguration("mmproj_use_gpu", default=True),
+            "no_mmproj": LaunchConfiguration("no_mmproj", default=False),
             # paths params
             "model_path": LaunchConfiguration("model_path", default=""),
             "model_repo": LaunchConfiguration("model_repo", default=""),
@@ -117,15 +122,6 @@ def generate_launch_description():
                 LaunchConfiguration("suffix", default=""), value_type=str
             ),
             "stopping_words": LaunchConfiguration("stopping_words", default="['']"),
-            "image_prefix": ParameterValue(
-                LaunchConfiguration("image_prefix", default=""), value_type=str
-            ),
-            "image_suffix": ParameterValue(
-                LaunchConfiguration("image_suffix", default=""), value_type=str
-            ),
-            "image_text": ParameterValue(
-                LaunchConfiguration("image_text", default="<image>"), value_type=str
-            ),
             # prompt params
             "system_prompt": ParameterValue(
                 LaunchConfiguration("system_prompt", default=""), value_type=str

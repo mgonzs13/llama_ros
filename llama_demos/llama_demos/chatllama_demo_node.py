@@ -35,7 +35,7 @@ from llama_ros.langchain import ChatLlamaROS
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "Who is the character in the middle?"
+        prompt = "<__image__>Who is the character in the middle?"
     else:
         prompt = " ".join(sys.argv[1:])
 

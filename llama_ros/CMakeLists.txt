@@ -78,7 +78,7 @@ add_executable(llava_node
 )
 target_link_libraries(llava_node
   llama_cpp_vendor::llama
-  llama_cpp_vendor::llava
+  llama_cpp_vendor::mtmd
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
   Threads::Threads

@@ -731,26 +731,12 @@ struct ResponseOutput Llama::generate_response(
 *        LOAD PROMPT        *
 *****************************
 */
-void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
-                        bool add_sfx) {
-
+void Llama::load_prefix() {
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params.input_prefix,
       this->add_bos_token() && this->prompt_tokens.empty(), true);
-  std::vector<llama_token> inp_sfx =
-      this->tokenize(this->params.input_suffix, false, true);
 
-  std::string prompt(input_prompt);
-  std::vector<llama_token> line_inp;
-
-  if (this->prompt_tokens.empty() && !add_pfx) {
-    line_inp = this->tokenize(prompt, this->add_bos_token(), true);
-  } else {
-    line_inp = this->tokenize(prompt, false, false);
-  }
-
-  // insert prefix
-  if (add_pfx && !this->params.input_prefix.empty()) {
+  if (!this->params.input_prefix.empty()) {
 
     const int n_prev = 64;
     const std::string last_output =
@@ -766,14 +752,41 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
                                  inp_pfx.end());
     }
   }
+}
+
+void Llama::load_suffix() {
+  std::vector<llama_token> inp_sfx =
+      this->tokenize(this->params.input_suffix, false, true);
+
+  if (!this->params.input_suffix.empty()) {
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
+                               inp_sfx.end());
+  }
+}
+
+void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
+                        bool add_sfx) {
+
+  std::string prompt(input_prompt);
+  std::vector<llama_token> line_inp;
+
+  if (this->prompt_tokens.empty() && !add_pfx) {
+    line_inp = this->tokenize(prompt, this->add_bos_token(), true);
+  } else {
+    line_inp = this->tokenize(prompt, false, false);
+  }
+
+  // insert prefix
+  if (add_pfx) {
+    this->load_prefix();
+  }
 
   this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
                              line_inp.end());
 
   // insert suffix
-  if (add_sfx && !this->params.input_suffix.empty()) {
-    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
-                               inp_sfx.end());
+  if (add_sfx) {
+    this->load_suffix();
   }
 }
 
@@ -946,7 +959,7 @@ bool Llama::eval(std::vector<llama_token> tokens) {
       nullptr,                // embd
       nullptr,                // pos
       nullptr,                // n_seq_id
-      nullptr,                // seq_id
+      0,                      // seq_id
       nullptr,                // logits
   };
 

@@ -29,36 +29,12 @@
 #include <string>
 #include <vector>
 
-#include "clip.h"
 #include "common.h"
-#include "llava.h"
+#include "mtmd.h"
 
 #include "llama_ros/llama.hpp"
 
 namespace llava_ros {
-
-/**
- * @brief Parameters for configuring the Llava model.
- *
- * This structure contains parameters specific to Llava, such as text and
- * prefix/suffix for image processing.
- */
-struct LlavaParams {
-  /**
-   * @brief Text associated with the image.
-   */
-  std::string image_text = "";
-
-  /**
-   * @brief Prefix to be added to the image text.
-   */
-  std::string image_prefix = "";
-
-  /**
-   * @brief Suffix to be added to the image text.
-   */
-  std::string image_suffix = "";
-};
 
 /**
  * @brief Represents the Llava model, extending the Llama model with image
@@ -74,11 +50,9 @@ public:
    * @brief Constructs a new Llava instance.
    *
    * @param params Common parameters for the llama.cpp.
-   * @param llava_params Llava-specific parameters for image processing.
    * @param system_prompt The system prompt to initialize the model's context.
    */
-  Llava(const struct common_params &params,
-        const struct LlavaParams &llava_params, std::string system_prompt = "");
+  Llava(const struct common_params &params, std::string system_prompt = "");
 
   /**
    * @brief Destroys the Llava instance.
@@ -100,7 +74,7 @@ public:
    * @param base64_str The image encoded as a Base64 string.
    * @return True if the image is successfully loaded, false otherwise.
    */
-  bool load_image(std::string base64_str);
+  bool load_image(std::vector<uint8_t> buf);
 
   /**
    * @brief Converts a Base64-encoded image string into an image embedding.
@@ -131,10 +105,9 @@ protected:
    * This method processes the provided image embedding and integrates it into
    * the model's context.
    *
-   * @param image_embed A pointer to the image embedding structure.
    * @return True if the image evaluation is successful, false otherwise.
    */
-  bool eval_image(struct llava_image_embed *image_embed);
+  bool eval_image();
 
   /**
    * @brief Evaluates the input prompt in the Llava model.
@@ -147,17 +120,6 @@ protected:
   bool eval_prompt() override;
 
   /**
-   * @brief Evaluates a batch of tokens in the Llava model.
-   *
-   * This method overrides the base Llama class to process a batch of tokens,
-   * including image-related context.
-   *
-   * @param batch The batch of tokens to evaluate.
-   * @return True if the batch evaluation is successful, false otherwise.
-   */
-  bool eval(struct llama_batch batch) override;
-
-  /**
    * @brief Pointer to the image embedding structure.
    *
    * This structure holds the embedding data for the currently loaded image.
@@ -165,29 +127,34 @@ protected:
   struct llava_image_embed *image_embed;
 
   /**
-   * @brief Pointer to the CLIP context used for image processing.
+   * @brief Pointer to the multimodal context used for image processing.
    *
-   * This context is used for managing the state and operations of the CLIP
-   * model.
+   * This context is used for managing the state and operations of the
+   * multimodal.
    */
-  struct clip_ctx *ctx_clip;
-
-  /**
-   * @brief Llava-specific parameters for image processing.
-   *
-   * This structure contains configuration options for handling images in the
-   * Llava model.
-   */
-  struct LlavaParams llava_params;
+  struct mtmd_context *mtmd_ctx;
 
 private:
   /**
-   * @brief Frees the resources associated with the currently loaded image.
+   * @brief Bitmaps for image processing.
    *
-   * This method releases memory and other resources allocated for the image
-   * embedding.
+   * This structure holds the bitmap data for images used in the model.
    */
-  void free_image();
+  mtmd::bitmaps bitmaps;
+
+  /**
+   * @brief Pointer to the image chunk used for processing.
+   *
+   * This structure holds the chunk of image data used in the model's context.
+   */
+  const mtmd_input_chunk *image_chunk;
+
+  /**
+   * @brief Pointer to the input chunks used for processing.
+   *
+   * This structure holds the chunks of input data used in the model's context.
+   */
+  mtmd::input_chunks chunks;
 
   /**
    * @brief The pose of the image in the model's context.
@@ -196,14 +163,6 @@ private:
    * processing pipeline.
    */
   int image_pose;
-
-  /**
-   * @brief The starting position ID for image-related tokens.
-   *
-   * This integer specifies the position ID where image-related tokens begin in
-   * the model's context.
-   */
-  int st_pos_id;
 };
 
 } // namespace llava_ros

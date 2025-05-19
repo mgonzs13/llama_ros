@@ -52,7 +52,7 @@ def text_cb(feedback):
 
 
 def main():
-    prompt = "What type of food is the girl holding?"
+    prompt = "<__image__>What type of food is the girl holding?"
     use_image = True
     image_url = "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
 

@@ -6,9 +6,6 @@ n_gpu_layers: 29
 n_threads: -1
 n_predict: 8192
 
-image_prefix: "<|vision_start|>"
-image_suffix: "<|vision_end|>"
-
 model_repo: "bartowski/Qwen2-VL-2B-Instruct-GGUF"
 model_filename: "Qwen2-VL-2B-Instruct-Q4_K_M.gguf"
 

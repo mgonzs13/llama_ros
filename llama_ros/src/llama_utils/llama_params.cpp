@@ -77,6 +77,7 @@ void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   node->declare_parameters<int32_t>("", {
+                                            {"verbosity", 0},
                                             {"seed", -1},
                                             {"n_ctx", 512},
                                             {"n_batch", 2048},
@@ -95,33 +96,20 @@ void llama_utils::declare_llama_params(
                                             {"n_sequences", 1},
                                             {"yarn_orig_ctx", 0},
                                         });
-  node->declare_parameters<std::string>("", {
-                                                {"model_path", ""},
-                                                {"model_repo", ""},
-                                                {"model_filename", ""},
-                                                {"mmproj_path", ""},
-                                                {"mmproj_repo", ""},
-                                                {"mmproj_filename", ""},
-                                                {"cpu_mask", ""},
-                                                {"cpu_range", ""},
-                                                {"cpu_mask_batch", ""},
-                                                {"cpu_range_batch", ""},
-                                                {"priority", "normal"},
-                                                {"priority_batch", "normal"},
-                                                {"split_mode", "layer"},
-                                                {"rope_scaling_type", ""},
-                                                {"numa", "none"},
-                                                {"pooling_type", ""},
-                                                {"cache_type_k", "f16"},
-                                                {"cache_type_v", "f16"},
-                                                {"system_prompt", ""},
-                                                {"system_prompt_file", ""},
-                                                {"prefix", ""},
-                                                {"suffix", ""},
-                                                {"image_prefix", ""},
-                                                {"image_suffix", ""},
-                                                {"image_text", "<image>"},
-                                            });
+  node->declare_parameters<std::string>(
+      "", {
+              {"model_path", ""},      {"model_repo", ""},
+              {"model_filename", ""},  {"mmproj_path", ""},
+              {"mmproj_repo", ""},     {"mmproj_filename", ""},
+              {"cpu_mask", ""},        {"cpu_range", ""},
+              {"cpu_mask_batch", ""},  {"cpu_range_batch", ""},
+              {"priority", "normal"},  {"priority_batch", "normal"},
+              {"split_mode", "layer"}, {"rope_scaling_type", ""},
+              {"numa", "none"},        {"pooling_type", ""},
+              {"cache_type_k", "f16"}, {"cache_type_v", "f16"},
+              {"system_prompt", ""},   {"system_prompt_file", ""},
+              {"prefix", ""},          {"suffix", ""},
+          });
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
                 {"devices", std::vector<std::string>({})},
@@ -149,12 +137,15 @@ void llama_utils::declare_llama_params(
                                          {"use_mmap", true},
                                          {"use_mlock", false},
                                          {"cont_batching", true},
+                                         {"no_op_offload", false},
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
                                          {"flash_attn", false},
                                          {"strict_cpu", false},
                                          {"strict_cpu_batch", false},
+                                         {"mmproj_use_gpu", true},
+                                         {"no_mmproj", false},
                                      });
 }
 
@@ -194,6 +185,7 @@ struct LlamaParams llama_utils::get_llama_params(
 
   struct LlamaParams params;
 
+  node->get_parameter("verbosity", params.params.verbosity);
   node->get_parameter("seed", seed);
   node->get_parameter("n_ctx", params.params.n_ctx);
   node->get_parameter("n_batch", params.params.n_batch);
@@ -213,6 +205,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("check_tensors", params.params.check_tensors);
   node->get_parameter("flash_attn", params.params.flash_attn);
 
+  node->get_parameter("no_op_offload", params.params.no_op_offload);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
   node->get_parameter("cache_type_k", cache_type_k);
   node->get_parameter("cache_type_v", cache_type_v);
@@ -251,6 +244,9 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
   node->get_parameter("defrag_thold", params.params.defrag_thold);
 
+  node->get_parameter("mmproj_use_gpu", params.params.mmproj_use_gpu);
+  node->get_parameter("no_mmproj", params.params.no_mmproj);
+
   node->get_parameter("model_path", params.params.model.path);
   node->get_parameter("model_repo", params.params.model.hf_repo);
   node->get_parameter("model_filename", params.params.model.hf_file);
@@ -271,9 +267,6 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("prefix", params.params.input_prefix);
   node->get_parameter("suffix", params.params.input_suffix);
   node->get_parameter("stopping_words", stopping_words);
-  node->get_parameter("image_prefix", params.llava_params.image_prefix);
-  node->get_parameter("image_suffix", params.llava_params.image_suffix);
-  node->get_parameter("image_text", params.llava_params.image_text);
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
