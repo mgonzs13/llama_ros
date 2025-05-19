@@ -32,8 +32,7 @@
 using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params, std::string system_prompt)
-    : llama_ros::Llama(params, system_prompt, false), image_chunk(nullptr),
-      image_pose(0) {
+    : llama_ros::Llama(params, system_prompt, false), image_pose(0) {
 
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
@@ -52,19 +51,21 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
 }
 
 Llava::~Llava() {
-  this->free_image_chunk();
+  this->free_image_chunks();
   mtmd_free(this->mtmd_ctx);
 }
 
 void Llava::reset() {
-  this->free_image_chunk();
+  this->free_image_chunks();
   Llama::reset();
 }
 
-void Llava::free_image_chunk() {
-  if (this->image_chunk) {
-    mtmd_input_chunk_free(this->image_chunk);
-    this->image_chunk = nullptr;
+void Llava::free_image_chunks() {
+  if (this->image_chunks.size() > 0) {
+    for (auto &chunk : this->image_chunks) {
+      mtmd_input_chunk_free(chunk);
+    }
+    this->image_chunks.clear();
   }
 }
 
@@ -92,7 +93,7 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
   }
 
   // calculate the image pose
-  this->free_image_chunk();
+  this->free_image_chunks();
   this->image_pose = -1;
   int aux_pose = 0;
 
@@ -105,7 +106,8 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
 
     if (mtmd_input_chunk_get_type(chunks[i]) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
 
-      this->image_chunk = mtmd_input_chunk_copy(chunks[i]);
+      // add image/slice chunks
+      this->image_chunks.push_back(mtmd_input_chunk_copy(chunks[i]));
 
       if (this->image_pose == -1) {
         this->image_pose = aux_pose;
@@ -180,7 +182,7 @@ bool Llava::eval_prompt() {
     }
 
     // eval the image
-    if (this->image_chunk != nullptr) {
+    if (this->image_chunks.size() > 0) {
       LLAMA_LOG_INFO("Evaluating the image");
 
       if (!this->eval_image()) {
@@ -205,8 +207,18 @@ bool Llava::eval_prompt() {
 }
 
 bool Llava::eval_image() {
+  for (size_t i = 0; i < this->image_chunks.size(); i++) {
+    if (!this->eval_image_chunk(this->image_chunks[i])) {
+      LLAMA_LOG_ERROR("Error evaluating image chunk");
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Llava::eval_image_chunk(mtmd_input_chunk *image_chunk) {
   return mtmd_helper_eval_chunk_single(this->mtmd_ctx, this->ctx, // contexts
-                                       this->image_chunk,         // image chunk
+                                       image_chunk,               // image chunk
                                        this->n_past,              // n_past
                                        0,                         // seq_id
                                        this->params.n_batch,      // batch

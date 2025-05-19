@@ -110,6 +110,18 @@ protected:
   bool eval_image();
 
   /**
+   * @brief Evaluates a specific image chunk in the Llava model.
+   *
+   * This method processes the provided image chunk and integrates it into the
+   * model's context.
+   *
+   * @param image_chunk The image chunk to evaluate.
+   * @return True if the image chunk evaluation is successful, false
+   * otherwise.
+   */
+  bool eval_image_chunk(mtmd_input_chunk *image_chunk);
+
+  /**
    * @brief Evaluates the input prompt in the Llava model.
    *
    * This method overrides the base Llama class to evaluate the input prompt,
@@ -136,11 +148,11 @@ protected:
 
 private:
   /**
-   * @brief Free the image chunk used for processing.
+   * @brief Free the image chunks used for processing.
    *
-   * This method releases the resources associated with the image chunk.
+   * This method releases the resources associated with the image chunks.
    */
-  void free_image_chunk();
+  void free_image_chunks();
 
   /**
    * @brief Bitmaps for image processing.
@@ -154,7 +166,7 @@ private:
    *
    * This structure holds the chunk of image data used in the model's context.
    */
-  mtmd_input_chunk *image_chunk;
+  std::vector<mtmd_input_chunk *> image_chunks;
 
   /**
    * @brief The pose of the image in the model's context.
