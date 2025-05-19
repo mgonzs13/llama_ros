@@ -35,7 +35,7 @@ from llama_ros.langchain import ChatLlamaROS
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "<__image__>Who is the character in the middle?"
+        prompt = "Who is the character in the middle?"
     else:
         prompt = " ".join(sys.argv[1:])
 
@@ -51,7 +51,7 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"<image>{prompt}"},
+                    {"type": "text", "text": f"<__image__>{prompt}"},
                     {"type": "image_url", "image_url": "{image_url}"},
                 ]
             ),
