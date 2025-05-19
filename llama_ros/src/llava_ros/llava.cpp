@@ -33,7 +33,7 @@ using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params, std::string system_prompt)
     : llama_ros::Llama(params, system_prompt, false), image_chunk(nullptr),
-      chunks(mtmd_input_chunks_init()), image_pose(0) {
+      image_pose(0) {
 
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
@@ -51,11 +51,21 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
   this->reset();
 }
 
-Llava::~Llava() { mtmd_free(this->mtmd_ctx); }
+Llava::~Llava() {
+  this->free_image_chunk();
+  mtmd_free(this->mtmd_ctx);
+}
 
 void Llava::reset() {
-  this->image_chunk = nullptr;
+  this->free_image_chunk();
   Llama::reset();
+}
+
+void Llava::free_image_chunk() {
+  if (this->image_chunk) {
+    mtmd_input_chunk_free(this->image_chunk);
+    this->image_chunk = nullptr;
+  }
 }
 
 /*
@@ -74,14 +84,15 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
 
   auto bitmaps_c_ptr = this->bitmaps.c_ptr();
 
-  if (mtmd_tokenize(this->mtmd_ctx, this->chunks.ptr.get(), &inp_txt,
+  mtmd::input_chunks chunks(mtmd_input_chunks_init());
+  if (mtmd_tokenize(this->mtmd_ctx, chunks.ptr.get(), &inp_txt,
                     bitmaps_c_ptr.data(), bitmaps_c_ptr.size()) != 0) {
     LLAMA_LOG_ERROR("Failed to tokenize prompt");
     return;
   }
 
   // calculate the image pose
-  this->image_chunk = nullptr;
+  this->free_image_chunk();
   this->image_pose = -1;
   int aux_pose = 0;
 
@@ -90,23 +101,21 @@ void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
     this->load_prefix();
   }
 
-  for (size_t i = 0; i < this->chunks.size(); i++) {
+  for (size_t i = 0; i < chunks.size(); i++) {
 
-    if (mtmd_input_chunk_get_type(this->chunks[i]) ==
-        MTMD_INPUT_CHUNK_TYPE_IMAGE) {
+    if (mtmd_input_chunk_get_type(chunks[i]) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
 
-      this->image_chunk = this->chunks[i];
+      this->image_chunk = mtmd_input_chunk_copy(chunks[i]);
 
       if (this->image_pose == -1) {
         this->image_pose = aux_pose;
       }
 
-    } else if (mtmd_input_chunk_get_type(this->chunks[i]) ==
+    } else if (mtmd_input_chunk_get_type(chunks[i]) ==
                MTMD_INPUT_CHUNK_TYPE_TEXT) {
       size_t n_tokens;
       aux_pose += n_tokens;
-      auto tokens =
-          mtmd_input_chunk_get_tokens_text(this->chunks[i], &n_tokens);
+      auto tokens = mtmd_input_chunk_get_tokens_text(chunks[i], &n_tokens);
 
       for (size_t j = 0; j < n_tokens; j++) {
         this->prompt_tokens.push_back(tokens[j]);

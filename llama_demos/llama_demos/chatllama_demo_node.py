@@ -44,7 +44,7 @@ def main():
     eval_time = -1
 
     rclpy.init()
-    chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
+    chat = ChatLlamaROS(temp=0.0)
 
     prompt = ChatPromptTemplate.from_messages(
         [

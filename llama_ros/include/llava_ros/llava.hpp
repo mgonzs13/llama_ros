@@ -136,6 +136,13 @@ protected:
 
 private:
   /**
+   * @brief Free the image chunk used for processing.
+   *
+   * This method releases the resources associated with the image chunk.
+   */
+  void free_image_chunk();
+
+  /**
    * @brief Bitmaps for image processing.
    *
    * This structure holds the bitmap data for images used in the model.
@@ -147,14 +154,7 @@ private:
    *
    * This structure holds the chunk of image data used in the model's context.
    */
-  const mtmd_input_chunk *image_chunk;
-
-  /**
-   * @brief Pointer to the input chunks used for processing.
-   *
-   * This structure holds the chunks of input data used in the model's context.
-   */
-  mtmd::input_chunks chunks;
+  mtmd_input_chunk *image_chunk;
 
   /**
    * @brief The pose of the image in the model's context.
