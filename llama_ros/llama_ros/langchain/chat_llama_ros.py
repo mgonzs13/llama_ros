@@ -698,7 +698,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
                 image_url = None
 
-            chat_request.image = self._get_image(image_url, image)
+            chat_request.images.append(self._get_image(image_url, image))
 
         if "tool_choice" in kwargs:
             chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])

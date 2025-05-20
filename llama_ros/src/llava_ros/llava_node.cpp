@@ -44,33 +44,18 @@ void LlavaNode::create_llama() {
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
-  return goal->prompt.size() == 0 && goal->image.data.size() == 0;
+  return goal->prompt.size() == 0 && goal->images.size() == 0;
 }
 
 void LlavaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
-  auto image_msg = goal_handle->get_goal()->image;
+  auto images_msg = goal_handle->get_goal()->images;
 
-  // load image
-  if (image_msg.data.size() > 0) {
-
-    RCLCPP_INFO(this->get_logger(), "Loading image...");
-
-    cv_bridge::CvImagePtr cv_ptr =
-        cv_bridge::toCvCopy(image_msg, image_msg.encoding);
-
-    std::vector<uchar> buf;
-    cv::imencode(".jpg", cv_ptr->image, buf);
-
-    if (!static_cast<Llava *>(this->llama.get())->load_image(buf)) {
-      this->goal_handle_->abort(result);
-      RCLCPP_ERROR(this->get_logger(), "Failed to load image");
-      return;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Image loaded");
+  // load images
+  if (!this->load_images(images_msg)) {
+    this->goal_handle_->abort(result);
   }
 
   // llama_node execute
@@ -84,37 +69,49 @@ void LlavaNode::execute(
 */
 bool LlavaNode::goal_empty_chat_completions(
     std::shared_ptr<const GenerateChatCompletions::Goal> goal) {
-  return goal->messages.size() == 0 && goal->image.data.size() == 0;
+  return goal->messages.size() == 0 && goal->images.size() == 0;
 }
 
 void LlavaNode::execute_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
 
   auto result = std::make_shared<GenerateChatCompletions::Result>();
-  auto image_msg = goal_handle->get_goal()->image;
+  auto images_msg = goal_handle->get_goal()->images;
 
   RCLCPP_INFO(this->get_logger(), "Executing chat completions");
 
-  // load image
-  if (image_msg.data.size() > 0) {
-
-    RCLCPP_INFO(this->get_logger(), "Loading image...");
-
-    cv_bridge::CvImagePtr cv_ptr =
-        cv_bridge::toCvCopy(image_msg, image_msg.encoding);
-
-    std::vector<uchar> buf;
-    cv::imencode(".jpg", cv_ptr->image, buf);
-
-    if (!static_cast<Llava *>(this->llama.get())->load_image(buf)) {
-      this->goal_handle_chat_->abort(result);
-      RCLCPP_ERROR(this->get_logger(), "Failed to load image");
-      return;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Image loaded");
+  // load images
+  if (!this->load_images(images_msg)) {
+    this->goal_handle_chat_->abort(result);
   }
 
   // llama_node execute_chat_completions
   llama_ros::LlamaNode::execute_chat_completions(goal_handle);
+}
+
+bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
+
+  std::vector<std::vector<uchar>> images;
+
+  for (const auto &image_msg : images_msg) {
+    if (image_msg.data.size() > 0) {
+
+      RCLCPP_INFO(this->get_logger(), "Loading image...");
+
+      cv_bridge::CvImagePtr cv_ptr =
+          cv_bridge::toCvCopy(image_msg, image_msg.encoding);
+
+      std::vector<uchar> buf;
+      cv::imencode(".jpg", cv_ptr->image, buf);
+      images.push_back(buf);
+    }
+  }
+
+  if (!static_cast<Llava *>(this->llama.get())->load_images(images)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to load images");
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Images loaded");
+  return true;
 }

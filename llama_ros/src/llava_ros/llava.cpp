@@ -157,8 +157,22 @@ bool Llava::load_image(std::vector<uint8_t> buf) {
   // calculate bitmap hash (for KV caching)
   std::string hash = fnv_hash(bmp.data(), bmp.nx() * bmp.ny() * 3);
   bmp.set_id(hash.c_str());
-  this->bitmaps.entries.clear();
   this->bitmaps.entries.push_back(std::move(bmp));
+
+  return true;
+}
+
+bool Llava::load_images(std::vector<std::vector<uint8_t>> images) {
+
+  LLAMA_LOG_INFO("Loading images...");
+  this->bitmaps.entries.clear();
+
+  for (const auto &image : images) {
+    if (!this->load_image(image)) {
+      LLAMA_LOG_ERROR("Failed to load image");
+      return false;
+    }
+  }
 
   return true;
 }

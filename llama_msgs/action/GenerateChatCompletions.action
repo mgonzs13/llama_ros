@@ -1,21 +1,21 @@
-ChatMessage[] messages              # List of chat messages
-bool add_generation_prompt          # Add generation prompt to the chat messages
-bool use_jinja                      # Use Jinja templating for the chat messages. Required for tool calls
-ChatReqTool[] tools                 # List of tools to use
-int32 tool_choice                   # TOOL_CHOICE_AUTO = 0, TOOL_CHOICE_REQUIRED = 1, TOOL_CHOICE_NONE = 2
-bool extract_reasoning              # Extract reasoning from the chat messages
-SamplingConfig sampling_config      # Sampling configuration
-sensor_msgs/Image image             # Image to be used in the chat messages
-bool parallel_tool_calls            # Return more than one tool call per message
-bool stream                         # Stream the chat messages
+ChatMessage[] messages                  # List of chat messages
+bool add_generation_prompt              # Add generation prompt to the chat messages
+bool use_jinja                          # Use Jinja templating for the chat messages. Required for tool calls
+ChatReqTool[] tools                     # List of tools to use
+int32 tool_choice                       # TOOL_CHOICE_AUTO = 0, TOOL_CHOICE_REQUIRED = 1, TOOL_CHOICE_NONE = 2
+bool extract_reasoning                  # Extract reasoning from the chat messages
+SamplingConfig sampling_config          # Sampling configuration
+sensor_msgs/Image[] images              # Images to be used in the chat messages
+bool parallel_tool_calls                # Return more than one tool call per message
+bool stream                             # Stream the chat messages
 ---
-string id                           # Unique ID for the chat completion
-ChatChoice[] choices                # List of chat completions
-int32 created                       # Time of creation
-string model                        # Model used for the chat completion
-string system_fingerprint           # System fingerprint
-string object "chat.completion"     # Object type
-UsageStats usage                    # Usage statistics
+string id                               # Unique ID for the chat completion
+ChatChoice[] choices                    # List of chat completions
+int32 created                           # Time of creation
+string model                            # Model used for the chat completion
+string system_fingerprint               # System fingerprint
+string object "chat.completion"         # Object type
+UsageStats usage                        # Usage statistics
 ---
 string id                               # Unique ID for the chat completion
 ChatChoiceChunk[] choices               # List of chat chunks

@@ -131,7 +131,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
         # load image
         if image_url or image is not None:
-            goal.image = self._get_image(image_url, image)
+            goal.images.append(self._get_image(image_url, image))
 
         # add stop
         if stop:

@@ -77,7 +77,7 @@ def main():
     goal.sampling_config.temp = 0.2
 
     if use_image and image is not None:
-        goal.image = cv_bridge.cv2_to_imgmsg(image)
+        goal.images.append(cv_bridge.cv2_to_imgmsg(image))
 
     initial_time = time.time()
     llama_client.generate_response(goal, text_cb)

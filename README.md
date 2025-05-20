@@ -460,7 +460,7 @@ class ExampleNode(Node):
 
         # add your image to the goal
         image = cv2.imread("/path/to/your/image", cv2.IMREAD_COLOR)
-        goal.image = self.cv_bridge.cv2_to_imgmsg(image)
+        goal.images.append(self.cv_bridge.cv2_to_imgmsg(image))
 
         # wait for the server and send the goal
         self.action_client.wait_for_server()

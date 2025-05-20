@@ -145,6 +145,13 @@ protected:
   void execute_chat_completions(
       const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle)
       override;
+
+  /**
+   * @brief Load images from a vector of sensor_msgs::msg::Image messages.
+   *
+   * This method processes the input images and prepares them.
+   */
+  bool load_images(std::vector<sensor_msgs::msg::Image> images_msg);
 };
 
 } // namespace llava_ros

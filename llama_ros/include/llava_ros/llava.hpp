@@ -71,19 +71,19 @@ public:
   /**
    * @brief Loads an image into the Llava model.
    *
-   * @param base64_str The image encoded as a Base64 string.
+   * @param std::vector<uint8_t> buf The image data as a byte buffer.
    * @return True if the image is successfully loaded, false otherwise.
    */
   bool load_image(std::vector<uint8_t> buf);
 
   /**
-   * @brief Converts a Base64-encoded image string into an image embedding.
+   * @brief Loads an image into the Llava model.
    *
-   * @param base64_str The image encoded as a Base64 string.
-   * @return A pointer to the generated image embedding structure.
+   * @param std::vector<std::vector<uint8_t>> images The images data as a vector
+   * of
+   * @return True if the image is successfully loaded, false otherwise.
    */
-  struct llava_image_embed *
-  base64_image_to_embed(const std::string &base64_str);
+  bool load_images(std::vector<std::vector<uint8_t>> images);
 
 protected:
   /**
