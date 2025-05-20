@@ -532,23 +532,22 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     #     ROS related code        #
     #                             #
     ###############################
-
     def _remove_image_url(self, data):
-        image_url = None
+        image_urls = []
 
         for message in data.get("messages", []):
             if isinstance(message.get("content"), list):
                 # Extract the URL if an image_url exists
                 for item in message["content"]:
                     if item.get("type") == "image_url":
-                        image_url = item["image_url"]["url"]
+                        image_urls.append(item["image_url"]["url"])
 
                 # Remove all 'image_url' type items
                 message["content"] = [
                     item for item in message["content"] if item.get("type") != "image_url"
                 ]
 
-        return data, image_url
+        return data, image_urls
 
     def _parse_chat_generation_response(
         self, result: GenerateChatCompletions.Result
@@ -687,18 +686,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.tools = []
         chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
 
-        payload, image_url = self._remove_image_url(payload)
+        payload, image_urls = self._remove_image_url(payload)
 
-        if image_url:
+        if image_urls:
             image = None
-            if "data:image" in image_url:
-                image_data = image_url.split(",")[-1]
-                decoded_image = base64.b64decode(image_data)
-                np_image = np.frombuffer(decoded_image, np.uint8)
-                image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-                image_url = None
+            for image_url in image_urls:
+                if "data:image" in image_url:
+                    image_data = image_url.split(",")[-1]
+                    decoded_image = base64.b64decode(image_data)
+                    np_image = np.frombuffer(decoded_image, np.uint8)
+                    image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
+                    image_url = None
 
-            chat_request.images.append(self._get_image(image_url, image))
+                chat_request.images.append(self._get_image(image_url, image))
 
         if "tool_choice" in kwargs:
             chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])
