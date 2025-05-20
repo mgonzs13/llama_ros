@@ -51,6 +51,12 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
+  llama_demos/chatllama_multi_image_user_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME chatllama_multi_image_user_demo_node
+)
+
+install(PROGRAMS
   llama_demos/chatllama_structured_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME chatllama_structured_demo_node
