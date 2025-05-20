@@ -32,7 +32,8 @@
 using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params, std::string system_prompt)
-    : llama_ros::Llama(params, system_prompt, false), image_pose(0) {
+    : llama_ros::Llama(params, system_prompt, false),
+      chunks(mtmd_input_chunks_init()) {
 
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
@@ -50,24 +51,9 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
   this->reset();
 }
 
-Llava::~Llava() {
-  this->free_image_chunks();
-  mtmd_free(this->mtmd_ctx);
-}
+Llava::~Llava() { mtmd_free(this->mtmd_ctx); }
 
-void Llava::reset() {
-  this->free_image_chunks();
-  Llama::reset();
-}
-
-void Llava::free_image_chunks() {
-  if (this->image_chunks.size() > 0) {
-    for (auto &chunk : this->image_chunks) {
-      mtmd_input_chunk_free(chunk);
-    }
-    this->image_chunks.clear();
-  }
-}
+void Llava::reset() { Llama::reset(); }
 
 /*
 *****************************
@@ -77,57 +63,28 @@ void Llava::free_image_chunks() {
 void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
                         bool add_sfx) {
 
+  std::string prompt = input_prompt;
+
+  if (add_pfx && !this->check_if_prefix()) {
+    prompt = this->params.input_prefix + prompt;
+  }
+
+  if (add_sfx) {
+    prompt += this->params.input_suffix;
+  }
+
   mtmd_input_text inp_txt = {
-      input_prompt.c_str(),
+      prompt.c_str(),
       /* add_special */ true,
       /* parse_special */ true,
   };
 
   auto bitmaps_c_ptr = this->bitmaps.c_ptr();
 
-  mtmd::input_chunks chunks(mtmd_input_chunks_init());
-  if (mtmd_tokenize(this->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+  if (mtmd_tokenize(this->mtmd_ctx, this->chunks.ptr.get(), &inp_txt,
                     bitmaps_c_ptr.data(), bitmaps_c_ptr.size()) != 0) {
     LLAMA_LOG_ERROR("Failed to tokenize prompt");
     return;
-  }
-
-  // calculate the image pose
-  this->free_image_chunks();
-  this->image_pose = -1;
-  int aux_pose = 0;
-
-  // insert prefix
-  if (add_pfx) {
-    this->load_prefix();
-  }
-
-  for (size_t i = 0; i < chunks.size(); i++) {
-
-    if (mtmd_input_chunk_get_type(chunks[i]) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
-
-      // add image/slice chunks
-      this->image_chunks.push_back(mtmd_input_chunk_copy(chunks[i]));
-
-      if (this->image_pose == -1) {
-        this->image_pose = aux_pose;
-      }
-
-    } else if (mtmd_input_chunk_get_type(chunks[i]) ==
-               MTMD_INPUT_CHUNK_TYPE_TEXT) {
-      size_t n_tokens;
-      aux_pose += n_tokens;
-      auto tokens = mtmd_input_chunk_get_tokens_text(chunks[i], &n_tokens);
-
-      for (size_t j = 0; j < n_tokens; j++) {
-        this->prompt_tokens.push_back(tokens[j]);
-      }
-    }
-  }
-
-  // insert suffix
-  if (add_sfx) {
-    this->load_suffix();
   }
 }
 
@@ -184,53 +141,40 @@ bool Llava::load_images(std::vector<std::vector<uint8_t>> images) {
 */
 bool Llava::eval_prompt() {
 
-  if (this->image_pose >= 0) {
+  for (size_t i = 0; i < this->chunks.size(); i++) {
 
-    std::vector<llama_token> prompt_tokens_1(this->prompt_tokens.begin(),
-                                             this->prompt_tokens.begin() +
-                                                 this->image_pose);
+    auto chunk = mtmd_input_chunk_copy(this->chunks[i]);
 
-    // eval part of the prompt
-    if (!Llama::eval_prompt(prompt_tokens_1)) {
-      return false;
-    }
+    if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
 
-    // eval the image
-    if (this->image_chunks.size() > 0) {
-      LLAMA_LOG_INFO("Evaluating the image");
+      LLAMA_LOG_INFO("Evaluating image");
 
-      if (!this->eval_image()) {
+      if (!this->eval_image_chunk(chunk)) {
         LLAMA_LOG_ERROR("Error evaluating the image");
         return false;
       }
+    } else if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_TEXT) {
 
-    } else {
-      LLAMA_LOG_INFO("No image to evaluate");
+      LLAMA_LOG_INFO("Evaluating text");
+      size_t n_tokens;
+      auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
+
+      for (size_t j = 0; j < n_tokens; j++) {
+        this->prompt_tokens.push_back(tokens[j]);
+      }
+
+      if (!Llama::eval_prompt(this->prompt_tokens)) {
+        return false;
+      }
     }
 
-    // eval the full prompt
-    if (!Llama::eval_prompt(this->prompt_tokens)) {
-      return false;
-    }
-
-  } else { // no image in the prompt
-    return llama_ros::Llama::eval_prompt();
+    mtmd_input_chunk_free(chunk);
   }
 
   return true;
 }
 
-bool Llava::eval_image() {
-  for (size_t i = 0; i < this->image_chunks.size(); i++) {
-    if (!this->eval_image_chunk(this->image_chunks[i])) {
-      LLAMA_LOG_ERROR("Error evaluating image chunk");
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Llava::eval_image_chunk(mtmd_input_chunk *image_chunk) {
+bool Llava::eval_image_chunk(const mtmd_input_chunk *image_chunk) {
   return mtmd_helper_eval_chunk_single(this->mtmd_ctx, this->ctx, // contexts
                                        image_chunk,               // image chunk
                                        this->n_past,              // n_past

@@ -925,6 +925,13 @@ protected:
   int32_t ga_i;
 
   /**
+   * @brief Checks if the prompt contains the prefix at the end.
+   *
+   * @return True if the prompt contains the prefix, false otherwise.
+   */
+  bool check_if_prefix();
+
+  /**
    * @brief Load the prefix to the propmt.
    */
   void load_prefix();

@@ -731,7 +731,7 @@ struct ResponseOutput Llama::generate_response(
 *        LOAD PROMPT        *
 *****************************
 */
-void Llama::load_prefix() {
+bool Llama::check_if_prefix() {
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params.input_prefix,
       this->add_bos_token() && this->prompt_tokens.empty(), true);
@@ -747,10 +747,21 @@ void Llama::load_prefix() {
             this->params.input_prefix.c_str(),
             last_output.length() - this->params.input_prefix.length(),
             this->params.input_prefix.length()) == std::string::npos) {
-
-      this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
-                                 inp_pfx.end());
+      return false;
     }
+  }
+
+  return true;
+}
+
+void Llama::load_prefix() {
+  std::vector<llama_token> inp_pfx = this->tokenize(
+      this->params.input_prefix,
+      this->add_bos_token() && this->prompt_tokens.empty(), true);
+
+  if (!this->params.input_prefix.empty() && !this->check_if_prefix()) {
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
+                               inp_pfx.end());
   }
 }
 

@@ -100,16 +100,6 @@ protected:
                    bool add_sfx) override;
 
   /**
-   * @brief Evaluates an image embedding in the Llava model.
-   *
-   * This method processes the provided image embedding and integrates it into
-   * the model's context.
-   *
-   * @return True if the image evaluation is successful, false otherwise.
-   */
-  bool eval_image();
-
-  /**
    * @brief Evaluates a specific image chunk in the Llava model.
    *
    * This method processes the provided image chunk and integrates it into the
@@ -119,7 +109,7 @@ protected:
    * @return True if the image chunk evaluation is successful, false
    * otherwise.
    */
-  bool eval_image_chunk(mtmd_input_chunk *image_chunk);
+  bool eval_image_chunk(const mtmd_input_chunk *image_chunk);
 
   /**
    * @brief Evaluates the input prompt in the Llava model.
@@ -132,13 +122,6 @@ protected:
   bool eval_prompt() override;
 
   /**
-   * @brief Pointer to the image embedding structure.
-   *
-   * This structure holds the embedding data for the currently loaded image.
-   */
-  struct llava_image_embed *image_embed;
-
-  /**
    * @brief Pointer to the multimodal context used for image processing.
    *
    * This context is used for managing the state and operations of the
@@ -148,33 +131,13 @@ protected:
 
 private:
   /**
-   * @brief Free the image chunks used for processing.
-   *
-   * This method releases the resources associated with the image chunks.
-   */
-  void free_image_chunks();
-
-  /**
    * @brief Bitmaps for image processing.
    *
    * This structure holds the bitmap data for images used in the model.
    */
   mtmd::bitmaps bitmaps;
 
-  /**
-   * @brief Pointer to the image chunk used for processing.
-   *
-   * This structure holds the chunk of image data used in the model's context.
-   */
-  std::vector<mtmd_input_chunk *> image_chunks;
-
-  /**
-   * @brief The pose of the image in the model's context.
-   *
-   * This integer represents the position or state of the image in the model's
-   * processing pipeline.
-   */
-  int image_pose;
+  mtmd::input_chunks chunks;
 };
 
 } // namespace llava_ros
