@@ -48,9 +48,8 @@ def main():
                     {
                         "type": "text",
                         "text": (
-                            "<__image__>Who is the character in the middle of this first image?\n"
-                            "<__image__>What type of food is the girl holding in this second image?\n"
-                            "Answer both questions in a single sentence."
+                            "<__image__><__image__>\n"
+                            "Who is the character in the middle of this first image and what type of food is the girl holding in this second image?"
                         ),
                     },
                     {

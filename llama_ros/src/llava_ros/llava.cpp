@@ -171,6 +171,9 @@ bool Llava::eval_prompt() {
     mtmd_input_chunk_free(chunk);
   }
 
+  LLAMA_LOG_INFO("llava prompt: %s",
+                 this->detokenize(this->prompt_tokens).c_str());
+
   return true;
 }
 
