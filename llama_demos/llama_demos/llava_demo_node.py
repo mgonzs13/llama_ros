@@ -52,7 +52,7 @@ def text_cb(feedback):
 
 
 def main():
-    prompt = "What type of food is the girl holding?"
+    prompt = "<__image__>What type of food is the girl holding?"
     use_image = True
     image_url = "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
 
@@ -77,7 +77,7 @@ def main():
     goal.sampling_config.temp = 0.2
 
     if use_image and image is not None:
-        goal.image = cv_bridge.cv2_to_imgmsg(image)
+        goal.images.append(cv_bridge.cv2_to_imgmsg(image))
 
     initial_time = time.time()
     llama_client.generate_response(goal, text_cb)

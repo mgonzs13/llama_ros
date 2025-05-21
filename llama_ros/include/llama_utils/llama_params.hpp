@@ -46,11 +46,6 @@ struct LlamaParams {
    * @brief Common parameters for configuring the Llama system.
    */
   struct common_params params;
-
-  /**
-   * @brief Parameters specific to the Llava system integration.
-   */
-  struct llava_ros::LlavaParams llava_params;
 };
 
 /**

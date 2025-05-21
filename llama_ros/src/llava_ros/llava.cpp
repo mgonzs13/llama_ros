@@ -31,29 +31,29 @@
 
 using namespace llava_ros;
 
-Llava::Llava(const struct common_params &params,
-             const struct LlavaParams &llava_params, std::string system_prompt)
+Llava::Llava(const struct common_params &params, std::string system_prompt)
     : llama_ros::Llama(params, system_prompt, false),
-      llava_params(llava_params), image_pose(0), st_pos_id(0) {
+      chunks(mtmd_input_chunks_init()) {
 
-  // load clip model
-  const char *clip_path = this->params.mmproj.path.c_str();
-  this->ctx_clip = clip_model_load(clip_path, 1);
-  this->image_embed = nullptr;
+  // create mtmd params
+  mtmd_context_params mparams = mtmd_context_params_default();
+  mparams.use_gpu = params.mmproj_use_gpu;
+  mparams.print_timings = false;
+  mparams.n_threads = params.cpuparams.n_threads;
+  mparams.verbosity =
+      params.verbosity > 0 ? GGML_LOG_LEVEL_DEBUG : GGML_LOG_LEVEL_INFO;
+
+  // load multimodal model
+  this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
+                                       this->get_model(), mparams);
 
   // set inital values
   this->reset();
 }
 
-Llava::~Llava() {
-  clip_free(this->ctx_clip);
-  this->free_image();
-}
+Llava::~Llava() { mtmd_free(this->mtmd_ctx); }
 
-void Llava::reset() {
-  this->st_pos_id = 0;
-  Llama::reset();
-}
+void Llava::reset() { Llama::reset(); }
 
 /*
 *****************************
@@ -63,89 +63,75 @@ void Llava::reset() {
 void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
                         bool add_sfx) {
 
-  std::string prompt(input_prompt);
-  this->image_pose = -1;
+  std::string prompt = input_prompt;
 
-  // image
-  if (this->image_embed != nullptr) {
+  if (add_pfx && !this->check_if_prefix()) {
+    prompt = this->params.input_prefix + prompt;
+  }
 
-    // search for image_text
-    size_t image_pos = prompt.find(this->llava_params.image_text);
+  if (add_sfx) {
+    prompt += this->params.input_suffix;
+  }
 
-    // empty prompt
-    if (prompt.size() == 0) {
-      prompt = this->llava_params.image_text;
+  mtmd_input_text inp_txt = {
+      prompt.c_str(),
+      /* add_special */ true,
+      /* parse_special */ true,
+  };
 
-    } else if (prompt.size() > 0) {
+  auto bitmaps_c_ptr = this->bitmaps.c_ptr();
 
-      // no image_text
-      if (image_pos == std::string::npos) {
-        prompt = this->llava_params.image_text + prompt;
-        image_pos = 0;
-      }
-    }
-
-    // split prompt
-    std::string prompt_1 =
-        prompt.substr(0, image_pos) + this->llava_params.image_prefix;
-    std::string prompt_2 =
-        this->llava_params.image_suffix +
-        prompt.substr(image_pos + this->llava_params.image_text.length());
-
-    // load first part of the prompt
-    Llama::load_prompt(prompt_1, true, false);
-
-    // get image pose
-    this->image_pose = (int)this->prompt_tokens.size();
-
-    // load second part of the prompt
-    Llama::load_prompt(prompt_2, false, true);
-
-    // no image
-  } else if (this->image_embed == nullptr) {
-    Llama::load_prompt(input_prompt, add_pfx, add_sfx);
+  if (mtmd_tokenize(this->mtmd_ctx, this->chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size()) != 0) {
+    LLAMA_LOG_ERROR("Failed to tokenize prompt");
+    return;
   }
 }
 
-bool Llava::load_image(std::string base64_str) {
+// Computes FNV-1a hash of the data
+static std::string fnv_hash(const uint8_t *data, size_t len) {
+  const uint64_t fnv_prime = 0x100000001b3ULL;
+  uint64_t hash = 0xcbf29ce484222325ULL;
 
-  this->free_image();
+  for (size_t i = 0; i < len; ++i) {
+    hash ^= data[i];
+    hash *= fnv_prime;
+  }
+  return std::to_string(hash);
+}
 
-  LLAMA_LOG_INFO("Converting base64 image to embeddings");
-  this->image_embed = this->base64_image_to_embed(base64_str);
+bool Llava::load_image(std::vector<uint8_t> buf) {
 
-  if (this->image_embed == nullptr) {
-    LLAMA_LOG_ERROR("Can't load base64 image");
+  LLAMA_LOG_INFO("Loading image...");
+
+  mtmd::bitmap bmp(mtmd_helper_bitmap_init_from_buf(buf.data(), buf.size()));
+
+  if (!bmp.ptr) {
+    LLAMA_LOG_ERROR("Can't load image");
     return false;
   }
+
+  // calculate bitmap hash (for KV caching)
+  std::string hash = fnv_hash(bmp.data(), bmp.nx() * bmp.ny() * 3);
+  bmp.set_id(hash.c_str());
+  this->bitmaps.entries.push_back(std::move(bmp));
 
   return true;
 }
 
-void Llava::free_image() {
-  if (this->image_embed != nullptr) {
-    llava_image_embed_free(this->image_embed);
-    this->image_embed = nullptr;
-  }
-}
+bool Llava::load_images(std::vector<std::vector<uint8_t>> images) {
 
-struct llava_image_embed *
-Llava::base64_image_to_embed(const std::string &base64_str) {
+  LLAMA_LOG_INFO("Loading images...");
+  this->bitmaps.entries.clear();
 
-  auto required_bytes = base64::required_encode_size(base64_str.size());
-  auto img_bytes = std::vector<unsigned char>(required_bytes);
-  base64::decode(base64_str.begin(), base64_str.end(), img_bytes.begin());
-
-  auto embed = llava_image_embed_make_with_bytes(
-      this->ctx_clip, this->params.cpuparams.n_threads, img_bytes.data(),
-      img_bytes.size());
-
-  if (!embed) {
-    LLAMA_LOG_ERROR("Could not load image from base64 string");
-    return nullptr;
+  for (const auto &image : images) {
+    if (!this->load_image(image)) {
+      LLAMA_LOG_ERROR("Failed to load image");
+      return false;
+    }
   }
 
-  return embed;
+  return true;
 }
 
 /*
@@ -153,131 +139,50 @@ Llava::base64_image_to_embed(const std::string &base64_str) {
 *        EVAL IMAGE         *
 *****************************
 */
-bool Llava::eval_image(struct llava_image_embed *image_embed) {
-
-  int n_embd = this->get_n_embd();
-  bool succ = true;
-
-  // for qwen2-vl
-  auto img_tokens = image_embed->n_image_pos;
-
-  std::vector<llama_pos> mrope_pos;
-  mrope_pos.resize(img_tokens * 4);
-
-  std::vector<llama_pos> batch_mrope_pos;
-  batch_mrope_pos.resize(img_tokens * 4);
-
-  // fill mrope if qwen2-vl
-  if (clip_is_qwen2vl(this->ctx_clip)) {
-    auto image_size = clip_get_load_image_size(this->ctx_clip);
-    const int patch_size = 14 * 2;
-
-    const int ph =
-        image_size->height / patch_size + (image_size->height % patch_size > 0);
-    const int pw =
-        image_size->width / patch_size + (image_size->width % patch_size > 0);
-
-    for (int y = 0; y < ph; y++) {
-      for (int x = 0; x < pw; x++) {
-        int i = y * pw + x;
-        mrope_pos[i] = this->st_pos_id;
-        mrope_pos[i + img_tokens] = this->st_pos_id + y;
-        mrope_pos[i + img_tokens * 2] = this->st_pos_id + x;
-        mrope_pos[i + img_tokens * 3] = 0;
-      }
-    }
-    this->st_pos_id += std::max(pw, ph);
-  }
-
-  for (int i = 0; i < image_embed->n_image_pos; i += this->params.n_batch) {
-
-    int n_eval = std::min(this->params.n_batch, image_embed->n_image_pos - i);
-
-    struct llama_batch batch = {
-        int32_t(n_eval),                   // n_tokens
-        nullptr,                           // tokens
-        (image_embed->embed + i * n_embd), // embd
-        nullptr,                           // pos
-        nullptr,                           // n_seq_id
-        nullptr,                           // seq_id
-        nullptr                            // logits
-    };
-
-    if (clip_is_qwen2vl(this->ctx_clip)) {
-      std::fill(batch_mrope_pos.begin(), batch_mrope_pos.end(), 0);
-      memcpy(batch_mrope_pos.data(), &mrope_pos[i], n_eval * sizeof(llama_pos));
-      memcpy(&batch_mrope_pos[n_eval * 1], &mrope_pos[img_tokens * 1 + i],
-             n_eval * sizeof(llama_pos));
-      memcpy(&batch_mrope_pos[n_eval * 2], &mrope_pos[img_tokens * 2 + i],
-             n_eval * sizeof(llama_pos));
-      memcpy(&batch_mrope_pos[n_eval * 3], &mrope_pos[img_tokens * 3 + i],
-             n_eval * sizeof(llama_pos));
-      batch.pos = batch_mrope_pos.data();
-    }
-
-    if (!Llama::eval(batch)) {
-      LLAMA_LOG_ERROR("Failed in image eval");
-      succ = false;
-      break;
-    }
-  }
-
-  this->free_image();
-  return succ;
-}
-
 bool Llava::eval_prompt() {
 
-  if (this->image_pose >= 0) {
+  for (size_t i = 0; i < this->chunks.size(); i++) {
 
-    std::vector<llama_token> prompt_tokens_1(this->prompt_tokens.begin(),
-                                             this->prompt_tokens.begin() +
-                                                 this->image_pose);
+    auto chunk = mtmd_input_chunk_copy(this->chunks[i]);
 
-    // eval part of the prompt
-    if (!Llama::eval_prompt(prompt_tokens_1)) {
-      return false;
-    }
+    if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
 
-    // eval the image
-    if (this->image_embed != nullptr) {
-      LLAMA_LOG_INFO("Evaluating the image");
+      LLAMA_LOG_INFO("Evaluating image");
 
-      if (!this->eval_image(this->image_embed)) {
+      if (!this->eval_image_chunk(chunk)) {
+        LLAMA_LOG_ERROR("Error evaluating the image");
+        return false;
+      }
+    } else if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_TEXT) {
+
+      LLAMA_LOG_INFO("Evaluating text");
+      size_t n_tokens;
+      auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
+
+      for (size_t j = 0; j < n_tokens; j++) {
+        this->prompt_tokens.push_back(tokens[j]);
+      }
+
+      if (!Llama::eval_prompt(this->prompt_tokens)) {
         return false;
       }
     }
 
-    // eval the full prompt
-    if (!Llama::eval_prompt(this->prompt_tokens)) {
-      return false;
-    }
-
-  } else { // no image in the prompt
-    return llama_ros::Llama::eval_prompt();
+    mtmd_input_chunk_free(chunk);
   }
+
+  LLAMA_LOG_INFO("llava prompt: %s",
+                 this->detokenize(this->prompt_tokens).c_str());
 
   return true;
 }
 
-bool Llava::eval(struct llama_batch batch) {
-
-  std::vector<llama_pos> pos;
-
-  if (clip_is_qwen2vl(this->ctx_clip)) {
-    pos.resize(batch.n_tokens * 4);
-    std::fill(pos.begin(), pos.end(), 0);
-    for (int j = 0; j < batch.n_tokens * 3; j++) {
-      pos[j] = this->st_pos_id + (j % batch.n_tokens);
-    }
-    batch.pos = pos.data();
-  }
-
-  if (!Llama::eval(batch)) {
-    return false;
-  }
-
-  this->st_pos_id += batch.n_tokens;
-
-  return true;
+bool Llava::eval_image_chunk(const mtmd_input_chunk *image_chunk) {
+  return mtmd_helper_eval_chunk_single(this->mtmd_ctx, this->ctx, // contexts
+                                       image_chunk,               // image chunk
+                                       this->n_past,              // n_past
+                                       0,                         // seq_id
+                                       this->params.n_batch,      // batch
+                                       true,                      // logits last
+                                       &this->n_past) == 0;
 }

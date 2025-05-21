@@ -89,19 +89,6 @@ public:
    */
   LlavaNode();
 
-  /**
-   * @brief Encodes data into a Base64 string.
-   *
-   * This method converts a byte array into a Base64-encoded string.
-   *
-   * @param bytes_to_encode A pointer to the byte array to encode.
-   * @param in_len The length of the byte array.
-   * @param url Whether to use URL-safe Base64 encoding.
-   * @return A Base64-encoded string.
-   */
-  std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len,
-                            bool url = false);
-
 protected:
   /**
    * @brief Creates and initializes the Llava instance.
@@ -158,6 +145,13 @@ protected:
   void execute_chat_completions(
       const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle)
       override;
+
+  /**
+   * @brief Load images from a vector of sensor_msgs::msg::Image messages.
+   *
+   * This method processes the input images and prepares them.
+   */
+  bool load_images(std::vector<sensor_msgs::msg::Image> images_msg);
 };
 
 } // namespace llava_ros

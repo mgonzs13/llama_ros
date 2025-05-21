@@ -6,9 +6,6 @@ n_gpu_layers: 20
 n_threads: -1
 n_predict: 8192
 
-image_prefix: "<image>"
-image_suffix: "</image>"
-
 model_repo: "openbmb/MiniCPM-V-2_6-gguf"
 model_filename: "ggml-model-Q4_K_M.gguf"
 

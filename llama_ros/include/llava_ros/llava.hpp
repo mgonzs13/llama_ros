@@ -29,36 +29,12 @@
 #include <string>
 #include <vector>
 
-#include "clip.h"
 #include "common.h"
-#include "llava.h"
+#include "mtmd.h"
 
 #include "llama_ros/llama.hpp"
 
 namespace llava_ros {
-
-/**
- * @brief Parameters for configuring the Llava model.
- *
- * This structure contains parameters specific to Llava, such as text and
- * prefix/suffix for image processing.
- */
-struct LlavaParams {
-  /**
-   * @brief Text associated with the image.
-   */
-  std::string image_text = "";
-
-  /**
-   * @brief Prefix to be added to the image text.
-   */
-  std::string image_prefix = "";
-
-  /**
-   * @brief Suffix to be added to the image text.
-   */
-  std::string image_suffix = "";
-};
 
 /**
  * @brief Represents the Llava model, extending the Llama model with image
@@ -74,11 +50,9 @@ public:
    * @brief Constructs a new Llava instance.
    *
    * @param params Common parameters for the llama.cpp.
-   * @param llava_params Llava-specific parameters for image processing.
    * @param system_prompt The system prompt to initialize the model's context.
    */
-  Llava(const struct common_params &params,
-        const struct LlavaParams &llava_params, std::string system_prompt = "");
+  Llava(const struct common_params &params, std::string system_prompt = "");
 
   /**
    * @brief Destroys the Llava instance.
@@ -97,19 +71,19 @@ public:
   /**
    * @brief Loads an image into the Llava model.
    *
-   * @param base64_str The image encoded as a Base64 string.
+   * @param std::vector<uint8_t> buf The image data as a byte buffer.
    * @return True if the image is successfully loaded, false otherwise.
    */
-  bool load_image(std::string base64_str);
+  bool load_image(std::vector<uint8_t> buf);
 
   /**
-   * @brief Converts a Base64-encoded image string into an image embedding.
+   * @brief Loads an image into the Llava model.
    *
-   * @param base64_str The image encoded as a Base64 string.
-   * @return A pointer to the generated image embedding structure.
+   * @param std::vector<std::vector<uint8_t>> images The images data as a vector
+   * of
+   * @return True if the image is successfully loaded, false otherwise.
    */
-  struct llava_image_embed *
-  base64_image_to_embed(const std::string &base64_str);
+  bool load_images(std::vector<std::vector<uint8_t>> images);
 
 protected:
   /**
@@ -126,15 +100,16 @@ protected:
                    bool add_sfx) override;
 
   /**
-   * @brief Evaluates an image embedding in the Llava model.
+   * @brief Evaluates a specific image chunk in the Llava model.
    *
-   * This method processes the provided image embedding and integrates it into
-   * the model's context.
+   * This method processes the provided image chunk and integrates it into the
+   * model's context.
    *
-   * @param image_embed A pointer to the image embedding structure.
-   * @return True if the image evaluation is successful, false otherwise.
+   * @param image_chunk The image chunk to evaluate.
+   * @return True if the image chunk evaluation is successful, false
+   * otherwise.
    */
-  bool eval_image(struct llava_image_embed *image_embed);
+  bool eval_image_chunk(const mtmd_input_chunk *image_chunk);
 
   /**
    * @brief Evaluates the input prompt in the Llava model.
@@ -147,63 +122,22 @@ protected:
   bool eval_prompt() override;
 
   /**
-   * @brief Evaluates a batch of tokens in the Llava model.
+   * @brief Pointer to the multimodal context used for image processing.
    *
-   * This method overrides the base Llama class to process a batch of tokens,
-   * including image-related context.
-   *
-   * @param batch The batch of tokens to evaluate.
-   * @return True if the batch evaluation is successful, false otherwise.
+   * This context is used for managing the state and operations of the
+   * multimodal.
    */
-  bool eval(struct llama_batch batch) override;
-
-  /**
-   * @brief Pointer to the image embedding structure.
-   *
-   * This structure holds the embedding data for the currently loaded image.
-   */
-  struct llava_image_embed *image_embed;
-
-  /**
-   * @brief Pointer to the CLIP context used for image processing.
-   *
-   * This context is used for managing the state and operations of the CLIP
-   * model.
-   */
-  struct clip_ctx *ctx_clip;
-
-  /**
-   * @brief Llava-specific parameters for image processing.
-   *
-   * This structure contains configuration options for handling images in the
-   * Llava model.
-   */
-  struct LlavaParams llava_params;
+  struct mtmd_context *mtmd_ctx;
 
 private:
   /**
-   * @brief Frees the resources associated with the currently loaded image.
+   * @brief Bitmaps for image processing.
    *
-   * This method releases memory and other resources allocated for the image
-   * embedding.
+   * This structure holds the bitmap data for images used in the model.
    */
-  void free_image();
+  mtmd::bitmaps bitmaps;
 
-  /**
-   * @brief The pose of the image in the model's context.
-   *
-   * This integer represents the position or state of the image in the model's
-   * processing pipeline.
-   */
-  int image_pose;
-
-  /**
-   * @brief The starting position ID for image-related tokens.
-   *
-   * This integer specifies the position ID where image-related tokens begin in
-   * the model's context.
-   */
-  int st_pos_id;
+  mtmd::input_chunks chunks;
 };
 
 } // namespace llava_ros

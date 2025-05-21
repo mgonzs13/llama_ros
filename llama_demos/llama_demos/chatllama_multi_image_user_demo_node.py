@@ -24,7 +24,6 @@
 # SOFTWARE.
 
 
-import sys
 import time
 import rclpy
 from langchain_core.messages import SystemMessage
@@ -34,11 +33,6 @@ from llama_ros.langchain import ChatLlamaROS
 
 
 def main():
-    if len(sys.argv) < 2:
-        prompt = "Who is the character in the middle?"
-    else:
-        prompt = " ".join(sys.argv[1:])
-
     tokens = 0
     initial_time = -1
     eval_time = -1
@@ -51,8 +45,21 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"<__image__>{prompt}"},
-                    {"type": "image_url", "image_url": "{image_url}"},
+                    {
+                        "type": "text",
+                        "text": (
+                            "<__image__><__image__>\n"
+                            "Who is the character in the middle of this first image and what type of food is the girl holding in this second image?"
+                        ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg",
+                    },
                 ]
             ),
         ]
@@ -61,11 +68,7 @@ def main():
     chain = prompt | chat | StrOutputParser()
 
     initial_time = time.time()
-    for text in chain.stream(
-        {
-            "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
-        }
-    ):
+    for text in chain.stream({}):
         tokens += 1
         print(text, end="", flush=True)
         if eval_time < 0:

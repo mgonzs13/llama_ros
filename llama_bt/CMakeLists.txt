@@ -126,6 +126,7 @@ install(FILES llama_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 # ###########
 if(BUILD_TESTING)
   find_package(ament_cmake_clang_format REQUIRED)
+  ament_clang_format(CONFIG_FILE .clang-format)
 
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)

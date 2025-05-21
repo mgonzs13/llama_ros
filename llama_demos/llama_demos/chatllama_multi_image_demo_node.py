@@ -27,7 +27,7 @@
 import sys
 import time
 import rclpy
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from llama_ros.langchain import ChatLlamaROS
@@ -35,7 +35,7 @@ from llama_ros.langchain import ChatLlamaROS
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "Who is the character in the middle?"
+        prompt = "What type of food is the girl holding?"
     else:
         prompt = " ".join(sys.argv[1:])
 
@@ -51,7 +51,23 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"<__image__>{prompt}"},
+                    {
+                        "type": "text",
+                        "text": f"<__image__>Who is the character in the middle?",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg",
+                    },
+                ]
+            ),
+            AIMessage(content="The character in the middle is Goku."),
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {
+                        "type": "text",
+                        "text": f"<__image__>{prompt}",
+                    },
                     {"type": "image_url", "image_url": "{image_url}"},
                 ]
             ),
@@ -63,7 +79,7 @@ def main():
     initial_time = time.time()
     for text in chain.stream(
         {
-            "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
+            "image_url": "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
         }
     ):
         tokens += 1

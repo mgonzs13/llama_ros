@@ -76,7 +76,7 @@ def prompt_llm(
         img = cv2.imdecode(arr, -1)
 
         cv_bridge = CvBridge()
-        goal.image = cv_bridge.cv2_to_imgmsg(img)
+        goal.images.append(cv_bridge.cv2_to_imgmsg(img))
 
     last_t = ""
     for ele in llama_client.generate_response(goal, stream=True):

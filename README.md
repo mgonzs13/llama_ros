@@ -460,7 +460,7 @@ class ExampleNode(Node):
 
         # add your image to the goal
         image = cv2.imread("/path/to/your/image", cv2.IMREAD_COLOR)
-        goal.image = self.cv_bridge.cv2_to_imgmsg(image)
+        goal.images.append(self.cv_bridge.cv2_to_imgmsg(image))
 
         # wait for the server and send the goal
         self.action_client.wait_for_server()
@@ -773,7 +773,7 @@ chat = ChatLlamaROS(
 prompt = ChatPromptTemplate.from_messages([
     SystemMessage("You are a IA that just answer with a single word."),
     HumanMessagePromptTemplate.from_template(template=[
-        {"type": "text", "text": "<image>Who is the character in the middle of the image?"},
+        {"type": "text", "text": "<__image__>Who is the character in the middle of the image?"},
         {"type": "image_url", "image_url": "{image_url}"}
     ])
 ])
@@ -1067,9 +1067,6 @@ n_gpu_layers: 20
 n_threads: -1
 n_predict: 8192
 
-image_prefix: "<image>"
-image_suffix: "</image>"
-
 model_repo: "openbmb/MiniCPM-V-2_6-gguf"
 model_filename: "ggml-model-Q4_K_M.gguf"
 
@@ -1175,6 +1172,8 @@ n_predict: -1
 
 model_repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
 model_filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
+
+stopping_words: ["<|im_end|>"]
 ```
 
 </details>

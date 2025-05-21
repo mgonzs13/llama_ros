@@ -925,6 +925,23 @@ protected:
   int32_t ga_i;
 
   /**
+   * @brief Checks if the prompt contains the prefix at the end.
+   *
+   * @return True if the prompt contains the prefix, false otherwise.
+   */
+  bool check_if_prefix();
+
+  /**
+   * @brief Load the prefix to the propmt.
+   */
+  void load_prefix();
+
+  /**
+   * @brief Load the suffix to the propmt.
+   */
+  void load_suffix();
+
+  /**
    * @brief Loads a prompt into the model.
    *
    * @param input_prompt The input text prompt to load.

@@ -433,7 +433,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
     common_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
   }
 
-  if (llama_decode(this->ctx, batch)) {
+  if (llama_encode(this->ctx, batch)) {
     LLAMA_LOG_ERROR("Failed to eval");
     return output;
   }
@@ -731,14 +731,52 @@ struct ResponseOutput Llama::generate_response(
 *        LOAD PROMPT        *
 *****************************
 */
-void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
-                        bool add_sfx) {
-
+bool Llama::check_if_prefix() {
   std::vector<llama_token> inp_pfx = this->tokenize(
       this->params.input_prefix,
       this->add_bos_token() && this->prompt_tokens.empty(), true);
+
+  if (!this->params.input_prefix.empty()) {
+
+    const int n_prev = 64;
+    const std::string last_output =
+        common_sampler_prev_str(this->sampler, this->ctx, n_prev);
+
+    // check if prefix is already added
+    if (last_output.find(
+            this->params.input_prefix.c_str(),
+            last_output.length() - this->params.input_prefix.length(),
+            this->params.input_prefix.length()) == std::string::npos) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void Llama::load_prefix() {
+  std::vector<llama_token> inp_pfx = this->tokenize(
+      this->params.input_prefix,
+      this->add_bos_token() && this->prompt_tokens.empty(), true);
+
+  if (!this->params.input_prefix.empty() && !this->check_if_prefix()) {
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
+                               inp_pfx.end());
+  }
+}
+
+void Llama::load_suffix() {
   std::vector<llama_token> inp_sfx =
       this->tokenize(this->params.input_suffix, false, true);
+
+  if (!this->params.input_suffix.empty()) {
+    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
+                               inp_sfx.end());
+  }
+}
+
+void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
+                        bool add_sfx) {
 
   std::string prompt(input_prompt);
   std::vector<llama_token> line_inp;
@@ -750,30 +788,16 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
   }
 
   // insert prefix
-  if (add_pfx && !this->params.input_prefix.empty()) {
-
-    const int n_prev = 64;
-    const std::string last_output =
-        common_sampler_prev_str(this->sampler, this->ctx, n_prev);
-
-    // check if prefix is already added
-    if (last_output.find(
-            this->params.input_prefix.c_str(),
-            last_output.length() - this->params.input_prefix.length(),
-            this->params.input_prefix.length()) == std::string::npos) {
-
-      this->prompt_tokens.insert(this->prompt_tokens.end(), inp_pfx.begin(),
-                                 inp_pfx.end());
-    }
+  if (add_pfx) {
+    this->load_prefix();
   }
 
   this->prompt_tokens.insert(this->prompt_tokens.end(), line_inp.begin(),
                              line_inp.end());
 
   // insert suffix
-  if (add_sfx && !this->params.input_suffix.empty()) {
-    this->prompt_tokens.insert(this->prompt_tokens.end(), inp_sfx.begin(),
-                               inp_sfx.end());
+  if (add_sfx) {
+    this->load_suffix();
   }
 }
 
@@ -946,7 +970,7 @@ bool Llama::eval(std::vector<llama_token> tokens) {
       nullptr,                // embd
       nullptr,                // pos
       nullptr,                // n_seq_id
-      nullptr,                // seq_id
+      0,                      // seq_id
       nullptr,                // logits
   };
 
