@@ -1,0 +1,7 @@
+<map id="llama_ros::LoRA" name="llama_ros::LoRA">
+<area shape="rect" id="Node000001" title="Represents a Low&#45;Rank Adaptation (LoRA) configuration." alt="" coords="9,184,125,210"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="70,137,70,184,64,184,64,137"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+</map>

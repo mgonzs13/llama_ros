@@ -1,0 +1,7 @@
+<map id="llama_ros::Metadata::TokenizerInfo" name="llama_ros::Metadata::TokenizerInfo">
+<area shape="rect" id="Node000001" title="A structure representing the tokenizer information." alt="" coords="5,199,143,240"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="35,95,113,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,137,77,199,71,199,71,137"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="12,5,136,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="77,61,77,95,71,95,71,61"/>
+</map>

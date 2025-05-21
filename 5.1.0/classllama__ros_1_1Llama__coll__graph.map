@@ -1,0 +1,15 @@
+<map id="llama_ros::Llama" name="llama_ros::Llama">
+<area shape="rect" id="Node000001" title="A class representing a llama.cpp." alt="" coords="460,120,580,145"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="178,5,320,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="336,41,387,56,437,75,474,96,503,117,500,121,471,100,435,80,385,61,335,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="210,70,288,96"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="304,88,437,111,462,116,461,121,436,116,303,94"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,63,129,103"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="144,80,210,80,210,86,144,86"/>
+<area shape="rect" id="Node000005" href="$classllama__utils_1_1Spinner.html" title="A utility class for displaying a spinning animation in the terminal." alt="" coords="182,120,316,145"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="331,130,460,130,460,135,331,135"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="188,169,311,210"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="326,173,436,150,465,143,466,148,437,155,327,178"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="179,234,319,260"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="330,227,383,212,435,190,472,167,502,144,506,148,475,172,438,195,385,217,332,232"/>
+</map>
