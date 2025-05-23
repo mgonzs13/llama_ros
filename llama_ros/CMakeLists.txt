@@ -24,7 +24,7 @@ include_directories(
 
 # ROS 2 distros
 if(NOT DEFINED ENV{ROS_DISTRO})
-  message(FATAL_ERROR "ROS_DISTRO is not defined." )
+  message(FATAL_ERROR "ROS_DISTRO is not defined.")
 endif()
 if("$ENV{ROS_DISTRO}" STREQUAL "foxy")
   message(STATUS "Build for ROS 2 Foxy")
@@ -55,15 +55,13 @@ target_link_libraries(llama_node
   llama_cpp_vendor::llama
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${llama_msgs_TARGETS}
+  ${llama_cpp_vendor_TARGETS}
+  ${llama_hfhub_vendor_TARGETS}
   Threads::Threads
-)
-ament_target_dependencies(llama_node
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  llama_msgs
-  llama_cpp_vendor
-  llama_hfhub_vendor
 )
 
 add_executable(llava_node
@@ -77,20 +75,18 @@ add_executable(llava_node
   src/llava_main.cpp
 )
 target_link_libraries(llava_node
+  cv_bridge::cv_bridge
   llama_cpp_vendor::llama
   llama_cpp_vendor::mtmd
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${llama_msgs_TARGETS}
+  ${llama_cpp_vendor_TARGETS}
+  ${llama_hfhub_vendor_TARGETS}
   Threads::Threads
-)
-ament_target_dependencies(llava_node
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  llama_msgs
-  llama_cpp_vendor
-  cv_bridge
-  llama_hfhub_vendor
 )
 
 ament_export_dependencies(llama_cpp_vendor)
