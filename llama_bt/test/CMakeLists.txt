@@ -1,7 +1,7 @@
 if("$ENV{ROS_DISTRO}" STREQUAL "foxy" OR "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR "$ENV{ROS_DISTRO}" STREQUAL "humble")
   message(STATUS "Using BehaviorTree.CPP V3")
   set(BT_LIB_NAME behaviortree_cpp_v3)
-  set(BT_TARGET behaviortree_cpp_v3::behaviortree_cpp_v3)
+  set(BT_TARGET ${behaviortree_cpp_v3_TARGETS})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBTV3")
 elseif("$ENV{ROS_DISTRO}" STREQUAL "iron" OR "$ENV{ROS_DISTRO}" STREQUAL "jazzy" OR "$ENV{ROS_DISTRO}" STREQUAL "rolling")
   message(STATUS "Using BehaviorTree.CPP V4")
