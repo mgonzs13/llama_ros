@@ -23,23 +23,12 @@ include_directories(
 )
 
 # ROS 2 distros
-if(NOT DEFINED ENV{ROS_DISTRO})
-  message(FATAL_ERROR "ROS_DISTRO is not defined.")
-endif()
-if("$ENV{ROS_DISTRO}" STREQUAL "foxy")
-  message(STATUS "Build for ROS 2 Foxy")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFOXY")
-elseif("$ENV{ROS_DISTRO}" STREQUAL "humble")
-  message(STATUS "Build for ROS 2 Humble")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHUMBLE")
-elseif("$ENV{ROS_DISTRO}" STREQUAL "iron")
-  message(STATUS "Build for ROS 2 Iron")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIRON")
-elseif("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
-  message(STATUS "Build for ROS 2 Jazzy")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DJAZZY")
+if("$ENV{ROS_DISTRO}" STREQUAL "foxy" OR "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR "$ENV{ROS_DISTRO}" STREQUAL "humble")
+  message(STATUS "Using cv_bridge.h")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCV_BRIDGE_H")
 else()
-  message(FATAL_ERROR "Unsupported ROS Distribution: " "$ENV{ROS_DISTRO}")
+  message(STATUS "Using cv_bridge.hpp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCV_BRIDGE_HPP")
 endif()
 
 # llama nodes
