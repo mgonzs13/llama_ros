@@ -9,7 +9,7 @@
     <author email="ajtudela@gmail.com">Alberto Tudela</author>
     <buildtool_depend>ament_cmake</buildtool_depend>
     <depend condition="$ROS_DISTRO == 'foxy' or $ROS_DISTRO == 'galactic' or $ROS_DISTRO == 'humble'">behaviortree_cpp_v3</depend>
-    <depend condition="$ROS_DISTRO == 'iron' or $ROS_DISTRO == 'jazzy' or $ROS_DISTRO == 'rolling'">behaviortree_cpp</depend>
+    <depend condition="$ROS_DISTRO == 'iron' or $ROS_DISTRO == 'jazzy' or $ROS_DISTRO == 'kilted'">behaviortree_cpp</depend>
     <depend>ament_index_cpp</depend>
     <depend>rclcpp</depend>
     <depend>rclcpp_action</depend>
@@ -17,7 +17,6 @@
     <depend>llama_ros</depend>
     <depend>llama_msgs</depend>
     <depend>nlohmann-json-dev</depend>
-
     <test_depend>ament_cmake_clang_format</test_depend>
     <test_depend>ament_cmake_gtest</test_depend>
     <export>

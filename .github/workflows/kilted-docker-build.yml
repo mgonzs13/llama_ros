@@ -1,4 +1,4 @@
-name: Rolling Docker Build
+name: Kilted Docker Build
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     - cron: "0 5 * * 1"
 
 jobs:
-  rolling_docker_build:
+  kilted_docker_build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,5 +19,5 @@ jobs:
       - name: Build docker
         uses: docker/build-push-action@v6
         with:
-          build-args: ROS_DISTRO=rolling
+          build-args: ROS_DISTRO=kilted
           push: false

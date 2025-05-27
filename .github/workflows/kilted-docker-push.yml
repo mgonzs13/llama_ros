@@ -1,11 +1,11 @@
-name: Rolling Docker Push
+name: Kilted Docker Push
 
 on:
   release:
     types: [published]
 
 jobs:
-  rolling_docker_push:
+  kilted_docker_push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -30,6 +30,6 @@ jobs:
       - name: Build and push docker
         uses: docker/build-push-action@v6
         with:
-          build-args: ROS_DISTRO=rolling
+          build-args: ROS_DISTRO=kilted
           push: true
-          tags: mgons/llama_ros:rolling-${{ github.event.release.tag_name }}
+          tags: mgons/llama_ros:kilted-${{ github.event.release.tag_name }}
