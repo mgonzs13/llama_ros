@@ -29,7 +29,7 @@
 
 // Include behavior tree library
 #if defined(BTV3)
-#include <behaviortree_cpp_v3/behavior_tree.h>
+#include "behaviortree_cpp_v3/behavior_tree.h"
 #else
 #include "behaviortree_cpp/json_export.h"
 #endif

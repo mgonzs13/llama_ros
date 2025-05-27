@@ -100,6 +100,12 @@ foreach(bt_plugin ${plugin_libs})
     ${llama_msgs_TARGETS}
     ${llama_ros_TARGETS}
   )
+
+  # If using behavior_tree_cpp_v3, use ament_target_dependencies
+  if(BT_LIB_NAME STREQUAL "behaviortree_cpp_v3")
+    ament_target_dependencies(${bt_plugin} PUBLIC ${BT_LIB_NAME})
+  endif()
+
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
