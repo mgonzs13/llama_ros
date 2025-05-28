@@ -1,4 +1,4 @@
-ARG ROS_DISTRO=humble
+ARG ROS_DISTRO=rolling
 FROM ros:${ROS_DISTRO} AS deps
 
 # Create ros2_ws and copy files
@@ -14,8 +14,17 @@ RUN apt-get update \
     wget \
     python3 \
     python3-pip
-RUN rosdep install --from-paths src --ignore-src -r -y
-RUN if [ "$ROS_DISTRO" = "jazzy" ] || [ "$ROS_DISTRO" = "kilted" ] || [ "$ROS_DISTRO" = "rolling" ]; then \
+
+# Clone behavior_tree if ROS_DISTRO is rolling
+RUN if [ "$ROS_DISTRO" = "rolling" ]; then \
+    git clone https://github.com/BehaviorTree/BehaviorTree.CPP src/BehaviorTree.CPP; \
+    fi
+
+# Install rosdep
+RUN apt update && rosdep install --from-paths src --ignore-src -r -y
+
+# Check if ubuntu version is 24.04 or later
+RUN if [ "$(lsb_release -rs)" = "24.04" ] || [ "$(lsb_release -rs)" = "24.10" ]; then \
     pip3 install -r src/requirements.txt --break-system-packages --ignore-installed; \
     else \
     pip3 install -r src/requirements.txt; \
