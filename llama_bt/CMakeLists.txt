@@ -31,7 +31,7 @@ if(NOT DEFINED ENV{ROS_DISTRO})
   message(FATAL_ERROR "ROS_DISTRO is not defined.")
 endif()
 
-if("$ENV{ROS_DISTRO}" STREQUAL "foxy" OR "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR "$ENV{ROS_DISTRO}" STREQUAL "humble")
+if("$ENV{ROS_DISTRO}" STREQUAL "foxy" OR "$ENV{ROS_DISTRO}" STREQUAL "galactic" OR "$ENV{ROS_DISTRO}" STREQUAL "humble" OR "$ENV{ROS_DISTRO}" STREQUAL "iron")
   message(STATUS "Using BehaviorTree.CPP V3")
   set(BT_LIB_NAME behaviortree_cpp_v3)
   set(BT_TARGET ${behaviortree_cpp_v3_TARGETS})
