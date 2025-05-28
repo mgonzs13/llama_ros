@@ -8,8 +8,8 @@
     <license>MIT</license>
     <author email="ajtudela@gmail.com">Alberto Tudela</author>
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <depend condition="$ROS_DISTRO == 'foxy' or $ROS_DISTRO == 'galactic' or $ROS_DISTRO == 'humble'">behaviortree_cpp_v3</depend>
-    <depend condition="$ROS_DISTRO == 'iron' or $ROS_DISTRO == 'jazzy' or $ROS_DISTRO == 'kilted'">behaviortree_cpp</depend>
+    <depend condition="$ROS_DISTRO == 'foxy' or $ROS_DISTRO == 'galactic' or $ROS_DISTRO == 'humble' or $ROS_DISTRO == 'iron'">behaviortree_cpp_v3</depend>
+    <depend condition="$ROS_DISTRO != 'foxy' and $ROS_DISTRO != 'galactic' and $ROS_DISTRO != 'humble' and $ROS_DISTRO != 'iron'">behaviortree_cpp</depend>
     <depend>ament_index_cpp</depend>
     <depend>rclcpp</depend>
     <depend>rclcpp_action</depend>
