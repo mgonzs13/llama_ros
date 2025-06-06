@@ -160,7 +160,7 @@ struct ResponseResult {
  * @param string_size The size of the string to generate. Default is 32.
  * @return A random alphanumeric string.
  */
-inline std::string random_string(int string_size = 32) {
+static inline std::string random_string(int string_size) {
   static const std::string str(
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
@@ -174,6 +174,10 @@ inline std::string random_string(int string_size = 32) {
   }
 
   return result;
+}
+
+static inline std::string random_string() {
+  return random_string(32);
 }
 
 /**
@@ -219,7 +223,7 @@ struct common_chat_templates_inputs parse_chat_completions_goal(
  * @return The generated result for the action.
  */
 llama_msgs::action::GenerateChatCompletions::Result
-generate_chat_completions_result(const ResponseResult &result);
+generate_chat_completions_result(const common_chat_msg &msg);
 
 /**
  * @brief Generates feedback for a chat completion action.

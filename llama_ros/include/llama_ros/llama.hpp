@@ -816,6 +816,10 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
+  const common_chat_msg & update_chat_msg(enum StopType stop);
+  std::string  generated_text;
+
+
 protected:
   /**
    * @brief Common parameters for the model.
@@ -1046,6 +1050,13 @@ private:
    * @brief A mutex for thread-safe operations.
    */
   std::recursive_mutex mutex;
+
+  common_chat_msg oaicompat_msg;
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+  common_chat_msg chat_msg;
+  common_chat_syntax oaicompat_chat_syntax;
+  std::vector<std::string> generated_tool_call_ids;
+
 };
 
 } // namespace llama_ros

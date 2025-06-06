@@ -616,6 +616,9 @@ void LlamaNode::execute_chat_completions(
       this->llama->get_chat_params(tmpls.get(), prompt_format_config);
   auto sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                     this->llama->get_n_vocab());
+  common_chat_syntax oaicompat_chat_syntax;
+  oaicompat_chat_syntax.format = chat_prompt_instance.format;
+  // oaicompat_chat_syntax.reasoning_format = 
 
   if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
     sparams.grammar = chat_prompt_instance.grammar;
@@ -680,7 +683,9 @@ void LlamaNode::execute_chat_completions(
       response_result.probs_output.push_back(probs_msg);
     }
 
-    *result = llama_utils::generate_chat_completions_result(response_result);
+    common_chat_msg msg = this->llama->update_chat_msg(chat_output.stop);
+    this->llama->generated_text = this->llama->detokenize(msg.content_tokens);
+    *result = llama_utils::generate_chat_completions_result(msg);
   }
 
   if (rclcpp::ok()) {
@@ -702,20 +707,13 @@ void LlamaNode::execute_chat_completions(
 void LlamaNode::send_text_chat_completions(
     const struct CompletionOutput &completion) {
   if (this->goal_handle_chat_ != nullptr) {
-    // auto stat_usage = this->llama->get_perf_data();
-
     llama_utils::ResponseResult response_result;
 
     response_result.oaicompat_model = this->llama->get_metadata().general.name;
     response_result.oaicompat_cmpl_id = "chatcmplid-0";
     response_result.build_info =
         "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
-
-    // TODO: have some type of storage for single calls
-    // response_result.n_decoded = stat_usage.n_eval;
-    // response_result.n_prompt_tokens = stat_usage.n_p_eval;
-    // response_result.n_tokens_cached = stat_usage.n_eval +
-    // stat_usage.n_p_eval;
+  
     response_result.content = this->llama->detokenize({completion.token});
     response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 

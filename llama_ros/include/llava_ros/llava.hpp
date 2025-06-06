@@ -31,6 +31,7 @@
 
 #include "common.h"
 #include "mtmd.h"
+#include "mtmd-helper.h"
 
 #include "llama_ros/llama.hpp"
 

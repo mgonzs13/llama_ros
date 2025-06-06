@@ -25,7 +25,6 @@
 
 #include "common.h"
 #include "huggingface_hub.h"
-#include "json-schema-to-grammar.h"
 #include "json.hpp"
 
 #include "llama_utils/llama_params.hpp"

@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "common.h"
+#include "llama_utils/chat_utils.hpp"
 #include "sampling.h"
 
 #include "llama_ros/llama.hpp"
@@ -168,6 +169,13 @@ void Llama::reset() {
   this->n_past = 0;
   this->n_consumed = 0;
   this->ga_i = 0;
+
+  this->oaicompat_msg = {};
+  this->oaicompat_msg_diffs.clear();
+  this->chat_msg = {};
+  this->generated_text.clear();
+  this->oaicompat_chat_syntax = {};
+  this->generated_tool_call_ids.clear();
 
   this->prompt_tokens.clear();
 
@@ -1107,3 +1115,19 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
                        common_chat_templates_inputs inputs) {
   return common_chat_templates_apply(tmpls, inputs);
 }
+
+const common_chat_msg & Llama::update_chat_msg(enum StopType stop) {
+  auto previous_msg = chat_msg;
+  auto new_msg = common_chat_parse(
+      generated_text,
+      /* is_partial= */ stop != StopType::FULL_STOP,
+      oaicompat_chat_syntax);
+  if (!new_msg.empty()) {
+      std::function<std::string()> gen_tool_call_id = static_cast<std::string(*)()>(llama_utils::random_string);
+      new_msg.ensure_tool_call_ids_set(generated_tool_call_ids, gen_tool_call_id);
+      chat_msg = new_msg;
+      oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(previous_msg, new_msg.empty() ? previous_msg : new_msg);
+  }
+  return chat_msg;
+}
+

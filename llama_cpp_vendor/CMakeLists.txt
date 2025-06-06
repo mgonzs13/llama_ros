@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b5437
+  GIT_TAG        b5600
   GIT_SHALLOW    TRUE
 )
 
@@ -62,8 +62,12 @@ add_library(mtmd
 
 target_include_directories(mtmd
   PUBLIC
-    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
-    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/common>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/vendor>
+    $<INSTALL_INTERFACE:include>   
 )
 
 # CUDA
@@ -72,16 +76,23 @@ if(GGML_CUDA)
 endif()
 
 # export
-file(GLOB COMMON_HEADERS 
-  ${llama_SOURCE_DIR}/ggml/include/*
-  ${llama_SOURCE_DIR}/common/*.h
-  ${llama_SOURCE_DIR}/common/*.hpp
-  ${llama_SOURCE_DIR}/common/minja/*.hpp
-  ${llama_SOURCE_DIR}/tools/mtmd/*.h
-)
+# file(GLOB COMMON_HEADERS 
+#   ${llama_SOURCE_DIR}/ggml/include/*
+#   ${llama_SOURCE_DIR}/common/*.h
+#   ${llama_SOURCE_DIR}/common/*.hpp
+#   ${llama_SOURCE_DIR}/tools/mtmd/*.h
+#   ${llama_SOURCE_DIR}/vendor/nlohmann/*.hpp
+#   ${llama_SOURCE_DIR}/vendor/minja/*.hpp
+# )
 install(
-  FILES ${COMMON_HEADERS}
+  DIRECTORY
+    ${llama_SOURCE_DIR}/common/
+    ${llama_SOURCE_DIR}/ggml/include/
+    ${llama_SOURCE_DIR}/tools/mtmd/
+    ${llama_SOURCE_DIR}/vendor/nlohmann/
+    ${llama_SOURCE_DIR}/vendor/minja/
   DESTINATION include
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 set(INSTALL_TARGETS 

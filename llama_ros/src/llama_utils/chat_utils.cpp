@@ -93,18 +93,7 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 }
 
 llama_msgs::action::GenerateChatCompletions::Result
-llama_utils::generate_chat_completions_result(const ResponseResult &result) {
-
-  std::string finish_reason = "length";
-  common_chat_msg msg;
-
-  if (result.stop == llama_ros::FULL_STOP || result.stop == llama_ros::ABORT) {
-    msg = common_chat_parse(result.content, result.oaicompat_chat_format);
-    finish_reason = msg.tool_calls.empty() ? "stop" : "tool_calls";
-  } else {
-    msg.content = result.content;
-  }
-
+llama_utils::generate_chat_completions_result(const common_chat_msg &msg) {
   llama_msgs::msg::ChatMessage chat_msg;
 
   chat_msg.role = msg.role;
