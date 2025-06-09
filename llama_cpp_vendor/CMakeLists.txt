@@ -58,6 +58,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
 )
 
 target_include_directories(mtmd

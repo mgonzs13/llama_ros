@@ -23,6 +23,7 @@
 #ifndef LLAMA_UTILS__CHAT_UTILS_HPP
 #define LLAMA_UTILS__CHAT_UTILS_HPP
 
+#include <common.h>
 #include <llama_msgs/action/generate_chat_completions.hpp>
 #include <memory>
 #include <random>
@@ -152,6 +153,8 @@ struct ResponseResult {
    * @brief The OpenAI-compatible completion ID.
    */
   std::string oaicompat_cmpl_id;
+
+  common_chat_msg chat_msg;
 };
 
 /**
@@ -205,6 +208,9 @@ inline float logit(float x) {
  */
 common_chat_tool_choice parse_chat_tool_choice(int choice);
 
+common_reasoning_format parse_reasoning_format(
+    const int reasoning_format);
+
 /**
  * @brief Parses the goal for generating chat completions.
  *
@@ -223,7 +229,7 @@ struct common_chat_templates_inputs parse_chat_completions_goal(
  * @return The generated result for the action.
  */
 llama_msgs::action::GenerateChatCompletions::Result
-generate_chat_completions_result(const common_chat_msg &msg);
+generate_chat_completions_result(const ResponseResult &result);
 
 /**
  * @brief Generates feedback for a chat completion action.

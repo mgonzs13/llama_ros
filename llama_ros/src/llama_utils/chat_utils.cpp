@@ -21,7 +21,9 @@
 // SOFTWARE.
 
 #include "llama_utils/chat_utils.hpp"
+#include "llama_msgs/msg/chat_reasoning_format.hpp"
 #include "llama_ros/llama.hpp"
+#include <common.h>
 
 common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO) {
@@ -34,6 +36,19 @@ common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
     throw std::runtime_error("Unsupported chat tool choice: " +
                              std::to_string(type));
   }
+}
+
+common_reasoning_format llama_utils::parse_reasoning_format(
+    const int reasoning_format) {
+  if (reasoning_format ==
+      llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_DEEPSEEK) {
+    return COMMON_REASONING_FORMAT_DEEPSEEK;
+  } else if (reasoning_format ==
+             llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY) {
+    return COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
+  } else {
+    return COMMON_REASONING_FORMAT_NONE;
+  } 
 }
 
 struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
@@ -88,18 +103,28 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
   inputs.use_jinja = goal->use_jinja;
   inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);
   inputs.parallel_tool_calls = goal->parallel_tool_calls;
+  inputs.enable_thinking = goal->reasoning_format.value != 
+      llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_NONE;
 
   return inputs;
 }
 
 llama_msgs::action::GenerateChatCompletions::Result
-llama_utils::generate_chat_completions_result(const common_chat_msg &msg) {
+llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   llama_msgs::msg::ChatMessage chat_msg;
+  std::string finish_reason = "stop";
+
+  common_chat_msg msg = result.chat_msg;
+
+  if (msg.tool_calls.size() > 0) {
+    finish_reason = "tool_calls";
+  }
 
   chat_msg.role = msg.role;
   if (!msg.reasoning_content.empty()) {
     chat_msg.reasoning_content = msg.reasoning_content;
   }
+
   if (!msg.content.empty() || msg.tool_calls.empty()) {
     chat_msg.content = msg.content;
   }

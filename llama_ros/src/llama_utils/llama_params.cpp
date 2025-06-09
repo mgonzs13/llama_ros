@@ -27,6 +27,7 @@
 #include "huggingface_hub.h"
 #include "json.hpp"
 
+#include "json-schema-to-grammar.h"
 #include "llama_utils/llama_params.hpp"
 #include "llama_utils/logs.hpp"
 
@@ -518,7 +519,7 @@ common_grammar_trigger_type llama_utils::parse_grammar_trigger_type(int type) {
     return COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN;
   } else if (type == llama_msgs::msg::GrammarTrigger::
                          GRAMMAR_TRIGGER_TYPE_PATTERN_START) {
-    return COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN_START;
+    return COMMON_GRAMMAR_TRIGGER_TYPE_PATTERN_FULL;
   } else {
     throw std::runtime_error("Unsupported grammar trigger type: " +
                              std::to_string(type));

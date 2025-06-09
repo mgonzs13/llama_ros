@@ -21,7 +21,9 @@
 // SOFTWARE.
 
 #include <cassert>
+#include <chat.h>
 #include <cmath>
+#include <cstdio>
 #include <map>
 #include <memory>
 
@@ -174,7 +176,6 @@ void Llama::reset() {
   this->oaicompat_msg_diffs.clear();
   this->chat_msg = {};
   this->generated_text.clear();
-  this->oaicompat_chat_syntax = {};
   this->generated_tool_call_ids.clear();
 
   this->prompt_tokens.clear();
@@ -1116,12 +1117,12 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
   return common_chat_templates_apply(tmpls, inputs);
 }
 
-const common_chat_msg & Llama::update_chat_msg(enum StopType stop) {
+const common_chat_msg & Llama::update_chat_msg(enum StopType stop, const common_chat_syntax & syntax) {
   auto previous_msg = chat_msg;
   auto new_msg = common_chat_parse(
       generated_text,
       /* is_partial= */ stop != StopType::FULL_STOP,
-      oaicompat_chat_syntax);
+      syntax);
   if (!new_msg.empty()) {
       std::function<std::string()> gen_tool_call_id = static_cast<std::string(*)()>(llama_utils::random_string);
       new_msg.ensure_tool_call_ids_set(generated_tool_call_ids, gen_tool_call_id);
