@@ -34,13 +34,13 @@ from langchain_core.messages import AIMessage
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner."
+        prompt = "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner in English."
     else:
         prompt = " ".join(sys.argv[1:])
 
     rclpy.init()
     initial_time = -1
-    chat = ChatLlamaROS(temp=0.2, penalty_last_n=8)
+    chat = ChatLlamaROS(temp=0.2, penalty_last_n=8, enable_thinking=True)
 
     prompt = ChatPromptTemplate.from_messages(
         [

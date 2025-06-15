@@ -100,6 +100,7 @@ from llama_msgs.msg import (
     ChatChoiceChunk,
     TokenProbArray,
     TokenProb,
+    ChatReasoningFormat
 )
 from llama_msgs.action import GenerateChatCompletions
 import openai
@@ -671,12 +672,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         return result_dict
 
     def _parse_tool_choice(self, tool_choice: str) -> dict:
-        if tool_choice == "auto":
-            return ChatTool.TOOL_CHOICE_AUTO
+        if tool_choice == "none":
+            return ChatTool.TOOL_CHOICE_NONE
         elif tool_choice == "required":
             return ChatTool.TOOL_CHOICE_REQUIRED
         else:
-            return ChatTool.TOOL_CHOICE_NONE
+            return ChatTool.TOOL_CHOICE_AUTO
 
     def _send_llama_chat_request(self, payload: Dict[str, Any], **kwargs) -> Any:
         chat_request = GenerateChatCompletions.Goal()
@@ -685,6 +686,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.messages = []
         chat_request.tools = []
         chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
+        if self.enable_thinking:
+            chat_request.reasoning_format.value = ChatReasoningFormat.COMMON_REASONING_FORMAT_DEEPSEEK
+        else:
+            chat_request.reasoning_format.value = ChatReasoningFormat.COMMON_REASONING_FORMAT_NONE
 
         payload, image_urls = self._remove_image_url(payload)
 
@@ -703,7 +708,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if "tool_choice" in kwargs:
             chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])
         else:
-            chat_request.tool_choice = self._parse_tool_choice("none")
+            chat_request.tool_choice = self._parse_tool_choice("auto")
 
         for message in payload.get("messages", []):
             chat_message = RChatMessage()
