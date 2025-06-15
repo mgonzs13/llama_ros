@@ -15,6 +15,20 @@ option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
 
 FetchContent_MakeAvailable(llama)
 
+# Apply custom patch for chat-qwen parallel toolcall parse
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E echo "Applying patch: patches/0001-chat-qwen-parallel-toolcall-parse.patch"
+)
+execute_process(
+  COMMAND git -C ${llama_SOURCE_DIR} apply ${CMAKE_CURRENT_LIST_DIR}/patches/0001-chat-qwen-parallel-toolcall-parse.patch
+  RESULT_VARIABLE PATCH_RESULT
+  OUTPUT_VARIABLE PATCH_OUTPUT
+  ERROR_VARIABLE PATCH_ERROR
+)
+if(NOT PATCH_RESULT EQUAL 0)
+  message(WARNING "Failed to apply patch: ${PATCH_ERROR}")
+endif()
+
 # ggml
 set_target_properties(
   ggml PROPERTIES
