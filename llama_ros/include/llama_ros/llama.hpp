@@ -659,6 +659,14 @@ public:
   const struct llama_model *get_model() { return this->model; }
 
   /**
+   * @brief Retrieves the internal llama memory.
+   *
+   * @return A llama memory.
+   */
+  llama_memory_t get_memory() { return llama_get_memory(this->ctx); }
+
+
+  /**
    * @brief Retrieves the vocabulary associated with the llama model.
    *
    * @return A pointer to the llama vocabulary structure.

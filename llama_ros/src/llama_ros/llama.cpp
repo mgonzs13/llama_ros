@@ -161,7 +161,7 @@ Llama::~Llama() {
 */
 void Llama::reset() {
 
-  llama_kv_self_clear(this->ctx);
+  llama_memory_clear(this->get_memory(), true);
 
   if (this->sampler != nullptr) {
     common_sampler_reset(this->sampler);
@@ -470,7 +470,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   }
 
   // clear
-  llama_kv_self_seq_rm(this->ctx, 0, 0, -1);
+  llama_memory_seq_rm(this->get_memory(), 0, 0, -1);
   llama_batch_free(batch);
 
   // result
@@ -997,9 +997,9 @@ bool Llama::eval(struct llama_batch batch) {
         const int n_left = this->n_past - this->params.n_keep;
         const int n_discard = n_left / 2;
 
-        llama_kv_self_seq_rm(this->ctx, 0, this->params.n_keep,
+        llama_memory_seq_rm(this->get_memory(), 0, this->params.n_keep,
                              this->params.n_keep + n_discard);
-        llama_kv_self_seq_add(this->ctx, 0, this->params.n_keep + n_discard,
+        llama_memory_seq_add(this->get_memory(), 0, this->params.n_keep + n_discard,
                               n_past, -n_discard);
 
         this->n_past -= n_discard;
@@ -1015,10 +1015,10 @@ bool Llama::eval(struct llama_batch batch) {
         const int bd = (ga_w / ga_n) * (ga_n - 1);
         const int dd = (ga_w / ga_n) - ib * bd - ga_w;
 
-        llama_kv_self_seq_add(this->ctx, 0, this->ga_i, this->n_past, ib * bd);
-        llama_kv_self_seq_div(this->ctx, 0, this->ga_i + ib * bd,
+        llama_memory_seq_add(this->get_memory(), 0, this->ga_i, this->n_past, ib * bd);
+        llama_memory_seq_div(this->get_memory(), 0, this->ga_i + ib * bd,
                               this->ga_i + ib * bd + ga_w, ga_n);
-        llama_kv_self_seq_add(this->ctx, 0, this->ga_i + ib * bd + ga_w,
+        llama_memory_seq_add(this->get_memory(), 0, this->ga_i + ib * bd + ga_w,
                               this->n_past + ib * bd, dd);
 
         this->n_past -= bd;
