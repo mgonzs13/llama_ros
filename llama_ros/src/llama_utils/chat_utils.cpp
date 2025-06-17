@@ -38,17 +38,17 @@ common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   }
 }
 
-common_reasoning_format llama_utils::parse_reasoning_format(
-    const int reasoning_format) {
+common_reasoning_format
+llama_utils::parse_reasoning_format(const int reasoning_format) {
   if (reasoning_format ==
       llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_DEEPSEEK) {
     return COMMON_REASONING_FORMAT_DEEPSEEK;
-  } else if (reasoning_format ==
-             llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY) {
+  } else if (reasoning_format == llama_msgs::msg::ChatReasoningFormat::
+                                     COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY) {
     return COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
   } else {
     return COMMON_REASONING_FORMAT_NONE;
-  } 
+  }
 }
 
 struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
@@ -103,7 +103,8 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
   inputs.use_jinja = goal->use_jinja;
   inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);
   inputs.parallel_tool_calls = goal->parallel_tool_calls;
-  inputs.enable_thinking = goal->reasoning_format.value != 
+  inputs.enable_thinking =
+      goal->reasoning_format.value !=
       llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_NONE;
 
   return inputs;

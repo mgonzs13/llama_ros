@@ -607,10 +607,11 @@ void LlamaNode::execute_chat_completions(
 
   this->llama->reset();
 
-  auto ctx = llama_utils::prepare_chat_completions_call(goal, this->llama.get());
-  auto& sparams = ctx.sparams;
-  auto& oaicompat_chat_syntax = ctx.oaicompat_chat_syntax;
-  auto& chat_prompt_instance = ctx.chat_prompt_instance;
+  auto ctx =
+      llama_utils::prepare_chat_completions_call(goal, this->llama.get());
+  auto &sparams = ctx.sparams;
+  auto &oaicompat_chat_syntax = ctx.oaicompat_chat_syntax;
+  auto &chat_prompt_instance = ctx.chat_prompt_instance;
 
   llama_utils::ResponseResult response_result;
   response_result.oaicompat_model = this->llama->get_metadata().general.name;

@@ -180,9 +180,7 @@ static inline std::string random_string(int string_size) {
   return result;
 }
 
-static inline std::string random_string() {
-  return random_string(32);
-}
+static inline std::string random_string() { return random_string(32); }
 
 /**
  * @brief Generates a unique chat completion ID.
@@ -209,8 +207,7 @@ inline float logit(float x) {
  */
 common_chat_tool_choice parse_chat_tool_choice(int choice);
 
-common_reasoning_format parse_reasoning_format(
-    const int reasoning_format);
+common_reasoning_format parse_reasoning_format(const int reasoning_format);
 
 /**
  * @brief Parses the goal for generating chat completions.

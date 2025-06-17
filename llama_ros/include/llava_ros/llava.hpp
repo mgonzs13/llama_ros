@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "common.h"
-#include "mtmd.h"
 #include "mtmd-helper.h"
+#include "mtmd.h"
 
 #include "llama_ros/llama.hpp"
 
