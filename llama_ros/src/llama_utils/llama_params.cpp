@@ -156,6 +156,8 @@ struct LlamaParams llama_utils::get_llama_params(
   int32_t poll;
   int32_t poll_batch;
 
+  bool reranking = false;
+
   std::vector<std::string> stopping_words;
 
   std::vector<std::string> lora_adapters;
@@ -197,14 +199,8 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("main_gpu", params.params.main_gpu);
   node->get_parameter("tensor_split", tensor_split);
 
-  bool reranking = false;
   node->get_parameter("embedding", params.params.embedding);
   node->get_parameter("reranking", reranking);
-  if (reranking) {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
-  } else {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_NONE;
-  }
   node->get_parameter("use_mmap", params.params.use_mmap);
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
@@ -432,7 +428,8 @@ struct LlamaParams llama_utils::get_llama_params(
   params.params.cpuparams_batch.poll = poll_batch;
 
   // rerank
-  if (params.params.pooling_type == LLAMA_POOLING_TYPE_RANK) {
+  if (reranking) {
+    pooling_type = "rerank";
     params.params.embedding = true;
   }
 
@@ -471,6 +468,8 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
   } else if (pooling_type == "last") {
     params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
+  }else if (pooling_type == "rerank"){
+    params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
   } else {
     params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
   }
