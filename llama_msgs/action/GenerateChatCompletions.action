@@ -5,6 +5,7 @@ ChatReqTool[] tools                     # List of tools to use
 int32 tool_choice                       # TOOL_CHOICE_AUTO = 0, TOOL_CHOICE_REQUIRED = 1, TOOL_CHOICE_NONE = 2
 bool extract_reasoning                  # Extract reasoning from the chat messages
 SamplingConfig sampling_config          # Sampling configuration
+ChatReasoningFormat reasoning_format    # Reasoning format to use for the chat messages
 sensor_msgs/Image[] images              # Images to be used in the chat messages
 bool parallel_tool_calls                # Return more than one tool call per message
 bool stream                             # Stream the chat messages

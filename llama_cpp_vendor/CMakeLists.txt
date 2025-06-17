@@ -7,13 +7,27 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b5437
+  GIT_TAG        b5687
   GIT_SHALLOW    TRUE
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
 
 FetchContent_MakeAvailable(llama)
+
+# Apply custom patch for chat-qwen parallel toolcall parse
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E echo "Applying patch: patches/0001-chat-qwen-parallel-toolcall-parse.patch"
+)
+execute_process(
+  COMMAND git -C ${llama_SOURCE_DIR} apply ${CMAKE_CURRENT_LIST_DIR}/patches/0001-chat-qwen-parallel-toolcall-parse.patch
+  RESULT_VARIABLE PATCH_RESULT
+  OUTPUT_VARIABLE PATCH_OUTPUT
+  ERROR_VARIABLE PATCH_ERROR
+)
+if(NOT PATCH_RESULT EQUAL 0)
+  message(WARNING "Failed to apply patch: ${PATCH_ERROR}")
+endif()
 
 # ggml
 set_target_properties(
@@ -58,12 +72,17 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
 )
 
 target_include_directories(mtmd
   PUBLIC
-    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/ggml/include>
-    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/common>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/vendor>
+    $<INSTALL_INTERFACE:include>   
 )
 
 # CUDA
@@ -72,16 +91,15 @@ if(GGML_CUDA)
 endif()
 
 # export
-file(GLOB COMMON_HEADERS 
-  ${llama_SOURCE_DIR}/ggml/include/*
-  ${llama_SOURCE_DIR}/common/*.h
-  ${llama_SOURCE_DIR}/common/*.hpp
-  ${llama_SOURCE_DIR}/common/minja/*.hpp
-  ${llama_SOURCE_DIR}/tools/mtmd/*.h
-)
 install(
-  FILES ${COMMON_HEADERS}
+  DIRECTORY
+    ${llama_SOURCE_DIR}/common/
+    ${llama_SOURCE_DIR}/ggml/include/
+    ${llama_SOURCE_DIR}/tools/mtmd/
+    ${llama_SOURCE_DIR}/vendor/nlohmann/
+    ${llama_SOURCE_DIR}/vendor/minja/
   DESTINATION include
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 set(INSTALL_TARGETS 

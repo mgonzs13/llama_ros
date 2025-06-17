@@ -23,6 +23,7 @@
 #ifndef LLAMA_UTILS__CHAT_UTILS_HPP
 #define LLAMA_UTILS__CHAT_UTILS_HPP
 
+#include <common.h>
 #include <llama_msgs/action/generate_chat_completions.hpp>
 #include <memory>
 #include <random>
@@ -31,6 +32,7 @@
 
 #include "chat.h"
 #include "llama_ros/llama.hpp"
+#include "llama_utils/llama_params.hpp"
 
 namespace llama_utils {
 
@@ -152,6 +154,8 @@ struct ResponseResult {
    * @brief The OpenAI-compatible completion ID.
    */
   std::string oaicompat_cmpl_id;
+
+  common_chat_msg chat_msg;
 };
 
 /**
@@ -160,7 +164,7 @@ struct ResponseResult {
  * @param string_size The size of the string to generate. Default is 32.
  * @return A random alphanumeric string.
  */
-inline std::string random_string(int string_size = 32) {
+static inline std::string random_string(int string_size) {
   static const std::string str(
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
@@ -175,6 +179,8 @@ inline std::string random_string(int string_size = 32) {
 
   return result;
 }
+
+static inline std::string random_string() { return random_string(32); }
 
 /**
  * @brief Generates a unique chat completion ID.
@@ -200,6 +206,8 @@ inline float logit(float x) {
  * @return The parsed chat tool choice.
  */
 common_chat_tool_choice parse_chat_tool_choice(int choice);
+
+common_reasoning_format parse_reasoning_format(const int reasoning_format);
 
 /**
  * @brief Parses the goal for generating chat completions.
@@ -229,6 +237,28 @@ generate_chat_completions_result(const ResponseResult &result);
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(const ResponseResult &result);
+
+/**
+ * @brief Represents the context for chat completions.
+ */
+struct ChatCompletionsContext {
+  common_chat_syntax oaicompat_chat_syntax;
+  common_params_sampling sparams;
+  common_chat_templates_inputs prompt_format_config;
+  common_chat_params chat_prompt_instance;
+};
+
+/**
+ * @brief Prepares the context for chat completions.
+ *
+ * @param goal The goal shared pointer from the action server.
+ * @param llama The Llama instance.
+ * @return The prepared chat completions context.
+ */
+ChatCompletionsContext prepare_chat_completions_call(
+    const std::shared_ptr<
+        const llama_msgs::action::GenerateChatCompletions::Goal> &goal,
+    llama_ros::Llama *llama);
 
 } // namespace llama_utils
 

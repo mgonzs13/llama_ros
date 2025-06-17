@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ChatChoiceChunk.msg"
   "msg/ChatDeltaChunk.msg"
   "msg/UsageStats.msg"
+  "msg/ChatReasoningFormat.msg"
 
   "action/GenerateResponse.action"
   "action/GenerateChatCompletions.action"

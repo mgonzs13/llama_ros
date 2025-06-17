@@ -89,6 +89,8 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     grammar_triggers: List[List[Union[int, str]]] = []
     preserved_tokens: List[int] = []
 
+    enable_thinking: bool = False
+
     class Config:
         """Configuration for this pydantic object."""
 

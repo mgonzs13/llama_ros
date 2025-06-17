@@ -776,7 +776,9 @@ public:
    *
    * @return True if the model is in reranking mode, false otherwise.
    */
-  bool is_reranking() { return this->params.reranking; }
+  bool is_reranking() {
+    return this->params.pooling_type == LLAMA_POOLING_TYPE_RANK;
+  }
 
   /**
    * @brief Checks if the model adds a beginning-of-sequence (BOS) token.
@@ -815,6 +817,10 @@ public:
    * @return The separator token.
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
+
+  const common_chat_msg &update_chat_msg(enum StopType stop,
+                                         const common_chat_syntax &syntax);
+  std::string generated_text;
 
 protected:
   /**
@@ -1046,6 +1052,11 @@ private:
    * @brief A mutex for thread-safe operations.
    */
   std::recursive_mutex mutex;
+
+  common_chat_msg oaicompat_msg;
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+  common_chat_msg chat_msg;
+  std::vector<std::string> generated_tool_call_ids;
 };
 
 } // namespace llama_ros

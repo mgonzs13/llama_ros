@@ -104,7 +104,8 @@ bool Llava::load_image(std::vector<uint8_t> buf) {
 
   LLAMA_LOG_INFO("Loading image...");
 
-  mtmd::bitmap bmp(mtmd_helper_bitmap_init_from_buf(buf.data(), buf.size()));
+  mtmd::bitmap bmp(
+      mtmd_helper_bitmap_init_from_buf(this->mtmd_ctx, buf.data(), buf.size()));
 
   if (!bmp.ptr) {
     LLAMA_LOG_ERROR("Can't load image");
