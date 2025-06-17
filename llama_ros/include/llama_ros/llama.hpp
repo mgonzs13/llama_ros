@@ -776,7 +776,7 @@ public:
    *
    * @return True if the model is in reranking mode, false otherwise.
    */
-  bool is_reranking() { return this->params.reranking; }
+  bool is_reranking() { return this->params.pooling_type == LLAMA_POOLING_TYPE_RANK; }
 
   /**
    * @brief Checks if the model adds a beginning-of-sequence (BOS) token.

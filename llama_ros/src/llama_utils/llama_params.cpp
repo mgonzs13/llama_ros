@@ -197,8 +197,14 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("main_gpu", params.params.main_gpu);
   node->get_parameter("tensor_split", tensor_split);
 
+  bool reranking = false;
   node->get_parameter("embedding", params.params.embedding);
-  node->get_parameter("reranking", params.params.reranking);
+  node->get_parameter("reranking", reranking);
+  if (reranking) {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
+  } else {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_NONE;
+  }
   node->get_parameter("use_mmap", params.params.use_mmap);
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
@@ -426,7 +432,7 @@ struct LlamaParams llama_utils::get_llama_params(
   params.params.cpuparams_batch.poll = poll_batch;
 
   // rerank
-  if (params.params.reranking) {
+  if (params.params.pooling_type == LLAMA_POOLING_TYPE_RANK) {
     params.params.embedding = true;
   }
 
