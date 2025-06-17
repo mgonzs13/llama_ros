@@ -91,14 +91,6 @@ if(GGML_CUDA)
 endif()
 
 # export
-# file(GLOB COMMON_HEADERS 
-#   ${llama_SOURCE_DIR}/ggml/include/*
-#   ${llama_SOURCE_DIR}/common/*.h
-#   ${llama_SOURCE_DIR}/common/*.hpp
-#   ${llama_SOURCE_DIR}/tools/mtmd/*.h
-#   ${llama_SOURCE_DIR}/vendor/nlohmann/*.hpp
-#   ${llama_SOURCE_DIR}/vendor/minja/*.hpp
-# )
 install(
   DIRECTORY
     ${llama_SOURCE_DIR}/common/

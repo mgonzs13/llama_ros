@@ -259,3 +259,43 @@ llama_utils::generate_chat_completions_feedback(const ResponseResult &result) {
   ret.choices = choices;
   return {ret};
 }
+
+llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
+    const std::shared_ptr<
+        const llama_msgs::action::GenerateChatCompletions::Goal> &goal,
+    llama_ros::Llama *llama) {
+  llama_utils::ChatCompletionsContext ctx;
+
+  ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
+
+  // Get model chat template
+  auto tmpls = llama->get_chat_templates();
+  ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
+  ctx.chat_prompt_instance =
+      llama->get_chat_params(tmpls.get(), ctx.prompt_format_config);
+  ctx.sparams = llama_utils::parse_sampling_params(goal->sampling_config,
+                                                   llama->get_n_vocab());
+
+  ctx.oaicompat_chat_syntax.format = ctx.chat_prompt_instance.format;
+  ctx.oaicompat_chat_syntax.reasoning_format =
+      llama_utils::parse_reasoning_format(goal->reasoning_format.value);
+  ctx.oaicompat_chat_syntax.reasoning_in_content =
+      goal->stream && ctx.oaicompat_chat_syntax.reasoning_format !=
+                          COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
+  ctx.oaicompat_chat_syntax.thinking_forced_open =
+      ctx.chat_prompt_instance.thinking_forced_open;
+  ctx.oaicompat_chat_syntax.parse_tool_calls =
+      !goal->tools.empty() &&
+      ctx.prompt_format_config.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;
+
+  if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
+    ctx.sparams.grammar = ctx.chat_prompt_instance.grammar;
+  }
+  if (goal->sampling_config.grammar_triggers.empty()) {
+    ctx.sparams.grammar_triggers = ctx.chat_prompt_instance.grammar_triggers;
+  }
+  ctx.sparams.grammar_lazy = ctx.chat_prompt_instance.grammar_lazy ||
+                             goal->sampling_config.grammar_lazy;
+
+  return ctx;
+}

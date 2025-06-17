@@ -1117,18 +1117,19 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
   return common_chat_templates_apply(tmpls, inputs);
 }
 
-const common_chat_msg & Llama::update_chat_msg(enum StopType stop, const common_chat_syntax & syntax) {
+const common_chat_msg &
+Llama::update_chat_msg(enum StopType stop, const common_chat_syntax &syntax) {
   auto previous_msg = chat_msg;
-  auto new_msg = common_chat_parse(
-      generated_text,
-      /* is_partial= */ stop != StopType::FULL_STOP,
-      syntax);
+  auto new_msg =
+      common_chat_parse(generated_text,
+                        /* is_partial= */ stop != StopType::FULL_STOP, syntax);
   if (!new_msg.empty()) {
-      std::function<std::string()> gen_tool_call_id = static_cast<std::string(*)()>(llama_utils::random_string);
-      new_msg.ensure_tool_call_ids_set(generated_tool_call_ids, gen_tool_call_id);
-      chat_msg = new_msg;
-      oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(previous_msg, new_msg.empty() ? previous_msg : new_msg);
+    std::function<std::string()> gen_tool_call_id =
+        static_cast<std::string (*)()>(llama_utils::random_string);
+    new_msg.ensure_tool_call_ids_set(generated_tool_call_ids, gen_tool_call_id);
+    chat_msg = new_msg;
+    oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(
+        previous_msg, new_msg.empty() ? previous_msg : new_msg);
   }
   return chat_msg;
 }
-

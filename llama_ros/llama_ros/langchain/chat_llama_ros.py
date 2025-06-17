@@ -100,7 +100,7 @@ from llama_msgs.msg import (
     ChatChoiceChunk,
     TokenProbArray,
     TokenProb,
-    ChatReasoningFormat
+    ChatReasoningFormat,
 )
 from llama_msgs.action import GenerateChatCompletions
 import openai
@@ -687,9 +687,13 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.tools = []
         chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
         if self.enable_thinking:
-            chat_request.reasoning_format.value = ChatReasoningFormat.COMMON_REASONING_FORMAT_DEEPSEEK
+            chat_request.reasoning_format.value = (
+                ChatReasoningFormat.COMMON_REASONING_FORMAT_DEEPSEEK
+            )
         else:
-            chat_request.reasoning_format.value = ChatReasoningFormat.COMMON_REASONING_FORMAT_NONE
+            chat_request.reasoning_format.value = (
+                ChatReasoningFormat.COMMON_REASONING_FORMAT_NONE
+            )
 
         payload, image_urls = self._remove_image_url(payload)
 

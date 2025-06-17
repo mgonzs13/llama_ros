@@ -32,6 +32,7 @@
 
 #include "chat.h"
 #include "llama_ros/llama.hpp"
+#include "llama_utils/llama_params.hpp"
 
 namespace llama_utils {
 
@@ -239,6 +240,28 @@ generate_chat_completions_result(const ResponseResult &result);
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(const ResponseResult &result);
+
+/**
+ * @brief Represents the context for chat completions.
+ */
+struct ChatCompletionsContext {
+  common_chat_syntax oaicompat_chat_syntax;
+  common_params_sampling sparams;
+  common_chat_templates_inputs prompt_format_config;
+  common_chat_params chat_prompt_instance;
+};
+
+/**
+ * @brief Prepares the context for chat completions.
+ *
+ * @param goal The goal shared pointer from the action server.
+ * @param llama The Llama instance.
+ * @return The prepared chat completions context.
+ */
+ChatCompletionsContext prepare_chat_completions_call(
+    const std::shared_ptr<
+        const llama_msgs::action::GenerateChatCompletions::Goal> &goal,
+    llama_ros::Llama *llama);
 
 } // namespace llama_utils
 
