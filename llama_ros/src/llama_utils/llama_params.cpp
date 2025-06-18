@@ -468,7 +468,7 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
   } else if (pooling_type == "last") {
     params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
-  }else if (pooling_type == "rerank"){
+  } else if (pooling_type == "rerank") {
     params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
   } else {
     params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
