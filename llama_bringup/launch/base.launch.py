@@ -122,6 +122,7 @@ def generate_launch_description():
                 LaunchConfiguration("suffix", default=""), value_type=str
             ),
             "stopping_words": LaunchConfiguration("stopping_words", default="['']"),
+            "chat_template_file": LaunchConfiguration("chat_template_file", default=""),
             # prompt params
             "system_prompt": ParameterValue(
                 LaunchConfiguration("system_prompt", default=""), value_type=str

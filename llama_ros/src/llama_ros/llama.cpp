@@ -1105,7 +1105,7 @@ struct std::unique_ptr<struct common_chat_templates,
 Llama::get_chat_templates() {
   return std::unique_ptr<struct common_chat_templates,
                          common_chat_templates_deleter>(
-      common_chat_templates_init(this->get_model(), ""));
+      common_chat_templates_init(this->get_model(), this->params.chat_template));
 }
 
 struct llama_perf_context_data

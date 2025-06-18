@@ -666,10 +666,6 @@ void LlamaNode::execute_chat_completions(
     }
 
     this->llama->generated_text = response_result.content;
-    if (oaicompat_chat_syntax.reasoning_format !=
-        COMMON_REASONING_FORMAT_NONE) {
-      response_result.content = "<think>" + response_result.content;
-    }
     common_chat_msg msg =
         this->llama->update_chat_msg(chat_output.stop, oaicompat_chat_syntax);
     response_result.chat_msg = msg;

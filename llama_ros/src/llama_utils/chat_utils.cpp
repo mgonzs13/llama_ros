@@ -267,8 +267,6 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
     llama_ros::Llama *llama) {
   llama_utils::ChatCompletionsContext ctx;
 
-  ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
-
   // Get model chat template
   auto tmpls = llama->get_chat_templates();
   ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
