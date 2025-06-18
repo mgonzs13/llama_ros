@@ -439,7 +439,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   // llama eval
   struct llama_batch batch = llama_batch_init(this->params.n_batch, 0, 1);
   for (size_t i = 0; i < tokens.size(); i++) {
-    common_batch_add(batch, tokens[i], i, {0}, i == tokens.size() - 1);
+    common_batch_add(batch, tokens[i], i, {0}, true);
   }
 
   if (llama_encode(this->ctx, batch)) {

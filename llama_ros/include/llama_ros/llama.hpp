@@ -665,7 +665,6 @@ public:
    */
   llama_memory_t get_memory() { return llama_get_memory(this->ctx); }
 
-
   /**
    * @brief Retrieves the vocabulary associated with the llama model.
    *

@@ -159,6 +159,7 @@ bool Llava::eval_prompt() {
     } else if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
 
       LLAMA_LOG_INFO("Evaluating text");
+
       size_t n_tokens;
       auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
 
