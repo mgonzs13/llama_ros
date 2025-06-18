@@ -145,8 +145,9 @@ bool Llava::eval_prompt() {
   for (size_t i = 0; i < this->chunks.size(); i++) {
 
     auto chunk = mtmd_input_chunk_copy(this->chunks[i]);
+    auto chunk_type = mtmd_input_chunk_get_type(chunk);
 
-    if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
+    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
 
       LLAMA_LOG_INFO("Evaluating image");
 
@@ -154,7 +155,8 @@ bool Llava::eval_prompt() {
         LLAMA_LOG_ERROR("Error evaluating the image");
         return false;
       }
-    } else if (mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_TEXT) {
+
+    } else if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
 
       LLAMA_LOG_INFO("Evaluating text");
       size_t n_tokens;
