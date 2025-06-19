@@ -100,7 +100,7 @@ static std::string fnv_hash(const uint8_t *data, size_t len) {
   return std::to_string(hash);
 }
 
-bool Llava::load_image(std::vector<uint8_t> buf) {
+bool Llava::load_mtmd(std::vector<uint8_t> buf) {
 
   LLAMA_LOG_INFO("Loading image...");
 
@@ -120,14 +120,14 @@ bool Llava::load_image(std::vector<uint8_t> buf) {
   return true;
 }
 
-bool Llava::load_images(std::vector<std::vector<uint8_t>> images) {
+bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
 
-  LLAMA_LOG_INFO("Loading images...");
+  LLAMA_LOG_INFO("Loading mtmds...");
   this->bitmaps.entries.clear();
 
-  for (const auto &image : images) {
-    if (!this->load_image(image)) {
-      LLAMA_LOG_ERROR("Failed to load image");
+  for (const auto &mtmd : mtmds) {
+    if (!this->load_mtmd(mtmd)) {
+      LLAMA_LOG_ERROR("Failed to load mtmd");
       return false;
     }
   }
@@ -147,11 +147,12 @@ bool Llava::eval_prompt() {
     auto chunk = mtmd_input_chunk_copy(this->chunks[i]);
     auto chunk_type = mtmd_input_chunk_get_type(chunk);
 
-    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
+    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_IMAGE ||
+        chunk_type == MTMD_INPUT_CHUNK_TYPE_AUDIO) {
 
       LLAMA_LOG_INFO("Evaluating image");
 
-      if (!this->eval_image_chunk(chunk)) {
+      if (!this->eval_mtmd_chunk(chunk)) {
         LLAMA_LOG_ERROR("Error evaluating the image");
         return false;
       }
@@ -181,7 +182,7 @@ bool Llava::eval_prompt() {
   return true;
 }
 
-bool Llava::eval_image_chunk(const mtmd_input_chunk *image_chunk) {
+bool Llava::eval_mtmd_chunk(const mtmd_input_chunk *image_chunk) {
   return mtmd_helper_eval_chunk_single(this->mtmd_ctx, this->ctx, // contexts
                                        image_chunk,               // image chunk
                                        this->n_past,              // n_past

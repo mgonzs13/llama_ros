@@ -39,9 +39,21 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
+  llama_demos/mtmd_audio_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME mtmd_audio_demo_node
+)
+
+install(PROGRAMS
   llama_demos/chatllama_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME chatllama_demo_node
+)
+
+install(PROGRAMS
+  llama_demos/chatllama_audio_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME chatllama_audio_demo_node
 )
 
 install(PROGRAMS

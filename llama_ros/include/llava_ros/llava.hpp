@@ -70,21 +70,21 @@ public:
   void reset() override;
 
   /**
-   * @brief Loads an image into the Llava model.
+   * @brief Loads an mtmd into the Llava model.
    *
-   * @param std::vector<uint8_t> buf The image data as a byte buffer.
-   * @return True if the image is successfully loaded, false otherwise.
+   * @param std::vector<uint8_t> buf The mtmd data as a byte buffer.
+   * @return True if the mtmd is successfully loaded, false otherwise.
    */
-  bool load_image(std::vector<uint8_t> buf);
+  bool load_mtmd(std::vector<uint8_t> buf);
 
   /**
-   * @brief Loads an image into the Llava model.
+   * @brief Loads an mtmd into the Llava model.
    *
-   * @param std::vector<std::vector<uint8_t>> images The images data as a vector
+   * @param std::vector<std::vector<uint8_t>> mtmd The mtmds data as a vector
    * of
    * @return True if the image is successfully loaded, false otherwise.
    */
-  bool load_images(std::vector<std::vector<uint8_t>> images);
+  bool load_mtmds(std::vector<std::vector<uint8_t>> mtmds);
 
 protected:
   /**
@@ -101,16 +101,16 @@ protected:
                    bool add_sfx) override;
 
   /**
-   * @brief Evaluates a specific image chunk in the Llava model.
+   * @brief Evaluates a specific mtmd chunk in the Llava model.
    *
-   * This method processes the provided image chunk and integrates it into the
+   * This method processes the provided mtmd chunk and integrates it into the
    * model's context.
    *
-   * @param image_chunk The image chunk to evaluate.
-   * @return True if the image chunk evaluation is successful, false
+   * @param image_chunk The mtmd chunk to evaluate.
+   * @return True if the mtmd chunk evaluation is successful, false
    * otherwise.
    */
-  bool eval_image_chunk(const mtmd_input_chunk *image_chunk);
+  bool eval_mtmd_chunk(const mtmd_input_chunk *image_chunk);
 
   /**
    * @brief Evaluates the input prompt in the Llava model.

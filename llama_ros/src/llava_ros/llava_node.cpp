@@ -52,9 +52,15 @@ void LlavaNode::execute(
 
   auto result = std::make_shared<GenerateResponse::Result>();
   auto images_msg = goal_handle->get_goal()->images;
+  auto audios_msgs = goal_handle->get_goal()->audios;
 
   // load images
   if (!this->load_images(images_msg)) {
+    this->goal_handle_->abort(result);
+  }
+
+  // load audios
+  if (!this->load_audios(audios_msgs)) {
     this->goal_handle_->abort(result);
   }
 
@@ -77,11 +83,17 @@ void LlavaNode::execute_chat_completions(
 
   auto result = std::make_shared<GenerateChatCompletions::Result>();
   auto images_msg = goal_handle->get_goal()->images;
+  auto audios_msgs = goal_handle->get_goal()->audios;
 
   RCLCPP_INFO(this->get_logger(), "Executing chat completions");
 
   // load images
   if (!this->load_images(images_msg)) {
+    this->goal_handle_chat_->abort(result);
+  }
+
+  // load audios
+  if (!this->load_audios(audios_msgs)) {
     this->goal_handle_chat_->abort(result);
   }
 
@@ -107,11 +119,33 @@ bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
     }
   }
 
-  if (!static_cast<Llava *>(this->llama.get())->load_images(images)) {
+  if (!static_cast<Llava *>(this->llama.get())->load_mtmds(images)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to load images");
     return false;
   }
 
   RCLCPP_INFO(this->get_logger(), "Images loaded");
+  return true;
+}
+
+bool LlavaNode::load_audios(
+    std::vector<std_msgs::msg::UInt8MultiArray> audios_msgs) {
+
+  std::vector<std::vector<uchar>> audios;
+
+  for (const auto &audio_msg : audios_msgs) {
+    if (audio_msg.data.size() > 0) {
+      RCLCPP_INFO(this->get_logger(), "Loading audio...");
+      std::vector<uchar> buf;
+      audios.push_back(audio_msg.data);
+    }
+  }
+
+  if (!static_cast<Llava *>(this->llama.get())->load_mtmds(audios)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to load audios");
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Audios loaded");
   return true;
 }

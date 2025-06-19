@@ -2,6 +2,7 @@
 
 # MIT License
 #
+# Copyright (c) 2024 Alejandro González Cantón
 # Copyright (c) 2024 Miguel Ángel González Santamarta
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,66 +26,57 @@
 
 import sys
 import time
-import cv2
-import numpy as np
-import urllib.request
-
 import rclpy
-from cv_bridge import CvBridge
-from llama_ros.llama_client_node import LlamaClientNode
-from llama_msgs.action import GenerateResponse
-
-
-def load_image_from_url(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    response = urllib.request.urlopen(req)
-    arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-    img = cv2.imdecode(arr, -1)
-    return img
-
-
-def text_cb(feedback):
-    global eval_time, tokens
-    if eval_time < 0:
-        eval_time = time.time()
-    tokens += 1
-    print(feedback.feedback.partial_response.text, end="", flush=True)
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from llama_ros.langchain import ChatLlamaROS
 
 
 def main():
-    prompt = "<__media__>What type of food is the girl holding?"
-    use_image = True
-    image_url = "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
+    if len(sys.argv) < 2:
+        prompt = "What's that sound?"
+    else:
+        prompt = " ".join(sys.argv[1:])
 
-    if len(sys.argv) > 1:
-        prompt = sys.argv[1]
-    if len(sys.argv) > 2:
-        use_image = sys.argv[2].lower() in ["true", "1", "yes"]
-    if len(sys.argv) > 3:
-        image_url = sys.argv[3]
-
-    global tokens, eval_time
     tokens = 0
+    initial_time = -1
     eval_time = -1
 
     rclpy.init()
-    cv_bridge = CvBridge()
-    image = load_image_from_url(image_url) if use_image else None
-    llama_client = LlamaClientNode.get_instance()
+    chat = ChatLlamaROS(temp=0.0)
 
-    goal = GenerateResponse.Goal()
-    goal.prompt = prompt
-    goal.sampling_config.temp = 0.2
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage("You are an IA that answer questions."),
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {"type": "text", "text": f"<__media__>{prompt}"},
+                    {"type": "image_url", "image_url": "{audio_url}"},
+                ]
+            ),
+        ]
+    )
 
-    if use_image and image is not None:
-        goal.images.append(cv_bridge.cv2_to_imgmsg(image))
+    chain = prompt | chat | StrOutputParser()
 
     initial_time = time.time()
-    llama_client.generate_response(goal, text_cb)
-    end_time = time.time()
+    for text in chain.stream(
+        {
+            "audio_url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen2-Audio/audio/glass-breaking-151256.mp3"
+        }
+    ):
+        tokens += 1
+        print(text, end="", flush=True)
+        if eval_time < 0:
+            eval_time = time.time()
 
+    print("", end="\n", flush=True)
+
+    end_time = time.time()
     print(f"Time to eval: {eval_time - initial_time} s")
     print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
+
     rclpy.shutdown()
 
 

@@ -22,6 +22,8 @@
 # SOFTWARE.
 
 import cv2
+import requests
+import tempfile
 import numpy as np
 from abc import ABC
 import urllib.request
@@ -117,6 +119,20 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
             image = cv2.imdecode(arr, -1)
 
         return self.cv_bridge.cv2_to_imgmsg(image)
+
+    def download_audio_to_tempfile(self, url: str) -> str:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        temp_file.write(response.content)
+        temp_file.close()
+        return temp_file.name
+
+    def read_mp3_as_uint8_array(self, filename: str) -> np.ndarray:
+        with open(filename, "rb") as f:
+            data = f.read()
+        return np.frombuffer(data, dtype=np.uint8)
 
     def _create_action_goal(
         self,

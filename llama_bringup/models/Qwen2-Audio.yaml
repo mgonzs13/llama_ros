@@ -1,0 +1,15 @@
+use_llava: True
+
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 29
+n_threads: -1
+n_predict: 8192
+
+model_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+model_filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
+
+mmproj_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+mmproj_filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
+
+system_prompt_type: "ChatML"
