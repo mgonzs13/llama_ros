@@ -150,7 +150,7 @@ bool Llava::eval_prompt() {
     if (chunk_type == MTMD_INPUT_CHUNK_TYPE_IMAGE ||
         chunk_type == MTMD_INPUT_CHUNK_TYPE_AUDIO) {
 
-      LLAMA_LOG_INFO("Evaluating image");
+      LLAMA_LOG_INFO("Evaluating mtmd data");
 
       if (!this->eval_mtmd_chunk(chunk)) {
         LLAMA_LOG_ERROR("Error evaluating the image");

@@ -2,7 +2,7 @@ use_llava: True
 
 n_ctx: 8192
 n_batch: 512
-n_gpu_layers: 29
+n_gpu_layers: 20
 n_threads: -1
 n_predict: 8192
 
