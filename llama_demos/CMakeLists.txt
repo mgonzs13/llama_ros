@@ -69,6 +69,12 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
+  llama_demos/chatllama_streaming_tools_demo_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME chatllama_streaming_tools_demo_node
+)
+
+install(PROGRAMS
   llama_demos/chatllama_langgraph_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME chatllama_langgraph_demo_node

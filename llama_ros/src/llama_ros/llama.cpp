@@ -179,6 +179,7 @@ void Llama::reset() {
   this->generated_tool_call_ids.clear();
 
   this->prompt_tokens.clear();
+  this->oaicompat_chat_syntax = {};
 
   // load system prompt
   if (!this->eval_system_prompt()) {
@@ -1120,11 +1121,11 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
 }
 
 const common_chat_msg &
-Llama::update_chat_msg(enum StopType stop, const common_chat_syntax &syntax) {
+Llama::update_chat_msg(enum StopType stop) {
   auto previous_msg = chat_msg;
   auto new_msg =
       common_chat_parse(generated_text,
-                        /* is_partial= */ stop != StopType::FULL_STOP, syntax);
+                        /* is_partial= */ stop != StopType::FULL_STOP, this->oaicompat_chat_syntax);
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
         static_cast<std::string (*)()>(llama_utils::random_string);

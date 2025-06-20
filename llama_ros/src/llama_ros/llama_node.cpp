@@ -32,6 +32,7 @@
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama_node.hpp"
+#include "llama_ros/llama.hpp"
 #include "llama_utils/chat_utils.hpp"
 #include "llama_utils/llama_params.hpp"
 
@@ -610,7 +611,7 @@ void LlamaNode::execute_chat_completions(
   auto ctx =
       llama_utils::prepare_chat_completions_call(goal, this->llama.get());
   auto &sparams = ctx.sparams;
-  auto &oaicompat_chat_syntax = ctx.oaicompat_chat_syntax;
+  this->llama->oaicompat_chat_syntax = ctx.oaicompat_chat_syntax;
   auto &chat_prompt_instance = ctx.chat_prompt_instance;
 
   llama_utils::ResponseResult response_result;
@@ -621,6 +622,7 @@ void LlamaNode::execute_chat_completions(
 
   // call llama
   llama_perf_context_data prev_stat_usage = this->llama->get_perf_data();
+  this->llama->prev_stat_usage = prev_stat_usage;
   struct ResponseOutput chat_output = this->llama->generate_response(
       chat_prompt_instance.prompt, sparams,
       std::bind(&LlamaNode::send_text_chat_completions, this,
@@ -667,7 +669,7 @@ void LlamaNode::execute_chat_completions(
 
     this->llama->generated_text = response_result.content;
     common_chat_msg msg =
-        this->llama->update_chat_msg(chat_output.stop, oaicompat_chat_syntax);
+        this->llama->update_chat_msg(chat_output.stop);
     response_result.chat_msg = msg;
 
     RCLCPP_INFO(this->get_logger(), "Chat response generated %s",
@@ -705,6 +707,16 @@ void LlamaNode::send_text_chat_completions(
     response_result.content = this->llama->detokenize({completion.token});
     response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 
+    auto cur_stat_usage = this->llama->get_perf_data();
+    response_result.n_decoded = cur_stat_usage.n_eval - this->llama->prev_stat_usage.n_eval;
+    response_result.n_prompt_tokens =
+        cur_stat_usage.n_p_eval - this->llama->prev_stat_usage.n_p_eval;
+    response_result.n_tokens_cached = cur_stat_usage.n_eval + cur_stat_usage.n_p_eval -
+                                      this->llama->prev_stat_usage.n_eval -
+                                      this->llama->prev_stat_usage.n_p_eval;
+    response_result.stop = llama_ros::StopType::NO_STOP;
+    response_result.post_sampling_probs = false;
+
     for (auto prob_cmpl : completion.probs) {
       struct llama_utils::LogProb lobprob;
       lobprob.token = prob_cmpl.token;
@@ -713,10 +725,17 @@ void LlamaNode::send_text_chat_completions(
       response_result.probs_output[0].data.push_back(lobprob);
     }
 
+    this->llama->update_chat_msg(NO_STOP);
+    auto diffs = this->llama->oaicompat_msg_diffs;
+
     auto feedbacks =
-        llama_utils::generate_chat_completions_feedback(response_result);
+        llama_utils::generate_chat_completions_feedback(response_result, diffs);
+    
+    this->llama->prev_stat_usage = cur_stat_usage;
 
     for (auto &feedback : feedbacks) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Chat response feedback generated");
       this->goal_handle_chat_->publish_feedback(
           std::make_shared<GenerateChatCompletions::Feedback>(feedback));
     }

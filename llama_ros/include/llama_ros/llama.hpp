@@ -825,9 +825,12 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
-  const common_chat_msg &update_chat_msg(enum StopType stop,
-                                         const common_chat_syntax &syntax);
+  const common_chat_msg &update_chat_msg(enum StopType stop);
+
   std::string generated_text;
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+  common_chat_syntax oaicompat_chat_syntax;
+  llama_perf_context_data prev_stat_usage;
 
 protected:
   /**
@@ -1061,7 +1064,6 @@ private:
   std::recursive_mutex mutex;
 
   common_chat_msg oaicompat_msg;
-  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
   common_chat_msg chat_msg;
   std::vector<std::string> generated_tool_call_ids;
 };

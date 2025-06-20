@@ -24,6 +24,8 @@
 #include "llama_msgs/msg/chat_reasoning_format.hpp"
 #include "llama_ros/llama.hpp"
 #include <common.h>
+#include <cstddef>
+#include <llama_msgs/msg/detail/chat_req_tool__struct.hpp>
 
 common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
   if (type == llama_msgs::msg::ChatTool::TOOL_CHOICE_AUTO) {
@@ -131,11 +133,13 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
   }
   if (!msg.tool_calls.empty()) {
     std::vector<llama_msgs::msg::ChatToolCall> tool_calls;
-    for (const auto &tc : msg.tool_calls) {
+    for (size_t i = 0; i < msg.tool_calls.size(); ++i) {
+      const auto &tc = msg.tool_calls[i];
       llama_msgs::msg::ChatToolCall tool_call;
       tool_call.name = tc.name;
       tool_call.arguments = tc.arguments;
       tool_call.id = "call_" + llama_utils::random_string(8);
+      tool_call.index = i;
       tool_calls.push_back(tool_call);
     }
     chat_msg.tool_calls = tool_calls;
@@ -179,86 +183,65 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
 }
 
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
-llama_utils::generate_chat_completions_feedback(const ResponseResult &result) {
+llama_utils::generate_chat_completions_feedback(const ResponseResult &result, 
+                                                std::vector<common_chat_msg_diff> deltas) {
   bool first = result.n_decoded == 0;
 
+  std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;
   std::vector<llama_msgs::msg::ChatChoiceChunk> choices;
 
-  if (!first) {
+  if (first) {
+    llama_msgs::action::GenerateChatCompletions::Feedback first_msg;
+    first_msg.created = std::time(0);
+    first_msg.object = "chat.completion.chunk";
+    first_msg.model = result.oaicompat_model;
+    first_msg.id = result.oaicompat_cmpl_id;
+    first_msg.system_fingerprint = result.build_info;
+
     llama_msgs::msg::ChatChoiceChunk choice;
-    choice.finish_reason = "";
-    choice.index = 0;
     choice.delta.role = "assistant";
-    choice.delta.content = result.content;
-    choices.push_back(choice);
-  } else {
-    if (result.content.empty()) {
-      auto choice = llama_msgs::msg::ChatChoiceChunk();
-      choice.finish_reason = "";
-      choice.index = 0;
-      choice.delta.role = "assistant";
-      choices.push_back(choice);
-    } else {
-      llama_msgs::action::GenerateChatCompletions::Feedback first_ret;
-      first_ret.created = std::time(0);
-      first_ret.object = "chat.completion.chunk";
-      first_ret.model = result.oaicompat_model;
-      first_ret.usage.completion_tokens = result.n_decoded;
-      first_ret.usage.prompt_tokens = result.n_prompt_tokens;
-      first_ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
-      first_ret.system_fingerprint = result.build_info;
+    choice.index = 0;
+    choice.finish_reason = "";
+    choice.delta.content = "";
 
-      llama_msgs::msg::ChatChoiceChunk choice;
-      choice.finish_reason = "";
-      choice.index = 0;
-      choice.delta.role = "assistant";
-      first_ret.choices.push_back(choice);
-
-      llama_msgs::action::GenerateChatCompletions::Feedback second_ret;
-      second_ret.created = std::time(0);
-      second_ret.object = "chat.completion.chunk";
-      second_ret.model = result.oaicompat_model;
-      second_ret.usage.completion_tokens = result.n_decoded;
-      second_ret.usage.prompt_tokens = result.n_prompt_tokens;
-      second_ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
-      second_ret.system_fingerprint = result.build_info;
-
-      llama_msgs::msg::ChatChoiceChunk choice2;
-      choice2.finish_reason = "";
-      choice2.index = 0;
-      choice2.delta.role = "assistant";
-      choice2.delta.content = result.content;
-
-      second_ret.choices.push_back(choice2);
-      return {first_ret, second_ret};
-    }
+    first_msg.choices.push_back(choice);
+    feedbacks.push_back(first_msg);
   }
 
-  llama_msgs::action::GenerateChatCompletions::Feedback ret;
-  ret.created = std::time(0);
-  ret.object = "chat.completion.chunk";
-  ret.model = result.oaicompat_model;
-  ret.usage.completion_tokens = result.n_decoded;
-  ret.usage.prompt_tokens = result.n_prompt_tokens;
-  ret.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
-  ret.system_fingerprint = result.build_info;
+  for (auto &diff : deltas) {
+    llama_msgs::action::GenerateChatCompletions::Feedback feedback;
+    feedback.created = std::time(0);
+    feedback.object = "chat.completion.chunk";
+    feedback.model = result.oaicompat_model;
+    feedback.id = result.oaicompat_cmpl_id;
+    feedback.system_fingerprint = result.build_info;
+    feedback.usage.completion_tokens = result.n_decoded;
+    feedback.usage.prompt_tokens = result.n_prompt_tokens;
+    feedback.usage.total_tokens = result.n_decoded + result.n_prompt_tokens;
 
-  if (result.probs_output.size() > 0) {
-    auto prob = result.probs_output[0];
-    llama_msgs::msg::TokenProbArray probs_msg;
-    probs_msg.chosen_token = prob.chosen_token.token;
-    for (const auto &p : prob.data) {
-      llama_msgs::msg::TokenProb aux;
-      aux.token = p.token;
-      aux.probability = p.probability;
-      aux.token_text = p.text;
-      probs_msg.data.push_back(aux);
+    llama_msgs::msg::ChatChoiceChunk choice;
+    choice.index = 0;
+    choice.finish_reason = "";
+    choice.delta.role = "assistant";
+
+    if (!diff.reasoning_content_delta.empty()) {
+      choice.delta.reasoning_content = diff.reasoning_content_delta;
     }
-    choices[0].logprobs = probs_msg;
+    if (!diff.content_delta.empty()) {
+      choice.delta.content = diff.content_delta;
+    }
+    if (diff.tool_call_index != std::string::npos) {
+      llama_msgs::msg::ChatToolCall tool_call;
+      tool_call.index = diff.tool_call_index;
+      if (!diff.tool_call_delta.id.empty()) {
+          tool_call.id = diff.tool_call_delta.id;
+          tool_call.arguments = diff.tool_call_delta.arguments;
+          tool_call.name = diff.tool_call_delta.name;
+      }
+      choice.delta.tool_calls.push_back(tool_call);
+    }
   }
-
-  ret.choices = choices;
-  return {ret};
+  return feedbacks;
 }
 
 llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
