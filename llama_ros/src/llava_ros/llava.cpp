@@ -57,7 +57,7 @@ void Llava::reset() { Llama::reset(); }
 
 /*
 *****************************
-*        LOAD IMAGE         *
+*        LOAD MTMDS         *
 *****************************
 */
 void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
@@ -123,7 +123,6 @@ bool Llava::load_mtmd(std::vector<uint8_t> buf) {
 bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
 
   LLAMA_LOG_INFO("Loading mtmds...");
-  this->bitmaps.entries.clear();
 
   for (const auto &mtmd : mtmds) {
     if (!this->load_mtmd(mtmd)) {
@@ -134,6 +133,8 @@ bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
 
   return true;
 }
+
+void Llava::clear_mtmds() { this->bitmaps.entries.clear(); }
 
 /*
 *****************************

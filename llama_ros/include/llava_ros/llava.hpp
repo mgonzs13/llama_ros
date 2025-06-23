@@ -86,6 +86,11 @@ public:
    */
   bool load_mtmds(std::vector<std::vector<uint8_t>> mtmds);
 
+  /**
+   * @brief Clears all loaded mtmds from the Llava model.
+   */
+  void clear_mtmds();
+
 protected:
   /**
    * @brief Loads a prompt into the Llava model.

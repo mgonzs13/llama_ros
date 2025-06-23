@@ -54,6 +54,9 @@ void LlavaNode::execute(
   auto images_msg = goal_handle->get_goal()->images;
   auto audios_msgs = goal_handle->get_goal()->audios;
 
+  // Clear mtmds
+  static_cast<Llava *>(this->llama.get())->clear_mtmds();
+
   // load images
   if (!this->load_images(images_msg)) {
     this->goal_handle_->abort(result);
