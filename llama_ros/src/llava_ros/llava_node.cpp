@@ -90,6 +90,9 @@ void LlavaNode::execute_chat_completions(
 
   RCLCPP_INFO(this->get_logger(), "Executing chat completions");
 
+  // Clear mtmds
+  static_cast<Llava *>(this->llama.get())->clear_mtmds();
+
   // load images
   if (!this->load_images(images_msg)) {
     this->goal_handle_chat_->abort(result);

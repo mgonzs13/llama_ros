@@ -102,13 +102,13 @@ static std::string fnv_hash(const uint8_t *data, size_t len) {
 
 bool Llava::load_mtmd(std::vector<uint8_t> buf) {
 
-  LLAMA_LOG_INFO("Loading image...");
+  LLAMA_LOG_INFO("Loading mtmd...");
 
   mtmd::bitmap bmp(
       mtmd_helper_bitmap_init_from_buf(this->mtmd_ctx, buf.data(), buf.size()));
 
   if (!bmp.ptr) {
-    LLAMA_LOG_ERROR("Can't load image");
+    LLAMA_LOG_ERROR("Can't load mtmd");
     return false;
   }
 
@@ -134,7 +134,10 @@ bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
   return true;
 }
 
-void Llava::clear_mtmds() { this->bitmaps.entries.clear(); }
+void Llava::clear_mtmds() {
+  LLAMA_LOG_ERROR("Clearing mtmds...");
+  this->bitmaps.entries.clear();
+}
 
 /*
 *****************************
