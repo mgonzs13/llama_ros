@@ -265,6 +265,8 @@ def generate_launch_description():
 ros2 launch llama_bringup llava.launch.py
 ```
 
+</details>
+
 #### llava_ros (Audio)
 
 <details>
