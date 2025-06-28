@@ -29,7 +29,6 @@ import numpy as np
 import requests
 import tempfile
 
-
 import rclpy
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
@@ -38,6 +37,7 @@ from std_msgs.msg import UInt8MultiArray
 
 def download_audio_to_tempfile(url: str) -> str:
     """Download WAV file to a temporary file and return its path."""
+    print(f"Downloading audio file '{url}'")
     response = requests.get(url)
     response.raise_for_status()
 
@@ -96,7 +96,7 @@ def main():
     llama_client.generate_response(goal, text_cb)
     end_time = time.time()
 
-    print(f"Time to eval: {eval_time - initial_time} s")
+    print(f"\nTime to eval: {eval_time - initial_time} s")
     print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
     rclpy.shutdown()
 
