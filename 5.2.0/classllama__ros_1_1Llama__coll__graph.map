@@ -1,0 +1,20 @@
+<map id="llama_ros::Llama" name="llama_ros::Llama">
+<area shape="rect" id="Node000001" title="A class representing a llama.cpp." alt="" coords="706,199,825,225"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="178,54,255,80"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="270,52,355,38,461,33,519,36,576,46,631,62,683,87,712,112,735,143,762,198,757,200,731,145,709,116,680,92,629,67,575,51,518,42,461,38,355,44,271,57"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="359,85,519,110"/>
+<area shape="poly" id="edge9_Node000009_Node000002" title=" " alt="" coords="271,71,359,84,359,89,271,77"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,46,129,87"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="144,64,178,64,178,69,144,69"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="368,134,510,175"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="525,163,682,189,712,196,711,201,681,195,525,169"/>
+<area shape="rect" id="Node000005" href="$classllama__utils_1_1Spinner.html" title="A utility class for displaying a spinning animation in the terminal." alt="" coords="372,199,506,225"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="521,209,705,209,705,215,521,215"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="377,249,501,290"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="516,257,681,230,712,223,713,228,682,235,516,262"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="369,314,509,340"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="524,316,602,301,642,289,680,274,720,249,750,223,753,227,723,254,683,279,644,294,603,306,525,321"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="368,364,510,404"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="525,380,604,366,644,352,680,333,708,308,730,278,757,224,762,227,734,281,712,312,683,337,646,357,606,371,526,385"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="534,104,608,120,683,146,722,170,752,197,749,201,719,175,681,150,607,125,533,110"/>
+</map>
