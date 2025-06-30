@@ -31,9 +31,9 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include "chat.h"
+#include "llama_msgs/msg/chat_reasoning_format.hpp"
 #include "llama_ros/llama.hpp"
 #include "llama_utils/llama_params.hpp"
-#include "llama_msgs/msg/chat_reasoning_format.hpp"
 
 namespace llama_utils {
 
@@ -237,7 +237,9 @@ generate_chat_completions_result(const ResponseResult &result);
  * @return A vector of feedback messages for the action.
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
-generate_chat_completions_feedback(const ResponseResult &result, std::vector<common_chat_msg_diff> deltas = {});
+generate_chat_completions_feedback(
+    const ResponseResult &result,
+    std::vector<common_chat_msg_diff> deltas = {});
 
 /**
  * @brief Represents the context for chat completions.

@@ -96,21 +96,31 @@ void llama_utils::declare_llama_params(
                                             {"n_sequences", 1},
                                             {"yarn_orig_ctx", 0},
                                         });
-  node->declare_parameters<std::string>(
-      "", {
-              {"model_path", ""},      {"model_repo", ""},
-              {"model_filename", ""},  {"mmproj_path", ""},
-              {"mmproj_repo", ""},     {"mmproj_filename", ""},
-              {"cpu_mask", ""},        {"cpu_range", ""},
-              {"cpu_mask_batch", ""},  {"cpu_range_batch", ""},
-              {"priority", "normal"},  {"priority_batch", "normal"},
-              {"split_mode", "layer"}, {"rope_scaling_type", ""},
-              {"numa", "none"},        {"pooling_type", ""},
-              {"cache_type_k", "f16"}, {"cache_type_v", "f16"},
-              {"system_prompt", ""},   {"system_prompt_file", ""},
-              {"prefix", ""},          {"suffix", ""},
-              {"chat_template_file", ""},
-          });
+  node->declare_parameters<std::string>("", {
+                                                {"model_path", ""},
+                                                {"model_repo", ""},
+                                                {"model_filename", ""},
+                                                {"mmproj_path", ""},
+                                                {"mmproj_repo", ""},
+                                                {"mmproj_filename", ""},
+                                                {"cpu_mask", ""},
+                                                {"cpu_range", ""},
+                                                {"cpu_mask_batch", ""},
+                                                {"cpu_range_batch", ""},
+                                                {"priority", "normal"},
+                                                {"priority_batch", "normal"},
+                                                {"split_mode", "layer"},
+                                                {"rope_scaling_type", ""},
+                                                {"numa", "none"},
+                                                {"pooling_type", ""},
+                                                {"cache_type_k", "f16"},
+                                                {"cache_type_v", "f16"},
+                                                {"system_prompt", ""},
+                                                {"system_prompt_file", ""},
+                                                {"prefix", ""},
+                                                {"suffix", ""},
+                                                {"chat_template_file", ""},
+                                            });
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
                 {"devices", std::vector<std::string>({})},
