@@ -152,6 +152,13 @@ protected:
    * This method processes the input images and prepares them.
    */
   bool load_images(std::vector<sensor_msgs::msg::Image> images_msg);
+
+  /**
+   * @brief Load audios from a vector of messages.
+   *
+   * This method processes the input audios and prepares them.
+   */
+  bool load_audios(std::vector<std_msgs::msg::UInt8MultiArray> audios_msg);
 };
 
 } // namespace llava_ros

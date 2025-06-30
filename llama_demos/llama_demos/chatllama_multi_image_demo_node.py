@@ -53,7 +53,7 @@ def main():
                 template=[
                     {
                         "type": "text",
-                        "text": f"<__image__>Who is the character in the middle?",
+                        "text": f"<__media__>Who is the character in the middle?",
                     },
                     {
                         "type": "image_url",
@@ -66,7 +66,7 @@ def main():
                 template=[
                     {
                         "type": "text",
-                        "text": f"<__image__>{prompt}",
+                        "text": f"<__media__>{prompt}",
                     },
                     {"type": "image_url", "image_url": "{image_url}"},
                 ]

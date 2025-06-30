@@ -267,6 +267,44 @@ ros2 launch llama_bringup llava.launch.py
 
 </details>
 
+#### llava_ros (Audio)
+
+<details>
+<summary>Click to expand</summary>
+
+```yaml
+use_llava: True
+
+n_ctx: 8192
+n_batch: 512
+n_gpu_layers: 29
+n_threads: -1
+n_predict: 8192
+
+model_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+model_filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
+
+mmproj_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+mmproj_filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
+
+system_prompt_type: "ChatML"
+```
+
+```python
+def generate_launch_description():
+    return LaunchDescription([
+        create_llama_launch_from_yaml(os.path.join(
+            get_package_share_directory("llama_bringup"),
+            "models", "Qwen2-Audio.yaml"))
+    ])
+```
+
+```shell
+ros2 launch llama_bringup llava.launch.py
+```
+
+</details>
+
 ### LoRA Adapters
 
 You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3. You can lis the
@@ -776,7 +814,7 @@ chat = ChatLlamaROS(
 prompt = ChatPromptTemplate.from_messages([
     SystemMessage("You are a IA that just answer with a single word."),
     HumanMessagePromptTemplate.from_template(template=[
-        {"type": "text", "text": "<__image__>Who is the character in the middle of the image?"},
+        {"type": "text", "text": "<__media__>Who is the character in the middle of the image?"},
         {"type": "image_url", "image_url": "{image_url}"}
     ])
 ])
@@ -794,6 +832,72 @@ rclpy.shutdown()
 ```
 
 </details>
+
+#### chat_llama_ros (Chat + Audio)
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+import sys
+import time
+import rclpy
+from langchain_core.messages import SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from llama_ros.langchain import ChatLlamaROS
+
+
+def main():
+    if len(sys.argv) < 2:
+        prompt = "What's that sound?"
+    else:
+        prompt = " ".join(sys.argv[1:])
+
+    tokens = 0
+    initial_time = -1
+    eval_time = -1
+
+    rclpy.init()
+    chat = ChatLlamaROS(temp=0.0)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage("You are an IA that answer questions."),
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {"type": "text", "text": f"<__media__>{prompt}"},
+                    {"type": "image_url", "image_url": "{audio_url}"},
+                ]
+            ),
+        ]
+    )
+
+    chain = prompt | chat | StrOutputParser()
+
+    initial_time = time.time()
+    for text in chain.stream(
+        {
+            "audio_url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen2-Audio/audio/glass-breaking-151256.mp3"
+        }
+    ):
+        tokens += 1
+        print(text, end="", flush=True)
+        if eval_time < 0:
+            eval_time = time.time()
+
+    print("", end="\n", flush=True)
+
+    end_time = time.time()
+    print(f"Time to eval: {eval_time - initial_time} s")
+    print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
+
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+```
 
 </details>
 
@@ -948,7 +1052,7 @@ rclpy.shutdown()
 
 </details>
 
-#### chat_llama_ros (langgraph)
+#### chat_llama_ros (LangGraph)
 
 <details>
 <summary>Click to expand</summary>

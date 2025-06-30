@@ -25,22 +25,33 @@
 
 import sys
 import time
-import cv2
 import numpy as np
-import urllib.request
+import requests
+import tempfile
 
 import rclpy
-from cv_bridge import CvBridge
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.action import GenerateResponse
+from std_msgs.msg import UInt8MultiArray
 
 
-def load_image_from_url(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    response = urllib.request.urlopen(req)
-    arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-    img = cv2.imdecode(arr, -1)
-    return img
+def download_audio_to_tempfile(url: str) -> str:
+    """Download WAV file to a temporary file and return its path."""
+    print(f"Downloading audio file '{url}'")
+    response = requests.get(url)
+    response.raise_for_status()
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    temp_file.write(response.content)
+    temp_file.close()
+    return temp_file.name
+
+
+def read_mp3_as_uint8_array(filename: str) -> np.ndarray:
+    """Read the binary MP3 file and return a NumPy array of uint8."""
+    with open(filename, "rb") as f:
+        data = f.read()
+    return np.frombuffer(data, dtype=np.uint8)
 
 
 def text_cb(feedback):
@@ -52,38 +63,40 @@ def text_cb(feedback):
 
 
 def main():
-    prompt = "<__media__>What type of food is the girl holding?"
-    use_image = True
-    image_url = "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg"
+    prompt = "<__media__>What's that sound?"
+    use_audio = True
+    audio_url = "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen2-Audio/audio/glass-breaking-151256.mp3"
 
     if len(sys.argv) > 1:
         prompt = sys.argv[1]
     if len(sys.argv) > 2:
-        use_image = sys.argv[2].lower() in ["true", "1", "yes"]
+        use_audio = sys.argv[2].lower() in ["true", "1", "yes"]
     if len(sys.argv) > 3:
-        image_url = sys.argv[3]
+        use_audio = sys.argv[3]
 
     global tokens, eval_time
     tokens = 0
     eval_time = -1
 
     rclpy.init()
-    cv_bridge = CvBridge()
-    image = load_image_from_url(image_url) if use_image else None
+    file_path = download_audio_to_tempfile(audio_url)
+    mp3_array = read_mp3_as_uint8_array(file_path)
     llama_client = LlamaClientNode.get_instance()
 
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
-    goal.sampling_config.temp = 0.2
+    goal.sampling_config.temp = 0.8
 
-    if use_image and image is not None:
-        goal.images.append(cv_bridge.cv2_to_imgmsg(image))
+    if use_audio and mp3_array is not None:
+        msg = UInt8MultiArray()
+        msg.data = mp3_array.tolist()
+        goal.audios.append(msg)
 
     initial_time = time.time()
     llama_client.generate_response(goal, text_cb)
     end_time = time.time()
 
-    print(f"Time to eval: {eval_time - initial_time} s")
+    print(f"\nTime to eval: {eval_time - initial_time} s")
     print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
     rclpy.shutdown()
 

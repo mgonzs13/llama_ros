@@ -24,6 +24,7 @@
 import cv2
 import json
 import base64
+import requests
 import numpy as np
 from typing import (
     Any,
@@ -76,6 +77,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from std_msgs.msg import UInt8MultiArray
 from langchain_openai.chat_models.base import (
     _create_usage_metadata,
     _lc_invalid_tool_call_to_openai_tool_call,
@@ -519,22 +521,47 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     #     ROS related code        #
     #                             #
     ###############################
-    def _remove_image_url(self, data):
+    def get_file_type(self, url: str) -> str:
+        try:
+            # HEAD is faster and avoids downloading the full file
+            response = requests.head(url, allow_redirects=True, timeout=10)
+            content_type = response.headers.get("Content-Type", "")
+
+            if content_type.startswith("image/"):
+                return "image"
+            elif content_type.startswith("audio/"):
+                return "audio"
+            else:
+                return "other"
+        except requests.RequestException as e:
+            return f"Error: {e}"
+
+    def _remove_mtmd_url(self, data):
         image_urls = []
+        audios_urls = []
 
         for message in data.get("messages", []):
             if isinstance(message.get("content"), list):
                 # Extract the URL if an image_url exists
                 for item in message["content"]:
                     if item.get("type") == "image_url":
-                        image_urls.append(item["image_url"]["url"])
+                        if self.get_file_type(item["image_url"]["url"]) == "image":
+                            image_urls.append(item["image_url"]["url"])
+                        elif self.get_file_type(item["image_url"]["url"]) == "audio":
+                            audios_urls.append(item["image_url"]["url"])
 
                 # Remove all 'image_url' type items
                 message["content"] = [
                     item for item in message["content"] if item.get("type") != "image_url"
                 ]
 
-        return data, image_urls
+                message["content"] = [
+                    item
+                    for item in message["content"]
+                    if item.get("type") != "audios_url"
+                ]
+
+        return data, image_urls, audios_urls
 
     def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
         result_dict = {}
@@ -698,7 +725,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 ChatReasoningFormat.COMMON_REASONING_FORMAT_NONE
             )
 
-        payload, image_urls = self._remove_image_url(payload)
+        payload, image_urls, audio_urls = self._remove_mtmd_url(payload)
 
         if image_urls:
             image = None
@@ -711,6 +738,17 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     image_url = None
 
                 chat_request.images.append(self._get_image(image_url, image))
+
+        if audio_urls:
+            image = None
+            for audio_url in audio_urls:
+                file_path = self.download_audio_to_tempfile(audio_url)
+                mp3_array = self.read_mp3_as_uint8_array(file_path)
+                msg = UInt8MultiArray()
+                msg.data = mp3_array.tolist()
+                audio_url = None
+
+                chat_request.audios.append(msg)
 
         if "tool_choice" in kwargs:
             chat_request.tool_choice = self._parse_tool_choice(kwargs["tool_choice"])

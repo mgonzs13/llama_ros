@@ -51,7 +51,7 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"<__image__>{prompt}"},
+                    {"type": "text", "text": f"<__media__>{prompt}"},
                     {"type": "image_url", "image_url": "{image_url}"},
                 ]
             ),

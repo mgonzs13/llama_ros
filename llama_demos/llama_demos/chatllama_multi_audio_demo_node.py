@@ -26,13 +26,14 @@
 
 import time
 import rclpy
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from llama_ros.langchain import ChatLlamaROS
 
 
 def main():
+
     tokens = 0
     initial_time = -1
     eval_time = -1
@@ -45,20 +46,20 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {
-                        "type": "text",
-                        "text": (
-                            "<__media__><__media__>\n"
-                            "Who is the character in the middle of this first image and what type of food is the girl holding in this second image?"
-                        ),
-                    },
+                    {"type": "text", "text": "<__media__>"},
                     {
                         "type": "image_url",
-                        "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg",
+                        "image_url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen2-Audio/audio/guess_age_gender.wav",
                     },
+                ]
+            ),
+            AIMessage(content="Yes, the speaker is female and in her twenties."),
+            HumanMessagePromptTemplate.from_template(
+                template=[
+                    {"type": "text", "text": "<__media__>"},
                     {
                         "type": "image_url",
-                        "image_url": "https://i.pinimg.com/474x/32/89/17/328917cc4fe3bd4cfbe2d32aa9cc6e98.jpg",
+                        "image_url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen2-Audio/audio/translate_to_chinese.wav",
                     },
                 ]
             ),
