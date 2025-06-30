@@ -54,7 +54,9 @@ async def main():
     ]
 
     print(f"\nPrompt: {messages[0].content}")
-    llm_tools = chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice="any")
+    llm_tools = chat.bind_tools(
+        [get_inhabitants, get_curr_temperature], tool_choice="any"
+    )
 
     initial_time = time.time()
     eval_time = -1

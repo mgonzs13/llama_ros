@@ -53,7 +53,9 @@ def main():
     ]
 
     print(f"\nPrompt: {messages[0].content}\n")
-    llm_tools = chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice="auto")
+    llm_tools = chat.bind_tools(
+        [get_inhabitants, get_curr_temperature], tool_choice="auto"
+    )
 
     initial_time = time.time()
     all_tools_res: AIMessage = llm_tools.invoke(messages)
