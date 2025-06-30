@@ -1106,7 +1106,8 @@ struct std::unique_ptr<struct common_chat_templates,
 Llama::get_chat_templates() {
   return std::unique_ptr<struct common_chat_templates,
                          common_chat_templates_deleter>(
-      common_chat_templates_init(this->get_model(), this->params.chat_template));
+      common_chat_templates_init(this->get_model(),
+                                 this->params.chat_template));
 }
 
 struct llama_perf_context_data
@@ -1120,12 +1121,12 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
   return common_chat_templates_apply(tmpls, inputs);
 }
 
-const common_chat_msg &
-Llama::update_chat_msg(enum StopType stop) {
+const common_chat_msg &Llama::update_chat_msg(enum StopType stop) {
   auto previous_msg = chat_msg;
   auto new_msg =
       common_chat_parse(generated_text,
-                        /* is_partial= */ stop != StopType::FULL_STOP, this->oaicompat_chat_syntax);
+                        /* is_partial= */ stop != StopType::FULL_STOP,
+                        this->oaicompat_chat_syntax);
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
         static_cast<std::string (*)()>(llama_utils::random_string);
