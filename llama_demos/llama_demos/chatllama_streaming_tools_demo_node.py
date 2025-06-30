@@ -54,11 +54,39 @@ async def main():
     ]
 
     print(f"\nPrompt: {messages[0].content}")
-    llm_tools = chat.bind_tools(
-        [get_inhabitants, get_curr_temperature], tool_choice="any"
-    )
+    llm_tools = chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice="any")
+
+    initial_time = time.time()
+    eval_time = -1
+
+    first = True
     async for chunk in llm_tools.astream(messages):
-        print(chunk)
+        if first:
+            gathered = chunk
+            first = False
+            eval_time = time.time()
+        else:
+            gathered = gathered + chunk
+
+        if (
+            chunk.tool_call_chunks
+            and chunk.tool_call_chunks[-1]["args"]
+            and "}" in chunk.tool_call_chunks[-1]["args"]
+        ):
+            print(
+                f"Tool received: {gathered.tool_calls[-1]['name']}({gathered.tool_calls[-1]['args']})"
+            )
+
+        output_tokens = chunk.usage_metadata.get("output_tokens", 0)
+
+    end_time = time.time()
+    total_eval_time = end_time - eval_time
+    total_time = end_time - initial_time
+    predition_time = total_time - total_eval_time
+
+    print(f"\nTime to eval: {total_eval_time:.2f} s")
+    print(f"Time to predict: {predition_time:.2f} s")
+    print(f"Prediction speed: {output_tokens / predition_time:.2f} t/s")
 
     rclpy.shutdown()
 

@@ -33,6 +33,7 @@
 #include "chat.h"
 #include "llama_ros/llama.hpp"
 #include "llama_utils/llama_params.hpp"
+#include "llama_msgs/msg/chat_reasoning_format.hpp"
 
 namespace llama_utils {
 

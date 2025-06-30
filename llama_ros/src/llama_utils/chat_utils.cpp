@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include "llama_utils/chat_utils.hpp"
-#include "llama_msgs/msg/chat_reasoning_format.hpp"
 #include "llama_ros/llama.hpp"
 #include <common.h>
 #include <cstddef>
@@ -183,8 +182,8 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
 }
 
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
-llama_utils::generate_chat_completions_feedback(const ResponseResult &result, 
-                                                std::vector<common_chat_msg_diff> deltas) {
+llama_utils::generate_chat_completions_feedback(
+    const ResponseResult &result, std::vector<common_chat_msg_diff> deltas) {
   bool first = result.n_decoded == 0;
 
   std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;
@@ -232,15 +231,19 @@ llama_utils::generate_chat_completions_feedback(const ResponseResult &result,
     }
     if (diff.tool_call_index != std::string::npos) {
       llama_msgs::msg::ChatToolCall tool_call;
+
       tool_call.index = diff.tool_call_index;
-      if (!diff.tool_call_delta.id.empty()) {
-          tool_call.id = diff.tool_call_delta.id;
-          tool_call.arguments = diff.tool_call_delta.arguments;
-          tool_call.name = diff.tool_call_delta.name;
-      }
+      tool_call.id = diff.tool_call_delta.id;
+      tool_call.arguments = diff.tool_call_delta.arguments;
+      tool_call.name = diff.tool_call_delta.name;
+
       choice.delta.tool_calls.push_back(tool_call);
     }
+
+    feedback.choices.push_back(choice);
+    feedbacks.push_back(feedback);
   }
+
   return feedbacks;
 }
 
