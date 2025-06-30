@@ -178,10 +178,10 @@ class LlamaClientNode(Node):
                 with self._action_done_cond:
                     to_yield = self._partial_results[:]
                     self._partial_results.clear()
-                
+
                 for item in to_yield:
                     yield item
-                
+
                 # Wait for more results or completion
                 if not self._action_done:
                     with self._action_done_cond:
@@ -233,10 +233,10 @@ class LlamaClientNode(Node):
                 with self._action_done_cond:
                     to_yield = self._partial_results[:]
                     self._partial_results.clear()
-                
+
                 for item in to_yield:
                     yield item
-                
+
                 # Wait for more results or completion
                 if not self._action_done:
                     with self._action_done_cond:

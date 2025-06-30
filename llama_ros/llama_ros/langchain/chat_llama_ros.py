@@ -174,9 +174,13 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             _handle_openai_bad_request(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
-            generation_chunk = self._get_generation_chunk_from_completion(final_completion)
+            generation_chunk = self._get_generation_chunk_from_completion(
+                final_completion
+            )
             if run_manager:
-                run_manager.on_llm_new_token(generation_chunk.text, chunk=generation_chunk)
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk
+                )
             yield generation_chunk
 
     def bind_tools(
@@ -209,10 +213,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 tool_choice = "required"
             elif isinstance(tool_choice, dict):
                 tool_names = [
-                    formatted_tool["function"]["name"] for formatted_tool in formatted_tools
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
                 ]
                 if not any(
-                    tool_name == tool_choice["function"]["name"] for tool_name in tool_names
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
                 ):
                     raise ValueError(
                         f"Tool choice {tool_choice} was specified, but the only "
@@ -230,7 +236,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -238,7 +246,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         if strict is not None and method == "json_mode":
-            raise ValueError("Argument `strict` is not supported with `method`='json_mode'")
+            raise ValueError(
+                "Argument `strict` is not supported with `method`='json_mode'"
+            )
         is_pydantic_schema = _is_pydantic_class(schema)
 
         if method == "json_schema":
@@ -372,7 +382,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 message_dict["content"] = message_dict["content"] or None
 
         elif isinstance(message, SystemMessage):
-            message_dict["role"] = message.additional_kwargs.get("__openai_role__", "system")
+            message_dict["role"] = message.additional_kwargs.get(
+                "__openai_role__", "system"
+            )
         elif isinstance(message, FunctionMessage):
             message_dict["role"] = "function"
         elif isinstance(message, ToolMessage):
@@ -494,7 +506,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         if choice["delta"] is None:
             return None
 
-        message_chunk = _convert_delta_to_message_chunk(choice["delta"], default_chunk_class)
+        message_chunk = _convert_delta_to_message_chunk(
+            choice["delta"], default_chunk_class
+        )
         generation_info = {**base_generation_info} if base_generation_info else {}
 
         if finish_reason := choice.get("finish_reason"):
@@ -563,7 +577,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         return data, image_urls, audios_urls
 
-    def _parse_chat_generation_response(self, result: GenerateChatCompletions.Result) -> dict:
+    def _parse_chat_generation_response(
+        self, result: GenerateChatCompletions.Result
+    ) -> dict:
         result_dict = {}
 
         result_dict["id"] = result.id
@@ -674,7 +690,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                     tool_call_dict["id"] = None
                     tool_call_dict["type"] = None
 
-                tool_call_dict["function"]["name"] = tool_call.name if tool_call.name else None
+                tool_call_dict["function"]["name"] = (
+                    tool_call.name if tool_call.name else None
+                )
                 tool_call_dict["function"]["arguments"] = tool_call.arguments
 
                 choice_dict["delta"]["tool_calls"].append(tool_call_dict)
@@ -792,7 +810,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         stream = kwargs.get("stream", False)
 
         if stream:
-            result = self.llama_client.generate_chat_completions(chat_request, stream=True)
+            result = self.llama_client.generate_chat_completions(
+                chat_request, stream=True
+            )
         else:
             result, _ = self.llama_client.generate_chat_completions(chat_request)
 

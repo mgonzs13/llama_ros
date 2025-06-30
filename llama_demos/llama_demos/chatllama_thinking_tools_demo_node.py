@@ -53,9 +53,7 @@ def main():
     ]
 
     print(f"\nPrompt: {messages[0].content}\n")
-    llm_tools = chat.bind_tools(
-        [get_inhabitants, get_curr_temperature], tool_choice="auto"
-    )
+    llm_tools = chat.bind_tools([get_inhabitants, get_curr_temperature], tool_choice="auto")
 
     initial_time = time.time()
     all_tools_res: AIMessage = llm_tools.invoke(messages)
@@ -64,9 +62,7 @@ def main():
     messages.append(all_tools_res)
 
     for tool in all_tools_res.tool_calls:
-        formatted_output = (
-            f"{tool['name']}({''.join(tool['args'].values())})"
-        )
+        formatted_output = f"{tool['name']}({''.join(tool['args'].values())})"
         print(f"Calling tool: {formatted_output}")
 
     if "reasoning_content" in all_tools_res.additional_kwargs:
