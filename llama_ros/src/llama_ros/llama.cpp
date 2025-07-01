@@ -172,7 +172,6 @@ void Llama::reset() {
   this->n_consumed = 0;
   this->ga_i = 0;
 
-  this->oaicompat_msg = {};
   this->oaicompat_msg_diffs.clear();
   this->chat_msg = {};
   this->generated_text.clear();

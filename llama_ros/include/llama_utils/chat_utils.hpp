@@ -156,6 +156,10 @@ struct ResponseResult {
    */
   std::string oaicompat_cmpl_id;
 
+  /**
+   * @brief The OpenAI-compatible chat syntax. Used while streaming the
+   * response.
+   */
   common_chat_msg chat_msg;
 };
 
