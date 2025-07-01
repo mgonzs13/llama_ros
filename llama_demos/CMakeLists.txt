@@ -105,9 +105,9 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
-  llama_demos/chatllama_thinking_tools_demo_node.py
+  llama_demos/chatllama_reasoning_tools_demo_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_thinking_tools_demo_node
+  RENAME chatllama_reasoning_tools_demo_node
 )
 
 ament_python_install_package(${PROJECT_NAME})
