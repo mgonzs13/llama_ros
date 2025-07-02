@@ -173,16 +173,25 @@ class LlamaClientNode(Node):
 
         # Wait for action to be done
         def generator():
+            while not self._action_done:
+                # Collect and yield any available results
+                with self._action_done_cond:
+                    to_yield = self._partial_results[:]
+                    self._partial_results.clear()
+
+                for item in to_yield:
+                    yield item
+
+                # Wait for more results or completion
+                if not self._action_done:
+                    with self._action_done_cond:
+                        if not self._partial_results and not self._action_done:
+                            self._action_done_cond.wait()
+
+            # Yield any final results
             with self._action_done_cond:
-                while not self._action_done:
-
-                    while self._partial_results:
-                        yield self._partial_results.pop(0)
-
-                    self._action_done_cond.wait()
-
-            if self._partial_results:
-                yield from self._partial_results
+                for item in self._partial_results:
+                    yield item
 
         if stream:
             return generator()
@@ -219,16 +228,25 @@ class LlamaClientNode(Node):
 
         # Wait for action to be done
         def generator():
+            while not self._action_done:
+                # Collect and yield any available results
+                with self._action_done_cond:
+                    to_yield = self._partial_results[:]
+                    self._partial_results.clear()
+
+                for item in to_yield:
+                    yield item
+
+                # Wait for more results or completion
+                if not self._action_done:
+                    with self._action_done_cond:
+                        if not self._partial_results and not self._action_done:
+                            self._action_done_cond.wait()
+
+            # Yield any final results
             with self._action_done_cond:
-                while not self._action_done:
-
-                    while self._partial_results:
-                        yield self._partial_results.pop(0)
-
-                    self._action_done_cond.wait()
-
-            if self._partial_results:
-                yield from self._partial_results
+                for item in self._partial_results:
+                    yield item
 
         if stream:
             return generator()

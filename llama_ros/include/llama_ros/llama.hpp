@@ -825,9 +825,43 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
-  const common_chat_msg &update_chat_msg(enum StopType stop,
-                                         const common_chat_syntax &syntax);
+  /**
+   * @brief Updates the chat message based on the specified stop condition and
+   * syntax.
+   *
+   * This method returns a constant reference to the completed chat message.
+   * It updates the oaicompat_msg_diffs with the changes made to the chat
+   * message while streaming the response.
+   *
+   * @param stop The stop condition to apply when updating the chat message.
+   * @param syntax The syntax rules to use for updating the chat message.
+   * @return A constant reference to the completed chat message.
+   */
+  const common_chat_msg &update_chat_msg(enum StopType stop);
+
+  /**
+   * @brief The generated text from the model while streaming the response.
+   * @note slot
+   */
   std::string generated_text;
+
+  /**
+   * @brief Message diffs when streaming the response.
+   * @note slot
+   */
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+
+  /**
+   * @brief The chat syntax used for generating responses.
+   * @note slot
+   */
+  common_chat_syntax oaicompat_chat_syntax;
+
+  /**
+   * @brief The previous performance context data for usage statistics. It is
+   * used while streaming.
+   */
+  llama_perf_context_data prev_stat_usage;
 
 protected:
   /**
@@ -1060,9 +1094,16 @@ private:
    */
   std::recursive_mutex mutex;
 
-  common_chat_msg oaicompat_msg;
-  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+  /**
+   * @brief The last generated chat message while streaming the response.
+   * @note slot
+   */
   common_chat_msg chat_msg;
+
+  /**
+   * @brief A list of generated tool call IDs while streaming the response.
+   * @note slot
+   */
   std::vector<std::string> generated_tool_call_ids;
 };
 

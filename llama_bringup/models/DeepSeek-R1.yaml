@@ -8,3 +8,4 @@ model_repo: "unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
 model_filename: "DeepSeek-R1-Distill-Qwen-1.5B-Q8_0.gguf"
 
 system_prompt_type: "DeepSeek-R1"
+chat_template_file: "llama-cpp-deepseek-r1.jinja"

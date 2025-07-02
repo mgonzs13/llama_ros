@@ -675,6 +675,27 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             choice_dict["delta"] = {}
             choice_dict["delta"]["content"] = choice.delta.content
             choice_dict["delta"]["role"] = choice.delta.role
+            choice_dict["delta"]["tool_calls"] = []
+
+            tool_call: ChatToolCall
+            for tool_call in choice.delta.tool_calls:
+                tool_call_dict = {}
+                tool_call_dict["function"] = {}
+                tool_call_dict["index"] = tool_call.index
+
+                if tool_call.id != "":
+                    tool_call_dict["id"] = tool_call.id
+                    tool_call_dict["type"] = "function"
+                else:
+                    tool_call_dict["id"] = None
+                    tool_call_dict["type"] = None
+
+                tool_call_dict["function"]["name"] = (
+                    tool_call.name if tool_call.name else None
+                )
+                tool_call_dict["function"]["arguments"] = tool_call.arguments
+
+                choice_dict["delta"]["tool_calls"].append(tool_call_dict)
 
             if choice.logprobs and len(choice.logprobs.data) > 0:
                 logprob = choice.logprobs

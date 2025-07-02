@@ -102,6 +102,13 @@ install(
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
+install(
+  DIRECTORY
+    ${llama_SOURCE_DIR}/models/templates/
+  DESTINATION share/${PROJECT_NAME}/models/templates
+  FILES_MATCHING PATTERN "*.jinja"
+)
+
 set(INSTALL_TARGETS 
   ggml
   ggml-base

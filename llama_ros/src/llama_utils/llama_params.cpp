@@ -96,20 +96,31 @@ void llama_utils::declare_llama_params(
                                             {"n_sequences", 1},
                                             {"yarn_orig_ctx", 0},
                                         });
-  node->declare_parameters<std::string>(
-      "", {
-              {"model_path", ""},      {"model_repo", ""},
-              {"model_filename", ""},  {"mmproj_path", ""},
-              {"mmproj_repo", ""},     {"mmproj_filename", ""},
-              {"cpu_mask", ""},        {"cpu_range", ""},
-              {"cpu_mask_batch", ""},  {"cpu_range_batch", ""},
-              {"priority", "normal"},  {"priority_batch", "normal"},
-              {"split_mode", "layer"}, {"rope_scaling_type", ""},
-              {"numa", "none"},        {"pooling_type", ""},
-              {"cache_type_k", "f16"}, {"cache_type_v", "f16"},
-              {"system_prompt", ""},   {"system_prompt_file", ""},
-              {"prefix", ""},          {"suffix", ""},
-          });
+  node->declare_parameters<std::string>("", {
+                                                {"model_path", ""},
+                                                {"model_repo", ""},
+                                                {"model_filename", ""},
+                                                {"mmproj_path", ""},
+                                                {"mmproj_repo", ""},
+                                                {"mmproj_filename", ""},
+                                                {"cpu_mask", ""},
+                                                {"cpu_range", ""},
+                                                {"cpu_mask_batch", ""},
+                                                {"cpu_range_batch", ""},
+                                                {"priority", "normal"},
+                                                {"priority_batch", "normal"},
+                                                {"split_mode", "layer"},
+                                                {"rope_scaling_type", ""},
+                                                {"numa", "none"},
+                                                {"pooling_type", ""},
+                                                {"cache_type_k", "f16"},
+                                                {"cache_type_v", "f16"},
+                                                {"system_prompt", ""},
+                                                {"system_prompt_file", ""},
+                                                {"prefix", ""},
+                                                {"suffix", ""},
+                                                {"chat_template_file", ""},
+                                            });
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
                 {"devices", std::vector<std::string>({})},
@@ -159,6 +170,7 @@ struct LlamaParams llama_utils::get_llama_params(
   bool reranking = false;
 
   std::vector<std::string> stopping_words;
+  std::string chat_template_file;
 
   std::vector<std::string> lora_adapters;
   std::vector<std::string> lora_adapters_repos;
@@ -269,6 +281,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("prefix", params.params.input_prefix);
   node->get_parameter("suffix", params.params.input_suffix);
   node->get_parameter("stopping_words", stopping_words);
+  node->get_parameter("chat_template_file", chat_template_file);
 
   node->get_parameter("system_prompt", params.system_prompt);
   node->get_parameter("system_prompt_file", file_path);
@@ -387,6 +400,18 @@ struct LlamaParams llama_utils::get_llama_params(
 
     replace_all(word, "\\n", "\n");
     params.params.antiprompt.push_back(word);
+  }
+
+  // Read chat template file if provided
+  if (!chat_template_file.empty()) {
+    std::ifstream file(chat_template_file.c_str());
+    if (!file) {
+      RCLCPP_ERROR(node->get_logger(), "Failed to open chat template file %s",
+                   chat_template_file.c_str());
+    }
+    std::copy(std::istreambuf_iterator<char>(file),
+              std::istreambuf_iterator<char>(),
+              back_inserter(params.params.chat_template));
   }
 
   // split mode

@@ -65,6 +65,24 @@ def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
     kwargs["stopping_words"] = kwargs.get("stopping_words", prompt_data[2])
     if not kwargs["stopping_words"]:
         kwargs["stopping_words"] = [""]
+    kwargs["chat_template_file"] = kwargs.get("chat_template_file", "")
+    if kwargs["chat_template_file"]:
+        chat_template_path = ""
+
+        if "/" in kwargs["chat_template_file"]:
+            chat_template_path = kwargs["chat_template_file"]
+        else:
+            chat_template_path = os.path.join(
+                get_package_share_directory("llama_cpp_vendor"),
+                "models",
+                "templates",
+                kwargs["chat_template_file"],
+            )
+
+        if not os.path.exists(chat_template_path):
+            kwargs["chat_template_file"] = ""
+        else:
+            kwargs["chat_template_file"] = chat_template_path
 
     # load lora adapters
     lora_adapters = [""]
