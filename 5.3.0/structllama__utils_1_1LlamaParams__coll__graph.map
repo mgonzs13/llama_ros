@@ -1,0 +1,7 @@
+<map id="llama_utils::LlamaParams" name="llama_utils::LlamaParams">
+<area shape="rect" id="Node000001" title="Represents the parameters for configuring the Llama system." alt="" coords="5,184,176,210"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="52,95,129,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,137,93,184,88,184,88,137"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="29,5,152,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="93,61,93,95,88,95,88,61"/>
+</map>
