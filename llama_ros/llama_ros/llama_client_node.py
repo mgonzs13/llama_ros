@@ -58,7 +58,7 @@ class LlamaClientNode(Node):
 
     _action_result = None
     _action_status: GoalStatus = GoalStatus.STATUS_UNKNOWN
-    _partial_results: List[PartialResponse] = []
+    _partial_results: List[PartialResponse | GenerateChatCompletions.Feedback] = []
     _goal_handle: ClientGoalHandle = None
     _goal_handle_lock: RLock = RLock()
 
@@ -153,6 +153,7 @@ class LlamaClientNode(Node):
         goal: GenerateChatCompletions.Goal,
         feedback_cb: Callable = None,
         stream: bool = False,
+        stream_reasoning: bool = False,
     ) -> Union[
         Tuple[GenerateChatCompletions.Result, GoalStatus],
         Generator[GenerateChatCompletions.Feedback, None, None],
@@ -180,6 +181,10 @@ class LlamaClientNode(Node):
                     self._partial_results.clear()
 
                 for item in to_yield:
+                    if stream_reasoning and item.choices[0].delta.reasoning_content:
+                        item.choices[0].delta.content = item.choices[
+                            0
+                        ].delta.reasoning_content
                     yield item
 
                 # Wait for more results or completion
@@ -191,6 +196,10 @@ class LlamaClientNode(Node):
             # Yield any final results
             with self._action_done_cond:
                 for item in self._partial_results:
+                    if stream_reasoning and item.choices[0].delta.reasoning_content:
+                        item.choices[0].delta.content = item.choices[
+                            0
+                        ].delta.reasoning_content
                     yield item
 
         if stream:

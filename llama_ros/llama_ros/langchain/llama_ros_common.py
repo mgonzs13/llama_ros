@@ -47,6 +47,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     llama_client: LlamaClientNode = None
     cv_bridge: CvBridge = CvBridge()
     model_metadata: Metadata = None
+    stream_reasoning: bool = False
 
     # sampling params
     n_prev: int = 64

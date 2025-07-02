@@ -734,6 +734,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         chat_request.messages = []
         chat_request.tools = []
         chat_request.parallel_tool_calls = kwargs.get("parallel_tool_calls", True)
+
         if self.enable_thinking:
             chat_request.reasoning_format.value = (
                 ChatReasoningFormat.COMMON_REASONING_FORMAT_DEEPSEEK
@@ -811,7 +812,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         if stream:
             result = self.llama_client.generate_chat_completions(
-                chat_request, stream=True
+                chat_request, stream=True, stream_reasoning=self.stream_reasoning
             )
         else:
             result, _ = self.llama_client.generate_chat_completions(chat_request)
