@@ -29,6 +29,7 @@
 #include "llama.h"
 
 #include "llama_msgs/msg/lo_ra.hpp"
+#include "llama_msgs/msg/logit_bias.hpp"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama.hpp"
@@ -487,6 +488,34 @@ void LlamaNode::execute(
 
   // update sampling params of common_params
   auto sampling_config = goal->sampling_config;
+
+  if (sampling_config.ignore_eos &&
+      llama_vocab_eos(this->llama->get_vocab()) == LLAMA_TOKEN_NULL) {
+    RCLCPP_WARN(this->get_logger(),
+                "vocab does not have an EOS token, ignoring --ignore-eos\n");
+    sampling_config.ignore_eos = false;
+  }
+
+  for (llama_token i = 0; i < this->llama->get_n_vocab(); i++) {
+    if (llama_vocab_is_eog(this->llama->get_vocab(), i)) {
+      RCLCPP_WARN(this->get_logger(), "added %s logit bias = %f\n",
+                  common_token_to_piece(this->llama->get_ctx(), i).c_str(),
+                  -INFINITY);
+      llama_msgs::msg::LogitBias bias_eog;
+      bias_eog.token = i;
+      bias_eog.bias = -INFINITY;
+      sampling_config.logit_bias_eog.data.push_back(bias_eog);
+    }
+  }
+
+  if (sampling_config.ignore_eos) {
+    // add EOG biases to the active set of logit biases
+    sampling_config.logit_bias.data.insert(
+        sampling_config.logit_bias.data.end(),
+        sampling_config.logit_bias_eog.data.begin(),
+        sampling_config.logit_bias_eog.data.end());
+  }
+
   auto sparams = llama_utils::parse_sampling_params(sampling_config,
                                                     this->llama->get_n_vocab());
 
