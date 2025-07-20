@@ -61,7 +61,7 @@ void LlamaNode::destroy_llama() {
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
 
-  RCLCPP_INFO(get_logger(), "[%s] Configuring...", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Configuring...", this->get_name());
 
   if (!this->params_declared) {
     this->params_declared = true;
@@ -69,7 +69,7 @@ LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
   }
 
   this->params = llama_utils::get_llama_params(this->shared_from_this());
-  RCLCPP_INFO(get_logger(), "[%s] Configured", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Configured", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
@@ -78,7 +78,7 @@ LlamaNode::on_configure(const rclcpp_lifecycle::State &) {
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
 
-  RCLCPP_INFO(get_logger(), "[%s] Activating...", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Activating...", this->get_name());
 
   // create llama
   this->create_llama();
@@ -144,7 +144,7 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
             std::bind(&LlamaNode::handle_accepted_chat_completions, this, _1));
   }
 
-  RCLCPP_INFO(get_logger(), "[%s] Activated", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Activated", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
@@ -153,7 +153,7 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
-  RCLCPP_INFO(get_logger(), "[%s] Deactivating...", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Deactivating...", this->get_name());
 
   this->destroy_llama();
 
@@ -192,7 +192,7 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
     this->generate_chat_completions_action_server_ = nullptr;
   }
 
-  RCLCPP_INFO(get_logger(), "[%s] Deactivated", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Deactivated", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
@@ -201,8 +201,8 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_cleanup(const rclcpp_lifecycle::State &) {
 
-  RCLCPP_INFO(get_logger(), "[%s] Cleaning up...", this->get_name());
-  RCLCPP_INFO(get_logger(), "[%s] Cleaned up", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Cleaning up...", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Cleaned up", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
@@ -211,8 +211,8 @@ LlamaNode::on_cleanup(const rclcpp_lifecycle::State &) {
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_shutdown(const rclcpp_lifecycle::State &) {
 
-  RCLCPP_INFO(get_logger(), "[%s] Shutting down...", this->get_name());
-  RCLCPP_INFO(get_logger(), "[%s] Shutted down", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Shutting down...", this->get_name());
+  RCLCPP_INFO(this->get_logger(), "[%s] Shutted down", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
       CallbackReturn::SUCCESS;
