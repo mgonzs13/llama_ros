@@ -23,20 +23,36 @@
 #ifndef LLAMA_ROS__LLAMA_HPP
 #define LLAMA_ROS__LLAMA_HPP
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "chat.h"
 #include "common.h"
 #include "llama.h"
 #include "sampling.h"
+#include <mtmd.h>
 
 #include "llama_utils/spinner.hpp"
 
+using json = nlohmann::ordered_json;
+
 namespace llama_ros {
+
+struct OAICompactParserOptions {
+    bool use_jinja;
+    bool prefill_assistant;
+    common_reasoning_format reasoning_format;
+    std::map<std::string,std::string> chat_template_kwargs;
+    common_chat_templates * tmpls;
+    bool allow_image;
+    bool allow_audio;
+    bool enable_thinking = true;
+};
 
 /**
  * @brief Represents the probability of a token.
@@ -450,6 +466,62 @@ struct Metadata {
   TokenizerInfo tokenizer;
 };
 
+enum SlotState {
+  SLOT_STATE_IDLE,
+  SLOT_STATE_STARTED,
+  SLOT_STATE_PROCESSING_PROMPT,
+  SLOT_STATE_DONE_PROMPT,
+  SLOT_STATE_GENERATING
+};
+
+class ServerSlot {
+public:
+    int id;
+    llama_batch batch;
+    llama_context *ctx;
+    mtmd_context *mtmd_ctx;
+    common_sampler *sampler;
+    std::vector<common_adapter_lora_info> lora_adapters;
+
+    SlotState state = SLOT_STATE_IDLE;
+    json json_schema;
+    std::string stopping_word;
+
+    int32_t n_past = 0;
+    int32_t n_ctx = 0;
+    int32_t n_consumed = 0;
+    int32_t n_predict = -1;
+
+    struct slot_params {
+        int32_t n_keep    =  0;
+        int32_t n_discard =  0;
+        int32_t n_predict = -1;
+
+        std::vector<common_adapter_lora_info> lora;
+
+        std::vector<std::string> antiprompt;
+
+        struct common_params_sampling sampling;
+
+        bool                         verbose                   = false;
+        std::string                  oaicompat_model;
+        std::string                  oaicompat_cmpl_id;
+        common_chat_syntax           oaicompat_chat_syntax;
+    } params;
+
+    common_chat_msg chat_msg;
+    common_chat_format chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
+    std::vector<std::string> generated_tool_call_ids;
+    StopType stop;
+    std::string generated_text;
+    llama_perf_context_data prev_stat_usage;
+
+    void reset();
+    const common_chat_msg update_chat_msg(std::vector<common_chat_msg_diff> & diffs);
+    inline void release();
+    inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
+};
+
 /**
  * @brief A callback function type for handling generated responses.
  */
@@ -825,44 +897,6 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
-  /**
-   * @brief Updates the chat message based on the specified stop condition and
-   * syntax.
-   *
-   * This method returns a constant reference to the completed chat message.
-   * It updates the oaicompat_msg_diffs with the changes made to the chat
-   * message while streaming the response.
-   *
-   * @param stop The stop condition to apply when updating the chat message.
-   * @param syntax The syntax rules to use for updating the chat message.
-   * @return A constant reference to the completed chat message.
-   */
-  const common_chat_msg &update_chat_msg(enum StopType stop);
-
-  /**
-   * @brief The generated text from the model while streaming the response.
-   * @note slot
-   */
-  std::string generated_text;
-
-  /**
-   * @brief Message diffs when streaming the response.
-   * @note slot
-   */
-  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
-
-  /**
-   * @brief The chat syntax used for generating responses.
-   * @note slot
-   */
-  common_chat_syntax oaicompat_chat_syntax;
-
-  /**
-   * @brief The previous performance context data for usage statistics. It is
-   * used while streaming.
-   */
-  llama_perf_context_data prev_stat_usage;
-
 protected:
   /**
    * @brief Common parameters for the model.
@@ -970,6 +1004,8 @@ protected:
    * This counter is used for tracking the generation process.
    */
   int32_t ga_i;
+
+  std::vector<ServerSlot> server_slots;
 
   /**
    * @brief Checks if the prompt contains the prefix at the end.
@@ -1088,23 +1124,17 @@ protected:
    */
   struct CompletionOutput sample();
 
+  common_chat_templates_ptr chat_templates;
+  OAICompactParserOptions oai_parser_opt;
+
+  ServerSlot * get_slot_by_id(int id);
+  ServerSlot * get_available_slot();
+
 private:
   /**
    * @brief A mutex for thread-safe operations.
    */
   std::recursive_mutex mutex;
-
-  /**
-   * @brief The last generated chat message while streaming the response.
-   * @note slot
-   */
-  common_chat_msg chat_msg;
-
-  /**
-   * @brief A list of generated tool call IDs while streaming the response.
-   * @note slot
-   */
-  std::vector<std::string> generated_tool_call_ids;
 };
 
 } // namespace llama_ros

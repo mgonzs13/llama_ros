@@ -56,6 +56,34 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     return;
   }
 
+  // Slots
+  const int32_t n_ctx_slot = this->params.n_ctx /  this->params.n_parallel;
+  for (int i = 0; i < this->params.n_parallel; i++) {
+    ServerSlot slot;
+    slot.id = i;
+    slot.n_ctx = n_ctx_slot;
+    slot.n_predict = this->params.n_predict;
+    slot.params.sampling = this->params.sampling;
+    slot.params.n_keep = this->params.n_keep;
+
+    slot.reset();
+    server_slots.push_back(slot);
+  }
+
+  chat_templates = common_chat_templates_init(model, params.chat_template);
+  common_chat_format_example(chat_templates.get(), params.use_jinja);
+
+  oai_parser_opt = {
+    params.use_jinja,
+    params.prefill_assistant,
+    params.reasoning_format,
+    params.default_template_kwargs,
+    chat_templates.get(),
+    false,
+    false,
+    false
+  };
+
   // init threadpool
   LLAMA_LOG_INFO("llama threadpool init = n_threads = %d",
                  this->params.cpuparams.n_threads);
@@ -134,9 +162,12 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 }
 
 Llama::~Llama() {
-  llama_free(this->ctx);
-  this->ctx = nullptr;
+  for (ServerSlot &slot : this->server_slots) {
+    common_sampler_free(slot.sampler);
+    slot.sampler = nullptr;
 
+    llama_batch_free(slot.batch);
+  }
   llama_model_free(this->model);
   this->model = nullptr;
 
@@ -160,25 +191,14 @@ Llama::~Llama() {
 *****************************
 */
 void Llama::reset() {
-
   llama_memory_clear(this->get_memory(), true);
-
-  if (this->sampler != nullptr) {
-    common_sampler_reset(this->sampler);
-  }
 
   this->canceled = false;
   this->n_past = 0;
   this->n_consumed = 0;
   this->ga_i = 0;
 
-  this->oaicompat_msg_diffs.clear();
-  this->chat_msg = {};
-  this->generated_text.clear();
-  this->generated_tool_call_ids.clear();
-
   this->prompt_tokens.clear();
-  this->oaicompat_chat_syntax = {};
 
   // load system prompt
   if (!this->eval_system_prompt()) {
@@ -1120,12 +1140,19 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
   return common_chat_templates_apply(tmpls, inputs);
 }
 
-const common_chat_msg &Llama::update_chat_msg(enum StopType stop) {
-  auto previous_msg = chat_msg;
+
+/*
+*****************************
+*   SERVER SLOT FUNCS       *
+*****************************
+*/
+
+inline const common_chat_msg ServerSlot::update_chat_msg(std::vector<common_chat_msg_diff> & oaicompat_msg_diffs) {
+    auto previous_msg = chat_msg;
   auto new_msg =
       common_chat_parse(generated_text,
                         /* is_partial= */ stop != StopType::FULL_STOP,
-                        this->oaicompat_chat_syntax);
+                        params.oaicompat_chat_syntax);
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
         static_cast<std::string (*)()>(llama_utils::random_string);
@@ -1135,4 +1162,20 @@ const common_chat_msg &Llama::update_chat_msg(enum StopType stop) {
         previous_msg, new_msg.empty() ? previous_msg : new_msg);
   }
   return chat_msg;
+}
+
+inline void ServerSlot::reset() {
+  generated_text.clear();
+  stop = StopType::NO_STOP;
+  stopping_word.clear();
+  n_past = 0;
+  chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
+  generated_tool_call_ids.clear();
+  chat_msg = {};
+}
+
+inline void ServerSlot::release() {
+  if (is_processing()) {
+    state = SLOT_STATE_IDLE;
+  }
 }
