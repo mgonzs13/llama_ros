@@ -149,6 +149,7 @@ void llama_utils::declare_llama_params(
                                          {"use_mlock", false},
                                          {"cont_batching", true},
                                          {"no_op_offload", false},
+                                         {"no_extra_bufts", false},
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
@@ -220,6 +221,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("flash_attn", params.params.flash_attn);
 
   node->get_parameter("no_op_offload", params.params.no_op_offload);
+  node->get_parameter("no_extra_bufts", params.params.no_extra_bufts);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
   node->get_parameter("cache_type_k", cache_type_k);
   node->get_parameter("cache_type_v", cache_type_v);
