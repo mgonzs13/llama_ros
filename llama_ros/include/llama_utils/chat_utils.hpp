@@ -267,6 +267,8 @@ ChatCompletionsContext prepare_chat_completions_call(
         const llama_msgs::action::GenerateChatCompletions::Goal> &goal,
     llama_ros::Llama *llama);
 
+
+int32_t uuid_to_int32(const std::array<uint8_t, 16>& uuid);
 } // namespace llama_utils
 
 #endif

@@ -23,13 +23,14 @@
 #ifndef LLAMA_ROS__LLAMA_HPP
 #define LLAMA_ROS__LLAMA_HPP
 
+#include <condition_variable>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
 
 #include "chat.h"
 #include "common.h"
@@ -44,14 +45,14 @@ using json = nlohmann::ordered_json;
 namespace llama_ros {
 
 struct OAICompactParserOptions {
-    bool use_jinja;
-    bool prefill_assistant;
-    common_reasoning_format reasoning_format;
-    std::map<std::string,std::string> chat_template_kwargs;
-    common_chat_templates * tmpls;
-    bool allow_image;
-    bool allow_audio;
-    bool enable_thinking = true;
+  bool use_jinja;
+  bool prefill_assistant;
+  common_reasoning_format reasoning_format;
+  std::map<std::string, std::string> chat_template_kwargs;
+  common_chat_templates *tmpls;
+  bool allow_image;
+  bool allow_audio;
+  bool enable_thinking = true;
 };
 
 /**
@@ -133,7 +134,7 @@ struct ResponseOutput {
 /**
  * @brief Represents the output of an embedding generation process.
  */
-struct EmbeddingsOuput {
+struct EmbeddingsOutput {
   /**
    * @brief The generated embeddings.
    */
@@ -476,56 +477,58 @@ enum SlotState {
 
 class ServerSlot {
 public:
-    int id;
-    llama_batch batch;
-    llama_context *ctx;
-    mtmd_context *mtmd_ctx;
-    common_sampler *sampler;
-    std::vector<common_adapter_lora_info> lora_adapters;
+  int id;
+  int goal_id;
+  llama_batch batch;
+  llama_context *ctx;
+  mtmd_context *mtmd_ctx;
+  common_sampler *sampler;
+  std::vector<common_adapter_lora_info> lora_adapters;
 
-    SlotState state = SLOT_STATE_IDLE;
-    json json_schema;
-    std::string stopping_word;
+  SlotState state = SLOT_STATE_IDLE;
+  json json_schema;
+  std::string stopping_word;
 
-    int32_t n_past = 0;
-    int32_t n_ctx = 0;
-    int32_t n_consumed = 0;
+  int32_t n_past = 0;
+  int32_t n_ctx = 0;
+  int32_t n_consumed = 0;
+  int32_t n_predict = -1;
+
+  struct slot_params {
+    int32_t n_keep = 0;
+    int32_t n_discard = 0;
     int32_t n_predict = -1;
 
-    struct slot_params {
-        int32_t n_keep    =  0;
-        int32_t n_discard =  0;
-        int32_t n_predict = -1;
+    std::vector<common_adapter_lora_info> lora;
 
-        std::vector<common_adapter_lora_info> lora;
+    std::vector<std::string> antiprompt;
 
-        std::vector<std::string> antiprompt;
+    struct common_params_sampling sampling;
 
-        struct common_params_sampling sampling;
+    bool verbose = false;
+    std::string oaicompat_model;
+    std::string oaicompat_cmpl_id;
+    common_chat_syntax oaicompat_chat_syntax;
+  } params;
 
-        bool                         verbose                   = false;
-        std::string                  oaicompat_model;
-        std::string                  oaicompat_cmpl_id;
-        common_chat_syntax           oaicompat_chat_syntax;
-    } params;
+  common_chat_msg chat_msg;
+  common_chat_format chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
+  std::vector<std::string> generated_tool_call_ids;
+  StopType stop;
+  std::string generated_text;
+  llama_perf_context_data prev_stat_usage;
 
-    common_chat_msg chat_msg;
-    common_chat_format chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
-    std::vector<std::string> generated_tool_call_ids;
-    StopType stop;
-    std::string generated_text;
-    llama_perf_context_data prev_stat_usage;
-
-    void reset();
-    const common_chat_msg update_chat_msg(std::vector<common_chat_msg_diff> & diffs);
-    inline void release();
-    inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
+  void reset();
+  const common_chat_msg
+  update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
+  void release();
+  inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
 };
 
 /**
  * @brief A callback function type for handling generated responses.
  */
-using GenerateResponseCallback = std::function<void(struct CompletionOutput)>;
+using GenerateResponseCallback = std::function<void(struct CompletionOutput, ServerSlot *)>;
 
 /**
  * @brief A class representing a llama.cpp.
@@ -564,7 +567,8 @@ public:
    * @return A vector of tokens representing the tokenized text.
    */
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
-                                    bool special = false);
+                                    bool special = false,
+                                    ServerSlot *slot = nullptr);
 
   /**
    * @brief Converts a vector of tokens back into a string.
@@ -572,7 +576,15 @@ public:
    * @param tokens The vector of tokens to detokenize.
    * @return The detokenized string.
    */
-  std::string detokenize(const std::vector<llama_token> &tokens);
+  std::string detokenize(const std::vector<llama_token> &tokens,
+                         ServerSlot *slot = nullptr);
+
+  std::vector<llama_token> tokenize_task(const std::string &text, bool add_bos,
+                                    bool special = false,
+                                    ServerSlot *slot = nullptr);
+
+  std::string detokenize_task(const std::vector<llama_token> &tokens,
+                         ServerSlot *slot = nullptr);
 
   /**
    * @brief Resets the internal state of the model.
@@ -621,8 +633,13 @@ public:
    * @param normalization The normalization method to apply (default is 2).
    * @return A structure containing the generated embeddings and token count.
    */
-  struct EmbeddingsOuput generate_embeddings(const std::string &input_prompt,
-                                             int normalization = 2);
+  struct EmbeddingsOutput generate_embeddings(const std::string &input_prompt,
+                                              int normalization = 2,
+                                              ServerSlot *slot = nullptr);
+
+  struct EmbeddingsOutput generate_embeddings_task(const std::string &input_prompt,
+                                            int normalization = 2,
+                                            ServerSlot *slot = nullptr);
 
   /**
    * @brief Generates embeddings for a given vector of tokens.
@@ -631,9 +648,9 @@ public:
    * @param normalization The normalization method to apply (default is 2).
    * @return A structure containing the generated embeddings and token count.
    */
-  struct EmbeddingsOuput
+  struct EmbeddingsOutput
   generate_embeddings(const std::vector<llama_token> &tokens,
-                      int normalization = 2);
+                      int normalization = 2, ServerSlot *slot = nullptr);
 
   /**
    * @brief Ranks the relevance of a document to a given query.
@@ -642,7 +659,7 @@ public:
    * @param document The document string to rank.
    * @return A floating-point score representing the relevance of the document.
    */
-  float rank_document(const std::string &query, const std::string &document);
+  float rank_document(const std::string &query, const std::string &document, ServerSlot *slot);
 
   /**
    * @brief Ranks the relevance of multiple documents to a given query.
@@ -653,7 +670,11 @@ public:
    * each document.
    */
   std::vector<float> rank_documents(const std::string &query,
-                                    const std::vector<std::string> &documents);
+                                    const std::vector<std::string> &documents, ServerSlot *slot);
+
+
+  std::vector<float> rank_documents_task(const std::string &query,
+                                    const std::vector<std::string> &documents, ServerSlot *slot);
 
   /**
    * @brief Generates a response based on the input prompt and sampling
@@ -668,7 +689,8 @@ public:
    * @return A structure containing the generated response and its metadata.
    */
   struct ResponseOutput
-  generate_response(const std::string &input_prompt,
+  generate_response(ServerSlot *slot,
+                    const std::string &input_prompt,
                     struct common_params_sampling sparams,
                     GenerateResponseCallback callbakc = nullptr,
                     std::vector<std::string> stop = {});
@@ -684,7 +706,7 @@ public:
    * @return A structure containing the generated response and its metadata.
    */
   struct ResponseOutput
-  generate_response(const std::string &input_prompt,
+  generate_response(ServerSlot *slot, const std::string &input_prompt,
                     GenerateResponseCallback callbakc = nullptr,
                     std::vector<std::string> stop = {});
 
@@ -871,9 +893,9 @@ public:
    *
    * @return True if the end-of-generation is reached, false otherwise.
    */
-  bool is_eog() {
+  bool is_eog(ServerSlot *slot = nullptr) {
     return llama_vocab_is_eog(this->get_vocab(),
-                              common_sampler_last(this->sampler));
+                              common_sampler_last(slot->sampler));
   }
 
   /**
@@ -896,6 +918,10 @@ public:
    * @return The separator token.
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
+
+  ServerSlot *get_slot_by_id(int id);
+  ServerSlot *get_available_slot();
+  ServerSlot *wait_for_available_slot();
 
 protected:
   /**
@@ -1044,7 +1070,9 @@ protected:
    * @return The type of stopping condition encountered.
    */
   StopType
-  find_stop(std::vector<struct CompletionOutput> completion_result_list,
+  find_stop(
+    ServerSlot *slot,
+    std::vector<struct CompletionOutput> completion_result_list,
             std::vector<std::string> stopping_words);
 
   /**
@@ -1056,7 +1084,8 @@ protected:
    * @return The type of stopping condition encountered.
    */
   StopType
-  find_stop_word(std::vector<struct CompletionOutput> completion_result_list,
+  find_stop_word(ServerSlot *slot,
+    std::vector<struct CompletionOutput> completion_result_list,
                  std::string stopping_word);
 
   /**
@@ -1127,14 +1156,12 @@ protected:
   common_chat_templates_ptr chat_templates;
   OAICompactParserOptions oai_parser_opt;
 
-  ServerSlot * get_slot_by_id(int id);
-  ServerSlot * get_available_slot();
+  std::condition_variable server_slot_cv;
 
-private:
   /**
    * @brief A mutex for thread-safe operations.
    */
-  std::recursive_mutex mutex;
+  std::mutex mutex;
 };
 
 } // namespace llama_ros

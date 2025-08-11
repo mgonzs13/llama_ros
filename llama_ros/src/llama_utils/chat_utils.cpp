@@ -284,3 +284,9 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
 
   return ctx;
 }
+
+int32_t llama_utils::uuid_to_int32(const std::array<uint8_t, 16>& uuid) {
+    int32_t value;
+    std::memcpy(&value, uuid.data(), sizeof(int32_t));
+    return value;
+}

@@ -214,7 +214,7 @@ protected:
    * GenerateResponse action.
    */
   virtual void
-  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
+  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, ServerSlot *slot = nullptr);
 
   /**
    * @brief Sends the generated text response.
@@ -223,7 +223,7 @@ protected:
    *
    * @param completion The completion output containing the generated text.
    */
-  void send_text(const struct CompletionOutput &completion);
+  void send_text(const struct CompletionOutput &completion, ServerSlot *slot);
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -257,7 +257,7 @@ protected:
    * @param completion The completion output containing the generated chat
    * response.
    */
-  void send_text_chat_completions(const struct CompletionOutput &completion);
+  void send_text_chat_completions(const struct CompletionOutput &completion, ServerSlot *slot);
 
 private:
   /**

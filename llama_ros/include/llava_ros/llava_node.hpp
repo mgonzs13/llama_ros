@@ -33,6 +33,7 @@
 
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
+#include "llama_ros/llama.hpp"
 #include "llama_ros/llama_node.hpp"
 #include "llava_ros/llava.hpp"
 
@@ -119,7 +120,7 @@ protected:
    * GenerateResponse action.
    */
   void execute(
-      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) override;
+      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, llama_ros::ServerSlot* slot) override;
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.

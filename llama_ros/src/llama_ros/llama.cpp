@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <map>
 #include <memory>
+#include <mutex>
 
 #include "common.h"
 #include "llama_utils/chat_utils.hpp"
@@ -409,21 +410,31 @@ struct Metadata Llama::get_metadata() {
 *****************************
 */
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
-                                         bool special) {
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
-  return common_tokenize(this->ctx, text, add_bos, special);
+                                         bool special, ServerSlot *slot) {
+  return common_tokenize(slot->ctx, text, add_bos, special);
 }
 
-std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
-
+std::string Llama::detokenize(const std::vector<llama_token> &tokens, ServerSlot *slot) {
   std::string text;
 
   for (llama_token t : tokens) {
-    text.append(common_token_to_piece(this->ctx, t));
+    text.append(common_token_to_piece(slot->ctx, t));
   }
 
   return text;
+}
+
+std::vector<llama_token> Llama::tokenize_task(const std::string &text, bool add_bos,
+                                               bool special, ServerSlot *slot) {
+  auto result = common_tokenize(slot->ctx, text, add_bos, special);
+  slot->release();
+  return result;
+}
+
+std::string Llama::detokenize_task(const std::vector<llama_token> &tokens, ServerSlot *slot) {
+  auto result = common_detokenize(slot->ctx, tokens);
+  slot->release();
+  return result;
 }
 
 void Llama::cancel() { this->canceled = true; }
@@ -433,14 +444,14 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-struct EmbeddingsOuput
+struct EmbeddingsOutput
 Llama::generate_embeddings(const std::vector<llama_token> &tokens,
-                           int normalization) {
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+                           int normalization, ServerSlot *slot) {
+  std::lock_guard<std::mutex> lk(this->mutex);
 
   const int n_embd = this->get_n_embd();
 
-  struct EmbeddingsOuput output;
+  struct EmbeddingsOutput output;
   output.embeddings = std::vector<float>(n_embd, 0.0f);
   output.n_tokens = 0;
 
@@ -450,9 +461,9 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
     return output;
   }
 
-  if ((int)tokens.size() > this->get_n_ctx()) {
+  if ((int)tokens.size() > slot->n_ctx) {
     LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),
-                    this->get_n_ctx());
+                    slot->n_ctx);
     return output;
   }
 
@@ -462,7 +473,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
     common_batch_add(batch, tokens[i], i, {0}, true);
   }
 
-  if (llama_encode(this->ctx, batch)) {
+  if (llama_encode(slot->ctx, batch)) {
     LLAMA_LOG_ERROR("Failed to eval");
     return output;
   }
@@ -476,9 +487,9 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
       continue;
     }
 
-    const float *embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
+    const float *embd = llama_get_embeddings_seq(slot->ctx, batch.seq_id[i][0]);
     if (embd == NULL) {
-      embd = llama_get_embeddings_ith(this->ctx, i);
+      embd = llama_get_embeddings_ith(slot->ctx, i);
     }
 
     if (embd == NULL) {
@@ -500,13 +511,20 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
   return output;
 }
 
-struct EmbeddingsOuput
-Llama::generate_embeddings(const std::string &input_prompt, int normalization) {
+struct EmbeddingsOutput
+Llama::generate_embeddings(const std::string &input_prompt, int normalization, ServerSlot *slot) {
 
-  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
+  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true, slot);
   tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
 
-  return this->generate_embeddings(tokens, normalization);
+  return this->generate_embeddings(tokens, normalization, slot);
+}
+
+struct EmbeddingsOutput
+Llama::generate_embeddings_task(const std::string &input_prompt, int normalization, ServerSlot *slot) {
+  auto result = this->generate_embeddings(input_prompt, normalization, slot);
+  slot->release();
+  return result;
 }
 
 std::vector<llama_token>
@@ -535,7 +553,7 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 *****************************
 */
 float Llama::rank_document(const std::string &query,
-                           const std::string &document) {
+                           const std::string &document, ServerSlot *slot) {
 
   if (!this->is_reranking()) {
     LLAMA_LOG_ERROR(
@@ -548,7 +566,7 @@ float Llama::rank_document(const std::string &query,
 
   tokens.push_back(this->get_token_bos());
 
-  auto part1 = this->tokenize(query, false, true);
+  auto part1 = this->tokenize(query, false, true, slot);
   part1 =
       this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part1.begin(), part1.end());
@@ -556,19 +574,20 @@ float Llama::rank_document(const std::string &query,
   tokens.push_back(this->get_token_eos());
   tokens.push_back(this->get_token_sep());
 
-  auto part2 = this->tokenize(document, false, true);
+  auto part2 = this->tokenize(document, false, true, slot);
   part2 =
       this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part2.begin(), part2.end());
 
   tokens.push_back(this->get_token_eos());
 
-  return this->generate_embeddings(tokens, -1).embeddings.at(0);
+  return this->generate_embeddings(tokens, -1, slot).embeddings.at(0);
 }
 
 std::vector<float>
 Llama::rank_documents(const std::string &query,
-                      const std::vector<std::string> &documents) {
+                      const std::vector<std::string> &documents,
+                      ServerSlot *slot) {
 
   if (!this->is_reranking()) {
     LLAMA_LOG_ERROR(
@@ -579,10 +598,17 @@ Llama::rank_documents(const std::string &query,
   std::vector<float> scores;
 
   for (std::string doc : documents) {
-    scores.push_back(this->rank_document(query, doc));
+    scores.push_back(this->rank_document(query, doc, slot));
   }
 
   return scores;
+}
+
+std::vector<float> Llama::rank_documents_task(const std::string &query,
+                                  const std::vector<std::string> &documents, ServerSlot *slot) {
+  auto result = this->rank_documents(query, documents, slot);
+  slot->release();
+  return result;
 }
 
 /*
@@ -592,7 +618,7 @@ Llama::rank_documents(const std::string &query,
 */
 std::vector<struct LoRA> Llama::list_loras() {
 
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+  std::lock_guard<std::mutex> lk(this->mutex);
 
   std::vector<struct LoRA> loras;
 
@@ -612,7 +638,7 @@ std::vector<struct LoRA> Llama::list_loras() {
 
 void Llama::update_loras(std::vector<struct LoRA> loras) {
 
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
+  std::lock_guard<std::mutex> lk(this->mutex);
 
   for (auto lora : loras) {
     if (lora.id >= 0 && lora.id <= (int)this->lora_adapters.size()) {
@@ -649,18 +675,19 @@ void Llama::update_loras(std::vector<struct LoRA> loras) {
 *****************************
 */
 struct ResponseOutput
-Llama::generate_response(const std::string &input_prompt,
+Llama::generate_response(ServerSlot *slot,
+                         
+    const std::string &input_prompt,
                          GenerateResponseCallback callback,
                          std::vector<std::string> stop) {
   struct common_params_sampling sparams;
-  return this->generate_response(input_prompt, sparams, callback, stop);
+  return this->generate_response(slot, input_prompt, sparams, callback, stop);
 }
 
 struct ResponseOutput Llama::generate_response(
+    ServerSlot *slot,
     const std::string &input_prompt, struct common_params_sampling sparams,
     GenerateResponseCallback callback, std::vector<std::string> stop) {
-
-  std::lock_guard<std::recursive_mutex> lk(this->mutex);
 
   this->canceled = false;
   struct ResponseOutput output;
@@ -669,21 +696,21 @@ struct ResponseOutput Llama::generate_response(
   std::vector<struct CompletionOutput> completion_result_list;
 
   std::vector<std::string> stop_concat;
-  stop_concat.reserve(this->params.antiprompt.size() + stop.size());
-  stop_concat.insert(stop_concat.end(), this->params.antiprompt.begin(),
-                     this->params.antiprompt.end());
+  stop_concat.reserve(slot->params.antiprompt.size() + stop.size());
+  stop_concat.insert(stop_concat.end(), slot->params.antiprompt.begin(),
+                     slot->params.antiprompt.end());
   stop_concat.insert(stop_concat.end(), stop.begin(), stop.end());
 
   // create sampler
-  this->params.sampling = sparams;
+  slot->params.sampling = sparams;
 
-  if (this->sampler != nullptr) {
-    common_sampler_free(this->sampler);
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
   }
 
-  this->sampler = common_sampler_init(this->model, this->params.sampling);
+  slot->sampler = common_sampler_init(this->model, slot->params.sampling);
 
-  if (this->sampler == nullptr) {
+  if (slot->sampler == nullptr) {
     output.stop = StopType::ABORT;
     return output;
   }
@@ -692,9 +719,9 @@ struct ResponseOutput Llama::generate_response(
   this->load_prompt(input_prompt, true, true);
 
   // show sampling info
-  LLAMA_LOG_INFO("Sampler params: %s", this->params.sampling.print().c_str());
+  LLAMA_LOG_INFO("Sampler params: %s", slot->params.sampling.print().c_str());
   LLAMA_LOG_INFO("Sampler constr: %s",
-                 common_sampler_print(this->sampler).c_str());
+                 common_sampler_print(slot->sampler).c_str());
   LLAMA_LOG_INFO("Prompt tokens:\n%s",
                  this->detokenize(this->prompt_tokens).c_str());
   LLAMA_LOG_INFO("Starting Response Generation");
@@ -710,7 +737,7 @@ struct ResponseOutput Llama::generate_response(
 
   while (stopping != FULL_STOP) {
 
-    stopping = this->find_stop(completion_result_list, stop_concat);
+    stopping = this->find_stop(slot, completion_result_list, stop_concat);
 
     if (stopping == FULL_STOP) {
       if (this->canceled) {
@@ -728,7 +755,7 @@ struct ResponseOutput Llama::generate_response(
       if (!completion_result_list.empty()) {
         for (auto completion_ele : completion_result_list) {
           if (callback != nullptr) {
-            callback(completion_ele);
+            callback(completion_ele, slot);
           }
           response.push_back(completion_ele);
         }
@@ -836,13 +863,14 @@ void Llama::load_prompt(const std::string &input_prompt, bool add_pfx,
 *****************************
 */
 StopType
-Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
+Llama::find_stop(ServerSlot *slot,
+                  std::vector<struct CompletionOutput> completion_result_list,
                  std::vector<std::string> stopping_words) {
 
   // check if stopping word appear at the end of the output
   const int n_prev = 32;
   const std::string last_output =
-      common_sampler_prev_str(this->sampler, this->ctx, n_prev);
+      common_sampler_prev_str(slot->sampler, slot->ctx, n_prev);
 
   for (auto w : stopping_words) {
     if (last_output.find(w.c_str(), last_output.length() - w.length(),
@@ -853,7 +881,7 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
   }
 
   // eos
-  if (this->is_eog()) {
+  if (this->is_eog(slot)) {
     LLAMA_LOG_INFO("Stopping with EOS");
     return FULL_STOP;
   }
@@ -865,20 +893,20 @@ Llama::find_stop(std::vector<struct CompletionOutput> completion_result_list,
   }
 
   // respect the maximum number of tokens
-  if (this->n_past >= this->params.n_predict && this->params.n_predict >= 0) {
+  if (slot->n_past >= slot->params.n_predict && this->params.n_predict >= 0) {
     LLAMA_LOG_INFO("Maximum number of tokens reached %d",
                    this->params.n_predict);
     return FULL_STOP;
   }
 
-  if (this->n_past >= this->get_n_ctx() && this->params.n_predict == -2) {
+  if (slot->n_past >= this->get_n_ctx() && this->params.n_predict == -2) {
     LLAMA_LOG_INFO("Maximum number of tokens reached %d", this->get_n_ctx());
     return FULL_STOP;
   }
 
   // search for stopping words
   for (auto w : stopping_words) {
-    StopType s = this->find_stop_word(completion_result_list, w);
+    StopType s = this->find_stop_word(slot, completion_result_list, w);
     if (s != NO_STOP) {
 
       if (s == FULL_STOP) {
@@ -910,12 +938,13 @@ inline std::string trim(const std::string &str) {
 }
 
 StopType Llama::find_stop_word(
+    ServerSlot *slot,
     std::vector<struct CompletionOutput> completion_result_list,
     std::string stopping_word) {
 
   std::string completion_text = "";
   for (auto c : completion_result_list) {
-    completion_text.append(trim(this->detokenize({c.token})));
+    completion_text.append(trim(this->detokenize({c.token}, slot)));
   }
 
   if (completion_text.empty()) {
@@ -1174,8 +1203,52 @@ inline void ServerSlot::reset() {
   chat_msg = {};
 }
 
-inline void ServerSlot::release() {
+void ServerSlot::release() {
   if (is_processing()) {
+    LLAMA_LOG_INFO("Releasing slot %d", id);
     state = SLOT_STATE_IDLE;
   }
 }
+
+ServerSlot* Llama::get_slot_by_id(int id) {
+  for (auto &slot : this->server_slots) {
+    if (slot.goal_id == id) {
+      return &slot;
+    }
+  }
+
+    return nullptr;
+}
+
+ServerSlot* Llama::get_available_slot() {
+  for (auto &slot : this->server_slots) {
+    if (slot.state == SLOT_STATE_IDLE) {
+      return &slot;
+    }
+  }
+  return nullptr;
+}
+
+ServerSlot* Llama::wait_for_available_slot() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+
+    this->server_slot_cv.wait(lock, [this] {
+        for (auto &slot : this->server_slots) {
+            if (slot.state == SLOT_STATE_IDLE) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    for (auto &slot : this->server_slots) {
+        if (slot.state == SLOT_STATE_IDLE) {
+            LLAMA_LOG_INFO("Found available slot with id %d", slot.id);
+            slot.state = SLOT_STATE_STARTED;
+            return &slot;
+        }
+    }
+
+    return nullptr;
+}
+

@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "llama_ros/llama.hpp"
 #if defined(CV_BRIDGE_H)
 #include <cv_bridge/cv_bridge.h>
 #else
@@ -48,7 +49,7 @@ bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 }
 
 void LlavaNode::execute(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, llama_ros::ServerSlot* slot) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
   auto images_msg = goal_handle->get_goal()->images;

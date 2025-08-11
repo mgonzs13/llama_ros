@@ -329,7 +329,9 @@ void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
-  response->tokens = this->llama->tokenize(request->text, false);
+  ServerSlot *slot = this->llama->wait_for_available_slot();
+  response->tokens = this->llama->tokenize(request->text, false, 2, slot);
+  slot->release();
 }
 
 void LlamaNode::detokenize_service_callback(
@@ -341,7 +343,9 @@ void LlamaNode::detokenize_service_callback(
     tokens.push_back(t);
   }
 
-  response->text = this->llama->detokenize(tokens);
+  ServerSlot *slot = this->llama->wait_for_available_slot();
+  response->text = this->llama->detokenize(tokens, slot);
+  slot->release();
 }
 
 /*
@@ -352,11 +356,12 @@ void LlamaNode::detokenize_service_callback(
 void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
+  ServerSlot *slot = this->llama->wait_for_available_slot();
 
   RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
   auto embeddings =
-      this->llama->generate_embeddings(request->prompt, request->normalization);
+      this->llama->generate_embeddings_task(request->prompt, request->normalization, slot);
   response->embeddings = embeddings.embeddings;
   response->n_tokens = embeddings.n_tokens;
 
@@ -372,10 +377,12 @@ void LlamaNode::rerank_documents_service_callback(
     const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
 
+  ServerSlot *slot = this->llama->wait_for_available_slot();
+
   RCLCPP_INFO(this->get_logger(), "Reranking documents...");
 
   response->scores =
-      this->llama->rank_documents(request->query, request->documents);
+      this->llama->rank_documents_task(request->query, request->documents, slot);
 
   RCLCPP_INFO(this->get_logger(), "Reranking finished");
 }
@@ -440,6 +447,9 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  ServerSlot *slot = this->llama->wait_for_available_slot();
+  slot->goal_id = llama_utils::uuid_to_int32(uuid);
+
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -454,7 +464,9 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
   this->goal_handle_ = goal_handle;
-  std::thread{std::bind(&LlamaNode::execute, this, _1), goal_handle}.detach();
+  ServerSlot *slot = this->llama->get_slot_by_id(
+      llama_utils::uuid_to_int32(goal_handle->get_goal_id()));
+  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot}.detach();
 }
 
 bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -462,7 +474,8 @@ bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 }
 
 void LlamaNode::execute(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+    ServerSlot *slot) {
 
   // get goal data
   this->goal_handle_ = goal_handle;
@@ -483,7 +496,7 @@ void LlamaNode::execute(
 
   // reset llama
   if (reset) {
-    this->llama->reset();
+    slot->reset();
   }
 
   // update sampling params of common_params
@@ -499,7 +512,7 @@ void LlamaNode::execute(
   for (llama_token i = 0; i < this->llama->get_n_vocab(); i++) {
     if (llama_vocab_is_eog(this->llama->get_vocab(), i)) {
       RCLCPP_WARN(this->get_logger(), "added %s logit bias = %f\n",
-                  common_token_to_piece(this->llama->get_ctx(), i).c_str(),
+                  common_token_to_piece(slot->ctx, i).c_str(),
                   -INFINITY);
       llama_msgs::msg::LogitBias bias_eog;
       bias_eog.token = i;
@@ -520,14 +533,14 @@ void LlamaNode::execute(
                                                     this->llama->get_n_vocab());
 
   // call llama
-  struct ResponseOutput output = this->llama->generate_response(
-      prompt, sparams, std::bind(&LlamaNode::send_text, this, _1));
+  struct ResponseOutput output = this->llama->generate_response(slot,
+      prompt, sparams, std::bind(&LlamaNode::send_text, this, _1, slot));
 
   if (output.stop == StopType::FULL_STOP) {
     auto completion_results = output.completions;
 
     for (auto completion : completion_results) {
-      result->response.text.append(this->llama->detokenize({completion.token}));
+      result->response.text.append(this->llama->detokenize({completion.token}, slot));
       result->response.tokens.push_back(completion.token);
 
       llama_msgs::msg::TokenProbArray probs_msg;
@@ -535,7 +548,7 @@ void LlamaNode::execute(
         llama_msgs::msg::TokenProb aux;
         aux.token = prob.token;
         aux.probability = llama_utils::logit(prob.probability);
-        aux.token_text = this->llama->detokenize({prob.token});
+        aux.token_text = this->llama->detokenize({prob.token}, slot);
         probs_msg.data.push_back(aux);
       }
       result->response.probs.push_back(probs_msg);
@@ -558,13 +571,13 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const struct CompletionOutput &completion) {
+void LlamaNode::send_text(const struct CompletionOutput &completion, ServerSlot *slot) {
 
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
 
     feedback->partial_response.text =
-        this->llama->detokenize({completion.token});
+        this->llama->detokenize({completion.token}, slot);
     feedback->partial_response.token = completion.token;
     feedback->partial_response.probs.chosen_token = completion.token;
 
@@ -572,7 +585,7 @@ void LlamaNode::send_text(const struct CompletionOutput &completion) {
       llama_msgs::msg::TokenProb aux;
       aux.token = prob.token;
       aux.probability = prob.probability;
-      aux.token_text = this->llama->detokenize({prob.token});
+      aux.token_text = this->llama->detokenize({prob.token}, slot);
       feedback->partial_response.probs.data.push_back(aux);
     }
 
@@ -624,147 +637,147 @@ bool LlamaNode::goal_empty_chat_completions(
 void LlamaNode::execute_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
 
-  // get goal data
-  this->goal_handle_chat_ = goal_handle;
-  auto goal = goal_handle->get_goal();
-  auto result = std::make_shared<GenerateChatCompletions::Result>();
+  // // get goal data
+  // this->goal_handle_chat_ = goal_handle;
+  // auto goal = goal_handle->get_goal();
+  // auto result = std::make_shared<GenerateChatCompletions::Result>();
 
-  // check if goal is empty
-  if (this->goal_empty_chat_completions(goal)) {
-    this->goal_handle_chat_->abort(result);
-    return;
-  }
+  // // check if goal is empty
+  // if (this->goal_empty_chat_completions(goal)) {
+  //   this->goal_handle_chat_->abort(result);
+  //   return;
+  // }
 
-  this->llama->reset();
+  // this->llama->reset();
 
-  auto ctx =
-      llama_utils::prepare_chat_completions_call(goal, this->llama.get());
-  auto &sparams = ctx.sparams;
-  this->llama->oaicompat_chat_syntax = ctx.oaicompat_chat_syntax;
-  auto &chat_prompt_instance = ctx.chat_prompt_instance;
+  // auto chat_context =
+  //     llama_utils::prepare_chat_completions_call(goal, this->llama.get());
+  // auto &sparams = chat_context.sparams;
+  // this->llama->oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
+  // auto &chat_prompt_instance = chat_context.chat_prompt_instance;
 
-  llama_utils::ResponseResult response_result;
-  response_result.oaicompat_model = this->llama->get_metadata().general.name;
-  response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
-  response_result.build_info =
-      "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+  // llama_utils::ResponseResult response_result;
+  // response_result.oaicompat_model = this->llama->get_metadata().general.name;
+  // response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
+  // response_result.build_info =
+  //     "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
-  // call llama
-  llama_perf_context_data prev_stat_usage = this->llama->get_perf_data();
-  this->llama->prev_stat_usage = prev_stat_usage;
-  struct ResponseOutput chat_output = this->llama->generate_response(
-      chat_prompt_instance.prompt, sparams,
-      std::bind(&LlamaNode::send_text_chat_completions, this,
-                std::placeholders::_1));
+  // // call llama
+  // llama_perf_context_data prev_stat_usage = this->llama->get_perf_data();
+  // this->llama->prev_stat_usage = prev_stat_usage;
+  // struct ResponseOutput chat_output = this->llama->generate_response(
+  //     chat_prompt_instance.prompt, sparams,
+  //     std::bind(&LlamaNode::send_text_chat_completions, this,
+  //               std::placeholders::_1));
 
-  if (chat_output.stop == StopType::FULL_STOP) {
-    response_result.index = 0;
-    auto completion_results = chat_output.completions;
-    response_result.stream = goal->stream;
-    response_result.prompt = chat_prompt_instance.prompt;
+  // if (chat_output.stop == StopType::FULL_STOP) {
+  //   response_result.index = 0;
+  //   auto completion_results = chat_output.completions;
+  //   response_result.stream = goal->stream;
+  //   response_result.prompt = chat_prompt_instance.prompt;
 
-    auto stat_usage = this->llama->get_perf_data();
+  //   auto stat_usage = this->llama->get_perf_data();
 
-    response_result.n_decoded = stat_usage.n_eval - prev_stat_usage.n_eval;
-    response_result.n_prompt_tokens =
-        stat_usage.n_p_eval - prev_stat_usage.n_p_eval;
-    response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval -
-                                      prev_stat_usage.n_eval -
-                                      prev_stat_usage.n_p_eval;
-    response_result.stop = llama_ros::StopType::FULL_STOP;
-    response_result.post_sampling_probs = false;
+  //   response_result.n_decoded = stat_usage.n_eval - prev_stat_usage.n_eval;
+  //   response_result.n_prompt_tokens =
+  //       stat_usage.n_p_eval - prev_stat_usage.n_p_eval;
+  //   response_result.n_tokens_cached = stat_usage.n_eval + stat_usage.n_p_eval -
+  //                                     prev_stat_usage.n_eval -
+  //                                     prev_stat_usage.n_p_eval;
+  //   response_result.stop = llama_ros::StopType::FULL_STOP;
+  //   response_result.post_sampling_probs = false;
 
-    response_result.oaicompat_chat_format = chat_prompt_instance.format;
-    std::string result_content;
+  //   response_result.oaicompat_chat_format = chat_prompt_instance.format;
+  //   std::string result_content;
 
-    for (auto completion : completion_results) {
-      response_result.content.append(
-          this->llama->detokenize({completion.token}));
-      response_result.tokens.push_back(completion.token);
+  //   for (auto completion : completion_results) {
+  //     response_result.content.append(
+  //         this->llama->detokenize({completion.token}));
+  //     response_result.tokens.push_back(completion.token);
 
-      struct llama_utils::SelectedLogProb probs_msg;
+  //     struct llama_utils::SelectedLogProb probs_msg;
 
-      for (auto prob_cmpl : completion.probs) {
-        struct llama_utils::LogProb prob;
-        prob.token = prob_cmpl.token;
-        prob.probability = prob_cmpl.probability;
-        prob.text = this->llama->detokenize({prob.token});
-        probs_msg.data.push_back(prob);
-      }
-      probs_msg.chosen_token = probs_msg.data[0];
+  //     for (auto prob_cmpl : completion.probs) {
+  //       struct llama_utils::LogProb prob;
+  //       prob.token = prob_cmpl.token;
+  //       prob.probability = prob_cmpl.probability;
+  //       prob.text = this->llama->detokenize({prob.token});
+  //       probs_msg.data.push_back(prob);
+  //     }
+  //     probs_msg.chosen_token = probs_msg.data[0];
 
-      response_result.probs_output.push_back(probs_msg);
-    }
+  //     response_result.probs_output.push_back(probs_msg);
+  //   }
 
-    this->llama->generated_text = response_result.content;
-    common_chat_msg msg = this->llama->update_chat_msg(chat_output.stop);
-    response_result.chat_msg = msg;
+  //   this->llama->generated_text = response_result.content;
+  //   common_chat_msg msg = this->llama->update_chat_msg(chat_output.stop);
+  //   response_result.chat_msg = msg;
 
-    RCLCPP_INFO(this->get_logger(), "Chat response generated %s",
-                response_result.content.c_str());
+  //   RCLCPP_INFO(this->get_logger(), "Chat response generated %s",
+  //               response_result.content.c_str());
 
-    *result = llama_utils::generate_chat_completions_result(response_result);
-  }
+  //   *result = llama_utils::generate_chat_completions_result(response_result);
+  // }
 
-  if (rclcpp::ok()) {
+  // if (rclcpp::ok()) {
 
-    if (chat_output.stop == StopType::CANCEL) {
-      this->goal_handle_chat_->canceled(result);
+  //   if (chat_output.stop == StopType::CANCEL) {
+  //     this->goal_handle_chat_->canceled(result);
 
-    } else if (chat_output.stop == StopType::ABORT) {
-      this->goal_handle_chat_->abort(result);
+  //   } else if (chat_output.stop == StopType::ABORT) {
+  //     this->goal_handle_chat_->abort(result);
 
-    } else {
-      this->goal_handle_chat_->succeed(result);
-    }
+  //   } else {
+  //     this->goal_handle_chat_->succeed(result);
+  //   }
 
-    this->goal_handle_ = nullptr;
-  }
+  //   this->goal_handle_ = nullptr;
+  // }
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion) {
-  if (this->goal_handle_chat_ != nullptr) {
-    llama_utils::ResponseResult response_result;
+    const struct CompletionOutput &completion, ServerSlot *slot) {
+  // if (this->goal_handle_chat_ != nullptr) {
+  //   llama_utils::ResponseResult response_result;
 
-    response_result.oaicompat_model = this->llama->get_metadata().general.name;
-    response_result.oaicompat_cmpl_id = "chatcmplid-0";
-    response_result.build_info =
-        "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+  //   response_result.oaicompat_model = this->llama->get_metadata().general.name;
+  //   response_result.oaicompat_cmpl_id = "chatcmplid-0";
+  //   response_result.build_info =
+  //       "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
 
-    response_result.content = this->llama->detokenize({completion.token});
-    response_result.probs_output.push_back(llama_utils::SelectedLogProb());
+  //   response_result.content = this->llama->detokenize({completion.token});
+  //   response_result.probs_output.push_back(llama_utils::SelectedLogProb());
 
-    auto cur_stat_usage = this->llama->get_perf_data();
-    response_result.n_decoded =
-        cur_stat_usage.n_eval - this->llama->prev_stat_usage.n_eval;
-    response_result.n_prompt_tokens =
-        cur_stat_usage.n_p_eval - this->llama->prev_stat_usage.n_p_eval;
-    response_result.n_tokens_cached = cur_stat_usage.n_eval +
-                                      cur_stat_usage.n_p_eval -
-                                      this->llama->prev_stat_usage.n_eval -
-                                      this->llama->prev_stat_usage.n_p_eval;
-    response_result.stop = llama_ros::StopType::NO_STOP;
-    response_result.post_sampling_probs = false;
+  //   auto cur_stat_usage = this->llama->get_perf_data();
+  //   response_result.n_decoded =
+  //       cur_stat_usage.n_eval - this->llama->prev_stat_usage.n_eval;
+  //   response_result.n_prompt_tokens =
+  //       cur_stat_usage.n_p_eval - this->llama->prev_stat_usage.n_p_eval;
+  //   response_result.n_tokens_cached = cur_stat_usage.n_eval +
+  //                                     cur_stat_usage.n_p_eval -
+  //                                     this->llama->prev_stat_usage.n_eval -
+  //                                     this->llama->prev_stat_usage.n_p_eval;
+  //   response_result.stop = llama_ros::StopType::NO_STOP;
+  //   response_result.post_sampling_probs = false;
 
-    for (auto prob_cmpl : completion.probs) {
-      struct llama_utils::LogProb lobprob;
-      lobprob.token = prob_cmpl.token;
-      lobprob.probability = prob_cmpl.probability;
-      lobprob.text = this->llama->detokenize({lobprob.token});
-      response_result.probs_output[0].data.push_back(lobprob);
-    }
+  //   for (auto prob_cmpl : completion.probs) {
+  //     struct llama_utils::LogProb lobprob;
+  //     lobprob.token = prob_cmpl.token;
+  //     lobprob.probability = prob_cmpl.probability;
+  //     lobprob.text = this->llama->detokenize({lobprob.token});
+  //     response_result.probs_output[0].data.push_back(lobprob);
+  //   }
 
-    this->llama->generated_text.append(response_result.content);
-    this->llama->update_chat_msg(NO_STOP);
-    auto diffs = this->llama->oaicompat_msg_diffs;
+  //   this->llama->generated_text.append(response_result.content);
+  //   this->llama->update_chat_msg(NO_STOP);
+  //   auto diffs = this->llama->oaicompat_msg_diffs;
 
-    auto feedbacks =
-        llama_utils::generate_chat_completions_feedback(response_result, diffs);
+  //   auto feedbacks =
+  //       llama_utils::generate_chat_completions_feedback(response_result, diffs);
 
-    for (auto &feedback : feedbacks) {
-      this->goal_handle_chat_->publish_feedback(
-          std::make_shared<GenerateChatCompletions::Feedback>(feedback));
-    }
-  }
+  //   for (auto &feedback : feedbacks) {
+  //     this->goal_handle_chat_->publish_feedback(
+  //         std::make_shared<GenerateChatCompletions::Feedback>(feedback));
+  //   }
+  // }
 }
