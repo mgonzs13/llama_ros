@@ -125,7 +125,7 @@ protected:
    *
    * @return True if the prompt evaluation is successful, false otherwise.
    */
-  bool eval_prompt() override;
+  bool eval_prompt(llama_ros::ServerSlot *slot) override;
 
   /**
    * @brief Pointer to the multimodal context used for image processing.

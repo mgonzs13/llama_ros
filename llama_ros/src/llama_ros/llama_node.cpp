@@ -330,7 +330,7 @@ void LlamaNode::tokenize_service_callback(
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
   ServerSlot *slot = this->llama->wait_for_available_slot();
-  response->tokens = this->llama->tokenize(request->text, false, 2, slot);
+  response->tokens = this->llama->tokenize(request->text, false, 2);
   slot->release();
 }
 
@@ -344,7 +344,7 @@ void LlamaNode::detokenize_service_callback(
   }
 
   ServerSlot *slot = this->llama->wait_for_available_slot();
-  response->text = this->llama->detokenize(tokens, slot);
+  response->text = this->llama->detokenize(tokens);
   slot->release();
 }
 
@@ -499,6 +499,8 @@ void LlamaNode::execute(
     slot->reset();
   }
 
+  RCLCPP_INFO(this->get_logger(), "Llama context reset");
+
   // update sampling params of common_params
   auto sampling_config = goal->sampling_config;
 
@@ -508,11 +510,13 @@ void LlamaNode::execute(
                 "vocab does not have an EOS token, ignoring --ignore-eos\n");
     sampling_config.ignore_eos = false;
   }
+  RCLCPP_INFO(this->get_logger(),
+            "Using ignore_eos = %s", sampling_config.ignore_eos ? "true" : "false");
 
   for (llama_token i = 0; i < this->llama->get_n_vocab(); i++) {
     if (llama_vocab_is_eog(this->llama->get_vocab(), i)) {
       RCLCPP_WARN(this->get_logger(), "added %s logit bias = %f\n",
-                  common_token_to_piece(slot->ctx, i).c_str(),
+                  common_token_to_piece(this->llama->get_ctx(), i).c_str(),
                   -INFINITY);
       llama_msgs::msg::LogitBias bias_eog;
       bias_eog.token = i;
@@ -520,6 +524,8 @@ void LlamaNode::execute(
       sampling_config.logit_bias_eog.data.push_back(bias_eog);
     }
   }
+  RCLCPP_INFO(this->get_logger(),
+            "Using %ld EOG logit biases", sampling_config.logit_bias_eog.data.size());
 
   if (sampling_config.ignore_eos) {
     // add EOG biases to the active set of logit biases
@@ -532,15 +538,17 @@ void LlamaNode::execute(
   auto sparams = llama_utils::parse_sampling_params(sampling_config,
                                                     this->llama->get_n_vocab());
 
+  RCLCPP_INFO(this->get_logger(), "Parsed sampling params, generating response");
   // call llama
   struct ResponseOutput output = this->llama->generate_response(slot,
       prompt, sparams, std::bind(&LlamaNode::send_text, this, _1, slot));
 
+  RCLCPP_INFO(this->get_logger(), "Response generated");
   if (output.stop == StopType::FULL_STOP) {
     auto completion_results = output.completions;
 
     for (auto completion : completion_results) {
-      result->response.text.append(this->llama->detokenize({completion.token}, slot));
+      result->response.text.append(this->llama->detokenize({completion.token}));
       result->response.tokens.push_back(completion.token);
 
       llama_msgs::msg::TokenProbArray probs_msg;
@@ -548,7 +556,7 @@ void LlamaNode::execute(
         llama_msgs::msg::TokenProb aux;
         aux.token = prob.token;
         aux.probability = llama_utils::logit(prob.probability);
-        aux.token_text = this->llama->detokenize({prob.token}, slot);
+        aux.token_text = this->llama->detokenize({prob.token});
         probs_msg.data.push_back(aux);
       }
       result->response.probs.push_back(probs_msg);
@@ -577,7 +585,7 @@ void LlamaNode::send_text(const struct CompletionOutput &completion, ServerSlot 
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
 
     feedback->partial_response.text =
-        this->llama->detokenize({completion.token}, slot);
+        this->llama->detokenize({completion.token});
     feedback->partial_response.token = completion.token;
     feedback->partial_response.probs.chosen_token = completion.token;
 
@@ -585,7 +593,7 @@ void LlamaNode::send_text(const struct CompletionOutput &completion, ServerSlot 
       llama_msgs::msg::TokenProb aux;
       aux.token = prob.token;
       aux.probability = prob.probability;
-      aux.token_text = this->llama->detokenize({prob.token}, slot);
+      aux.token_text = this->llama->detokenize({prob.token});
       feedback->partial_response.probs.data.push_back(aux);
     }
 

@@ -26,6 +26,7 @@
 #include "base64.hpp"
 #include "common.h"
 
+#include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
 
@@ -144,7 +145,7 @@ void Llava::clear_mtmds() {
 *        EVAL IMAGE         *
 *****************************
 */
-bool Llava::eval_prompt() {
+bool Llava::eval_prompt(llama_ros::ServerSlot *slot) {
 
   for (size_t i = 0; i < this->chunks.size(); i++) {
 
@@ -172,7 +173,7 @@ bool Llava::eval_prompt() {
         this->prompt_tokens.push_back(tokens[j]);
       }
 
-      if (!Llama::eval_prompt(this->prompt_tokens)) {
+      if (!Llama::eval_prompt(this->prompt_tokens, slot)) {
         return false;
       }
     }

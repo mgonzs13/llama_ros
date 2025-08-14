@@ -567,8 +567,7 @@ public:
    * @return A vector of tokens representing the tokenized text.
    */
   std::vector<llama_token> tokenize(const std::string &text, bool add_bos,
-                                    bool special = false,
-                                    ServerSlot *slot = nullptr);
+                                    bool special = false);
 
   /**
    * @brief Converts a vector of tokens back into a string.
@@ -576,8 +575,7 @@ public:
    * @param tokens The vector of tokens to detokenize.
    * @return The detokenized string.
    */
-  std::string detokenize(const std::vector<llama_token> &tokens,
-                         ServerSlot *slot = nullptr);
+  std::string detokenize(const std::vector<llama_token> &tokens);
 
   std::vector<llama_token> tokenize_task(const std::string &text, bool add_bos,
                                     bool special = false,
@@ -1103,7 +1101,7 @@ protected:
    *
    * @return True if the prompt evaluation is successful, false otherwise.
    */
-  virtual bool eval_prompt();
+  virtual bool eval_prompt(ServerSlot *slot);
 
   /**
    * @brief Evaluates a vector of prompt tokens.
@@ -1111,7 +1109,7 @@ protected:
    * @param prompt_tokens The vector of tokens to evaluate.
    * @return True if the token evaluation is successful, false otherwise.
    */
-  bool eval_prompt(std::vector<llama_token> prompt_tokens);
+  bool eval_prompt(std::vector<llama_token> prompt_tokens, ServerSlot *slot);
 
   /**
    * @brief Evaluates a single token.

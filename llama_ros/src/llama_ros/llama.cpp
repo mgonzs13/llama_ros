@@ -59,6 +59,8 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 
   // Slots
   const int32_t n_ctx_slot = this->params.n_ctx /  this->params.n_parallel;
+  LLAMA_LOG_INFO("slot context size: %d", n_ctx_slot);
+
   for (int i = 0; i < this->params.n_parallel; i++) {
     ServerSlot slot;
     slot.id = i;
@@ -96,6 +98,8 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 
   set_process_priority(this->params.cpuparams.priority);
 
+  LLAMA_LOG_INFO("loaded threadpool params");
+
   this->threadpool_batch = NULL;
   if (!ggml_threadpool_params_match(&tpp, &tpp_batch)) {
     this->threadpool_batch = ggml_threadpool_new(&tpp_batch);
@@ -109,15 +113,19 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     tpp.paused = true;
   }
 
+  LLAMA_LOG_INFO("creating threadpool");
+
   this->threadpool = ggml_threadpool_new(&tpp);
   if (!this->threadpool) {
     LLAMA_LOG_ERROR("Failed to create threadpool: n_threads %d", tpp.n_threads);
     return;
   }
 
+  LLAMA_LOG_INFO("attaching threadpool");
   llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
 
   // create the sampler
+  LLAMA_LOG_INFO("initializing sampler");
   this->sampler = common_sampler_init(this->model, this->params.sampling);
   if (!this->sampler) {
     LLAMA_LOG_ERROR("Failed to initialize sampler");
@@ -131,10 +139,11 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
                    this->get_n_ctx_train(), this->get_n_ctx());
   }
 
-  // set inital values
-  if (initial_reset) {
-    this->reset();
-  }
+  // set initial values
+  // LLAMA_LOG_INFO("setting initial values");
+  // if (initial_reset) {
+  //   this->reset();
+  // }
 
   // show info
   LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
@@ -202,9 +211,9 @@ void Llama::reset() {
   this->prompt_tokens.clear();
 
   // load system prompt
-  if (!this->eval_system_prompt()) {
-    LLAMA_LOG_ERROR("Failed to eval system prompt");
-  }
+  // if (!this->eval_system_prompt()) {
+  //   LLAMA_LOG_ERROR("Failed to eval system prompt");
+  // }
 
   // number of tokens to keep when resetting context
   if (this->params.n_keep < 0) {
@@ -410,15 +419,15 @@ struct Metadata Llama::get_metadata() {
 *****************************
 */
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
-                                         bool special, ServerSlot *slot) {
-  return common_tokenize(slot->ctx, text, add_bos, special);
+                                         bool special) {
+  return common_tokenize(this->ctx, text, add_bos, special);
 }
 
-std::string Llama::detokenize(const std::vector<llama_token> &tokens, ServerSlot *slot) {
+std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   std::string text;
 
   for (llama_token t : tokens) {
-    text.append(common_token_to_piece(slot->ctx, t));
+    text.append(common_token_to_piece(this->ctx, t));
   }
 
   return text;
@@ -426,7 +435,7 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens, ServerSlot
 
 std::vector<llama_token> Llama::tokenize_task(const std::string &text, bool add_bos,
                                                bool special, ServerSlot *slot) {
-  auto result = common_tokenize(slot->ctx, text, add_bos, special);
+  auto result = common_tokenize(this->ctx, text, add_bos, special);
   slot->release();
   return result;
 }
@@ -514,7 +523,7 @@ Llama::generate_embeddings(const std::vector<llama_token> &tokens,
 struct EmbeddingsOutput
 Llama::generate_embeddings(const std::string &input_prompt, int normalization, ServerSlot *slot) {
 
-  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true, slot);
+  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
   tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
 
   return this->generate_embeddings(tokens, normalization, slot);
@@ -566,7 +575,7 @@ float Llama::rank_document(const std::string &query,
 
   tokens.push_back(this->get_token_bos());
 
-  auto part1 = this->tokenize(query, false, true, slot);
+  auto part1 = this->tokenize(query, false, true);
   part1 =
       this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part1.begin(), part1.end());
@@ -574,7 +583,7 @@ float Llama::rank_document(const std::string &query,
   tokens.push_back(this->get_token_eos());
   tokens.push_back(this->get_token_sep());
 
-  auto part2 = this->tokenize(document, false, true, slot);
+  auto part2 = this->tokenize(document, false, true);
   part2 =
       this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), part2.begin(), part2.end());
@@ -716,6 +725,7 @@ struct ResponseOutput Llama::generate_response(
   }
 
   // load prompt
+  LLAMA_LOG_INFO("Loading prompt");
   this->load_prompt(input_prompt, true, true);
 
   // show sampling info
@@ -724,15 +734,16 @@ struct ResponseOutput Llama::generate_response(
                  common_sampler_print(slot->sampler).c_str());
   LLAMA_LOG_INFO("Prompt tokens:\n%s",
                  this->detokenize(this->prompt_tokens).c_str());
-  LLAMA_LOG_INFO("Starting Response Generation");
 
+  LLAMA_LOG_INFO("Evaluating prompt");
   // eval prompt
-  if (!this->eval_prompt()) {
+  if (!this->eval_prompt(slot)) {
     output.stop = StopType::ABORT;
     return output;
   }
 
   // generation loop
+  LLAMA_LOG_INFO("Start Response Generation");
   StopType stopping = NO_STOP;
 
   while (stopping != FULL_STOP) {
@@ -869,8 +880,10 @@ Llama::find_stop(ServerSlot *slot,
 
   // check if stopping word appear at the end of the output
   const int n_prev = 32;
+
   const std::string last_output =
-      common_sampler_prev_str(slot->sampler, slot->ctx, n_prev);
+      common_sampler_prev_str(slot->sampler, this->ctx, n_prev);
+  LLAMA_LOG_INFO("Last output: %s", last_output.c_str());
 
   for (auto w : stopping_words) {
     if (last_output.find(w.c_str(), last_output.length() - w.length(),
@@ -944,7 +957,7 @@ StopType Llama::find_stop_word(
 
   std::string completion_text = "";
   for (auto c : completion_result_list) {
-    completion_text.append(trim(this->detokenize({c.token}, slot)));
+    completion_text.append(trim(this->detokenize({c.token})));
   }
 
   if (completion_text.empty()) {
@@ -974,35 +987,35 @@ StopType Llama::find_stop_word(
 */
 bool Llama::eval_system_prompt() {
 
-  if (this->system_prompt.size() > 0) {
-    // load prompt
-    this->load_prompt(this->system_prompt, false, false);
+  // if (this->system_prompt.size() > 0) {
+  //   // load prompt
+  //   this->load_prompt(this->system_prompt, false, false);
 
-    // eval prompt
-    if (!this->eval_prompt()) {
-      return false;
-    }
-  }
+  //   // eval prompt
+  //   if (!this->eval_prompt()) {
+  //     return false;
+  //   }
+  // }
 
   return true;
 }
 
-bool Llama::eval_prompt() { return this->eval_prompt(this->prompt_tokens); }
+bool Llama::eval_prompt(ServerSlot *slot) { return this->eval_prompt(this->prompt_tokens, slot); }
 
-bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens) {
+bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens, ServerSlot *slot) {
 
   std::vector<llama_token> batch;
   batch.reserve(this->params.n_batch);
 
-  while (((int)prompt_tokens.size() > this->n_consumed)) {
+  while (((int)prompt_tokens.size() > slot->n_consumed)) {
 
-    while (((int)prompt_tokens.size() > this->n_consumed) &&
+    while (((int)prompt_tokens.size() > slot->n_consumed) &&
            ((int)batch.size() < this->params.n_batch)) {
 
-      batch.push_back(prompt_tokens[this->n_consumed]);
-      common_sampler_accept(this->sampler, prompt_tokens[this->n_consumed],
+      batch.push_back(prompt_tokens[slot->n_consumed]);
+      common_sampler_accept(slot->sampler, prompt_tokens[slot->n_consumed],
                             false);
-      ++this->n_consumed;
+      ++slot->n_consumed;
     }
 
     if (!this->eval(batch)) {
@@ -1193,7 +1206,7 @@ inline const common_chat_msg ServerSlot::update_chat_msg(std::vector<common_chat
   return chat_msg;
 }
 
-inline void ServerSlot::reset() {
+void ServerSlot::reset() {
   generated_text.clear();
   stop = StopType::NO_STOP;
   stopping_word.clear();
