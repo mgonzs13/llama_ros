@@ -61,7 +61,6 @@ def generate_launch_description():
             "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=32.0),
             "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
             "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
-            "defrag_thold": LaunchConfiguration("defrag_thold", default=0.1),
             # bool params
             "embedding": embedding,
             "reranking": reranking,
