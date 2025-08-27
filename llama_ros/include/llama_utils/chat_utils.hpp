@@ -36,132 +36,9 @@
 #include "llama_utils/llama_params.hpp"
 
 namespace llama_utils {
-
-/**
- * @brief Represents a log probability for a token.
- */
-struct LogProb {
-  /**
-   * @brief The token ID.
-   */
-  int token;
-
-  /**
-   * @brief The log probability of the token.
-   */
-  float probability;
-
-  /**
-   * @brief The text representation of the token.
-   */
-  std::string text;
-};
-
-/**
- * @brief Represents a selected log probability and its associated data.
- */
-struct SelectedLogProb {
-  /**
-   * @brief The chosen token and its log probability.
-   */
-  LogProb chosen_token;
-
-  /**
-   * @brief A list of log probabilities for other tokens.
-   */
-  std::vector<LogProb> data;
-};
-
 /**
  * @brief Represents the result of a chat response.
  */
-struct ResponseResult {
-  /**
-   * @brief The index of the response in a sequence.
-   */
-  int index;
-
-  /**
-   * @brief The content of the chat response.
-   */
-  std::string content;
-
-  /**
-   * @brief The list of token IDs in the response.
-   */
-  std::vector<int> tokens;
-
-  /**
-   * @brief Indicates if the response is streamed.
-   */
-  bool stream;
-
-  /**
-   * @brief The prompt used to generate the response.
-   */
-  std::string prompt;
-
-  /**
-   * @brief Build information for debugging purposes.
-   */
-  std::string build_info;
-
-  /**
-   * @brief The number of tokens decoded in the response.
-   */
-  int32_t n_decoded;
-
-  /**
-   * @brief The number of tokens in the prompt.
-   */
-  int32_t n_prompt_tokens;
-
-  /**
-   * @brief The number of tokens retrieved from the cache.
-   */
-  int32_t n_tokens_cached;
-
-  /**
-   * @brief The stop condition for the response generation.
-   */
-  llama_ros::StopType stop;
-
-  /**
-   * @brief Indicates if post-sampling probabilities are included.
-   */
-  bool post_sampling_probs;
-
-  /**
-   * @brief The output probabilities for selected tokens.
-   */
-  std::vector<SelectedLogProb> probs_output;
-
-  /**
-   * @brief Additional fields included in the response.
-   */
-  std::vector<std::string> response_fields;
-
-  /**
-   * @brief The OpenAI-compatible chat format.
-   */
-  common_chat_format oaicompat_chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
-
-  /**
-   * @brief The OpenAI-compatible model name.
-   */
-  std::string oaicompat_model;
-
-  /**
-   * @brief The OpenAI-compatible completion ID.
-   */
-  std::string oaicompat_cmpl_id;
-
-  /**
-   * @brief The OpenAI-compatible chat syntax. Used while streaming the
-   * response.
-   */
-  common_chat_msg chat_msg;
-};
 
 /**
  * @brief Generates a random alphanumeric string.
@@ -183,6 +60,33 @@ static inline std::string random_string(int string_size) {
   }
 
   return result;
+}
+
+static size_t validate_utf8(const std::string& text) {
+    size_t len = text.size();
+    if (len == 0) return 0;
+
+    // Check the last few bytes to see if a multi-byte character is cut off
+    for (size_t i = 1; i <= 4 && i <= len; ++i) {
+        unsigned char c = text[len - i];
+        // Check for start of a multi-byte sequence from the end
+        if ((c & 0xE0) == 0xC0) {
+            // 2-byte character start: 110xxxxx
+            // Needs at least 2 bytes
+            if (i < 2) return len - i;
+        } else if ((c & 0xF0) == 0xE0) {
+            // 3-byte character start: 1110xxxx
+            // Needs at least 3 bytes
+            if (i < 3) return len - i;
+        } else if ((c & 0xF8) == 0xF0) {
+            // 4-byte character start: 11110xxx
+            // Needs at least 4 bytes
+            if (i < 4) return len - i;
+        }
+    }
+
+    // If no cut-off multi-byte character is found, return full length
+    return len;
 }
 
 static inline std::string random_string() { return random_string(32); }
@@ -232,7 +136,7 @@ struct common_chat_templates_inputs parse_chat_completions_goal(
  * @return The generated result for the action.
  */
 llama_msgs::action::GenerateChatCompletions::Result
-generate_chat_completions_result(const ResponseResult &result);
+generate_chat_completions_result(const llama_ros::ServerTaskResultChatCompletion &result);
 
 /**
  * @brief Generates feedback for a chat completion action.
@@ -242,7 +146,7 @@ generate_chat_completions_result(const ResponseResult &result);
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(
-    const ResponseResult &result,
+    const llama_ros::ServerTaskResultChatCompletion &result,
     std::vector<common_chat_msg_diff> deltas = {});
 
 /**

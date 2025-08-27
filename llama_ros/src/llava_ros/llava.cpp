@@ -62,11 +62,11 @@ void Llava::reset() { Llama::reset(); }
 *****************************
 */
 void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
-                        bool add_sfx) {
+                        bool add_sfx, llama_ros::ServerSlot *slot) {
 
   std::string prompt = input_prompt;
 
-  if (add_pfx && !this->check_if_prefix()) {
+  if (add_pfx && !this->check_if_prefix(slot)) {
     prompt = this->params.input_prefix + prompt;
   }
 
@@ -170,10 +170,10 @@ bool Llava::eval_prompt(llama_ros::ServerSlot *slot) {
       auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
 
       for (size_t j = 0; j < n_tokens; j++) {
-        this->prompt_tokens.push_back(tokens[j]);
+        slot->prompt_tokens.push_back(tokens[j]);
       }
 
-      if (!Llama::eval_prompt(this->prompt_tokens, slot)) {
+      if (!Llama::eval_prompt(slot->prompt_tokens, slot)) {
         return false;
       }
     }
@@ -182,7 +182,7 @@ bool Llava::eval_prompt(llama_ros::ServerSlot *slot) {
   }
 
   LLAMA_LOG_INFO("llava prompt: %s",
-                 this->detokenize(this->prompt_tokens).c_str());
+                 this->detokenize(slot->prompt_tokens).c_str());
 
   return true;
 }
@@ -196,3 +196,4 @@ bool Llava::eval_mtmd_chunk(const mtmd_input_chunk *image_chunk) {
                                        true,                      // logits last
                                        &this->n_past) == 0;
 }
+

@@ -447,8 +447,11 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
   ServerSlot *slot = this->llama->wait_for_available_slot();
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
+  RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %d",
+              slot->id, slot->goal_id);
 
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }

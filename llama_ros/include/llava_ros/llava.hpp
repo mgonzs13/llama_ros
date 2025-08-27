@@ -103,7 +103,7 @@ protected:
    * @param add_sfx Whether to add a suffix to the prompt.
    */
   void load_prompt(const std::string &input_prompt, bool add_pfx,
-                   bool add_sfx) override;
+                   bool add_sfx, llama_ros::ServerSlot *slot) override;
 
   /**
    * @brief Evaluates a specific mtmd chunk in the Llava model.

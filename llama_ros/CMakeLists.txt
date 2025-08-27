@@ -55,30 +55,30 @@ target_link_libraries(llama_node
   Threads::Threads
 )
 
-add_executable(llava_node
-  src/llama_ros/llama.cpp
-  src/llava_ros/llava.cpp
-  src/llama_utils/logs.cpp
-  src/llama_utils/chat_utils.cpp
-  src/llama_utils/llama_params.cpp
-  src/llama_ros/llama_node.cpp
-  src/llava_ros/llava_node.cpp
-  src/llava_main.cpp
-)
-target_link_libraries(llava_node
-  cv_bridge::cv_bridge
-  llama_cpp_vendor::llama
-  llama_cpp_vendor::mtmd
-  llama_cpp_vendor::common
-  ${CMAKE_THREAD_LIBS_INIT}
-  rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${llama_msgs_TARGETS}
-  ${llama_cpp_vendor_TARGETS}
-  ${llama_hfhub_vendor_TARGETS}
-  Threads::Threads
-)
+# add_executable(llava_node
+#   src/llama_ros/llama.cpp
+#   src/llava_ros/llava.cpp
+#   src/llama_utils/logs.cpp
+#   src/llama_utils/chat_utils.cpp
+#   src/llama_utils/llama_params.cpp
+#   src/llama_ros/llama_node.cpp
+#   src/llava_ros/llava_node.cpp
+#   src/llava_main.cpp
+# )
+# target_link_libraries(llava_node
+#   cv_bridge::cv_bridge
+#   llama_cpp_vendor::llama
+#   llama_cpp_vendor::mtmd
+#   llama_cpp_vendor::common
+#   ${CMAKE_THREAD_LIBS_INIT}
+#   rclcpp::rclcpp
+#   rclcpp_action::rclcpp_action
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${llama_msgs_TARGETS}
+#   ${llama_cpp_vendor_TARGETS}
+#   ${llama_hfhub_vendor_TARGETS}
+#   Threads::Threads
+# )
 
 ament_export_dependencies(llama_cpp_vendor)
 
@@ -88,10 +88,10 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS
-  llava_node
-  DESTINATION lib/${PROJECT_NAME}
-)
+# install(TARGETS
+#   llava_node
+#   DESTINATION lib/${PROJECT_NAME}
+# )
 
 install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}

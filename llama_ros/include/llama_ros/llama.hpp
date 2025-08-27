@@ -103,6 +103,7 @@ struct CompletionOutput {
    * @brief The token generated in the completion.
    */
   llama_token token;
+  std::string text_to_send;
 };
 
 /**
@@ -475,6 +476,160 @@ enum SlotState {
   SLOT_STATE_GENERATING
 };
 
+enum ServerTaskType {
+    SERVER_TASK_TYPE_COMPLETION,
+    SERVER_TASK_TYPE_EMBEDDING,
+    SERVER_TASK_TYPE_RERANK,
+    SERVER_TASK_TYPE_CANCEL,
+};
+
+
+/**
+ * @brief Represents a log probability for a token.
+ */
+struct LogProb {
+  /**
+   * @brief The token ID.
+   */
+  int token;
+
+  /**
+   * @brief The log probability of the token.
+   */
+  float probability;
+
+  /**
+   * @brief The text representation of the token.
+   */
+  std::string text;
+};
+
+/**
+ * @brief Represents a selected log probability and its associated data.
+ */
+struct SelectedLogProb {
+  /**
+   * @brief The chosen token and its log probability.
+   */
+  LogProb chosen_token;
+
+  /**
+   * @brief A list of log probabilities for other tokens.
+   */
+  std::vector<LogProb> data;
+};
+
+struct ServerTaskResult {
+  int id;
+  int id_slot;
+};
+
+struct ServerTaskResultEmbedding : ServerTaskResult {
+  std::vector<std::vector<float>> embeddings;
+  int32_t n_tokens;
+};
+
+struct ServerTaskResultRerank : ServerTaskResult {
+    float score = -1e6;
+};
+
+struct ServerTaskResultCompletion : ServerTaskResult {
+  std::string text;
+  std::vector<llama_token> tokens;
+  bool is_full_stop;
+  std::vector<struct TokenProb> probs;
+};
+
+struct ServerTaskResultCompletionPartial : ServerTaskResult {
+  // std::string text;
+  // std::vector<llama_token> tokens;
+  // bool is_full_stop;
+  // std::vector<struct TokenProb> probs;
+};
+
+struct ServerTaskResultChatCompletion : ServerTaskResult {
+    /**
+   * @brief The content of the chat response.
+   */
+  std::string content;
+
+  /**
+   * @brief The list of token IDs in the response.
+   */
+  std::vector<int> tokens;
+
+  /**
+   * @brief Indicates if the response is streamed.
+   */
+  bool stream;
+
+  /**
+   * @brief The prompt used to generate the response.
+   */
+  std::string prompt;
+
+  /**
+   * @brief Build information for debugging purposes.
+   */
+  std::string build_info;
+
+  /**
+   * @brief The number of tokens decoded in the response.
+   */
+  int32_t n_decoded;
+
+  /**
+   * @brief The number of tokens in the prompt.
+   */
+  int32_t n_prompt_tokens;
+
+  /**
+   * @brief The number of tokens retrieved from the cache.
+   */
+  int32_t n_tokens_cached;
+
+  /**
+   * @brief The stop condition for the response generation.
+   */
+  llama_ros::StopType stop;
+
+  /**
+   * @brief Indicates if post-sampling probabilities are included.
+   */
+  bool post_sampling_probs;
+
+  /**
+   * @brief The output probabilities for selected tokens.
+   */
+  std::vector<SelectedLogProb> probs_output;
+
+  /**
+   * @brief Additional fields included in the response.
+   */
+  std::vector<std::string> response_fields;
+
+  /**
+   * @brief The OpenAI-compatible chat format.
+   */
+  common_chat_format oaicompat_chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
+
+  /**
+   * @brief The OpenAI-compatible model name.
+   */
+  std::string oaicompat_model;
+
+  /**
+   * @brief The OpenAI-compatible completion ID.
+   */
+  std::string oaicompat_cmpl_id;
+
+  /**
+   * @brief The OpenAI-compatible chat syntax. Used while streaming the
+   * response.
+   */
+  common_chat_msg chat_msg;
+};
+
 class ServerSlot {
 public:
   int id;
@@ -485,19 +640,30 @@ public:
   common_sampler *sampler;
   std::vector<common_adapter_lora_info> lora_adapters;
 
+  ServerTaskType task_type = SERVER_TASK_TYPE_COMPLETION;
+  llama_token sampled;
+
   SlotState state = SLOT_STATE_IDLE;
   json json_schema;
   std::string stopping_word;
+  bool has_next_token = true;
+  bool has_new_line   = false;
 
   int32_t n_past = 0;
   int32_t n_ctx = 0;
   int32_t n_consumed = 0;
   int32_t n_predict = -1;
+  int32_t i_batch = -1;
+  int32_t n_decoded = 0;
+
+  size_t n_sent_text        = 0;
+  bool stream;
 
   struct slot_params {
     int32_t n_keep = 0;
     int32_t n_discard = 0;
     int32_t n_predict = -1;
+    int32_t n_indent  =  0;
 
     std::vector<common_adapter_lora_info> lora;
 
@@ -511,11 +677,17 @@ public:
     common_chat_syntax oaicompat_chat_syntax;
   } params;
 
+  std::vector<llama_token> prompt_tokens;
+  int32_t n_prompt_tokens           = 0;
+  int32_t n_prompt_tokens_processed = 0;
+  size_t last_nl_pos = 0;
+
   common_chat_msg chat_msg;
   common_chat_format chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
   std::vector<std::string> generated_tool_call_ids;
   StopType stop;
   std::string generated_text;
+  llama_tokens generated_tokens;
   llama_perf_context_data prev_stat_usage;
 
   void reset();
@@ -523,6 +695,7 @@ public:
   update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
   void release();
   inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
+  size_t find_stopping_strings(const std::string & text, const size_t last_token_size, bool is_full_stop);
 };
 
 /**
@@ -557,6 +730,9 @@ public:
    * @brief Destructor for the Llama class.
    */
   virtual ~Llama();
+
+  bool process_token(ServerSlot *slot, CompletionOutput *result);
+  void run_loop();
 
   /**
    * @brief Tokenizes the given text into a vector of tokens.
@@ -965,6 +1141,8 @@ protected:
    */
   struct common_sampler *sampler;
 
+  llama_batch batch;
+
   /**
    * @brief Pointer to the thread pool for parallel processing.
    *
@@ -1002,13 +1180,6 @@ protected:
   llama_utils::Spinner spinner;
 
   /**
-   * @brief Tokens representing the input prompt.
-   *
-   * This vector contains the tokenized representation of the input prompt.
-   */
-  std::vector<llama_token> prompt_tokens;
-
-  /**
    * @brief Number of past tokens processed by the model.
    *
    * This value is used to manage the model's context window.
@@ -1030,23 +1201,29 @@ protected:
   int32_t ga_i;
 
   std::vector<ServerSlot> server_slots;
+  std::vector<ServerTaskResult> results;
+
+  void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
+  void send_rerank_result(ServerSlot *slot, const llama_batch &batch);
+  void send_completion_result_partial(ServerSlot *slot, const CompletionOutput &result);
+  void send_completion_result(ServerSlot *slot);
 
   /**
    * @brief Checks if the prompt contains the prefix at the end.
    *
    * @return True if the prompt contains the prefix, false otherwise.
    */
-  bool check_if_prefix();
+  bool check_if_prefix(ServerSlot *slot);
 
   /**
    * @brief Load the prefix to the propmt.
    */
-  void load_prefix();
+  void load_prefix(ServerSlot *slot);
 
   /**
    * @brief Load the suffix to the propmt.
    */
-  void load_suffix();
+  void load_suffix(ServerSlot *slot);
 
   /**
    * @brief Loads a prompt into the model.
@@ -1056,7 +1233,7 @@ protected:
    * @param add_sfx Whether to add a suffix to the prompt.
    */
   virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
-                           bool add_sfx);
+                           bool add_sfx, ServerSlot *slot);
 
   /**
    * @brief Finds a stopping condition based on the completion results and
@@ -1082,8 +1259,7 @@ protected:
    * @return The type of stopping condition encountered.
    */
   StopType
-  find_stop_word(ServerSlot *slot,
-    std::vector<struct CompletionOutput> completion_result_list,
+  find_stop_word(std::vector<struct CompletionOutput> completion_result_list,
                  std::string stopping_word);
 
   /**
@@ -1092,7 +1268,7 @@ protected:
    * @return True if the system prompt evaluation is successful, false
    * otherwise.
    */
-  bool eval_system_prompt();
+  bool eval_system_prompt(ServerSlot *slot);
 
   /**
    * @brief Evaluates the input prompt.
@@ -1117,7 +1293,7 @@ protected:
    * @param token The token to evaluate.
    * @return True if the token evaluation is successful, false otherwise.
    */
-  bool eval_token(llama_token token);
+  bool eval_token(llama_token token, ServerSlot *slot);
 
   /**
    * @brief Evaluates a vector of tokens.
@@ -1125,7 +1301,7 @@ protected:
    * @param tokens The vector of tokens to evaluate.
    * @return True if the token evaluation is successful, false otherwise.
    */
-  bool eval(std::vector<llama_token> tokens);
+  bool eval(std::vector<llama_token> tokens, ServerSlot *slot);
 
   /**
    * @brief Evaluates a batch of tokens.
@@ -1135,25 +1311,24 @@ protected:
    * @param batch The batch of tokens to evaluate.
    * @return True if the batch evaluation is successful, false otherwise.
    */
-  virtual bool eval(struct llama_batch batch);
+  virtual bool eval(struct llama_batch batch, ServerSlot *slot);
 
   /**
    * @brief Retrieves the probabilities of the next tokens.
    *
    * @return A vector of token probabilities.
    */
-  std::vector<struct TokenProb> get_probs();
+  std::vector<struct TokenProb> get_probs(ServerSlot *slot);
 
   /**
    * @brief Samples a token based on the current probabilities.
    *
    * @return A structure containing the sampled token and its metadata.
    */
-  struct CompletionOutput sample();
+  struct CompletionOutput sample(ServerSlot *slot);
 
   common_chat_templates_ptr chat_templates;
   OAICompactParserOptions oai_parser_opt;
-
   std::condition_variable server_slot_cv;
 
   /**
