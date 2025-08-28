@@ -63,10 +63,13 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   // Slots
   const int32_t n_ctx_slot = this->params.n_ctx / this->params.n_parallel;
   LLAMA_LOG_INFO("slot context size: %d", n_ctx_slot);
+  LLAMA_LOG_INFO("n_parallel: %d", this->params.n_parallel);
 
   for (int i = 0; i < this->params.n_parallel; i++) {
     ServerSlot slot;
     slot.id = i;
+    slot.ctx = llama_init.context.get();
+    LLAMA_LOG_INFO("\n\n\n\n\n\n\n\n\nctx address: %p", slot.ctx);
     slot.n_ctx = n_ctx_slot;
     slot.n_predict = this->params.n_predict;
     slot.params.sampling = this->params.sampling;
@@ -80,7 +83,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   batch = llama_batch_init(std::max(n_batch, params.n_parallel), 0, 1);
 
   chat_templates = common_chat_templates_init(model, params.chat_template);
-  common_chat_format_example(chat_templates.get(), params.use_jinja);
+  // common_chat_format_example(chat_templates.get(), params.use_jinja);
 
   oai_parser_opt = {params.use_jinja,
                     params.prefill_assistant,
@@ -1538,6 +1541,10 @@ void Llama::run_loop() {
       }
     }
 
+    if (slot_batched) {
+      llama_set_embeddings(this->ctx, this->is_embedding() || this->is_reranking());
+    }
+
     // Check if there are no tokens to decode
     if (batch.n_tokens == 0) {
       return;
@@ -1710,10 +1717,10 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
     }
 
     const float *embd = nullptr;
-    if (llama_pooling_type(slot->ctx) == LLAMA_POOLING_TYPE_NONE) {
-      embd = llama_get_embeddings_ith(ctx, i);
+    if (llama_pooling_type(this->ctx) == LLAMA_POOLING_TYPE_NONE) {
+      embd = llama_get_embeddings_ith(this->ctx, i);
     } else {
-      embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+      embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
     }
 
     if (embd == nullptr) {
@@ -1725,7 +1732,7 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
     }
 
     // normalize only when there is pooling
-    if (llama_pooling_type(slot->ctx) != LLAMA_POOLING_TYPE_NONE) {
+    if (llama_pooling_type(this->ctx) != LLAMA_POOLING_TYPE_NONE) {
       common_embd_normalize(embd, embd_res.data(), n_embd, 2);
       result->embeddings.push_back(embd_res);
       break;
@@ -1734,7 +1741,9 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
     }
   }
 
-  fulfill_pending(result->id, std::move(result));
+  const auto id = result->id;
+
+  fulfill_pending(id, std::move(result));
 }
 
 void Llama::send_rerank_result(ServerSlot *slot, const llama_batch &batch) {

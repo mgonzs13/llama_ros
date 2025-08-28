@@ -146,7 +146,6 @@ def generate_launch_description():
             name=llama_node_name,
             namespace="llama",
             parameters=[params],
-            prefix=['gdb', ' -ex', ' run', ' --args'],
             condition=UnlessCondition(
                 PythonExpression([LaunchConfiguration("use_llava")])
             ),
