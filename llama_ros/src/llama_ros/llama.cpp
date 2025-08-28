@@ -23,10 +23,13 @@
 #include <cassert>
 #include <chat.h>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <llama.h>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #include "common.h"
 #include "llama_utils/chat_utils.hpp"
@@ -72,6 +75,9 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     slot.reset();
     server_slots.push_back(slot);
   }
+
+  const int32_t n_batch = llama_n_batch(ctx);
+  batch = llama_batch_init(std::max(n_batch, params.n_parallel), 0, 1);
 
   chat_templates = common_chat_templates_init(model, params.chat_template);
   common_chat_format_example(chat_templates.get(), params.use_jinja);
@@ -174,7 +180,7 @@ Llama::~Llama() {
     common_sampler_free(slot.sampler);
     slot.sampler = nullptr;
 
-    llama_batch_free(slot.batch);
+    // llama_batch_free(slot.batch);
   }
   llama_model_free(this->model);
   this->model = nullptr;
@@ -445,109 +451,22 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-struct EmbeddingsOutput
-Llama::generate_embeddings(const std::vector<llama_token> &tokens,
-                           int normalization, ServerSlot *slot) {
-  std::lock_guard<std::mutex> lk(this->mutex);
+ServerTaskResultEmbedding
+Llama::generate_embeddings(const std::string &text) {
+  auto slot = this->wait_for_available_slot();
 
-  const int n_embd = this->get_n_embd();
+  const uint64_t gid = slot->goal_id;
+  auto fut = register_pending(gid);
 
-  struct EmbeddingsOutput output;
-  output.embeddings = std::vector<float>(n_embd, 0.0f);
-  output.n_tokens = 0;
+  this->handle_embeddings_req(text, slot);
 
-  if (!this->is_embedding()) {
-    LLAMA_LOG_ERROR(
-        "Llama must be created with embedding enable to create embeddings");
-    return output;
+  auto result = fut.get();
+
+  if (auto* out = dynamic_cast<ServerTaskResultEmbedding*>(result.get())) {
+    return *out;
   }
 
-  if ((int)tokens.size() > slot->n_ctx) {
-    LLAMA_LOG_ERROR("Prompt too long %ld, context size is %d", tokens.size(),
-                    slot->n_ctx);
-    return output;
-  }
-
-  // llama eval
-  struct llama_batch batch = llama_batch_init(this->params.n_batch, 0, 1);
-  for (size_t i = 0; i < tokens.size(); i++) {
-    common_batch_add(batch, tokens[i], i, {0}, true);
-  }
-
-  if (llama_encode(slot->ctx, batch)) {
-    LLAMA_LOG_ERROR("Failed to eval");
-    return output;
-  }
-
-  // get embeddings
-  std::vector<float> embd_res(n_embd, 0.0f);
-
-  for (int i = 0; i < batch.n_tokens; ++i) {
-
-    if (!batch.logits[i]) {
-      continue;
-    }
-
-    const float *embd = llama_get_embeddings_seq(slot->ctx, batch.seq_id[i][0]);
-    if (embd == NULL) {
-      embd = llama_get_embeddings_ith(slot->ctx, i);
-    }
-
-    if (embd == NULL) {
-      LLAMA_LOG_ERROR("Failed to get embeddings");
-      continue;
-    }
-
-    common_embd_normalize(embd, embd_res.data(), n_embd, normalization);
-  }
-
-  // clear
-  llama_memory_seq_rm(this->get_memory(), 0, 0, -1);
-  llama_batch_free(batch);
-
-  // result
-  output.embeddings = embd_res;
-  output.n_tokens = tokens.size();
-
-  return output;
-}
-
-struct EmbeddingsOutput
-Llama::generate_embeddings(const std::string &input_prompt, int normalization,
-                           ServerSlot *slot) {
-
-  auto tokens = this->tokenize(input_prompt, this->add_bos_token(), true);
-  tokens = this->truncate_tokens(tokens, this->params.n_batch, true);
-
-  return this->generate_embeddings(tokens, normalization, slot);
-}
-
-struct EmbeddingsOutput
-Llama::generate_embeddings_task(const std::string &input_prompt,
-                                int normalization, ServerSlot *slot) {
-  auto result = this->generate_embeddings(input_prompt, normalization, slot);
-  slot->release();
-  return result;
-}
-
-std::vector<llama_token>
-Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
-                       bool add_eos) {
-
-  std::vector<llama_token> new_tokens = tokens;
-
-  if ((int)tokens.size() > limit_size) {
-    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
-                   tokens.size(), limit_size);
-    new_tokens.resize(limit_size);
-  }
-
-  // add eos if not present
-  if (add_eos && tokens.back() != this->get_token_eos()) {
-    new_tokens.push_back(this->get_token_eos());
-  }
-
-  return new_tokens;
+  return {};
 }
 
 /*
@@ -558,33 +477,34 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 float Llama::rank_document(const std::string &query,
                            const std::string &document, ServerSlot *slot) {
 
-  if (!this->is_reranking()) {
-    LLAMA_LOG_ERROR(
-        "Llama must be created with reranking enable to make rerank");
-    return 0.0;
-  }
+  // if (!this->is_reranking()) {
+  //   LLAMA_LOG_ERROR(
+  //       "Llama must be created with reranking enable to make rerank");
+  //   return 0.0;
+  // }
 
-  std::vector<llama_token> tokens;
-  tokens.reserve(this->params.n_batch);
+  // std::vector<llama_token> tokens;
+  // tokens.reserve(this->params.n_batch);
 
-  tokens.push_back(this->get_token_bos());
+  // tokens.push_back(this->get_token_bos());
 
-  auto part1 = this->tokenize(query, false, true);
-  part1 =
-      this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
-  tokens.insert(tokens.end(), part1.begin(), part1.end());
+  // auto part1 = this->tokenize(query, false, true);
+  // part1 =
+  //     this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
+  // tokens.insert(tokens.end(), part1.begin(), part1.end());
 
-  tokens.push_back(this->get_token_eos());
-  tokens.push_back(this->get_token_sep());
+  // tokens.push_back(this->get_token_eos());
+  // tokens.push_back(this->get_token_sep());
 
-  auto part2 = this->tokenize(document, false, true);
-  part2 =
-      this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
-  tokens.insert(tokens.end(), part2.begin(), part2.end());
+  // auto part2 = this->tokenize(document, false, true);
+  // part2 =
+  //     this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
+  // tokens.insert(tokens.end(), part2.begin(), part2.end());
 
-  tokens.push_back(this->get_token_eos());
+  // tokens.push_back(this->get_token_eos());
 
-  return this->generate_embeddings(tokens, -1, slot).embeddings.at(0);
+  // return this->generate_embeddings(tokens, -1, slot).embeddings.at(0);
+  return 0.0;
 }
 
 std::vector<float>
@@ -1003,28 +923,28 @@ bool Llama::eval_prompt(ServerSlot *slot) {
 bool Llama::eval_prompt(std::vector<llama_token> prompt_tokens,
                         ServerSlot *slot) {
 
-  std::vector<llama_token> batch;
-  batch.reserve(this->params.n_batch);
+  // std::vector<llama_token> batch;
+  // batch.reserve(this->params.n_batch);
 
-  while (((int)prompt_tokens.size() > slot->n_consumed)) {
+  // while (((int)prompt_tokens.size() > slot->n_consumed)) {
 
-    while (((int)prompt_tokens.size() > slot->n_consumed) &&
-           ((int)batch.size() < this->params.n_batch)) {
+  //   while (((int)prompt_tokens.size() > slot->n_consumed) &&
+  //          ((int)batch.size() < this->params.n_batch)) {
 
-      batch.push_back(prompt_tokens[slot->n_consumed]);
-      common_sampler_accept(slot->sampler, prompt_tokens[slot->n_consumed],
-                            false);
-      ++slot->n_consumed;
-    }
+  //     batch.push_back(prompt_tokens[slot->n_consumed]);
+  //     common_sampler_accept(slot->sampler, prompt_tokens[slot->n_consumed],
+  //                           false);
+  //     ++slot->n_consumed;
+  //   }
 
-    if (!this->eval(batch, slot)) {
-      return false;
-    }
+  //   if (!this->eval(batch, slot)) {
+  //     return false;
+  //   }
 
-    batch.clear();
-  }
+  //   batch.clear();
+  // }
 
-  return true;
+  // return true;
 }
 
 bool Llama::eval_token(llama_token token, ServerSlot *slot) {
@@ -1034,17 +954,17 @@ bool Llama::eval_token(llama_token token, ServerSlot *slot) {
 bool Llama::eval(std::vector<llama_token> tokens, ServerSlot *slot) {
 
   // create batch
-  struct llama_batch batch = {
-      int32_t(tokens.size()), // n_tokens
-      tokens.data(),          // tokens
-      nullptr,                // embd
-      nullptr,                // pos
-      nullptr,                // n_seq_id
-      0,                      // seq_id
-      nullptr,                // logits
-  };
+  // struct llama_batch batch = {
+  //     int32_t(tokens.size()), // n_tokens
+  //     tokens.data(),          // tokens
+  //     nullptr,                // embd
+  //     nullptr,                // pos
+  //     nullptr,                // n_seq_id
+  //     0,                      // seq_id
+  //     nullptr,                // logits
+  // };
 
-  return this->eval(batch, slot);
+  // return this->eval(batch, slot);
 }
 
 bool Llama::eval(struct llama_batch batch, ServerSlot *slot) {
@@ -1267,44 +1187,37 @@ ServerSlot *Llama::wait_for_available_slot() {
   return nullptr;
 }
 
-size_t ServerSlot::find_stopping_strings(const std::string & text, const size_t last_token_size, bool is_full_stop) {
+size_t ServerSlot::find_stopping_strings(const std::string &text,
+                                         const size_t last_token_size,
+                                         bool is_full_stop) {
   size_t stop_pos = std::string::npos;
 
-  for (const std::string & word : params.antiprompt) {
-      size_t pos;
+  for (const std::string &word : params.antiprompt) {
+    size_t pos;
 
+    if (is_full_stop) {
+      const size_t tmp = word.size() + last_token_size;
+      const size_t from_pos = text.size() > tmp ? text.size() - tmp : 0;
+
+      pos = text.find(word, from_pos);
+    } else {
+      // otherwise, partial stop
+      pos = string_find_partial_stop(text, word);
+    }
+
+    if (pos != std::string::npos &&
+        (stop_pos == std::string::npos || pos < stop_pos)) {
       if (is_full_stop) {
-          const size_t tmp      = word.size() + last_token_size;
-          const size_t from_pos = text.size() > tmp ? text.size() - tmp : 0;
-
-          pos = text.find(word, from_pos);
-      } else {
-          // otherwise, partial stop
-          pos = string_find_partial_stop(text, word);
+        stop = FULL_STOP;
+        stopping_word = word;
+        has_next_token = false;
       }
-
-      if (pos != std::string::npos && (stop_pos == std::string::npos || pos < stop_pos)) {
-          if (is_full_stop) {
-              stop           = FULL_STOP;
-              stopping_word  = word;
-              has_next_token = false;
-          }
-          stop_pos = pos;
-      }
+      stop_pos = pos;
+    }
   }
 
   return stop_pos;
 }
-
-
-
-
-
-
-
-
-
-
 
 bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   const std::string token_str = result->text_to_send;
@@ -1315,8 +1228,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   slot->has_next_token = true;
 
   // check if there is incomplete UTF-8 character at the end
-  bool incomplete =
-      llama_utils::validate_utf8(slot->generated_text) < slot->generated_text.size();
+  bool incomplete = llama_utils::validate_utf8(slot->generated_text) <
+                    slot->generated_text.size();
 
   // search stop word and delete it
   if (!incomplete) {
@@ -1329,7 +1242,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
         slot->find_stopping_strings(str_test, token_str.size(), true);
     if (stop_pos != std::string::npos) {
       slot->generated_text.erase(slot->generated_text.begin() + pos + stop_pos,
-                                  slot->generated_text.end());
+                                 slot->generated_text.end());
       pos = std::min(slot->n_sent_text, slot->generated_text.size());
     } else if (slot->has_next_token) {
       stop_pos = slot->find_stopping_strings(str_test, token_str.size(), false);
@@ -1339,7 +1252,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     // check if there is any token to predict
     if (send_text) {
       // no send the stop word in the response
-      result->text_to_send = slot->generated_text.substr(pos, std::string::npos);
+      result->text_to_send =
+          slot->generated_text.substr(pos, std::string::npos);
       slot->n_sent_text += result->text_to_send.size();
       // add the token to slot queue and cache
     } else {
@@ -1362,17 +1276,18 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->has_next_token = false;
 
     LLAMA_LOG_DEBUG(
-            "stopped due to running out of context, n_past = %d, n_ctx = %d\n",
-            slot->n_past, slot->n_ctx);
+        "stopped due to running out of context, n_past = %d, n_ctx = %d\n",
+        slot->n_past, slot->n_ctx);
   }
 
   // check the limits
-  if (slot->n_decoded > 0 && slot->has_next_token && params.n_predict != -1 && slot->n_decoded >= params.n_predict) {
+  if (slot->n_decoded > 0 && slot->has_next_token && params.n_predict != -1 &&
+      slot->n_decoded >= params.n_predict) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
     LLAMA_LOG_DEBUG("stopped by limit, n_decoded = %d, n_predict = %d\n",
-            slot->n_decoded, slot->params.n_predict);
+                    slot->n_decoded, slot->params.n_predict);
   }
 
   if (slot->has_new_line) {
@@ -1422,9 +1337,9 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->has_next_token = false;
 
     LLAMA_LOG_DEBUG(
-            "stopped due to running out of context capacity, n_past = %d, "
-            "n_prompt_tokens = %d, n_decoded = %d, n_ctx = %d\n",
-            slot->n_decoded, slot->n_prompt_tokens, slot->n_past, slot->n_ctx);
+        "stopped due to running out of context capacity, n_past = %d, "
+        "n_prompt_tokens = %d, n_decoded = %d, n_ctx = %d\n",
+        slot->n_decoded, slot->n_prompt_tokens, slot->n_past, slot->n_ctx);
   }
 
   if (llama_vocab_is_eog(this->get_vocab(), result->token)) {
@@ -1441,11 +1356,12 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false; // stop prediction
 
-    LLAMA_LOG_WARN("stopped by context limit\n"
-            "n_predict (%d) is set for infinite generation. "
-            "Limiting generated tokens to n_ctx_train (%d) to avoid EOS-less "
-            "generation infinite loop\n",
-            slot->params.n_predict, n_ctx_train);
+    LLAMA_LOG_WARN(
+        "stopped by context limit\n"
+        "n_predict (%d) is set for infinite generation. "
+        "Limiting generated tokens to n_ctx_train (%d) to avoid EOS-less "
+        "generation infinite loop\n",
+        slot->params.n_predict, n_ctx_train);
   }
 
   auto n_remaining = slot->params.n_predict < 1
@@ -1453,7 +1369,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
                          : slot->params.n_predict - slot->n_decoded;
 
   LLAMA_LOG_DEBUG("n_decoded = %d, n_remaining = %d, next token: %5d '%s'\n",
-          slot->n_decoded, n_remaining, result->token, token_str.c_str());
+                  slot->n_decoded, n_remaining, result->token,
+                  token_str.c_str());
 
   return slot->has_next_token; // continue
 }
@@ -1464,20 +1381,23 @@ void Llama::run_loop() {
     // Check if any slots are being processed
     bool any_processing = false;
     for (auto &slot : this->server_slots) {
-      if (slot.state == SLOT_STATE_STARTED) {
+      if (slot.is_processing()) {
         any_processing = true;
-        // Process the slot
+        break;
       }
     }
-
-    ServerSlot *slot_batched = nullptr;
 
     if (!any_processing) {
       // No slots are being processed, we can sleep
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      LLAMA_LOG_INFO("No active slots, sleeping...");
+      continue;
     }
+    LLAMA_LOG_INFO("Active slots found, processing...");
+    ServerSlot *slot_batched = nullptr;
 
     // apply context shift
+    LLAMA_LOG_INFO("Applying context shift if needed");
     for (auto &slot : this->server_slots) {
       if (slot.n_past + 1 > slot.n_ctx) {
 
@@ -1497,8 +1417,9 @@ void Llama::run_loop() {
     // start populating the batch for this iteration
     common_batch_clear(this->batch);
 
+    LLAMA_LOG_INFO("Processing tokens for active slots");
     for (auto &slot : this->server_slots) {
-      if (slot.state == SLOT_STATE_GENERATING) {
+      if (slot.state != SLOT_STATE_GENERATING) {
         continue;
       }
 
@@ -1513,6 +1434,7 @@ void Llama::run_loop() {
     }
 
     // Process prompts (new inputs)
+    LLAMA_LOG_INFO("Processing prompts for newly started slots");
     int32_t n_batch = llama_n_batch(ctx);
     if (this->params.cont_batching || batch.n_tokens == 0) {
       for (auto &slot : this->server_slots) {
@@ -1542,16 +1464,19 @@ void Llama::run_loop() {
 
           // empty prompt -> release and send empty response
           if (prompt_tokens.empty()) {
+            LLAMA_LOG_WARN("Empty prompt on slot %d", slot.id);
             // TODO: exit here
             continue;
           }
 
           // must fit into one ubatch and within context
           if (slot.n_prompt_tokens > llama_n_ubatch(ctx)) {
+            LLAMA_LOG_WARN("Prompt too long for slot %d", slot.id);
             // TODO: exit here
             continue;
           }
           if (slot.n_prompt_tokens > slot.n_ctx) {
+            LLAMA_LOG_WARN("Prompt exceeds context size for slot %d", slot.id);
             // TODO: exit here
             continue;
           }
@@ -1574,14 +1499,21 @@ void Llama::run_loop() {
 
         // enqueue all prompt tokens (must fit fully in one batch)
         while (slot.n_past < slot.n_prompt_tokens) {
+          LLAMA_LOG_INFO("Adding prompt token %d for slot %d of maximum %d",
+                        slot.prompt_tokens[slot.n_past], slot.id, slot.n_prompt_tokens);
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
           const bool need_embd = this->is_embedding() || this->is_reranking();
+
+          LLAMA_LOG_INFO("n_past: %d, slot.id: %d, need_embd: %d", slot.n_past, slot.id, need_embd);
 
           common_batch_add(batch, cur_tok, slot.n_past, {slot.id}, need_embd);
 
           slot.n_prompt_tokens_processed++;
           slot.n_past++;
         }
+
+        LLAMA_LOG_INFO("Added %d prompt tokens for slot %d",
+                      slot.n_prompt_tokens_processed, slot.id);
 
         // finished the entire prompt this iteration
         slot.state = SLOT_STATE_DONE_PROMPT;
@@ -1613,6 +1545,7 @@ void Llama::run_loop() {
 
     int32_t i_next = 0;
 
+    LLAMA_LOG_INFO("Decoding batch of %d tokens", batch.n_tokens);
     for (int32_t i = 0; i < batch.n_tokens; i = i_next) {
       const int32_t n_tokens = std::min(n_batch, batch.n_tokens - i);
 
@@ -1660,12 +1593,16 @@ void Llama::run_loop() {
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
           if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING) {
             // TODO: Implement embedding response handling
+            this->send_embedding_result(&slot, batch_view);
+            slot.release();
             // TODO: Exit
             slot.i_batch = -1;
             continue;
           }
           if (slot.task_type == SERVER_TASK_TYPE_RERANK) {
             // TODO: Implement rerank response handling
+            this->send_rerank_result(&slot, batch_view);
+            slot.release();
             // TODO: Exit
             slot.i_batch = -1;
             continue;
@@ -1695,6 +1632,8 @@ void Llama::run_loop() {
         // Stream token / check stopping conditions
         if (!process_token(&slot, &result)) {
           // TODO: exit
+          send_completion_result(&slot);
+          slot.release();
           continue;
         }
       }
@@ -1702,73 +1641,163 @@ void Llama::run_loop() {
   }
 }
 
+std::future<ServerTaskResultPtr> Llama::register_pending(uint64_t goal_id) {
+    std::lock_guard<std::mutex> lk(pending_mutex);
+    pending.erase(goal_id);
+    std::promise<ServerTaskResultPtr> p;
+    auto fut = p.get_future();
+    pending.emplace(goal_id, std::move(p));
+    return fut;
+}
+
+void Llama::fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r) {
+    std::lock_guard<std::mutex> lk(pending_mutex);
+    auto it = pending.find(goal_id);
+    if (it != pending.end()) {
+        it->second.set_value(std::move(r)); // move-only, fine
+        pending.erase(it);
+    }
+}
+
+
+void Llama::handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot) {
+    auto tokens = common_tokenize(this->ctx, input_prompt,
+                                  false, true);
+    LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
+    tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
+        if (slot->sampler != nullptr) {
+        common_sampler_free(slot->sampler);
+    }
+
+    slot->sampler = common_sampler_init(model, this->params.sampling);
+    slot->prompt_tokens = tokens;
+    LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+    slot->task_type = SERVER_TASK_TYPE_EMBEDDING;
+    slot->state = SLOT_STATE_STARTED;
+}
+
+std::vector<llama_token>
+Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                       bool add_eos) {
+
+  std::vector<llama_token> new_tokens = tokens;
+
+  if ((int)tokens.size() > limit_size) {
+    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
+                   tokens.size(), limit_size);
+    new_tokens.resize(limit_size);
+  }
+
+  // add eos if not present
+  if (add_eos && tokens.back() != this->get_token_eos()) {
+    new_tokens.push_back(this->get_token_eos());
+  }
+
+  return new_tokens;
+}
+
 void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
-  ServerTaskResultEmbedding result;
-  result.id_slot = slot->id;
-  result.id = slot->goal_id;
+  auto result = std::make_unique<ServerTaskResultEmbedding>();
+  result->id_slot = slot->id;
+  result->id = slot->goal_id;
   const int n_embd = llama_model_n_embd(model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
 
   for (int i = 0; i < batch.n_tokens; ++i) {
-      if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
-          continue;
-      }
+    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
+      continue;
+    }
 
-      const float * embd = nullptr;
-      if (llama_pooling_type(slot->ctx) == LLAMA_POOLING_TYPE_NONE) {
-          embd = llama_get_embeddings_ith(ctx, i);
-      } else {
-          embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
-      }
+    const float *embd = nullptr;
+    if (llama_pooling_type(slot->ctx) == LLAMA_POOLING_TYPE_NONE) {
+      embd = llama_get_embeddings_ith(ctx, i);
+    } else {
+      embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+    }
 
-      if (embd == nullptr) {
-          LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n", batch.token[i], batch.seq_id[i][0]);
+    if (embd == nullptr) {
+      LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
+                      batch.token[i], batch.seq_id[i][0]);
 
-          result.embeddings.push_back(std::vector<float>(n_embd, 0.0f));
-          continue;
-      }
+      result->embeddings.push_back(std::vector<float>(n_embd, 0.0f));
+      continue;
+    }
 
-      // normalize only when there is pooling
-      if (llama_pooling_type(slot->ctx) != LLAMA_POOLING_TYPE_NONE) {
-          common_embd_normalize(embd, embd_res.data(), n_embd, 2);
-          result.embeddings.push_back(embd_res);
-          break;
-      } else {
-          result.embeddings.emplace_back(embd, embd + n_embd);
-      }
+    // normalize only when there is pooling
+    if (llama_pooling_type(slot->ctx) != LLAMA_POOLING_TYPE_NONE) {
+      common_embd_normalize(embd, embd_res.data(), n_embd, 2);
+      result->embeddings.push_back(embd_res);
+      break;
+    } else {
+      result->embeddings.emplace_back(embd, embd + n_embd);
+    }
   }
 
-  this->results.push_back(result);
+  fulfill_pending(result->id, std::move(result));
 }
 
 void Llama::send_rerank_result(ServerSlot *slot, const llama_batch &batch) {
-  ServerTaskResultRerank result;
-  result.id_slot = slot->id;
-  result.id = slot->goal_id;
-  for (int i = 0; i < batch.n_tokens; ++i) {
-      if (!batch.logits[i] || batch.seq_id[i][0] != slot.id) {
-          continue;
-      }
+  // auto result = std::make_unique<ServerTaskResultRerank>();
+  // result->id_slot = slot->id;
+  // result->id = slot->goal_id;
+  // for (int i = 0; i < batch.n_tokens; ++i) {
+  //   if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
+  //     continue;
+  //   }
 
-      const float * embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
-      if (embd == NULL) {
-          embd = llama_get_embeddings_ith(ctx, i);
-      }
+  //   const float *embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+  //   if (embd == NULL) {
+  //     embd = llama_get_embeddings_ith(ctx, i);
+  //   }
 
-      if (embd == NULL) {
-          LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n", batch.token[i], batch.seq_id[i][0]);
+  //   if (embd == NULL) {
+  //     LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
+  //                     batch.token[i], batch.seq_id[i][0]);
 
-          result.score = -1e6;
-          continue;
-      }
+  //     result->score = -1e6;
+  //     continue;
+  //   }
 
-      result.score = embd[0];
-  }
+  //   result->score = embd[0];
+  // }
 
-  this->results.push_back(result);
+  // this->results.push_back(std::move(result));
 }
 
 void Llama::send_completion_result(ServerSlot *slot) {
-  // Implementation for sending completion results
+  // auto task_result = std::make_unique<ServerTaskResultCompletionPartial>();
+  // task_result->id_slot = slot->id;
+  // task_result->id = slot->goal_id;
+
+  // task_result->content = slot->generated_text;
+  // task_result->tokens = {result.token};
+  // task_result->n_decoded = slot->n_decoded;
+  // task_result->n_prompt_tokens = slot->n_prompt_tokens;
+
+  // task_result->oaicompat_model = slot->params.oaicompat_model;
+  // task_result->oaicompat_cmpl_id = slot->params.oaicompat_cmpl_id;
+
+  // slot->update_chat_msg(task_result->oaicompat_msg_diffs);
+
+  // this->results.push_back(std::move(task_result));
+}
+
+void Llama::send_completion_result_partial(ServerSlot *slot,
+                                           const CompletionOutput &result) {
+  // auto task_result = std::make_unique<ServerTaskResultCompletionPartial>();
+  // task_result->id_slot = slot->id;
+  // task_result->id = slot->goal_id;
+
+  // task_result->content = slot->generated_text;
+  // task_result->tokens = {result.token};
+  // task_result->n_decoded = slot->n_decoded;
+  // task_result->n_prompt_tokens = slot->n_prompt_tokens;
+
+  // task_result->oaicompat_model = slot->params.oaicompat_model;
+  // task_result->oaicompat_cmpl_id = slot->params.oaicompat_cmpl_id;
+
+  // slot->update_chat_msg(task_result->oaicompat_msg_diffs);
+
+  // this->results.push_back(std::move(task_result));
 }

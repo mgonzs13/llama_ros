@@ -31,6 +31,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+#include <future>
 
 #include "chat.h"
 #include "common.h"
@@ -522,6 +523,7 @@ struct SelectedLogProb {
 struct ServerTaskResult {
   int id;
   int id_slot;
+  virtual ~ServerTaskResult() = default;
 };
 
 struct ServerTaskResultEmbedding : ServerTaskResult {
@@ -533,21 +535,21 @@ struct ServerTaskResultRerank : ServerTaskResult {
     float score = -1e6;
 };
 
-struct ServerTaskResultCompletion : ServerTaskResult {
-  std::string text;
-  std::vector<llama_token> tokens;
-  bool is_full_stop;
-  std::vector<struct TokenProb> probs;
-};
-
 struct ServerTaskResultCompletionPartial : ServerTaskResult {
-  // std::string text;
-  // std::vector<llama_token> tokens;
-  // bool is_full_stop;
-  // std::vector<struct TokenProb> probs;
+    std::string  content;
+    llama_tokens tokens;
+
+    int32_t n_decoded;
+    int32_t n_prompt_tokens;
+
+    TokenProb prob_output;
+
+    std::string     oaicompat_model;
+    std::string     oaicompat_cmpl_id;
+    std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
 };
 
-struct ServerTaskResultChatCompletion : ServerTaskResult {
+struct ServerTaskResultCompletion : ServerTaskResult {
     /**
    * @brief The content of the chat response.
    */
@@ -582,11 +584,6 @@ struct ServerTaskResultChatCompletion : ServerTaskResult {
    * @brief The number of tokens in the prompt.
    */
   int32_t n_prompt_tokens;
-
-  /**
-   * @brief The number of tokens retrieved from the cache.
-   */
-  int32_t n_tokens_cached;
 
   /**
    * @brief The stop condition for the response generation.
@@ -627,8 +624,11 @@ struct ServerTaskResultChatCompletion : ServerTaskResult {
    * @brief The OpenAI-compatible chat syntax. Used while streaming the
    * response.
    */
-  common_chat_msg chat_msg;
+  common_chat_msg oaicompat_msg;
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
 };
+
+using ServerTaskResultPtr = std::unique_ptr<ServerTaskResult>;
 
 class ServerSlot {
 public:
@@ -787,19 +787,6 @@ public:
   void update_loras(std::vector<struct LoRA> loras);
 
   /**
-   * @brief Truncates a vector of tokens to a specified size.
-   *
-   * @param tokens The vector of tokens to truncate.
-   * @param limit_size The maximum number of tokens to retain.
-   * @param add_eos Whether to add an end-of-sequence (EOS) token after
-   * truncation.
-   * @return A truncated vector of tokens.
-   */
-  std::vector<llama_token>
-  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
-                  bool add_eos = true);
-
-  /**
    * @brief Generates embeddings for a given input prompt.
    *
    * @param input_prompt The input text prompt for which embeddings are
@@ -807,24 +794,13 @@ public:
    * @param normalization The normalization method to apply (default is 2).
    * @return A structure containing the generated embeddings and token count.
    */
-  struct EmbeddingsOutput generate_embeddings(const std::string &input_prompt,
-                                              int normalization = 2,
-                                              ServerSlot *slot = nullptr);
+  ServerTaskResultEmbedding generate_embeddings(const std::string &text);
 
-  struct EmbeddingsOutput generate_embeddings_task(const std::string &input_prompt,
-                                            int normalization = 2,
-                                            ServerSlot *slot = nullptr);
+  void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
 
-  /**
-   * @brief Generates embeddings for a given vector of tokens.
-   *
-   * @param tokens The vector of tokens for which embeddings are generated.
-   * @param normalization The normalization method to apply (default is 2).
-   * @return A structure containing the generated embeddings and token count.
-   */
-  struct EmbeddingsOutput
-  generate_embeddings(const std::vector<llama_token> &tokens,
-                      int normalization = 2, ServerSlot *slot = nullptr);
+  std::vector<llama_token>
+  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                  bool add_eos = true);
 
   /**
    * @brief Ranks the relevance of a document to a given query.
@@ -1201,7 +1177,13 @@ protected:
   int32_t ga_i;
 
   std::vector<ServerSlot> server_slots;
-  std::vector<ServerTaskResult> results;
+  std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending;
+
+  std::mutex pending_mutex;
+
+  std::future<ServerTaskResultPtr> register_pending(uint64_t goal_id);
+  void fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r);
+  void fail_pending(uint64_t goal_id, std::exception_ptr eptr);
 
   void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
   void send_rerank_result(ServerSlot *slot, const llama_batch &batch);

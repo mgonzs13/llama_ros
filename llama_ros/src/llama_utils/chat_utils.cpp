@@ -112,11 +112,11 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 }
 
 llama_msgs::action::GenerateChatCompletions::Result
-llama_utils::generate_chat_completions_result(const llama_ros::ServerTaskResultChatCompletion &result) {
+llama_utils::generate_chat_completions_result(const llama_ros::ServerTaskResultCompletion &result) {
   llama_msgs::msg::ChatMessage chat_msg;
   std::string finish_reason = "stop";
 
-  common_chat_msg msg = result.chat_msg;
+  common_chat_msg msg = result.oaicompat_msg;
 
   if (msg.tool_calls.size() > 0) {
     finish_reason = "tool_calls";
@@ -183,7 +183,7 @@ llama_utils::generate_chat_completions_result(const llama_ros::ServerTaskResultC
 
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 llama_utils::generate_chat_completions_feedback(
-    const llama_ros::ServerTaskResultChatCompletion &result, std::vector<common_chat_msg_diff> deltas) {
+    const llama_ros::ServerTaskResultCompletion &result, std::vector<common_chat_msg_diff> deltas) {
   bool first = result.n_decoded == 0;
 
   std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;

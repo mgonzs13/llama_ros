@@ -136,7 +136,7 @@ struct common_chat_templates_inputs parse_chat_completions_goal(
  * @return The generated result for the action.
  */
 llama_msgs::action::GenerateChatCompletions::Result
-generate_chat_completions_result(const llama_ros::ServerTaskResultChatCompletion &result);
+generate_chat_completions_result(const llama_ros::ServerTaskResultCompletion &result);
 
 /**
  * @brief Generates feedback for a chat completion action.
@@ -146,7 +146,7 @@ generate_chat_completions_result(const llama_ros::ServerTaskResultChatCompletion
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(
-    const llama_ros::ServerTaskResultChatCompletion &result,
+    const llama_ros::ServerTaskResultCompletion &result,
     std::vector<common_chat_msg_diff> deltas = {});
 
 /**

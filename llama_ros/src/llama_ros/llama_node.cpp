@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "chat.h"
@@ -47,9 +48,13 @@ LlamaNode::LlamaNode()
 void LlamaNode::create_llama() {
   this->llama =
       std::make_unique<Llama>(this->params.params, this->params.system_prompt);
+
+  std::thread([this]() {
+    this->llama->run_loop();
+  }).detach();
 }
 
-void LlamaNode::destroy_llama() {
+void LlamaNode::destroy_llama() { // TODO: Stop the llama thread
   this->llama.reset();
   this->llama = nullptr;
 }
@@ -356,13 +361,12 @@ void LlamaNode::detokenize_service_callback(
 void LlamaNode::generate_embeddings_service_callback(
     const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
-  ServerSlot *slot = this->llama->wait_for_available_slot();
-
   RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
-  auto embeddings =
-      this->llama->generate_embeddings_task(request->prompt, request->normalization, slot);
-  response->embeddings = embeddings.embeddings;
+  auto embeddings = this->llama->generate_embeddings(request->prompt);
+  auto data = response->embeddings;
+
+  response->embeddings = std::move(data);
   response->n_tokens = embeddings.n_tokens;
 
   RCLCPP_INFO(this->get_logger(), "Embeddings generated");
