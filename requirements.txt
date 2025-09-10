@@ -1,8 +1,8 @@
-langchain==0.3.20
+langchain==0.3.27
 langchain-chroma==0.2.2
-langchain-community==0.3.19
-langchain-core==0.3.45
+langchain-community==0.3.27
+langchain-core==0.3.75
 langchain-openai==0.3.8
-langchain-text-splitters==0.3.6
-langgraph==0.3.11
+langchain-text-splitters==0.3.11
+langgraph==0.4.5
 pydantic==2.9.2
