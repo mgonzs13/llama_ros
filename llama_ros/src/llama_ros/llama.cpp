@@ -991,41 +991,44 @@ bool Llama::eval(struct llama_batch batch) {
   if (batch.n_tokens > 0) {
 
     // shift context
-    if (this->params.grp_attn_n == 1) {
-      if (this->n_past + batch.n_tokens > this->get_n_ctx()) {
+    if (this->params.ctx_shift) {
+      if (this->params.grp_attn_n == 1) {
+        if (this->n_past + batch.n_tokens > this->get_n_ctx()) {
 
-        const int n_left = this->n_past - this->params.n_keep;
-        const int n_discard = n_left / 2;
+          const int n_left = this->n_past - this->params.n_keep;
+          const int n_discard = n_left / 2;
 
-        llama_memory_seq_rm(this->get_memory(), 0, this->params.n_keep,
-                            this->params.n_keep + n_discard);
-        llama_memory_seq_add(this->get_memory(), 0,
-                             this->params.n_keep + n_discard, n_past,
-                             -n_discard);
+          llama_memory_seq_rm(this->get_memory(), 0, this->params.n_keep,
+                              this->params.n_keep + n_discard);
+          llama_memory_seq_add(this->get_memory(), 0,
+                               this->params.n_keep + n_discard, n_past,
+                               -n_discard);
 
-        this->n_past -= n_discard;
-      }
+          this->n_past -= n_discard;
+        }
 
-    } else {
-      // context extension via Self-Extend
-      int ga_n = this->params.grp_attn_n;
-      int ga_w = this->params.grp_attn_w;
+      } else {
+        // context extension via Self-Extend
+        int ga_n = this->params.grp_attn_n;
+        int ga_w = this->params.grp_attn_w;
 
-      while (this->n_past >= this->ga_i + ga_w) {
-        const int ib = (ga_n * this->ga_i) / ga_w;
-        const int bd = (ga_w / ga_n) * (ga_n - 1);
-        const int dd = (ga_w / ga_n) - ib * bd - ga_w;
+        while (this->n_past >= this->ga_i + ga_w) {
+          const int ib = (ga_n * this->ga_i) / ga_w;
+          const int bd = (ga_w / ga_n) * (ga_n - 1);
+          const int dd = (ga_w / ga_n) - ib * bd - ga_w;
 
-        llama_memory_seq_add(this->get_memory(), 0, this->ga_i, this->n_past,
-                             ib * bd);
-        llama_memory_seq_div(this->get_memory(), 0, this->ga_i + ib * bd,
-                             this->ga_i + ib * bd + ga_w, ga_n);
-        llama_memory_seq_add(this->get_memory(), 0, this->ga_i + ib * bd + ga_w,
-                             this->n_past + ib * bd, dd);
+          llama_memory_seq_add(this->get_memory(), 0, this->ga_i, this->n_past,
+                               ib * bd);
+          llama_memory_seq_div(this->get_memory(), 0, this->ga_i + ib * bd,
+                               this->ga_i + ib * bd + ga_w, ga_n);
+          llama_memory_seq_add(this->get_memory(), 0,
+                               this->ga_i + ib * bd + ga_w,
+                               this->n_past + ib * bd, dd);
 
-        this->n_past -= bd;
+          this->n_past -= bd;
 
-        this->ga_i += ga_w / ga_n;
+          this->ga_i += ga_w / ga_n;
+        }
       }
     }
 
