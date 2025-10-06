@@ -1066,7 +1066,7 @@ bool Llama::eval(struct llama_batch batch) {
 std::vector<struct TokenProb> Llama::get_probs() {
   std::vector<struct TokenProb> probs;
 
-  const auto *cur_p = common_sampler_get_candidates(this->sampler);
+  const auto *cur_p = common_sampler_get_candidates(this->sampler, true);
 
   const int32_t n_probs = this->params.sampling.n_probs;
 

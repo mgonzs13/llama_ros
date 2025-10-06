@@ -68,7 +68,6 @@ def generate_launch_description():
             "use_mlock": LaunchConfiguration("use_mlock", default=False),
             "warmup": LaunchConfiguration("warmup", default=True),
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
-            "flash_attn": LaunchConfiguration("flash_attn", default=False),
             # cache params
             "no_op_offload": LaunchConfiguration("no_op_offload", default=False),
             "no_extra_bufts": LaunchConfiguration("no_extra_bufts", default=False),
@@ -113,6 +112,8 @@ def generate_launch_description():
                 "lora_adapters_scales", default="[0.0]"
             ),
             "numa": LaunchConfiguration("numa", default="none"),
+            # types
+            "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
             "pooling_type": LaunchConfiguration("pooling_type", default=""),
             # prefix/suffix
             "prefix": ParameterValue(
