@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setup(
     name="llama_cli",
-    version="5.3.2",
+    version="5.3.3",
     packages=find_packages(exclude=["test"]),
     zip_safe=True,
     author="Miguel Ángel González Santamarta",
