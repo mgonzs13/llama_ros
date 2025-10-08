@@ -363,10 +363,13 @@ void LlamaNode::generate_embeddings_service_callback(
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
   RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
-  auto embeddings = this->llama->generate_embeddings(request->prompt);
-  auto data = response->embeddings;
+  llama_ros::ServerTaskResultEmbedding embeddings = this->llama->generate_embeddings(request->prompt);
+  std::vector<std::vector<float>> data = embeddings.embeddings;
 
-  response->embeddings = std::move(data);
+  response->embeddings = std::vector<float>();
+  for (const auto &vec : data) {
+    response->embeddings.insert(response->embeddings.end(), vec.begin(), vec.end());
+  }
   response->n_tokens = embeddings.n_tokens;
 
   RCLCPP_INFO(this->get_logger(), "Embeddings generated");
@@ -380,13 +383,11 @@ void LlamaNode::generate_embeddings_service_callback(
 void LlamaNode::rerank_documents_service_callback(
     const std::shared_ptr<llama_msgs::srv::RerankDocuments::Request> request,
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
+  RCLCPP_INFO(this->get_logger(), "Generating reranking");
 
-  ServerSlot *slot = this->llama->wait_for_available_slot();
+  std::vector<llama_ros::ServerTaskResultRerank> reranks = this->llama->rank_documents(request->query, request->documents);
 
-  RCLCPP_INFO(this->get_logger(), "Reranking documents...");
-
-  response->scores =
-      this->llama->rank_documents_task(request->query, request->documents, slot);
+  ;
 
   RCLCPP_INFO(this->get_logger(), "Reranking finished");
 }
