@@ -23,6 +23,7 @@
 #include <cassert>
 #include <chat.h>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <llama.h>
@@ -30,6 +31,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "common.h"
 #include "llama_utils/chat_utils.hpp"
@@ -419,7 +422,7 @@ struct Metadata Llama::get_metadata() {
 */
 std::vector<llama_token> Llama::tokenize(const std::string &text, bool add_bos,
                                          bool special) {
-  return common_tokenize(this->ctx, text, add_bos, special);
+  return common_tokenize(this->get_vocab(), text, add_bos, special);
 }
 
 std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
@@ -432,21 +435,6 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   return text;
 }
 
-std::vector<llama_token> Llama::tokenize_task(const std::string &text,
-                                              bool add_bos, bool special,
-                                              ServerSlot *slot) {
-  auto result = common_tokenize(this->ctx, text, add_bos, special);
-  slot->release();
-  return result;
-}
-
-std::string Llama::detokenize_task(const std::vector<llama_token> &tokens,
-                                   ServerSlot *slot) {
-  auto result = common_detokenize(slot->ctx, tokens);
-  slot->release();
-  return result;
-}
-
 void Llama::cancel() { this->canceled = true; }
 
 /*
@@ -454,22 +442,28 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-ServerTaskResultEmbedding
+std::optional<llama_ros::ServerTaskResultEmbedding>
 Llama::generate_embeddings(const std::string &text) {
   auto slot = this->wait_for_available_slot();
 
-  const uint64_t gid = slot->goal_id;
+  const uint64_t gid = llama_utils::generate_random_uint64();
+  slot->goal_id = gid;
   auto fut = register_pending(gid);
 
   this->handle_embeddings_req(text, slot);
 
   auto result = fut.get();
 
-  if (auto* out = dynamic_cast<ServerTaskResultEmbedding*>(result.get())) {
+  {
+    std::lock_guard<std::mutex> lk(done_mx);
+    done_q.push(gid);
+  }
+
+  if (auto *out = dynamic_cast<ServerTaskResultEmbedding *>(result.get())) {
     return *out;
   }
 
-  return {};
+  return std::nullopt;
 }
 
 /*
@@ -477,66 +471,97 @@ Llama::generate_embeddings(const std::string &text) {
 *         RERANKING         *
 *****************************
 */
-float Llama::rank_document(const std::string &query,
-                           const std::string &document, ServerSlot *slot) {
-
-  // if (!this->is_reranking()) {
-  //   LLAMA_LOG_ERROR(
-  //       "Llama must be created with reranking enable to make rerank");
-  //   return 0.0;
-  // }
-
-  // std::vector<llama_token> tokens;
-  // tokens.reserve(this->params.n_batch);
-
-  // tokens.push_back(this->get_token_bos());
-
-  // auto part1 = this->tokenize(query, false, true);
-  // part1 =
-  //     this->truncate_tokens(part1, (int)(this->params.n_batch / 2) - 2, true);
-  // tokens.insert(tokens.end(), part1.begin(), part1.end());
-
-  // tokens.push_back(this->get_token_eos());
-  // tokens.push_back(this->get_token_sep());
-
-  // auto part2 = this->tokenize(document, false, true);
-  // part2 =
-  //     this->truncate_tokens(part2, (int)(this->params.n_batch / 2) - 2, true);
-  // tokens.insert(tokens.end(), part2.begin(), part2.end());
-
-  // tokens.push_back(this->get_token_eos());
-
-  // return this->generate_embeddings(tokens, -1, slot).embeddings.at(0);
-  return 0.0;
-}
-
-std::vector<float>
+std::optional<std::vector<llama_ros::ServerTaskResultRerank>>
 Llama::rank_documents(const std::string &query,
-                      const std::vector<std::string> &documents,
-                      ServerSlot *slot) {
-
+                      const std::vector<std::string> &documents) {
   if (!this->is_reranking()) {
     LLAMA_LOG_ERROR(
         "Llama must be created with reranking enable to make rerank");
-    return {0.0};
+    return {};
   }
 
-  std::vector<float> scores;
+  // Register all tasks
+  auto n_documents = documents.size();
+  std::unordered_map<uint64_t, std::future<ServerTaskResultPtr>> futs(
+      n_documents);
 
-  for (std::string doc : documents) {
-    scores.push_back(this->rank_document(query, doc, slot));
+  const uint64_t slot_gid = llama_utils::generate_random_uint64();
+
+  for (size_t i = 0; i < documents.size(); ++i) {
+    auto slot = this->wait_for_available_slot();
+
+    const uint64_t gid =
+        (static_cast<uint64_t>(slot_gid) << 32) | static_cast<uint64_t>(i);
+
+    slot->goal_id = gid;
+    auto fut = register_pending(gid);
+
+    LLAMA_LOG_INFO(
+        "Submitting rerank task %lu for document %zu (slot goal_id: %lu)", gid,
+        i, slot_gid);
+
+    this->handle_rerank_req(query, documents[i], slot);
+
+    futs.emplace(gid, std::move(fut));
   }
 
-  return scores;
-}
+  std::vector<llama_ros::ServerTaskResultRerank> results;
+  results.reserve(documents.size());
 
-std::vector<float>
-Llama::rank_documents_task(const std::string &query,
-                           const std::vector<std::string> &documents,
-                           ServerSlot *slot) {
-  auto result = this->rank_documents(query, documents, slot);
-  slot->release();
-  return result;
+  size_t n_collected = 0;
+  while (n_collected < n_documents) {
+    uint64_t first_gid = 0;
+    {
+      std::unique_lock<std::mutex> lk(done_mx);
+      done_cv.wait(lk, [&] { return !done_q.empty(); });
+      first_gid = done_q.front();
+      done_q.pop();
+    }
+
+    if (auto it = futs.find(first_gid); it != futs.end()) {
+      ServerTaskResultPtr ptr = it->second.get();
+
+      if (auto *out = dynamic_cast<ServerTaskResultRerank *>(ptr.get())) {
+        results.push_back(*out);
+      } else {
+        LLAMA_LOG_ERROR(
+            "Failed to cast ServerTaskResultPtr to ServerTaskResultRerank");
+      }
+
+      futs.erase(it);
+      n_collected++;
+    }
+
+    for (;;) {
+      uint64_t gid;
+      {
+        std::lock_guard<std::mutex> lk(done_mx);
+        if (done_q.empty())
+          break;
+        gid = done_q.front();
+        done_q.pop();
+      }
+      if (auto it = futs.find(gid); it != futs.end()) {
+        ServerTaskResultPtr ptr = it->second.get();
+
+        if (auto *out = dynamic_cast<ServerTaskResultRerank *>(ptr.get())) {
+          results.push_back(*out);
+        } else {
+          LLAMA_LOG_ERROR(
+              "Failed to cast ServerTaskResultPtr to ServerTaskResultRerank");
+        }
+
+        futs.erase(it);
+        n_collected++;
+      }
+    }
+  }
+
+  std::sort(results.begin(), results.end(), [](const llama_ros::ServerTaskResultRerank &a, const llama_ros::ServerTaskResultRerank &b) {
+    return a.id < b.id;
+  });
+
+  return results;
 }
 
 /*
@@ -546,7 +571,7 @@ Llama::rank_documents_task(const std::string &query,
 */
 std::vector<struct LoRA> Llama::list_loras() {
 
-  std::lock_guard<std::mutex> lk(this->mutex);
+  std::lock_guard<std::mutex> lk(this->slot_mutex);
 
   std::vector<struct LoRA> loras;
 
@@ -566,7 +591,7 @@ std::vector<struct LoRA> Llama::list_loras() {
 
 void Llama::update_loras(std::vector<struct LoRA> loras) {
 
-  std::lock_guard<std::mutex> lk(this->mutex);
+  std::lock_guard<std::mutex> lk(this->slot_mutex);
 
   for (auto lora : loras) {
     if (lora.id >= 0 && lora.id <= (int)this->lora_adapters.size()) {
@@ -710,7 +735,7 @@ Llama::generate_response(ServerSlot *slot, const std::string &input_prompt,
   common_perf_print(this->ctx, this->sampler);
 
   output.completions = response;
-  slot->release();
+  release_slot(slot);
   return output;
 }
 
@@ -1093,8 +1118,7 @@ Llama::get_chat_templates() {
                                  this->params.chat_template));
 }
 
-struct llama_perf_context_data
-Llama::get_perf_data() {
+struct llama_perf_context_data Llama::get_perf_data() {
   return llama_perf_context(this->ctx);
 }
 
@@ -1140,22 +1164,20 @@ void ServerSlot::reset() {
   prompt_tokens.clear();
 }
 
+void Llama::release_slot(ServerSlot *slot) {
+  {
+    std::lock_guard<std::mutex> lock(this->slot_mutex);
+    slot->release();
+  }
+  this->server_slot_cv.notify_one();
+}
+
 void ServerSlot::release() {
   LLAMA_LOG_INFO("Trying to release slot %d", id);
   if (is_processing()) {
     LLAMA_LOG_INFO("Releasing slot %d", id);
     state = SLOT_STATE_IDLE;
   }
-}
-
-ServerSlot *Llama::get_slot_by_id(int id) {
-  for (auto &slot : this->server_slots) {
-    if (slot.goal_id == id) {
-      return &slot;
-    }
-  }
-
-  return nullptr;
 }
 
 ServerSlot *Llama::get_available_slot() {
@@ -1168,7 +1190,7 @@ ServerSlot *Llama::get_available_slot() {
 }
 
 ServerSlot *Llama::wait_for_available_slot() {
-  std::unique_lock<std::mutex> lock(this->mutex);
+  std::unique_lock<std::mutex> lock(this->slot_mutex);
 
   this->server_slot_cv.wait(lock, [this] {
     for (auto &slot : this->server_slots) {
@@ -1502,12 +1524,8 @@ void Llama::run_loop() {
 
         // enqueue all prompt tokens (must fit fully in one batch)
         while (slot.n_past < slot.n_prompt_tokens) {
-          LLAMA_LOG_INFO("Adding prompt token %d for slot %d of maximum %d",
-                        slot.prompt_tokens[slot.n_past], slot.id, slot.n_prompt_tokens);
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
           const bool need_embd = this->is_embedding() || this->is_reranking();
-
-          LLAMA_LOG_INFO("n_past: %d, slot.id: %d, need_embd: %d", slot.n_past, slot.id, need_embd);
 
           common_batch_add(batch, cur_tok, slot.n_past, {slot.id}, need_embd);
 
@@ -1516,7 +1534,7 @@ void Llama::run_loop() {
         }
 
         LLAMA_LOG_INFO("Added %d prompt tokens for slot %d",
-                      slot.n_prompt_tokens_processed, slot.id);
+                       slot.n_prompt_tokens_processed, slot.id);
 
         // finished the entire prompt this iteration
         slot.state = SLOT_STATE_DONE_PROMPT;
@@ -1542,7 +1560,8 @@ void Llama::run_loop() {
     }
 
     if (slot_batched) {
-      llama_set_embeddings(this->ctx, this->is_embedding() || this->is_reranking());
+      llama_set_embeddings(this->ctx,
+                           this->is_embedding() || this->is_reranking());
     }
 
     // Check if there are no tokens to decode
@@ -1599,17 +1618,15 @@ void Llama::run_loop() {
         // If we just finished prompt eval for this slot, branch by task type
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
           if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING) {
-            // TODO: Implement embedding response handling
             this->send_embedding_result(&slot, batch_view);
-            slot.release();
+            release_slot(&slot);
             // TODO: Exit
             slot.i_batch = -1;
             continue;
           }
           if (slot.task_type == SERVER_TASK_TYPE_RERANK) {
-            // TODO: Implement rerank response handling
             this->send_rerank_result(&slot, batch_view);
-            slot.release();
+            release_slot(&slot);
             // TODO: Exit
             slot.i_batch = -1;
             continue;
@@ -1640,7 +1657,7 @@ void Llama::run_loop() {
         if (!process_token(&slot, &result)) {
           // TODO: exit
           send_completion_result(&slot);
-          slot.release();
+          release_slot(&slot);
           continue;
         }
       }
@@ -1648,39 +1665,83 @@ void Llama::run_loop() {
   }
 }
 
+/*
+*****************************
+*   ASYNC TASK MANAGEMENT    *
+*****************************
+*/
+
 std::future<ServerTaskResultPtr> Llama::register_pending(uint64_t goal_id) {
-    std::lock_guard<std::mutex> lk(pending_mutex);
-    pending.erase(goal_id);
-    std::promise<ServerTaskResultPtr> p;
-    auto fut = p.get_future();
-    pending.emplace(goal_id, std::move(p));
-    return fut;
+  std::lock_guard<std::mutex> lk(pending_mutex);
+  pending.erase(goal_id);
+  std::promise<ServerTaskResultPtr> p;
+  auto fut = p.get_future();
+  pending.emplace(goal_id, std::move(p));
+  return fut;
 }
 
 void Llama::fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r) {
+  {
     std::lock_guard<std::mutex> lk(pending_mutex);
     auto it = pending.find(goal_id);
     if (it != pending.end()) {
-        it->second.set_value(std::move(r)); // move-only, fine
-        pending.erase(it);
+      it->second.set_value(std::move(r)); // ready now
+      pending.erase(it);
+    } else {
+      return; // no promise to fulfill
     }
+  }
+  {
+    std::lock_guard<std::mutex> lk(done_mx);
+    done_q.push(goal_id);
+  }
+  done_cv.notify_one();
 }
 
+void Llama::handle_embeddings_req(const std::string &input_prompt,
+                                  ServerSlot *slot) {
+  auto tokens = common_tokenize(this->ctx, input_prompt, false, true);
+  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
+  tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
+  }
 
-void Llama::handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot) {
-    auto tokens = common_tokenize(this->ctx, input_prompt,
-                                  false, true);
-    LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
-    tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
-        if (slot->sampler != nullptr) {
-        common_sampler_free(slot->sampler);
-    }
+  slot->sampler = common_sampler_init(model, this->params.sampling);
+  slot->prompt_tokens = tokens;
+  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+  slot->task_type = SERVER_TASK_TYPE_EMBEDDING;
+  slot->state = SLOT_STATE_STARTED;
+}
 
-    slot->sampler = common_sampler_init(model, this->params.sampling);
-    slot->prompt_tokens = tokens;
-    LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-    slot->task_type = SERVER_TASK_TYPE_EMBEDDING;
-    slot->state = SLOT_STATE_STARTED;
+void Llama::handle_rerank_req(const std::string &query,
+                              const std::string &document, ServerSlot *slot) {
+  std::vector<llama_token> tokens;
+  tokens.push_back(this->get_token_bos());
+  auto tokens_query = common_tokenize(this->get_vocab(), query, false, true);
+  auto truncated_query = this->truncate_tokens(
+      tokens_query, (int)(this->params.n_batch / 2) - 2, true);
+  tokens.insert(tokens.end(), truncated_query.begin(), truncated_query.end());
+  tokens.push_back(this->get_token_eos());
+  tokens.push_back(this->get_token_sep());
+  auto tokens_document =
+      common_tokenize(this->get_vocab(), document, false, true);
+  auto truncated_document = this->truncate_tokens(
+      tokens_document, (int)(this->params.n_batch / 2) - 2, true);
+  tokens.insert(tokens.end(), truncated_document.begin(),
+                truncated_document.end());
+  tokens.push_back(this->get_token_eos());
+
+  tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
+  }
+
+  slot->sampler = common_sampler_init(model, this->params.sampling);
+  slot->prompt_tokens = tokens;
+  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+  slot->task_type = SERVER_TASK_TYPE_RERANK;
+  slot->state = SLOT_STATE_STARTED;
 }
 
 std::vector<llama_token>
@@ -1707,6 +1768,7 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
   auto result = std::make_unique<ServerTaskResultEmbedding>();
   result->id_slot = slot->id;
   result->id = slot->goal_id;
+  result->n_tokens = batch.n_tokens;
   const int n_embd = llama_model_n_embd(model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
@@ -1747,31 +1809,33 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
 }
 
 void Llama::send_rerank_result(ServerSlot *slot, const llama_batch &batch) {
-  // auto result = std::make_unique<ServerTaskResultRerank>();
-  // result->id_slot = slot->id;
-  // result->id = slot->goal_id;
-  // for (int i = 0; i < batch.n_tokens; ++i) {
-  //   if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
-  //     continue;
-  //   }
+  auto result = std::make_unique<ServerTaskResultRerank>();
+  result->id_slot = slot->id;
+  result->id = slot->goal_id;
+  for (int i = 0; i < batch.n_tokens; ++i) {
+    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
+      continue;
+    }
 
-  //   const float *embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
-  //   if (embd == NULL) {
-  //     embd = llama_get_embeddings_ith(ctx, i);
-  //   }
+    const float *embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+    if (embd == NULL) {
+      embd = llama_get_embeddings_ith(ctx, i);
+    }
 
-  //   if (embd == NULL) {
-  //     LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
-  //                     batch.token[i], batch.seq_id[i][0]);
+    if (embd == NULL) {
+      LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
+                      batch.token[i], batch.seq_id[i][0]);
 
-  //     result->score = -1e6;
-  //     continue;
-  //   }
+      result->score = -1e6;
+      continue;
+    }
 
-  //   result->score = embd[0];
-  // }
+    result->score = embd[0];
+  }
 
-  // this->results.push_back(std::move(result));
+  LLAMA_LOG_INFO("Rerank score: %f", result->score);
+  const auto id = result->id;
+  fulfill_pending(id, std::move(result));
 }
 
 void Llama::send_completion_result(ServerSlot *slot) {

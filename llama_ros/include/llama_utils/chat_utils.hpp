@@ -173,6 +173,7 @@ ChatCompletionsContext prepare_chat_completions_call(
 
 
 int32_t uuid_to_int32(const std::array<uint8_t, 16>& uuid);
+uint64_t generate_random_uint64();
 } // namespace llama_utils
 
 #endif

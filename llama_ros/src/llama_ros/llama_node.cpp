@@ -20,7 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -334,9 +336,7 @@ void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
-  ServerSlot *slot = this->llama->wait_for_available_slot();
   response->tokens = this->llama->tokenize(request->text, false, 2);
-  slot->release();
 }
 
 void LlamaNode::detokenize_service_callback(
@@ -348,9 +348,7 @@ void LlamaNode::detokenize_service_callback(
     tokens.push_back(t);
   }
 
-  ServerSlot *slot = this->llama->wait_for_available_slot();
   response->text = this->llama->detokenize(tokens);
-  slot->release();
 }
 
 /*
@@ -363,14 +361,18 @@ void LlamaNode::generate_embeddings_service_callback(
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
   RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
-  llama_ros::ServerTaskResultEmbedding embeddings = this->llama->generate_embeddings(request->prompt);
-  std::vector<std::vector<float>> data = embeddings.embeddings;
+  std::optional<ServerTaskResultEmbedding> embeddings = this->llama->generate_embeddings(request->prompt);
+  if (!embeddings) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to generate embeddings");
+    return;
+  }
 
+  std::vector<std::vector<float>> data = embeddings->embeddings;
   response->embeddings = std::vector<float>();
   for (const auto &vec : data) {
     response->embeddings.insert(response->embeddings.end(), vec.begin(), vec.end());
   }
-  response->n_tokens = embeddings.n_tokens;
+  response->n_tokens = embeddings->n_tokens;
 
   RCLCPP_INFO(this->get_logger(), "Embeddings generated");
 }
@@ -385,9 +387,18 @@ void LlamaNode::rerank_documents_service_callback(
     std::shared_ptr<llama_msgs::srv::RerankDocuments::Response> response) {
   RCLCPP_INFO(this->get_logger(), "Generating reranking");
 
-  std::vector<llama_ros::ServerTaskResultRerank> reranks = this->llama->rank_documents(request->query, request->documents);
+  std::optional<std::vector<llama_ros::ServerTaskResultRerank>> reranks = this->llama->rank_documents(request->query, request->documents);
 
-  ;
+  if (!reranks) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to generate reranking");
+    return;
+  }
+
+  response->scores = std::vector<float>(request->documents.size(), -1e6);
+  for (uint32_t i = 0; i < reranks->size(); i++) {
+    const auto &rerank = (*reranks)[i];
+    response->scores[i] = rerank.score;
+  }
 
   RCLCPP_INFO(this->get_logger(), "Reranking finished");
 }
@@ -471,10 +482,10 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  this->goal_handle_ = goal_handle;
-  ServerSlot *slot = this->llama->get_slot_by_id(
-      llama_utils::uuid_to_int32(goal_handle->get_goal_id()));
-  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot}.detach();
+  // this->goal_handle_ = goal_handle;
+  // ServerSlot *slot = this->llama->get_slot_by_id(
+  //     llama_utils::uuid_to_int32(goal_handle->get_goal_id()));
+  // std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot}.detach();
 }
 
 bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {

@@ -29,9 +29,11 @@
 #include <memory>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 #include <future>
+#include <queue>
 
 #include "chat.h"
 #include "common.h"
@@ -521,7 +523,7 @@ struct SelectedLogProb {
 };
 
 struct ServerTaskResult {
-  int id;
+  uint64_t id;
   int id_slot;
   virtual ~ServerTaskResult() = default;
 };
@@ -633,7 +635,7 @@ using ServerTaskResultPtr = std::unique_ptr<ServerTaskResult>;
 class ServerSlot {
 public:
   int id;
-  int goal_id;
+  uint64_t goal_id;
   llama_batch batch;
   llama_context *ctx;
   mtmd_context *mtmd_ctx;
@@ -753,13 +755,6 @@ public:
    */
   std::string detokenize(const std::vector<llama_token> &tokens);
 
-  std::vector<llama_token> tokenize_task(const std::string &text, bool add_bos,
-                                    bool special = false,
-                                    ServerSlot *slot = nullptr);
-
-  std::string detokenize_task(const std::vector<llama_token> &tokens,
-                         ServerSlot *slot = nullptr);
-
   /**
    * @brief Resets the internal state of the model.
    *
@@ -794,22 +789,14 @@ public:
    * @param normalization The normalization method to apply (default is 2).
    * @return A structure containing the generated embeddings and token count.
    */
-  ServerTaskResultEmbedding generate_embeddings(const std::string &text);
+  std::optional<ServerTaskResultEmbedding> generate_embeddings(const std::string &text);
 
+  void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
                   bool add_eos = true);
-
-  /**
-   * @brief Ranks the relevance of a document to a given query.
-   *
-   * @param query The query string.
-   * @param document The document string to rank.
-   * @return A floating-point score representing the relevance of the document.
-   */
-  float rank_document(const std::string &query, const std::string &document, ServerSlot *slot);
 
   /**
    * @brief Ranks the relevance of multiple documents to a given query.
@@ -819,12 +806,8 @@ public:
    * @return A vector of floating-point scores representing the relevance of
    * each document.
    */
-  std::vector<float> rank_documents(const std::string &query,
-                                    const std::vector<std::string> &documents, ServerSlot *slot);
-
-
-  std::vector<float> rank_documents_task(const std::string &query,
-                                    const std::vector<std::string> &documents, ServerSlot *slot);
+  std::optional<std::vector<llama_ros::ServerTaskResultRerank>> rank_documents(const std::string &query,
+                                    const std::vector<std::string> &documents);
 
   /**
    * @brief Generates a response based on the input prompt and sampling
@@ -1069,7 +1052,6 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
-  ServerSlot *get_slot_by_id(int id);
   ServerSlot *get_available_slot();
   ServerSlot *wait_for_available_slot();
 
@@ -1177,9 +1159,14 @@ protected:
   int32_t ga_i;
 
   std::vector<ServerSlot> server_slots;
-  std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending;
+  void release_slot(ServerSlot *slot);
 
+  std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending;
   std::mutex pending_mutex;
+
+  std::mutex done_mx;
+  std::condition_variable done_cv;
+  std::queue<uint64_t> done_q;
 
   std::future<ServerTaskResultPtr> register_pending(uint64_t goal_id);
   void fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r);
@@ -1189,7 +1176,6 @@ protected:
   void send_rerank_result(ServerSlot *slot, const llama_batch &batch);
   void send_completion_result_partial(ServerSlot *slot, const CompletionOutput &result);
   void send_completion_result(ServerSlot *slot);
-
   /**
    * @brief Checks if the prompt contains the prefix at the end.
    *
@@ -1316,7 +1302,7 @@ protected:
   /**
    * @brief A mutex for thread-safe operations.
    */
-  std::mutex mutex;
+  std::mutex slot_mutex;
 };
 
 } // namespace llama_ros
