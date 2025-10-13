@@ -42,6 +42,7 @@ def generate_launch_description():
             "n_ctx": LaunchConfiguration("n_ctx", default=512),
             "n_batch": LaunchConfiguration("n_batch", default=2048),
             "n_ubatch": LaunchConfiguration("n_batch", default=512),
+            "n_parallel": LaunchConfiguration("n_parallel", default=1),
             # GPU params
             "devices": LaunchConfiguration("devices", default="['']"),
             "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
