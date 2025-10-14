@@ -634,6 +634,11 @@ using ServerTaskResultPtr = std::unique_ptr<ServerTaskResult>;
 
 class ServerSlot {
 public:
+  /**
+ * @brief A callback function type for handling generated responses.
+ */
+  using GenerateResponseCallback = std::function<void(struct CompletionOutput, ServerSlot *)>;
+
   int id;
   uint64_t goal_id;
   llama_batch batch;
@@ -660,6 +665,7 @@ public:
 
   size_t n_sent_text        = 0;
   bool stream;
+  GenerateResponseCallback stream_callback = nullptr;
 
   struct slot_params {
     int32_t n_keep = 0;
@@ -699,11 +705,6 @@ public:
   inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
   size_t find_stopping_strings(const std::string & text, const size_t last_token_size, bool is_full_stop);
 };
-
-/**
- * @brief A callback function type for handling generated responses.
- */
-using GenerateResponseCallback = std::function<void(struct CompletionOutput, ServerSlot *)>;
 
 /**
  * @brief A class representing a llama.cpp.
@@ -793,6 +794,7 @@ public:
 
   void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
+  void handle_completion_req(const std::string &input_prompt, ServerSlot *slot, struct common_params_sampling sparams, ServerSlot::GenerateResponseCallback callback, std::vector<std::string> stop, bool reset);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
@@ -815,33 +817,18 @@ public:
    *
    * @param input_prompt The input text prompt for generating the response.
    * @param sparams The sampling parameters to guide the response generation.
-   * @param callbakc (Optional) A callback function to handle the generated
+   * @param callback (Optional) A callback function to handle the generated
    * response.
    * @param stop (Optional) A list of stop words or phrases to terminate the
    * response generation.
    * @return A structure containing the generated response and its metadata.
    */
-  struct ResponseOutput
-  generate_response(ServerSlot *slot,
+  std::optional<ServerTaskResultCompletion>
+  generate_response(int slot_id,
                     const std::string &input_prompt,
                     struct common_params_sampling sparams,
-                    GenerateResponseCallback callbakc = nullptr,
-                    std::vector<std::string> stop = {});
-
-  /**
-   * @brief Generates a response based on the input prompt.
-   *
-   * @param input_prompt The input text prompt for generating the response.
-   * @param callbakc (Optional) A callback function to handle the generated
-   * response.
-   * @param stop (Optional) A list of stop words or phrases to terminate the
-   * response generation.
-   * @return A structure containing the generated response and its metadata.
-   */
-  struct ResponseOutput
-  generate_response(ServerSlot *slot, const std::string &input_prompt,
-                    GenerateResponseCallback callbakc = nullptr,
-                    std::vector<std::string> stop = {});
+                    ServerSlot::GenerateResponseCallback callback = nullptr,
+                    std::vector<std::string> stop = {}, bool reset = true);
 
   /**
    * @brief Retrieves the chat templates used for generating responses.
@@ -1054,6 +1041,8 @@ public:
 
   ServerSlot *get_available_slot();
   ServerSlot *wait_for_available_slot();
+  ServerSlot *get_slot_by_id(int id);
+  ServerSlot *get_slot_by_gid(uint64_t gid);
 
 protected:
   /**

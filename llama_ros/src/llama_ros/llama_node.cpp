@@ -33,6 +33,7 @@
 
 #include "llama_msgs/msg/lo_ra.hpp"
 #include "llama_msgs/msg/logit_bias.hpp"
+#include "llama_msgs/msg/sampling_config.hpp"
 #include "llama_msgs/msg/token_prob.hpp"
 #include "llama_msgs/msg/token_prob_array.hpp"
 #include "llama_ros/llama.hpp"
@@ -466,7 +467,7 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
   RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
   ServerSlot *slot = this->llama->wait_for_available_slot();
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
-  RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %d",
+  RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu",
               slot->id, slot->goal_id);
 
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -482,10 +483,9 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  // this->goal_handle_ = goal_handle;
-  // ServerSlot *slot = this->llama->get_slot_by_id(
-  //     llama_utils::uuid_to_int32(goal_handle->get_goal_id()));
-  // std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot}.detach();
+  this->goal_handle_ = goal_handle;
+  int slot_id = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
+  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot_id}.detach();
 }
 
 bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -494,8 +494,7 @@ bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 
 void LlamaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
-    ServerSlot *slot) {
-
+    int slot_id) {
   // get goal data
   this->goal_handle_ = goal_handle;
   auto goal = goal_handle->get_goal();
@@ -504,6 +503,7 @@ void LlamaNode::execute(
   std::string prompt = goal->prompt;
   std::vector<std::string> stop = goal->stop;
   bool reset = goal->reset;
+  llama_msgs::msg::SamplingConfig sampling_config = goal->sampling_config;
 
   // check if goal is empty
   if (this->goal_empty(goal)) {
@@ -511,18 +511,7 @@ void LlamaNode::execute(
     return;
   }
 
-  RCLCPP_INFO(this->get_logger(), "Prompt received:\n%s", prompt.c_str());
-
-  // reset llama
-  if (reset) {
-    slot->reset();
-  }
-
-  RCLCPP_INFO(this->get_logger(), "Llama context reset");
-
-  // update sampling params of common_params
-  auto sampling_config = goal->sampling_config;
-
+    // update sampling params of common_params
   if (sampling_config.ignore_eos &&
       llama_vocab_eos(this->llama->get_vocab()) == LLAMA_TOKEN_NULL) {
     RCLCPP_WARN(this->get_logger(),
@@ -543,6 +532,7 @@ void LlamaNode::execute(
       sampling_config.logit_bias_eog.data.push_back(bias_eog);
     }
   }
+
   RCLCPP_INFO(this->get_logger(),
             "Using %ld EOG logit biases", sampling_config.logit_bias_eog.data.size());
 
@@ -554,40 +544,38 @@ void LlamaNode::execute(
         sampling_config.logit_bias_eog.data.end());
   }
 
-  auto sparams = llama_utils::parse_sampling_params(sampling_config,
-                                                    this->llama->get_n_vocab());
+  auto sparams = llama_utils::parse_sampling_params(
+      sampling_config, this->llama->get_n_vocab());
 
-  RCLCPP_INFO(this->get_logger(), "Parsed sampling params, generating response");
-  // call llama
-  struct ResponseOutput output = this->llama->generate_response(slot,
-      prompt, sparams, std::bind(&LlamaNode::send_text, this, _1, slot));
+  std::optional<ServerTaskResultCompletion> generated_response = this->llama->generate_response(slot_id, prompt,
+                                              sparams, std::bind(&LlamaNode::send_text, this, _1, slot_id), stop, reset);
 
-  RCLCPP_INFO(this->get_logger(), "Response generated");
-  if (output.stop == StopType::FULL_STOP) {
-    auto completion_results = output.completions;
+  if (!generated_response) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to generate response");
+    this->goal_handle_->abort(result);
+    this->goal_handle_ = nullptr;
+    return;
+  }
 
-    for (auto completion : completion_results) {
-      result->response.text.append(this->llama->detokenize({completion.token}));
-      result->response.tokens.push_back(completion.token);
-
-      llama_msgs::msg::TokenProbArray probs_msg;
-      for (auto prob : completion.probs) {
-        llama_msgs::msg::TokenProb aux;
-        aux.token = prob.token;
-        aux.probability = llama_utils::logit(prob.probability);
-        aux.token_text = this->llama->detokenize({prob.token});
-        probs_msg.data.push_back(aux);
-      }
-      result->response.probs.push_back(probs_msg);
+  result->response.text = generated_response->content;
+  result->response.tokens = generated_response->tokens;
+  for (const auto &probs_msg : generated_response->probs_output) {
+    llama_msgs::msg::TokenProbArray probs_msg_aux;
+    for (const auto &prob : probs_msg.data) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llama->detokenize({prob.token});
+      probs_msg_aux.data.push_back(aux);
     }
+    result->response.probs.push_back(probs_msg_aux);
   }
 
   if (rclcpp::ok()) {
-
-    if (output.stop == StopType::CANCEL) {
+    if (generated_response->stop == StopType::CANCEL) {
       this->goal_handle_->canceled(result);
 
-    } else if (output.stop == StopType::ABORT) {
+    } else if (generated_response->stop == StopType::ABORT) {
       this->goal_handle_->abort(result);
 
     } else {
@@ -598,8 +586,7 @@ void LlamaNode::execute(
   }
 }
 
-void LlamaNode::send_text(const struct CompletionOutput &completion, ServerSlot *slot) {
-
+void LlamaNode::send_text(const struct CompletionOutput &completion, int slot_id) {
   if (this->goal_handle_ != nullptr) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
 
@@ -763,7 +750,7 @@ void LlamaNode::execute_chat_completions(
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion, ServerSlot *slot) {
+    const struct CompletionOutput &completion, int slot_id) {
   // if (this->goal_handle_chat_ != nullptr) {
   //   llama_utils::ResponseResult response_result;
 
