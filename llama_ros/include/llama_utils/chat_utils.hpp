@@ -32,8 +32,13 @@
 
 #include "chat.h"
 #include "llama_msgs/msg/chat_reasoning_format.hpp"
-#include "llama_ros/llama.hpp"
 #include "llama_utils/llama_params.hpp"
+
+// Forward declarations to avoid circular dependencies
+namespace llama_ros {
+  class Llama;
+  struct ServerTaskResultCompletion;
+}
 
 namespace llama_utils {
 /**

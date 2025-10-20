@@ -93,19 +93,6 @@ public:
 
 protected:
   /**
-   * @brief Loads a prompt into the Llava model.
-   *
-   * This method overrides the base Llama class to load a prompt into the Llava
-   * model, with optional prefix and suffix handling.
-   *
-   * @param input_prompt The input text prompt to load.
-   * @param add_pfx Whether to add a prefix to the prompt.
-   * @param add_sfx Whether to add a suffix to the prompt.
-   */
-  void load_prompt(const std::string &input_prompt, bool add_pfx,
-                   bool add_sfx, llama_ros::ServerSlot *slot) override;
-
-  /**
    * @brief Evaluates a specific mtmd chunk in the Llava model.
    *
    * This method processes the provided mtmd chunk and integrates it into the
@@ -116,16 +103,6 @@ protected:
    * otherwise.
    */
   bool eval_mtmd_chunk(const mtmd_input_chunk *image_chunk);
-
-  /**
-   * @brief Evaluates the input prompt in the Llava model.
-   *
-   * This method overrides the base Llama class to evaluate the input prompt,
-   * including image-related context.
-   *
-   * @return True if the prompt evaluation is successful, false otherwise.
-   */
-  bool eval_prompt(llama_ros::ServerSlot *slot) override;
 
   /**
    * @brief Pointer to the multimodal context used for image processing.

@@ -61,34 +61,6 @@ void Llava::reset() { Llama::reset(); }
 *        LOAD MTMDS         *
 *****************************
 */
-void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
-                        bool add_sfx, llama_ros::ServerSlot *slot) {
-
-  std::string prompt = input_prompt;
-
-  if (add_pfx && !this->check_if_prefix(slot)) {
-    prompt = this->params.input_prefix + prompt;
-  }
-
-  if (add_sfx) {
-    prompt += this->params.input_suffix;
-  }
-
-  mtmd_input_text inp_txt = {
-      prompt.c_str(),
-      /* add_special */ true,
-      /* parse_special */ true,
-  };
-
-  auto bitmaps_c_ptr = this->bitmaps.c_ptr();
-
-  if (mtmd_tokenize(this->mtmd_ctx, this->chunks.ptr.get(), &inp_txt,
-                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size()) != 0) {
-    LLAMA_LOG_ERROR("Failed to tokenize prompt");
-    return;
-  }
-}
-
 // Computes FNV-1a hash of the data
 static std::string fnv_hash(const uint8_t *data, size_t len) {
   const uint64_t fnv_prime = 0x100000001b3ULL;

@@ -45,6 +45,11 @@
 
 using json = nlohmann::ordered_json;
 
+// Forward declarations to avoid circular dependencies
+namespace llama_utils {
+  struct ChatCompletionsContext;
+}
+
 namespace llama_ros {
 
 struct OAICompactParserOptions {
@@ -795,6 +800,7 @@ public:
   void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
   void handle_completion_req(const std::string &input_prompt, ServerSlot *slot, struct common_params_sampling sparams, ServerSlot::GenerateResponseCallback callback, std::vector<std::string> stop, bool reset);
+  void handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot, ServerSlot::GenerateResponseCallback callback);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
@@ -829,6 +835,11 @@ public:
                     struct common_params_sampling sparams,
                     ServerSlot::GenerateResponseCallback callback = nullptr,
                     std::vector<std::string> stop = {}, bool reset = true);
+
+  std::optional<ServerTaskResultCompletion>
+  generate_chat_response(int slot_gid,
+                          llama_utils::ChatCompletionsContext chat_context,
+                          ServerSlot::GenerateResponseCallback callback = nullptr);
 
   /**
    * @brief Retrieves the chat templates used for generating responses.
@@ -1163,112 +1174,7 @@ protected:
 
   void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
   void send_rerank_result(ServerSlot *slot, const llama_batch &batch);
-  void send_completion_result_partial(ServerSlot *slot, const CompletionOutput &result);
   void send_completion_result(ServerSlot *slot);
-  /**
-   * @brief Checks if the prompt contains the prefix at the end.
-   *
-   * @return True if the prompt contains the prefix, false otherwise.
-   */
-  bool check_if_prefix(ServerSlot *slot);
-
-  /**
-   * @brief Load the prefix to the propmt.
-   */
-  void load_prefix(ServerSlot *slot);
-
-  /**
-   * @brief Load the suffix to the propmt.
-   */
-  void load_suffix(ServerSlot *slot);
-
-  /**
-   * @brief Loads a prompt into the model.
-   *
-   * @param input_prompt The input text prompt to load.
-   * @param add_pfx Whether to add a prefix to the prompt.
-   * @param add_sfx Whether to add a suffix to the prompt.
-   */
-  virtual void load_prompt(const std::string &input_prompt, bool add_pfx,
-                           bool add_sfx, ServerSlot *slot);
-
-  /**
-   * @brief Finds a stopping condition based on the completion results and
-   * stopping words.
-   *
-   * @param completion_result_list A list of completion results to evaluate.
-   * @param stopping_words A list of words or phrases that indicate stopping
-   * conditions.
-   * @return The type of stopping condition encountered.
-   */
-  StopType
-  find_stop(
-    ServerSlot *slot,
-    std::vector<struct CompletionOutput> completion_result_list,
-            std::vector<std::string> stopping_words);
-
-  /**
-   * @brief Finds a stopping condition based on a specific stopping word.
-   *
-   * @param completion_result_list A list of completion results to evaluate.
-   * @param stopping_word A specific word or phrase that indicates a stopping
-   * condition.
-   * @return The type of stopping condition encountered.
-   */
-  StopType
-  find_stop_word(std::vector<struct CompletionOutput> completion_result_list,
-                 std::string stopping_word);
-
-  /**
-   * @brief Evaluates the system prompt.
-   *
-   * @return True if the system prompt evaluation is successful, false
-   * otherwise.
-   */
-  bool eval_system_prompt(ServerSlot *slot);
-
-  /**
-   * @brief Evaluates the input prompt.
-   *
-   * This method is virtual and can be overridden by derived classes.
-   *
-   * @return True if the prompt evaluation is successful, false otherwise.
-   */
-  virtual bool eval_prompt(ServerSlot *slot);
-
-  /**
-   * @brief Evaluates a vector of prompt tokens.
-   *
-   * @param prompt_tokens The vector of tokens to evaluate.
-   * @return True if the token evaluation is successful, false otherwise.
-   */
-  bool eval_prompt(std::vector<llama_token> prompt_tokens, ServerSlot *slot);
-
-  /**
-   * @brief Evaluates a single token.
-   *
-   * @param token The token to evaluate.
-   * @return True if the token evaluation is successful, false otherwise.
-   */
-  bool eval_token(llama_token token, ServerSlot *slot);
-
-  /**
-   * @brief Evaluates a vector of tokens.
-   *
-   * @param tokens The vector of tokens to evaluate.
-   * @return True if the token evaluation is successful, false otherwise.
-   */
-  bool eval(std::vector<llama_token> tokens, ServerSlot *slot);
-
-  /**
-   * @brief Evaluates a batch of tokens.
-   *
-   * This method is virtual and can be overridden by derived classes.
-   *
-   * @param batch The batch of tokens to evaluate.
-   * @return True if the batch evaluation is successful, false otherwise.
-   */
-  virtual bool eval(struct llama_batch batch, ServerSlot *slot);
 
   /**
    * @brief Retrieves the probabilities of the next tokens.
@@ -1276,13 +1182,6 @@ protected:
    * @return A vector of token probabilities.
    */
   std::vector<struct TokenProb> get_probs(ServerSlot *slot);
-
-  /**
-   * @brief Samples a token based on the current probabilities.
-   *
-   * @return A structure containing the sampled token and its metadata.
-   */
-  struct CompletionOutput sample(ServerSlot *slot);
 
   common_chat_templates_ptr chat_templates;
   OAICompactParserOptions oai_parser_opt;

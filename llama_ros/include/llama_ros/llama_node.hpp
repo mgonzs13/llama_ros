@@ -247,7 +247,7 @@ protected:
    * GenerateChatCompletions action.
    */
   virtual void execute_chat_completions(
-      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_gid);
 
   /**
    * @brief Sends the generated chat completion response.

@@ -484,8 +484,8 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
   this->goal_handle_ = goal_handle;
-  int slot_id = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
-  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot_id}.detach();
+  int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
+  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot_gid}.detach();
 }
 
 bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -624,6 +624,12 @@ rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
+  ServerSlot *slot = this->llama->wait_for_available_slot();
+  slot->goal_id = llama_utils::uuid_to_int32(uuid);
+  RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu",
+              slot->id, slot->goal_id);
+
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -638,9 +644,8 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel_chat_completions(
 void LlamaNode::handle_accepted_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
   this->goal_handle_chat_ = goal_handle;
-  std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1),
-              goal_handle}
-      .detach();
+  int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
+  std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1, _2), goal_handle, slot_gid}.detach();
 }
 
 bool LlamaNode::goal_empty_chat_completions(
@@ -649,18 +654,24 @@ bool LlamaNode::goal_empty_chat_completions(
 }
 
 void LlamaNode::execute_chat_completions(
-    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_gid) {
 
-  // // get goal data
-  // this->goal_handle_chat_ = goal_handle;
-  // auto goal = goal_handle->get_goal();
-  // auto result = std::make_shared<GenerateChatCompletions::Result>();
+  // get goal data
+  this->goal_handle_chat_ = goal_handle;
+  auto goal = goal_handle->get_goal();
+  auto result = std::make_shared<GenerateChatCompletions::Result>();
 
-  // // check if goal is empty
-  // if (this->goal_empty_chat_completions(goal)) {
-  //   this->goal_handle_chat_->abort(result);
-  //   return;
-  // }
+  // check if goal is empty
+  if (this->goal_empty_chat_completions(goal)) {
+    this->goal_handle_chat_->abort(result);
+    return;
+  }
+
+  auto chat_context =
+        llama_utils::prepare_chat_completions_call(goal, this->llama.get());
+
+  std::optional<ServerTaskResultCompletion> generated_response = this->llama->generate_chat_response(
+      slot_gid, chat_context, std::bind(&LlamaNode::send_text_chat_completions, this, _1, slot_gid));
 
   // this->llama->reset();
 
@@ -671,11 +682,6 @@ void LlamaNode::execute_chat_completions(
   // auto &chat_prompt_instance = chat_context.chat_prompt_instance;
 
   // llama_utils::ResponseResult response_result;
-  // response_result.oaicompat_model = this->llama->get_metadata().general.name;
-  // response_result.oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
-  // response_result.build_info =
-  //     "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
-
   // // call llama
   // llama_perf_context_data prev_stat_usage = this->llama->get_perf_data();
   // this->llama->prev_stat_usage = prev_stat_usage;
