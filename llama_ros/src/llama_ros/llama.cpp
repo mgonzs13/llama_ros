@@ -1315,9 +1315,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->generated_tokens.push_back(result->token);
     LLAMA_LOG_INFO("Streaming token: '%s'", result->text_to_send.c_str());
 
-    if (slot->stream) {
-      slot->stream_callback(*result, slot);
-    }
+    slot->stream_callback(*result, slot);
   }
 
   if (incomplete) {
