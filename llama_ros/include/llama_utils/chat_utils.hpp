@@ -151,7 +151,7 @@ generate_chat_completions_result(const llama_ros::ServerTaskResultCompletion &re
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(
-    const llama_ros::ServerTaskResultCompletion &result,
+    const llama_ros::ServerTaskResultCompletionPartial &result,
     std::vector<common_chat_msg_diff> deltas = {});
 
 /**

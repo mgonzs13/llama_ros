@@ -183,7 +183,7 @@ llama_utils::generate_chat_completions_result(const llama_ros::ServerTaskResultC
 
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 llama_utils::generate_chat_completions_feedback(
-    const llama_ros::ServerTaskResultCompletion &result, std::vector<common_chat_msg_diff> deltas) {
+    const llama_ros::ServerTaskResultCompletionPartial &result, std::vector<common_chat_msg_diff> deltas) {
   bool first = result.n_decoded == 0;
 
   std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;

@@ -550,6 +550,9 @@ struct ServerTaskResultCompletionPartial : ServerTaskResult {
     int32_t n_prompt_tokens;
 
     TokenProb prob_output;
+    std::string build_info;
+    llama_ros::StopType stop;
+    bool post_sampling_probs;
 
     std::string     oaicompat_model;
     std::string     oaicompat_cmpl_id;
@@ -704,8 +707,7 @@ public:
   llama_perf_context_data prev_stat_usage;
 
   void reset();
-  const common_chat_msg
-  update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
+  const common_chat_msg &update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
   void release();
   inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
   size_t find_stopping_strings(const std::string & text, const size_t last_token_size, bool is_full_stop);
