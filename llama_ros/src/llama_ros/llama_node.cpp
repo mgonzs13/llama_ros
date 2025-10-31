@@ -511,38 +511,8 @@ void LlamaNode::execute(
     return;
   }
 
-    // update sampling params of common_params
-  if (sampling_config.ignore_eos &&
-      llama_vocab_eos(this->llama->get_vocab()) == LLAMA_TOKEN_NULL) {
-    RCLCPP_WARN(this->get_logger(),
-                "vocab does not have an EOS token, ignoring --ignore-eos\n");
-    sampling_config.ignore_eos = false;
-  }
-  RCLCPP_INFO(this->get_logger(),
-            "Using ignore_eos = %s", sampling_config.ignore_eos ? "true" : "false");
-
-  for (llama_token i = 0; i < this->llama->get_n_vocab(); i++) {
-    if (llama_vocab_is_eog(this->llama->get_vocab(), i)) {
-      RCLCPP_WARN(this->get_logger(), "added %s logit bias = %f\n",
-                  common_token_to_piece(this->llama->get_ctx(), i).c_str(),
-                  -INFINITY);
-      llama_msgs::msg::LogitBias bias_eog;
-      bias_eog.token = i;
-      bias_eog.bias = -INFINITY;
-      sampling_config.logit_bias_eog.data.push_back(bias_eog);
-    }
-  }
-
-  RCLCPP_INFO(this->get_logger(),
-            "Using %ld EOG logit biases", sampling_config.logit_bias_eog.data.size());
-
-  if (sampling_config.ignore_eos) {
-    // add EOG biases to the active set of logit biases
-    sampling_config.logit_bias.data.insert(
-        sampling_config.logit_bias.data.end(),
-        sampling_config.logit_bias_eog.data.begin(),
-        sampling_config.logit_bias_eog.data.end());
-  }
+  // Apply EOG logit biases to sampling configuration
+  llama_utils::apply_eog_logit_biases(sampling_config, this->llama->get_vocab(), this->llama->get_ctx());
 
   auto sparams = llama_utils::parse_sampling_params(
       sampling_config, this->llama->get_n_vocab());
