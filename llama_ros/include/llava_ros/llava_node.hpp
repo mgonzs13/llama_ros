@@ -120,7 +120,7 @@ protected:
    * GenerateResponse action.
    */
   void execute(
-      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, llama_ros::ServerSlot* slot) override;
+      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, int slot_id) override;
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -144,7 +144,7 @@ protected:
    * GenerateChatCompletions action.
    */
   void execute_chat_completions(
-      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle)
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_id)
       override;
 
   /**
