@@ -124,6 +124,8 @@ protected:
 
   bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
 
+  void process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSlot *slot);
+
 private:
   /**
    * @brief Bitmaps for image processing.

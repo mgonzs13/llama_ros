@@ -169,6 +169,30 @@ bool Llava::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
   return true;
 }
 
+void Llava::process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSlot *slot) {
+  for (size_t i = 0; i < chunks.size(); i++) {
+    auto chunk = mtmd_input_chunk_copy(chunks[i]);
+    auto chunk_type = mtmd_input_chunk_get_type(chunk);
+
+    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
+      size_t n_tokens;
+      auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
+
+      for (size_t j = 0; j < n_tokens; j++) {
+        slot->prompt_tokens.push_back(tokens[j]);
+      }
+    } else {
+      const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
+      llama_pos start_pos = slot->prompt_tokens.size();
+      for (int i = 0; i < n_pos; ++i) {
+        slot->prompt_tokens.emplace_back(LLAMA_TOKEN_NULL);
+      }
+      mtmd::input_chunk_ptr new_chunk(mtmd_input_chunk_copy(chunk));
+      slot->map_pos_to_media[start_pos] = std::move(new_chunk);
+    }
+  }
+}
+
 void llava_ros::Llava::handle_completion_req(
       const std::string &input_prompt, llama_ros::ServerSlot *slot,
       struct common_params_sampling sparams,
@@ -201,27 +225,7 @@ void llava_ros::Llava::handle_completion_req(
       throw std::runtime_error("Failed to tokenize prompt");
   }
 
-  for (size_t i = 0; i < chunks.size(); i++) {
-    auto chunk = mtmd_input_chunk_copy(chunks[i]);
-    auto chunk_type = mtmd_input_chunk_get_type(chunk);
-
-    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
-      size_t n_tokens;
-      auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
-
-      for (size_t j = 0; j < n_tokens; j++) {
-        slot->prompt_tokens.push_back(tokens[j]);
-      }
-    } else {
-      const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
-      llama_pos start_pos = slot->prompt_tokens.size();
-      for (int i = 0; i < n_pos; ++i) {
-        slot->prompt_tokens.emplace_back(LLAMA_TOKEN_NULL);
-      }
-      mtmd::input_chunk_ptr new_chunk(mtmd_input_chunk_copy(chunk));
-      slot->map_pos_to_media[start_pos] = std::move(new_chunk);
-    }
-  }
+  process_input_chunks(chunks, slot);
 
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
   
@@ -242,7 +246,41 @@ void llava_ros::Llava::handle_completion_req(
 void llava_ros::Llava::handle_chat_completion_req(
       llama_utils::ChatCompletionsContext chat_context, llama_ros::ServerSlot *slot,
       llama_ros::ServerSlot::GenerateResponseCallback callback) {
-  llama_ros::Llama::handle_chat_completion_req(chat_context, slot, callback);
-  
+    auto chat_tmpls = this->get_chat_templates();
+  common_chat_templates_inputs inputs = chat_context.prompt_format_config;
+  slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
+  slot->params.sampling = chat_context.sparams;
+
+  std::string prompt_str = chat_context.chat_prompt_instance.prompt;
+  mtmd_input_text inp_txt = {
+      prompt_str.c_str(),
+      /* add_special */   true,
+      /* parse_special */ true,
+  };
+  mtmd::input_chunks chunks(mtmd_input_chunks_init());
+  auto bitmaps_c_ptr = bitmaps.c_ptr();
+  int32_t tokenized = mtmd_tokenize(this->mtmd_ctx,
+                                      chunks.ptr.get(),
+                                      &inp_txt,
+                                      bitmaps_c_ptr.data(),
+                                      bitmaps_c_ptr.size());
+  if (tokenized != 0) {
+      throw std::runtime_error("Failed to tokenize prompt");
+  }
+
+  process_input_chunks(chunks, slot);
+
+  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
+
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
+  }
+
+  slot->sampler = common_sampler_init(model, slot->params.sampling);
+  slot->stream_callback = callback;
+  slot->chat_format = chat_context.chat_prompt_instance.format;
+  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+  slot->task_type = llama_ros::SERVER_TASK_TYPE_COMPLETION;
+  slot->state = llama_ros::SLOT_STATE_STARTED;
 }
 
