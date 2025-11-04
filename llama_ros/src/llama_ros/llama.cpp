@@ -179,9 +179,8 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
       "self-extend: n_ctx_train = %d, grp_attn_n = %d, grp_attn_w = %d",
       this->get_n_ctx_train(), this->params.grp_attn_n,
       this->params.grp_attn_w);
-  
-  llama_set_embeddings(this->ctx,
-                  this->is_embedding() || this->is_reranking());
+
+  llama_set_embeddings(this->ctx, this->is_embedding() || this->is_reranking());
 }
 
 Llama::~Llama() {
@@ -432,6 +431,8 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   std::string text;
 
   for (llama_token t : tokens) {
+    if (t == LLAMA_TOKEN_NULL)
+      continue;
     text.append(common_token_to_piece(this->ctx, t));
   }
 
@@ -733,7 +734,7 @@ Llama::get_chat_params(struct common_chat_templates *tmpls,
 *****************************
 */
 
-const common_chat_msg & ServerSlot::update_chat_msg(
+const common_chat_msg &ServerSlot::update_chat_msg(
     std::vector<common_chat_msg_diff> &oaicompat_msg_diffs) {
   auto previous_msg = chat_msg;
   auto new_msg =
@@ -928,7 +929,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->has_next_token = false;
 
     LLAMA_LOG_INFO("stopped by limit, n_decoded = %d, n_predict = %d\n",
-                    slot->n_decoded, slot->params.n_predict);
+                   slot->n_decoded, slot->params.n_predict);
   }
 
   if (slot->has_new_line) {
@@ -1156,6 +1157,7 @@ void Llama::run_loop() {
           continue;
         }
 
+        // process MTMD chunks if present
         if (slot.n_past < slot.n_prompt_tokens &&
             slot.prompt_tokens[slot.n_past] == LLAMA_TOKEN_NULL) {
           process_mtmd_chunk(&slot);
@@ -1178,24 +1180,29 @@ void Llama::run_loop() {
         LLAMA_LOG_INFO("Added %d prompt tokens for slot %d",
                        slot.n_prompt_tokens_processed, slot.id);
 
-        // finished the entire prompt this iteration
-        slot.state = SLOT_STATE_DONE_PROMPT;
+        if (slot.n_past == slot.n_prompt_tokens) {
+          slot.state = SLOT_STATE_DONE_PROMPT;
 
-        // reset sampler and virtually accept the prompt so the next token can
-        // be sampled
-        common_sampler_reset(slot.sampler);
-        for (int i = 0; i < slot.n_prompt_tokens; ++i) {
-          llama_token id = slot.prompt_tokens[i];
-          if (id != LLAMA_TOKEN_NULL) {
-            common_sampler_accept(slot.sampler, id, false);
+          // reset sampler and virtually accept the prompt so the next token can
+          // be sampled
+          common_sampler_reset(slot.sampler);
+          for (int i = 0; i < slot.n_prompt_tokens; ++i) {
+            llama_token id = slot.prompt_tokens[i];
+            if (id != LLAMA_TOKEN_NULL) {
+              common_sampler_accept(slot.sampler, id, false);
+            }
           }
+
+          // request logits for the last prompt token
+          batch.logits[batch.n_tokens - 1] = true;
+
+          slot.n_decoded = 0;
+          slot.i_batch = batch.n_tokens - 1;
+
+          LLAMA_LOG_INFO(
+              "prompt done (no caching), n_past = %d, n_tokens = %d\n",
+              slot.n_past, batch.n_tokens);
         }
-
-        // request logits for the last prompt token
-        batch.logits[batch.n_tokens - 1] = true;
-
-        slot.n_decoded = 0;
-        slot.i_batch = batch.n_tokens - 1;
 
         if (batch.n_tokens >= llama_n_batch(ctx)) {
           break;
@@ -1307,7 +1314,6 @@ bool llama_ros::Llama::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
   return false;
 }
 
-
 /*
 *****************************
 *   ASYNC TASK MANAGEMENT    *
@@ -1400,20 +1406,22 @@ void Llama::handle_completion_req(const std::string &input_prompt,
                                   std::vector<std::string> stop, bool reset) {
   slot->prompt_tokens.clear();
   if (this->params.input_prefix.size() > 0) {
-    auto prefix_tokens = common_tokenize(this->ctx, this->params.input_prefix, false, true);
-    slot->prompt_tokens.insert(slot->prompt_tokens.end(),
-                               prefix_tokens.begin(), prefix_tokens.end());
+    auto prefix_tokens =
+        common_tokenize(this->ctx, this->params.input_prefix, false, true);
+    slot->prompt_tokens.insert(slot->prompt_tokens.end(), prefix_tokens.begin(),
+                               prefix_tokens.end());
   }
   auto tokens = common_tokenize(this->ctx, input_prompt, false, true);
   slot->prompt_tokens.insert(slot->prompt_tokens.end(), tokens.begin(),
                              tokens.end());
   if (this->params.input_suffix.size() > 0) {
-    auto suffix_tokens = common_tokenize(this->ctx, this->params.input_suffix, false, true);
-    slot->prompt_tokens.insert(slot->prompt_tokens.end(),
-                               suffix_tokens.begin(), suffix_tokens.end());
+    auto suffix_tokens =
+        common_tokenize(this->ctx, this->params.input_suffix, false, true);
+    slot->prompt_tokens.insert(slot->prompt_tokens.end(), suffix_tokens.begin(),
+                               suffix_tokens.end());
   }
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
-  
+
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
@@ -1539,7 +1547,8 @@ void Llama::send_completion_result(ServerSlot *slot) {
   task_result->tokens = {slot->generated_tokens};
   task_result->stop = slot->stop;
   task_result->prompt = this->detokenize(slot->prompt_tokens);
-  // task_result->probs_output = this->get_probs(slot); // TODO: probs for all tokens
+  // task_result->probs_output = this->get_probs(slot); // TODO: probs for all
+  // tokens
 
   task_result->build_info =
       "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
@@ -1547,7 +1556,8 @@ void Llama::send_completion_result(ServerSlot *slot) {
   task_result->oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
   task_result->n_decoded = slot->n_decoded;
   task_result->n_prompt_tokens = slot->n_prompt_tokens;
-  task_result->oaicompat_msg = slot->update_chat_msg(task_result->oaicompat_msg_diffs);
+  task_result->oaicompat_msg =
+      slot->update_chat_msg(task_result->oaicompat_msg_diffs);
 
   const auto id = task_result->id;
   fulfill_pending(id, std::move(task_result));

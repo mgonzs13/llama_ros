@@ -83,7 +83,7 @@ def main():
     llama_client.generate_response(goal, text_cb)
     end_time = time.time()
 
-    print(f"Time to eval: {eval_time - initial_time} s")
+    print(f"\nTime to eval: {eval_time - initial_time} s")
     print(f"Prediction speed: {tokens / (end_time - eval_time)} t/s")
     rclpy.shutdown()
 
