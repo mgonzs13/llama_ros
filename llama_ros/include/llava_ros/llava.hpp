@@ -91,6 +91,16 @@ public:
    */
   void clear_mtmds();
 
+  void handle_completion_req(
+      const std::string &input_prompt, llama_ros::ServerSlot *slot,
+      struct common_params_sampling sparams,
+      llama_ros::ServerSlot::GenerateResponseCallback callback = nullptr,
+      std::vector<std::string> stop = {}, bool reset = true) override;
+
+  void handle_chat_completion_req(
+      llama_utils::ChatCompletionsContext chat_context, llama_ros::ServerSlot *slot,
+      llama_ros::ServerSlot::GenerateResponseCallback callback) override;
+
 protected:
   /**
    * @brief Evaluates a specific mtmd chunk in the Llava model.
@@ -112,6 +122,8 @@ protected:
    */
   struct mtmd_context *mtmd_ctx;
 
+  bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
+
 private:
   /**
    * @brief Bitmaps for image processing.
@@ -120,7 +132,7 @@ private:
    */
   mtmd::bitmaps bitmaps;
 
-  mtmd::input_chunks chunks;
+  const mtmd::input_chunk_ptr & find_chunk(llama_pos pos, llama_ros::ServerSlot * slot);
 };
 
 } // namespace llava_ros

@@ -42,6 +42,10 @@ LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.system_prompt);
+
+  std::thread([this]() {
+    this->llama->run_loop();
+  }).detach();
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -49,7 +53,7 @@ bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 }
 
 void LlavaNode::execute(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, llama_ros::ServerSlot* slot) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, int slot_gid) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
   auto images_msg = goal_handle->get_goal()->images;
@@ -69,7 +73,7 @@ void LlavaNode::execute(
   }
 
   // llama_node execute
-  llama_ros::LlamaNode::execute(goal_handle);
+  llama_ros::LlamaNode::execute(goal_handle, slot_gid);
 }
 
 /*
@@ -83,7 +87,7 @@ bool LlavaNode::goal_empty_chat_completions(
 }
 
 void LlavaNode::execute_chat_completions(
-    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_gid) {
 
   auto result = std::make_shared<GenerateChatCompletions::Result>();
   auto images_msg = goal_handle->get_goal()->images;
@@ -105,7 +109,7 @@ void LlavaNode::execute_chat_completions(
   }
 
   // llama_node execute_chat_completions
-  llama_ros::LlamaNode::execute_chat_completions(goal_handle);
+  llama_ros::LlamaNode::execute_chat_completions(goal_handle, slot_gid);
 }
 
 bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {

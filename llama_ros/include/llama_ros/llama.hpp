@@ -651,7 +651,6 @@ public:
   uint64_t goal_id;
   llama_batch batch;
   llama_context *ctx;
-  mtmd_context *mtmd_ctx;
   common_sampler *sampler;
   std::vector<common_adapter_lora_info> lora_adapters;
 
@@ -706,6 +705,8 @@ public:
   llama_tokens generated_tokens;
   llama_perf_context_data prev_stat_usage;
 
+  std::unordered_map<llama_pos, mtmd::input_chunk_ptr> map_pos_to_media;
+
   void reset();
   const common_chat_msg &update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
   void release();
@@ -743,6 +744,7 @@ public:
 
   bool process_token(ServerSlot *slot, CompletionOutput *result);
   void run_loop();
+  virtual bool process_mtmd_chunk(llama_ros::ServerSlot *slot);
 
   /**
    * @brief Tokenizes the given text into a vector of tokens.
@@ -801,8 +803,8 @@ public:
 
   void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
-  void handle_completion_req(const std::string &input_prompt, ServerSlot *slot, struct common_params_sampling sparams, ServerSlot::GenerateResponseCallback callback, std::vector<std::string> stop, bool reset);
-  void handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot, ServerSlot::GenerateResponseCallback callback);
+  virtual void handle_completion_req(const std::string &input_prompt, ServerSlot *slot, struct common_params_sampling sparams, ServerSlot::GenerateResponseCallback callback, std::vector<std::string> stop, bool reset);
+  virtual void handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot, ServerSlot::GenerateResponseCallback callback);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,

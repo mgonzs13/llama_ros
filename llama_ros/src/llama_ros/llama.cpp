@@ -79,7 +79,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     slot.params.n_keep = this->params.n_keep;
 
     slot.reset();
-    server_slots.push_back(slot);
+    server_slots.push_back(std::move(slot));
   }
 
   const int32_t n_batch = llama_n_batch(ctx);
@@ -760,6 +760,8 @@ void ServerSlot::reset() {
   generated_tool_call_ids.clear();
   chat_msg = {};
 
+  map_pos_to_media.clear();
+
   prompt_tokens.clear();
 }
 
@@ -1154,9 +1156,17 @@ void Llama::run_loop() {
           continue;
         }
 
+        if (slot.n_past < slot.n_prompt_tokens &&
+            slot.prompt_tokens[slot.n_past] == LLAMA_TOKEN_NULL) {
+          process_mtmd_chunk(&slot);
+        }
+
         // enqueue all prompt tokens (must fit fully in one batch)
         while (slot.n_past < slot.n_prompt_tokens) {
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
+          if (cur_tok == LLAMA_TOKEN_NULL) {
+            break; // end of text chunk
+          }
           const bool need_embd = this->is_embedding() || this->is_reranking();
 
           common_batch_add(batch, cur_tok, slot.n_past, {slot.id}, need_embd);
@@ -1176,7 +1186,9 @@ void Llama::run_loop() {
         common_sampler_reset(slot.sampler);
         for (int i = 0; i < slot.n_prompt_tokens; ++i) {
           llama_token id = slot.prompt_tokens[i];
-          common_sampler_accept(slot.sampler, id, false);
+          if (id != LLAMA_TOKEN_NULL) {
+            common_sampler_accept(slot.sampler, id, false);
+          }
         }
 
         // request logits for the last prompt token
@@ -1290,6 +1302,11 @@ void Llama::run_loop() {
     }
   }
 }
+
+bool llama_ros::Llama::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
+  return false;
+}
+
 
 /*
 *****************************
