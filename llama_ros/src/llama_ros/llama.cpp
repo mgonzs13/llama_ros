@@ -1128,19 +1128,19 @@ void Llama::run_loop() {
           // empty prompt -> release and send empty response
           if (prompt_tokens.empty()) {
             LLAMA_LOG_WARN("Empty prompt on slot %d", slot.id);
-            // TODO: exit here
+            slot.release();
             continue;
           }
 
           // must fit into one ubatch and within context
           if (slot.n_prompt_tokens > llama_n_ubatch(ctx)) {
             LLAMA_LOG_WARN("Prompt too long for slot %d", slot.id);
-            // TODO: exit here
+            slot.release();
             continue;
           }
           if (slot.n_prompt_tokens > slot.n_ctx) {
             LLAMA_LOG_WARN("Prompt exceeds context size for slot %d", slot.id);
-            // TODO: exit here
+            slot.release();
             continue;
           }
 
