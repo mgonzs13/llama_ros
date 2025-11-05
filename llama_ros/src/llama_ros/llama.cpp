@@ -762,7 +762,6 @@ void ServerSlot::reset() {
   chat_msg = {};
 
   map_pos_to_media.clear();
-
   prompt_tokens.clear();
 }
 
@@ -778,6 +777,7 @@ void ServerSlot::release() {
   LLAMA_LOG_INFO("Trying to release slot %d", id);
   if (is_processing()) {
     LLAMA_LOG_INFO("Releasing slot %d", id);
+    reset();
     state = SLOT_STATE_IDLE;
   }
 }
@@ -1440,6 +1440,9 @@ void Llama::handle_chat_completion_req(
     llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot,
     ServerSlot::GenerateResponseCallback callback) {
   auto chat_tmpls = this->get_chat_templates();
+
+  slot->reset();
+
   common_chat_templates_inputs inputs = chat_context.prompt_format_config;
   slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
   slot->params.sampling = chat_context.sparams;
