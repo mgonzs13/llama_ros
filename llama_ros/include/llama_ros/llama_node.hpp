@@ -28,6 +28,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 #include <memory>
+#include <thread>
 
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
@@ -258,6 +259,13 @@ protected:
    * response.
    */
   void send_text_chat_completions(const struct CompletionOutput &completion, int slot_id);
+
+  /**
+   * @brief Thread running the Llama run_loop.
+   *
+   * This thread continuously processes slots in the background.
+   */
+  std::thread run_loop_thread_;
 
 private:
   /**

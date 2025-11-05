@@ -52,12 +52,30 @@ void LlamaNode::create_llama() {
   this->llama =
       std::make_unique<Llama>(this->params.params, this->params.system_prompt);
 
-  std::thread([this]() {
-    this->llama->run_loop();
-  }).detach();
+  run_loop_thread_ = std::thread([this]() {
+    try {
+      this->llama->run_loop();
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Exception in run_loop: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception in run_loop");
+    }
+  });
 }
 
-void LlamaNode::destroy_llama() { // TODO: Stop the llama thread
+void LlamaNode::destroy_llama() {
+  if (this->llama) {
+    this->llama->cancel();
+  }
+  
+  if (run_loop_thread_.joinable()) {
+    try {
+      run_loop_thread_.join();
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Exception while joining run_loop thread: %s", e.what());
+    }
+  }
+  
   this->llama.reset();
   this->llama = nullptr;
 }

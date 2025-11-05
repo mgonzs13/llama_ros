@@ -184,6 +184,8 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 }
 
 Llama::~Llama() {
+  this->canceled = true;
+  
   for (ServerSlot &slot : this->server_slots) {
     common_sampler_free(slot.sampler);
     slot.sampler = nullptr;

@@ -43,9 +43,15 @@ void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.system_prompt);
 
-  std::thread([this]() {
-    this->llama->run_loop();
-  }).detach();
+  run_loop_thread_ = std::thread([this]() {
+    try {
+      this->llama->run_loop();
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Exception in run_loop: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception in run_loop");
+    }
+  });
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
