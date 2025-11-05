@@ -895,19 +895,17 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
       send_text = stop_pos == std::string::npos;
     }
 
-    // check if there is any token to predict
-    if (send_text) {
-      // no send the stop word in the response
+    LLAMA_LOG_INFO("Streaming token: '%s'", result->text_to_send.c_str());
+
+    if (send_text) { // TODO: Not working properly
       result->text_to_send =
           slot->generated_text.substr(pos, std::string::npos);
       slot->n_sent_text += result->text_to_send.size();
-      // add the token to slot queue and cache
     } else {
       result->text_to_send = "";
     }
 
     slot->generated_tokens.push_back(result->token);
-    LLAMA_LOG_INFO("Streaming token: '%s'", result->text_to_send.c_str());
   }
 
   if (incomplete) {
@@ -989,6 +987,9 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   if (llama_vocab_is_eog(this->get_vocab(), result->token)) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
+    slot->generated_text.erase(
+        slot->generated_text.end() - token_str.size(), slot->generated_text.end());
+    slot->generated_tokens.pop_back();
 
     LLAMA_LOG_INFO("%s", "stopped by EOS\n");
   } else {
@@ -1056,7 +1057,7 @@ void Llama::run_loop() {
     if (!any_processing) {
       // No slots are being processed, we can sleep
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      LLAMA_LOG_INFO("No active slots, sleeping...");
+      LLAMA_LOG_DEBUG("No active slots, sleeping...");
       continue;
     }
     ServerSlot *slot_batched = nullptr;
