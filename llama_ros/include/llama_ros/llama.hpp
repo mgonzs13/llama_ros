@@ -1170,11 +1170,11 @@ protected:
 
   std::mutex done_mx;
   std::condition_variable done_cv;
-  std::queue<uint64_t> done_q;
+  std::queue<uint64_t> done_q; // TODO: Better handle this queue (in general)
 
   std::future<ServerTaskResultPtr> register_pending(uint64_t goal_id);
   void fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r);
-  void fail_pending(uint64_t goal_id, std::exception_ptr eptr);
+  void fail_pending(uint64_t goal_id, std::string err);
 
   void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
   void send_rerank_result(ServerSlot *slot, const llama_batch &batch);

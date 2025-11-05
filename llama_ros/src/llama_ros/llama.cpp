@@ -1128,19 +1128,22 @@ void Llama::run_loop() {
           // empty prompt -> release and send empty response
           if (prompt_tokens.empty()) {
             LLAMA_LOG_WARN("Empty prompt on slot %d", slot.id);
-            slot.release();
+            fail_pending(slot.goal_id, "Empty prompt");
+            release_slot(&slot);
             continue;
           }
 
           // must fit into one ubatch and within context
           if (slot.n_prompt_tokens > llama_n_ubatch(ctx)) {
             LLAMA_LOG_WARN("Prompt too long for slot %d", slot.id);
-            slot.release();
+            fail_pending(slot.goal_id, "Prompt too long");
+            release_slot(&slot);
             continue;
           }
           if (slot.n_prompt_tokens > slot.n_ctx) {
             LLAMA_LOG_WARN("Prompt exceeds context size for slot %d", slot.id);
-            slot.release();
+            fail_pending(slot.goal_id, "Prompt exceeds context size");
+            release_slot(&slot);
             continue;
           }
 
@@ -1346,6 +1349,21 @@ void Llama::fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r) {
   {
     std::lock_guard<std::mutex> lk(done_mx);
     done_q.push(goal_id);
+  }
+  done_cv.notify_one();
+}
+
+void Llama::fail_pending(uint64_t goal_id, std::string err) {
+  {
+    std::lock_guard<std::mutex> lk(pending_mutex);
+    auto it = pending.find(goal_id);
+    if (it != pending.end()) {
+      LLAMA_LOG_ERROR("Failing pending task %lu: %s", goal_id,
+                      err.c_str());
+      pending.erase(it);
+    } else {
+      return; // no promise to fulfill
+    }
   }
   done_cv.notify_one();
 }
