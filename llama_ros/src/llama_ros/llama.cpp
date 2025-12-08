@@ -72,11 +72,11 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     ServerSlot slot;
     slot.id = i;
     slot.ctx = llama_init.context.get();
-    LLAMA_LOG_INFO("\n\n\n\n\n\n\n\n\nctx address: %p", slot.ctx);
     slot.n_ctx = n_ctx_slot;
     slot.n_predict = this->params.n_predict;
     slot.params.sampling = this->params.sampling;
     slot.params.n_keep = this->params.n_keep;
+    slot.sampler = nullptr;
 
     slot.reset();
     server_slots.push_back(std::move(slot));
@@ -187,13 +187,11 @@ Llama::~Llama() {
   this->canceled = true;
   
   for (ServerSlot &slot : this->server_slots) {
-    common_sampler_free(slot.sampler);
-    slot.sampler = nullptr;
-
-    // llama_batch_free(slot.batch);
+    if (slot.sampler != nullptr) {
+      common_sampler_free(slot.sampler);
+      slot.sampler = nullptr;
+    }
   }
-  llama_model_free(this->model);
-  this->model = nullptr;
 
   if (this->sampler != nullptr) {
     common_sampler_free(this->sampler);
@@ -992,8 +990,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->generated_tokens.pop_back();
 
     LLAMA_LOG_INFO("%s", "stopped by EOS\n");
-  } else {
-    slot->stream_callback(*result, slot);
+  } else { // TODO: Better stream callback
+    // slot->stream_callback(*result, slot);
   }
 
   const auto n_ctx_train = llama_model_n_ctx_train(model);
@@ -1211,6 +1209,7 @@ void Llama::run_loop() {
         }
 
         if (batch.n_tokens >= llama_n_batch(ctx)) {
+          LLAMA_LOG_ERROR("Batch full after adding prompts");
           break;
         }
       }
@@ -1218,6 +1217,7 @@ void Llama::run_loop() {
 
     // Check if there are no tokens to decode
     if (batch.n_tokens == 0) {
+      LLAMA_LOG_ERROR("No tokens to decode in this iteration");
       return;
     }
 
@@ -1246,6 +1246,7 @@ void Llama::run_loop() {
         }
 
         if (!err.empty()) {
+          LLAMA_LOG_ERROR("Decoding error: %s", err.c_str());
           for (auto &slot : this->server_slots) {
             // TODO: Exit here
           }
@@ -1314,6 +1315,7 @@ void Llama::run_loop() {
       }
     }
   }
+  LLAMA_LOG_INFO("Exiting run loop");
 }
 
 bool llama_ros::Llama::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
@@ -1426,21 +1428,16 @@ void Llama::handle_completion_req(const std::string &input_prompt,
                                   ServerSlot::GenerateResponseCallback callback,
                                   std::vector<std::string> stop, bool reset) {
   slot->prompt_tokens.clear();
+  std::string full_prompt = "";
   if (this->params.input_prefix.size() > 0) {
-    auto prefix_tokens =
-        common_tokenize(this->ctx, this->params.input_prefix, false, true);
-    slot->prompt_tokens.insert(slot->prompt_tokens.end(), prefix_tokens.begin(),
-                               prefix_tokens.end());
+    full_prompt += this->params.input_prefix;
   }
-  auto tokens = common_tokenize(this->ctx, input_prompt, false, true);
-  slot->prompt_tokens.insert(slot->prompt_tokens.end(), tokens.begin(),
-                             tokens.end());
+  full_prompt += input_prompt;
   if (this->params.input_suffix.size() > 0) {
-    auto suffix_tokens =
-        common_tokenize(this->ctx, this->params.input_suffix, false, true);
-    slot->prompt_tokens.insert(slot->prompt_tokens.end(), suffix_tokens.begin(),
-                               suffix_tokens.end());
+    full_prompt += this->params.input_suffix;
   }
+  slot->prompt_tokens = common_tokenize(this->ctx, full_prompt, false, true);
+  LLAMA_LOG_INFO("Full prompt: '%s'", full_prompt.c_str());
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
 
   if (slot->sampler != nullptr) {

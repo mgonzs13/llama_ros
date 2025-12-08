@@ -101,6 +101,46 @@ install(DIRECTORY
 if(BUILD_TESTING)
   find_package(ament_cmake_clang_format REQUIRED)
   ament_clang_format(CONFIG_FILE .clang-format)
+  
+  find_package(ament_cmake_gtest REQUIRED)
+  
+  # Test executable
+  ament_add_gtest(${PROJECT_NAME}_tests
+    test/test_main.cpp
+    test/test_llama_params.cpp
+    test/test_llama_deployment.cpp
+    test/test_llama_generation.cpp
+    src/llama_ros/llama.cpp
+    src/llama_utils/logs.cpp
+    src/llama_utils/chat_utils.cpp
+    src/llama_utils/llama_params.cpp
+  )
+  
+  target_include_directories(${PROJECT_NAME}_tests PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${OpenCV_INCLUDE_DIRS}
+  )
+  
+  target_link_libraries(${PROJECT_NAME}_tests
+    llama_cpp_vendor::llama
+    llama_cpp_vendor::common
+    ${CMAKE_THREAD_LIBS_INIT}
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    ${llama_msgs_TARGETS}
+    ${llama_cpp_vendor_TARGETS}
+    ${llama_hfhub_vendor_TARGETS}
+    Threads::Threads
+  )
+  
+  ament_target_dependencies(${PROJECT_NAME}_tests
+    rclcpp
+    rclcpp_lifecycle
+    llama_msgs
+    llama_cpp_vendor
+    llama_hfhub_vendor
+  )
 endif()
 
 ament_python_install_package(${PROJECT_NAME})
