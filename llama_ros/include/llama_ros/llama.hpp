@@ -669,6 +669,7 @@ public:
   int32_t n_predict = -1;
   int32_t i_batch = -1;
   int32_t n_decoded = 0;
+  int32_t ga_i = 0;  
 
   size_t n_sent_text        = 0;
   bool stream;

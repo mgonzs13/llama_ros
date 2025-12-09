@@ -185,7 +185,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 
 Llama::~Llama() {
   this->canceled = true;
-  
+
   for (ServerSlot &slot : this->server_slots) {
     if (slot.sampler != nullptr) {
       common_sampler_free(slot.sampler);
@@ -890,23 +890,25 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
       pos = std::min(slot->n_sent_text, slot->generated_text.size());
     } else if (slot->has_next_token) {
       stop_pos = slot->find_stopping_strings(str_test, token_str.size(), false);
-      send_text = stop_pos == std::string::npos;
+      send_text = (stop_pos == std::string::npos);
+    }
+
+    if (send_text) {
+      result->text_to_send = slot->generated_text.substr(pos);
+      slot->n_sent_text += result->text_to_send.size();
+    } else {
+      result->text_to_send.clear();
     }
 
     LLAMA_LOG_INFO("Streaming token: '%s'", result->text_to_send.c_str());
 
-    if (send_text) { // TODO: Not working properly
-      result->text_to_send =
-          slot->generated_text.substr(pos, std::string::npos);
-      slot->n_sent_text += result->text_to_send.size();
-    } else {
-      result->text_to_send = "";
+    if (slot->stream_callback && !result->text_to_send.empty()) {
+      slot->stream_callback(*result, slot);
     }
-
-    slot->generated_tokens.push_back(result->token);
   }
 
   if (incomplete) {
+    // still waiting for the rest of a UTF-8 sequence, keep going
     slot->has_next_token = true;
   }
 
@@ -920,21 +922,18 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
         slot->n_past, slot->n_ctx);
   }
 
-  // check the limits
-  if (slot->n_decoded > 0 && slot->has_next_token && params.n_predict != -1 &&
-      slot->n_decoded >= params.n_predict) {
+  // check the limits (n_predict)
+  if (slot->n_decoded > 0 && slot->has_next_token &&
+      params.n_predict != -1 && slot->n_decoded >= params.n_predict) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
     LLAMA_LOG_INFO("stopped by limit, n_decoded = %d, n_predict = %d\n",
-                   slot->n_decoded, slot->params.n_predict);
+                   slot->n_decoded, params.n_predict);
   }
 
   if (slot->has_new_line) {
-    // require that each new line has a whitespace prefix (i.e. indentation) of
-    // at least slot->params.n_indent
     if (slot->params.n_indent > 0) {
-      // check the current indentation
       if (slot->last_nl_pos > 0) {
         size_t pos = slot->last_nl_pos;
 
@@ -972,26 +971,26 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   }
 
   // if context shift is disabled, we stop when it reaches the context limit
-  if (slot->n_past >= slot->n_ctx) {
+  if (!params.ctx_shift && slot->n_past >= slot->n_ctx) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
     LLAMA_LOG_INFO(
         "stopped due to running out of context capacity, n_past = %d, "
         "n_prompt_tokens = %d, n_decoded = %d, n_ctx = %d\n",
-        slot->n_decoded, slot->n_prompt_tokens, slot->n_past, slot->n_ctx);
+        slot->n_past, slot->n_prompt_tokens, slot->n_decoded, slot->n_ctx);
   }
 
   if (llama_vocab_is_eog(this->get_vocab(), result->token)) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
-    slot->generated_text.erase(
-        slot->generated_text.end() - token_str.size(), slot->generated_text.end());
-    slot->generated_tokens.pop_back();
+    slot->generated_text.erase(slot->generated_text.end() - token_str.size(),
+                               slot->generated_text.end());
+    if (!slot->generated_tokens.empty()) {
+      slot->generated_tokens.pop_back();
+    }
 
     LLAMA_LOG_INFO("%s", "stopped by EOS\n");
-  } else { // TODO: Better stream callback
-    // slot->stream_callback(*result, slot);
   }
 
   const auto n_ctx_train = llama_model_n_ctx_train(model);
@@ -1004,8 +1003,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     LLAMA_LOG_WARN(
         "stopped by context limit\n"
         "n_predict (%d) is set for infinite generation. "
-        "Limiting generated tokens to n_ctx_train (%d) to avoid EOS-less "
-        "generation infinite loop\n",
+        "Limiting generated tokens to n_ctx_train (%d)\n",
         slot->params.n_predict, n_ctx_train);
   }
 
@@ -1058,24 +1056,64 @@ void Llama::run_loop() {
       LLAMA_LOG_DEBUG("No active slots, sleeping...");
       continue;
     }
-    ServerSlot *slot_batched = nullptr;
 
     // apply context shift
-    for (auto &slot : this->server_slots) {
-      if (slot.n_past + 1 > slot.n_ctx) {
+    if (this->params.ctx_shift) {
+      for (auto &slot : this->server_slots) {
+        if (slot.state != SLOT_STATE_GENERATING) {
+          continue;
+        }
 
-        const int n_left = slot.n_past - this->params.n_keep;
-        const int n_discard = n_left / 2;
+        // Classic sliding window
+        if (this->params.grp_attn_n <= 1) {
+          if (slot.n_past + 1 > slot.n_ctx) {
+            const int n_keep = this->params.n_keep;
 
-        llama_memory_seq_rm(this->get_memory(), slot.id, this->params.n_keep,
-                            this->params.n_keep + n_discard);
-        llama_memory_seq_add(this->get_memory(), slot.id,
-                             this->params.n_keep + n_discard, n_past,
-                             -n_discard);
+            const int n_left = slot.n_past - n_keep;
+            if (n_left <= 0) {
+              continue;
+            }
 
-        slot.n_past -= n_discard;
+            const int n_discard = n_left / 2;
+
+            llama_memory_seq_rm(this->get_memory(), slot.id, n_keep,
+                                n_keep + n_discard);
+            llama_memory_seq_add(this->get_memory(), slot.id,
+                                 n_keep + n_discard, slot.n_past, -n_discard);
+
+            slot.n_past -= n_discard;
+          }
+
+          continue;
+        }
+
+        // Self-Extend
+        const int ga_n = this->params.grp_attn_n;
+        const int ga_w = this->params.grp_attn_w;
+
+        while (slot.n_past >= slot.ga_i + ga_w) {
+          const int ib = (ga_n * slot.ga_i) / ga_w;
+          const int bd = (ga_w / ga_n) * (ga_n - 1);
+          const int dd = (ga_w / ga_n) - ib * bd - ga_w;
+
+          llama_memory_seq_add(this->get_memory(), slot.id, slot.ga_i,
+                               slot.n_past, ib * bd);
+
+          llama_memory_seq_div(this->get_memory(), slot.id, slot.ga_i + ib * bd,
+                               slot.ga_i + ib * bd + ga_w, ga_n);
+
+          llama_memory_seq_add(this->get_memory(), slot.id,
+                               slot.ga_i + ib * bd + ga_w,
+                               slot.n_past + ib * bd, dd);
+
+          slot.n_past -= bd;
+
+          slot.ga_i += ga_w / ga_n;
+        }
       }
     }
+
+    ServerSlot *slot_batched = nullptr;
 
     // start populating the batch for this iteration
     common_batch_clear(this->batch);
@@ -1360,8 +1398,7 @@ void Llama::fail_pending(uint64_t goal_id, std::string err) {
     std::lock_guard<std::mutex> lk(pending_mutex);
     auto it = pending.find(goal_id);
     if (it != pending.end()) {
-      LLAMA_LOG_ERROR("Failing pending task %lu: %s", goal_id,
-                      err.c_str());
+      LLAMA_LOG_ERROR("Failing pending task %lu: %s", goal_id, err.c_str());
       pending.erase(it);
     } else {
       return; // no promise to fulfill
