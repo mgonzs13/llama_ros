@@ -205,7 +205,7 @@ TEST_F(LlamaGenerationTest, RespectsMaxTokensLimit) {
   
   // Temporarily adjust n_predict for this slot
   int original_n_predict = slot->n_predict;
-  slot->n_predict = max_tokens;
+  slot->params.n_predict = max_tokens;
   
   auto result = llama->generate_response(slot->goal_id, prompt, sparams);
   

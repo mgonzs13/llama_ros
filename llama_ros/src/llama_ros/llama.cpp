@@ -921,12 +921,12 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
 
   // check the limits (n_predict)
   if (slot->n_decoded > 0 && slot->has_next_token &&
-      params.n_predict != -1 && slot->n_decoded >= params.n_predict) {
+      slot->params.n_predict != -1 && slot->n_decoded >= slot->params.n_predict) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
     LLAMA_LOG_INFO("stopped by limit, n_decoded = %d, n_predict = %d\n",
-                   slot->n_decoded, params.n_predict);
+                   slot->n_decoded, slot->params.n_predict);
   }
 
   if (slot->has_new_line) {
@@ -994,7 +994,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
 
   const auto n_ctx_train = llama_model_n_ctx_train(model);
 
-  if (slot->params.n_predict < 1 && slot->n_predict < 1 &&
+  if (slot->params.n_predict < 1 && slot->params.n_predict < 1 &&
       slot->n_prompt_tokens + slot->n_decoded >= n_ctx_train) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false; // stop prediction
