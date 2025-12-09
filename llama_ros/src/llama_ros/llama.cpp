@@ -757,6 +757,7 @@ void ServerSlot::reset() {
   stop = StopType::NO_STOP;
   stopping_word.clear();
   n_past = 0;
+  n_sent_text = 0;
   chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
   generated_tool_call_ids.clear();
   chat_msg = {};
@@ -899,17 +900,13 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     } else {
       result->text_to_send.clear();
     }
-
-    LLAMA_LOG_INFO("Streaming token: '%s'", result->text_to_send.c_str());
-
-    if (slot->stream_callback && !result->text_to_send.empty()) {
-      slot->stream_callback(*result, slot);
-    }
   }
 
   if (incomplete) {
     // still waiting for the rest of a UTF-8 sequence, keep going
     slot->has_next_token = true;
+  } else {
+    LLAMA_LOG_INFO("Generated token: '%s'", result->text_to_send.c_str());
   }
 
   // if context shifting is disabled, make sure that we don't run out of context
@@ -991,6 +988,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     }
 
     LLAMA_LOG_INFO("%s", "stopped by EOS\n");
+  } else if (slot->stream_callback && !result->text_to_send.empty()) {
+    slot->stream_callback(*result, slot);
   }
 
   const auto n_ctx_train = llama_model_n_ctx_train(model);
