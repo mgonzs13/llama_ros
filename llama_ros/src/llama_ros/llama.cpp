@@ -690,7 +690,7 @@ Llama::generate_chat_response(int slot_gid,
 std::vector<struct TokenProb> Llama::get_probs(ServerSlot *slot) {
   std::vector<struct TokenProb> probs;
 
-  const auto *cur_p = common_sampler_get_candidates(slot->sampler);
+  const auto *cur_p = common_sampler_get_candidates(slot->sampler, true);
 
   const int32_t n_probs = this->params.sampling.n_probs;
 

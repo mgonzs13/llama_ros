@@ -70,7 +70,7 @@ def generate_launch_description():
             "use_mlock": LaunchConfiguration("use_mlock", default=False),
             "warmup": LaunchConfiguration("warmup", default=True),
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
-            "flash_attn": LaunchConfiguration("flash_attn", default=False),
+            "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
             # cache params
             "no_op_offload": LaunchConfiguration("no_op_offload", default=False),
             "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),

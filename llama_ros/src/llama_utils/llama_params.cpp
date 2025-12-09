@@ -151,7 +151,7 @@ void llama_utils::declare_llama_params(
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
-                                         {"flash_attn", false},
+                                         {"flash_attn_type", "auto"},
                                          {"strict_cpu", false},
                                          {"strict_cpu_batch", false},
                                          {"mmproj_use_gpu", true},
@@ -193,6 +193,7 @@ struct LlamaParams llama_utils::get_llama_params(
   std::string rope_scaling_type;
   std::string numa;
   std::string pooling_type;
+  std::string flash_attn_type;
 
   std::string file_path;
 
@@ -216,7 +217,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
   node->get_parameter("check_tensors", params.params.check_tensors);
-  node->get_parameter("flash_attn", params.params.flash_attn);
+  node->get_parameter("flash_attn_type", flash_attn_type);
 
   node->get_parameter("no_op_offload", params.params.no_op_offload);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
@@ -384,7 +385,7 @@ struct LlamaParams llama_utils::get_llama_params(
         }
 
         // add lora
-        params.params.lora_adapters.push_back({lora, scale, nullptr});
+        params.params.lora_adapters.push_back({lora, scale, "", "", nullptr});
       }
     }
   }
@@ -480,6 +481,15 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.numa = GGML_NUMA_STRATEGY_MIRROR;
   } else if (numa == "count") {
     params.params.numa = GGML_NUMA_STRATEGY_COUNT;
+  }
+
+  // flash_attn_type
+  if (flash_attn_type == "auto") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
+  } else if (flash_attn_type == "enabled") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+  } else {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
   }
 
   // pooling
