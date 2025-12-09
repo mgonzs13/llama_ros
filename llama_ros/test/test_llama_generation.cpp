@@ -81,6 +81,9 @@ protected:
         // Handle unknown exceptions
       }
     });
+
+    slot = llama->wait_for_available_slot();
+    slot->goal_id = 1111; // Assign a dummy goal ID
     
     // Give the thread a moment to start
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -104,6 +107,7 @@ protected:
   std::unique_ptr<llama_ros::Llama> llama;
   std::unique_ptr<llama_utils::LlamaParams> params;
   std::thread run_loop_thread;
+  llama_ros::ServerSlot* slot;
 };
 
 /**
@@ -116,9 +120,6 @@ TEST_F(LlamaGenerationTest, CanGenerateSimpleCompletion) {
   sparams.top_k = 40;
   sparams.top_p = 0.95f;
 
-  llama_ros::ServerSlot* slot = llama->wait_for_available_slot();
-  slot->goal_id = 1111; // Assign a dummy goal ID
-  
   // Generate a simple completion
   auto result = llama->generate_response(
       slot->goal_id, // slot_id
@@ -148,9 +149,6 @@ TEST_F(LlamaGenerationTest, TemperatureAffectsOutput) {
   struct common_params_sampling sparams_low = params->params.sampling;
   sparams_low.temp = 0.0f;
   sparams_low.seed = 42; // Fixed seed for reproducibility
-
-  llama_ros::ServerSlot* slot = llama->wait_for_available_slot();
-  slot->goal_id = 1111; // Assign a dummy goal ID
 
   auto result_low = llama->generate_response(slot->goal_id, prompt, sparams_low);
   ASSERT_TRUE(result_low.has_value());
@@ -187,7 +185,7 @@ TEST_F(LlamaGenerationTest, TopPSamplingWorks) {
   sparams.top_p = 0.9f;
   sparams.temp = 0.8f;
   
-  auto result = llama->generate_response(0, prompt, sparams);
+  auto result = llama->generate_response(slot->goal_id, prompt, sparams);
   
   ASSERT_TRUE(result.has_value());
   EXPECT_FALSE(result->content.empty());
@@ -206,12 +204,10 @@ TEST_F(LlamaGenerationTest, RespectsMaxTokensLimit) {
   struct common_params_sampling sparams = params->params.sampling;
   
   // Temporarily adjust n_predict for this slot
-  auto slot = llama->get_slot_by_id(0);
-  ASSERT_NE(slot, nullptr);
   int original_n_predict = slot->n_predict;
   slot->n_predict = max_tokens;
   
-  auto result = llama->generate_response(0, prompt, sparams);
+  auto result = llama->generate_response(slot->goal_id, prompt, sparams);
   
   ASSERT_TRUE(result.has_value());
   
@@ -227,16 +223,17 @@ TEST_F(LlamaGenerationTest, RespectsMaxTokensLimit) {
  * @brief Test generation with stop sequences.
  */
 TEST_F(LlamaGenerationTest, StopSequencesWork) {
-  const std::string prompt = "Count: 1, 2, 3, 4, 5, 6, 7";
+  const std::string prompt = "Print the number 123524684363216843216843213584635";
   
   struct common_params_sampling sparams = params->params.sampling;
   
   // Use stop sequences to halt generation
-  std::vector<std::string> stop_sequences = {", 5"};
+  std::vector<std::string> stop_sequences = {"5"};
   
-  auto result = llama->generate_response(0, prompt, sparams, nullptr, stop_sequences);
+  auto result = llama->generate_response(slot->goal_id, prompt, sparams, nullptr, stop_sequences);
   
   ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result->content.find("123") != std::string::npos);
   EXPECT_FALSE(result->content.empty());
   
   // The content should stop before generating much past "5"
@@ -263,7 +260,7 @@ TEST_F(LlamaGenerationTest, StreamingCallbacksWork) {
     accumulated_text += output.text_to_send;
   };
   
-  auto result = llama->generate_response(0, prompt, sparams, callback);
+  auto result = llama->generate_response(slot->goal_id, prompt, sparams, callback);
   
   ASSERT_TRUE(result.has_value());
   
@@ -288,7 +285,7 @@ TEST_F(LlamaGenerationTest, CanCancelGeneration) {
   
   std::thread generation_thread([&]() {
     generation_started = true;
-    auto result = llama->generate_response(0, prompt, sparams);
+    auto result = llama->generate_response(slot->goal_id, prompt, sparams);
     generation_completed = true;
   });
   
