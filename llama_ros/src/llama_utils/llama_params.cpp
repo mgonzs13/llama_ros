@@ -120,6 +120,7 @@ void llama_utils::declare_llama_params(
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"chat_template_file", ""},
+                                                {"flash_attn_type", "auto"},
                                             });
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
@@ -151,7 +152,6 @@ void llama_utils::declare_llama_params(
                                          {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
-                                         {"flash_attn_type", "auto"},
                                          {"strict_cpu", false},
                                          {"strict_cpu_batch", false},
                                          {"mmproj_use_gpu", true},
