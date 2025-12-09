@@ -58,8 +58,8 @@ protected:
     
     // Download model from HuggingFace
     auto result = huggingface_hub::hf_hub_download_with_shards(
-        "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
-        "qwen2.5-0.5b-instruct-q4_k_m.gguf");
+        "bartowski/SmolLM2-135M-Instruct-GGUF",
+        "SmolLM2-135M-Instruct-Q6_K.gguf");
     
     ASSERT_TRUE(result.success) << "Failed to download model";
     ASSERT_FALSE(result.path.empty()) << "Model path is empty";
@@ -160,7 +160,7 @@ TEST_F(LlamaGenerationTest, TemperatureAffectsOutput) {
   
   // Generate with high temperature (more random)
   struct common_params_sampling sparams_high = params->params.sampling;
-  sparams_high.temp = 5.0f;
+  sparams_high.temp = 1.2f;
   sparams_high.seed = 42; // Same seed
   
   auto result_high = llama->generate_response(slot->goal_id, prompt, sparams_high);
