@@ -30,6 +30,7 @@
 #include "llama_utils/logs.hpp"
 #include "llama_utils/chat_utils.hpp"
 #include "llava_ros/llava.hpp"
+#include "llava_ros/llava_request_handler.hpp"
 
 using namespace llava_ros;
 
@@ -47,6 +48,10 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
   // load multimodal model
   this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
                                        this->get_model(), mparams);
+
+  // Initialize Llava-specific handlers
+  llava_completion_handler_ = std::make_unique<LlavaCompletionRequestHandler>(this);
+  llava_chat_completion_handler_ = std::make_unique<LlavaChatCompletionRequestHandler>(this);
 
   // set inital values
   this->reset();
@@ -175,6 +180,7 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSl
     auto chunk_type = mtmd_input_chunk_get_type(chunk);
 
     if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
+      LLAMA_LOG_INFO("TEXT chunk");
       size_t n_tokens;
       auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
 
@@ -182,6 +188,7 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSl
         slot->prompt_tokens.push_back(tokens[j]);
       }
     } else {
+      LLAMA_LOG_INFO("MEDIA chunk");
       const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
       llama_pos start_pos = slot->prompt_tokens.size();
       for (int i = 0; i < n_pos; ++i) {
@@ -198,89 +205,12 @@ void llava_ros::Llava::handle_completion_req(
       struct common_params_sampling sparams,
       llama_ros::ServerSlot::GenerateResponseCallback callback,
       std::vector<std::string> stop, bool reset) {
-  slot->prompt_tokens.clear();
-  std::string converted_prompt = input_prompt;
-
-  if (this->params.input_prefix.size() > 0) {
-    converted_prompt.insert(0, this->params.input_prefix);
-  }
-  if (this->params.input_suffix.size() > 0) {
-    converted_prompt.append(this->params.input_suffix.c_str());
-  }
-
-  std::string prompt_str = converted_prompt;
-  mtmd_input_text inp_txt = {
-      prompt_str.c_str(),
-      /* add_special */   true,
-      /* parse_special */ true,
-  };
-  mtmd::input_chunks chunks(mtmd_input_chunks_init());
-  auto bitmaps_c_ptr = bitmaps.c_ptr();
-  int32_t tokenized = mtmd_tokenize(this->mtmd_ctx,
-                                      chunks.ptr.get(),
-                                      &inp_txt,
-                                      bitmaps_c_ptr.data(),
-                                      bitmaps_c_ptr.size());
-  if (tokenized != 0) {
-      throw std::runtime_error("Failed to tokenize prompt");
-  }
-
-  process_input_chunks(chunks, slot);
-
-  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
-  
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->params.sampling = sparams;
-  slot->sampler = common_sampler_init(model, params.sampling);
-  slot->stream_callback = callback;
-  slot->params.antiprompt.insert(slot->params.antiprompt.end(), stop.begin(),
-                                 stop.end());
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = llama_ros::SERVER_TASK_TYPE_COMPLETION;
-  slot->state = llama_ros::SLOT_STATE_STARTED;
+  llava_completion_handler_->handle(input_prompt, slot, sparams, callback, stop, reset);
 }
 
 void llava_ros::Llava::handle_chat_completion_req(
       llama_utils::ChatCompletionsContext chat_context, llama_ros::ServerSlot *slot,
       llama_ros::ServerSlot::GenerateResponseCallback callback) {
-    auto chat_tmpls = this->get_chat_templates();
-  common_chat_templates_inputs inputs = chat_context.prompt_format_config;
-  slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
-  slot->params.sampling = chat_context.sparams;
-
-  std::string prompt_str = chat_context.chat_prompt_instance.prompt;
-  mtmd_input_text inp_txt = {
-      prompt_str.c_str(),
-      /* add_special */   true,
-      /* parse_special */ true,
-  };
-  mtmd::input_chunks chunks(mtmd_input_chunks_init());
-  auto bitmaps_c_ptr = bitmaps.c_ptr();
-  int32_t tokenized = mtmd_tokenize(this->mtmd_ctx,
-                                      chunks.ptr.get(),
-                                      &inp_txt,
-                                      bitmaps_c_ptr.data(),
-                                      bitmaps_c_ptr.size());
-  if (tokenized != 0) {
-      throw std::runtime_error("Failed to tokenize prompt");
-  }
-
-  process_input_chunks(chunks, slot);
-
-  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
-
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->sampler = common_sampler_init(model, slot->params.sampling);
-  slot->stream_callback = callback;
-  slot->chat_format = chat_context.chat_prompt_instance.format;
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = llama_ros::SERVER_TASK_TYPE_COMPLETION;
-  slot->state = llama_ros::SLOT_STATE_STARTED;
+  llava_chat_completion_handler_->handle(chat_context, slot, callback);
 }
 

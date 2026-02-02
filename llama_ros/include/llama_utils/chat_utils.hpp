@@ -25,6 +25,7 @@
 
 #include <common.h>
 #include <llama_msgs/action/generate_chat_completions.hpp>
+#include <llama_msgs/action/generate_response.hpp>
 #include <memory>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
@@ -38,6 +39,7 @@
 namespace llama_ros {
   class Llama;
   struct ServerTaskResultCompletion;
+  struct CompletionOutput;
 }
 
 namespace llama_utils {
@@ -165,6 +167,16 @@ struct ChatCompletionsContext {
 };
 
 /**
+ * @brief Represents the context for text completions.
+ */
+struct CompletionContext {
+  std::string prompt;
+  common_params_sampling sparams;
+  std::vector<std::string> stop;
+  bool reset;
+};
+
+/**
  * @brief Prepares the context for chat completions.
  *
  * @param goal The goal shared pointer from the action server.
@@ -176,6 +188,39 @@ ChatCompletionsContext prepare_chat_completions_call(
         const llama_msgs::action::GenerateChatCompletions::Goal> &goal,
     llama_ros::Llama *llama);
 
+/**
+ * @brief Prepares the context for text completion.
+ *
+ * @param goal The goal shared pointer from the action server.
+ * @param llama The Llama instance.
+ * @return The prepared completion context.
+ */
+CompletionContext prepare_completion_call(
+    const std::shared_ptr<
+        const llama_msgs::action::GenerateResponse::Goal> &goal,
+    llama_ros::Llama *llama);
+
+/**
+ * @brief Converts ServerTaskResultCompletion to ROS result message.
+ *
+ * @param result The internal completion result.
+ * @param llama The Llama instance for detokenization.
+ * @return The ROS result message.
+ */
+llama_msgs::action::GenerateResponse::Result
+generate_completion_result(const llama_ros::ServerTaskResultCompletion &result,
+                          llama_ros::Llama *llama);
+
+/**
+ * @brief Creates feedback message from CompletionOutput.
+ *
+ * @param completion The completion output containing token data.
+ * @param llama The Llama instance for detokenization.
+ * @return The ROS feedback message.
+ */
+llama_msgs::action::GenerateResponse::Feedback
+create_completion_feedback(const llama_ros::CompletionOutput &completion,
+                          llama_ros::Llama *llama);
 
 int32_t uuid_to_int32(const std::array<uint8_t, 16>& uuid);
 uint64_t generate_random_uint64();

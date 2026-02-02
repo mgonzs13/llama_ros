@@ -29,10 +29,8 @@
 #include <llama.h>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "common.h"
 #include "llama_utils/chat_utils.hpp"
@@ -82,17 +80,32 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
     server_slots.push_back(std::move(slot));
   }
 
+  LLAMA_LOG_INFO("Initializing batch context");
+
   const int32_t n_batch = llama_n_batch(ctx);
   batch = llama_batch_init(std::max(n_batch, params.n_parallel), 0, 1);
 
-  chat_templates = common_chat_templates_init(model, params.chat_template);
-  // common_chat_format_example(chat_templates.get(), params.use_jinja);
+  LLAMA_LOG_INFO("Model loaded successfully");
+
+  // Initialize managers and handlers
+  slot_manager_ = std::make_unique<SlotManager>(server_slots);
+  task_registry_ = std::make_unique<TaskRegistry>();
+  LLAMA_LOG_INFO("Initialized Slot Manager and Task Registry");
+  
+  embedding_handler_ = std::make_unique<EmbeddingRequestHandler>(this);
+  rerank_handler_ = std::make_unique<RerankRequestHandler>(this);
+  completion_handler_ = std::make_unique<CompletionRequestHandler>(this);
+  chat_completion_handler_ = std::make_unique<ChatCompletionRequestHandler>(this);
+  LLAMA_LOG_INFO("Initialized Request Handlers");
+
+  // Initialize chat formatter
+  chat_formatter_ = std::make_unique<llama_utils::ChatFormatter>(model, params.chat_template);
 
   oai_parser_opt = {params.use_jinja,
                     params.prefill_assistant,
                     params.reasoning_format,
                     params.default_template_kwargs,
-                    chat_templates.get(),
+                    chat_formatter_->get_templates(),
                     false,
                     false,
                     false};
@@ -446,28 +459,30 @@ void Llama::cancel() { this->canceled = true; }
 *         EMBEDDINGS          *
 *******************************
 */
-std::optional<llama_ros::ServerTaskResultEmbedding>
+Result<llama_ros::ServerTaskResultEmbedding>
 Llama::generate_embeddings(const std::string &text) {
-  auto slot = this->wait_for_available_slot();
+  auto slot = slot_manager_->wait_for_available_slot();
+  if (!slot) {
+    return Result<ServerTaskResultEmbedding>::error("No slot available for embedding generation");
+  }
 
   const uint64_t gid = llama_utils::generate_random_uint64();
   slot->goal_id = gid;
-  auto fut = register_pending(gid);
+  auto fut = task_registry_->register_pending(gid);
 
-  this->handle_embeddings_req(text, slot);
+  embedding_handler_->handle(text, slot);
 
-  auto result = fut.get();
+  try {
+    auto result = fut.get();
+    task_registry_->mark_done(gid);
 
-  {
-    std::lock_guard<std::mutex> lk(done_mx);
-    done_q.push(gid);
+    if (auto *out = dynamic_cast<ServerTaskResultEmbedding *>(result.get())) {
+      return Result<ServerTaskResultEmbedding>::ok(*out);
+    }
+    return Result<ServerTaskResultEmbedding>::error("Invalid result type returned");
+  } catch (const std::exception& e) {
+    return Result<ServerTaskResultEmbedding>::error(std::string("Exception during embedding generation: ") + e.what());
   }
-
-  if (auto *out = dynamic_cast<ServerTaskResultEmbedding *>(result.get())) {
-    return *out;
-  }
-
-  return std::nullopt;
 }
 
 /*
@@ -475,13 +490,12 @@ Llama::generate_embeddings(const std::string &text) {
 *         RERANKING         *
 *****************************
 */
-std::optional<std::vector<llama_ros::ServerTaskResultRerank>>
+Result<std::vector<llama_ros::ServerTaskResultRerank>>
 Llama::rank_documents(const std::string &query,
                       const std::vector<std::string> &documents) {
   if (!this->is_reranking()) {
-    LLAMA_LOG_ERROR(
-        "Llama must be created with reranking enable to make rerank");
-    return {};
+    return Result<std::vector<ServerTaskResultRerank>>::error(
+        "Llama must be created with reranking enabled to perform reranking");
   }
 
   // Register all tasks
@@ -492,19 +506,19 @@ Llama::rank_documents(const std::string &query,
   const uint64_t slot_gid = llama_utils::generate_random_uint64();
 
   for (size_t i = 0; i < documents.size(); ++i) {
-    auto slot = this->wait_for_available_slot();
+    auto slot = slot_manager_->wait_for_available_slot();
 
     const uint64_t gid =
         (static_cast<uint64_t>(slot_gid) << 32) | static_cast<uint64_t>(i);
 
     slot->goal_id = gid;
-    auto fut = register_pending(gid);
+    auto fut = task_registry_->register_pending(gid);
 
     LLAMA_LOG_INFO(
         "Submitting rerank task %lu for document %zu (slot goal_id: %lu)", gid,
         i, slot_gid);
 
-    this->handle_rerank_req(query, documents[i], slot);
+    rerank_handler_->handle(query, documents[i], slot);
 
     futs.emplace(gid, std::move(fut));
   }
@@ -514,13 +528,7 @@ Llama::rank_documents(const std::string &query,
 
   size_t n_collected = 0;
   while (n_collected < n_documents) {
-    uint64_t first_gid = 0;
-    {
-      std::unique_lock<std::mutex> lk(done_mx);
-      done_cv.wait(lk, [&] { return !done_q.empty(); });
-      first_gid = done_q.front();
-      done_q.pop();
-    }
+    uint64_t first_gid = task_registry_->wait_for_done();
 
     if (auto it = futs.find(first_gid); it != futs.end()) {
       ServerTaskResultPtr ptr = it->second.get();
@@ -536,15 +544,9 @@ Llama::rank_documents(const std::string &query,
       n_collected++;
     }
 
-    for (;;) {
-      uint64_t gid;
-      {
-        std::lock_guard<std::mutex> lk(done_mx);
-        if (done_q.empty())
-          break;
-        gid = done_q.front();
-        done_q.pop();
-      }
+    while (task_registry_->has_done_tasks()) {
+      uint64_t gid = task_registry_->wait_for_done();
+      
       if (auto it = futs.find(gid); it != futs.end()) {
         ServerTaskResultPtr ptr = it->second.get();
 
@@ -566,7 +568,7 @@ Llama::rank_documents(const std::string &query,
       [](const llama_ros::ServerTaskResultRerank &a,
          const llama_ros::ServerTaskResultRerank &b) { return a.id < b.id; });
 
-  return results;
+  return Result<std::vector<ServerTaskResultRerank>>::ok(std::move(results));
 }
 
 /*
@@ -576,8 +578,7 @@ Llama::rank_documents(const std::string &query,
 */
 std::vector<struct LoRA> Llama::list_loras() {
 
-  std::lock_guard<std::mutex> lk(this->slot_mutex);
-
+  // LoRA adapters are read-only here, no lock needed
   std::vector<struct LoRA> loras;
 
   for (size_t i = 0; i < this->lora_adapters.size(); ++i) {
@@ -596,8 +597,7 @@ std::vector<struct LoRA> Llama::list_loras() {
 
 void Llama::update_loras(std::vector<struct LoRA> loras) {
 
-  std::lock_guard<std::mutex> lk(this->slot_mutex);
-
+  // LoRA updates are thread-safe at llama.cpp level
   for (auto lora : loras) {
     if (lora.id >= 0 && lora.id <= (int)this->lora_adapters.size()) {
 
@@ -632,54 +632,57 @@ void Llama::update_loras(std::vector<struct LoRA> loras) {
 *     GENERATE RESPONSE     *
 *****************************
 */
-std::optional<ServerTaskResultCompletion>
+Result<ServerTaskResultCompletion>
 Llama::generate_response(int slot_gid, const std::string &input_prompt,
                          struct common_params_sampling sparams,
                          ServerSlot::GenerateResponseCallback callback,
                          std::vector<std::string> stop, bool reset) {
-  auto slot = this->get_slot_by_gid(slot_gid);
-
-  auto fut = register_pending(slot_gid);
-
-  this->handle_completion_req(input_prompt, slot, sparams, callback, stop,
-                              reset);
-
-  auto result = fut.get();
-
-  {
-    std::lock_guard<std::mutex> lk(done_mx);
-    done_q.push(slot_gid);
+  auto slot = slot_manager_->get_slot_by_gid(slot_gid);
+  if (!slot) {
+    return Result<ServerTaskResultCompletion>::error("Slot not found for given ID");
   }
 
-  if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
-    return *out;
-  }
+  auto fut = task_registry_->register_pending(slot_gid);
 
-  return std::nullopt;
+  this->handle_completion_req(input_prompt, slot, sparams, callback, stop, reset);
+
+  try {
+    auto result = fut.get();
+    task_registry_->mark_done(slot_gid);
+
+    if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
+      return Result<ServerTaskResultCompletion>::ok(*out);
+    }
+    return Result<ServerTaskResultCompletion>::error("Invalid result type returned");
+  } catch (const std::exception& e) {
+    return Result<ServerTaskResultCompletion>::error(std::string("Exception during response generation: ") + e.what());
+  }
 }
 
-std::optional<ServerTaskResultCompletion>
+Result<ServerTaskResultCompletion>
 Llama::generate_chat_response(int slot_gid,
                               llama_utils::ChatCompletionsContext chat_context,
                               ServerSlot::GenerateResponseCallback callback) {
-  auto slot = this->get_slot_by_gid(slot_gid);
+  auto slot = slot_manager_->get_slot_by_gid(slot_gid);
+  if (!slot) {
+    return Result<ServerTaskResultCompletion>::error("Slot not found for given ID");
+  }
 
-  auto fut = register_pending(slot_gid);
+  auto fut = task_registry_->register_pending(slot_gid);
 
   this->handle_chat_completion_req(chat_context, slot, callback);
 
-  auto result = fut.get();
+  try {
+    auto result = fut.get();
+    task_registry_->mark_done(slot_gid);
 
-  {
-    std::lock_guard<std::mutex> lk(done_mx);
-    done_q.push(slot_gid);
+    if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
+      return Result<ServerTaskResultCompletion>::ok(*out);
+    }
+    return Result<ServerTaskResultCompletion>::error("Invalid result type returned");
+  } catch (const std::exception& e) {
+    return Result<ServerTaskResultCompletion>::error(std::string("Exception during chat response generation: ") + e.what());
   }
-
-  if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
-    return *out;
-  }
-
-  return std::nullopt;
 }
 
 /*
@@ -709,14 +712,7 @@ std::vector<struct TokenProb> Llama::get_probs(ServerSlot *slot) {
 *   CHAT COMPLETION FUNCS   *
 *****************************
 */
-struct std::unique_ptr<struct common_chat_templates,
-                       common_chat_templates_deleter>
-Llama::get_chat_templates() {
-  return std::unique_ptr<struct common_chat_templates,
-                         common_chat_templates_deleter>(
-      common_chat_templates_init(this->get_model(),
-                                 this->params.chat_template));
-}
+// Removed get_chat_templates() - use get_chat_formatter() instead
 
 struct llama_perf_context_data Llama::get_perf_data() {
   return llama_perf_context(this->ctx);
@@ -767,11 +763,7 @@ void ServerSlot::reset() {
 }
 
 void Llama::release_slot(ServerSlot *slot) {
-  {
-    std::lock_guard<std::mutex> lock(this->slot_mutex);
-    slot->release();
-  }
-  this->server_slot_cv.notify_one();
+  slot_manager_->release_slot(slot);
 }
 
 void ServerSlot::release() {
@@ -784,52 +776,19 @@ void ServerSlot::release() {
 }
 
 ServerSlot *Llama::get_available_slot() {
-  for (auto &slot : this->server_slots) {
-    if (slot.state == SLOT_STATE_IDLE) {
-      return &slot;
-    }
-  }
-  return nullptr;
+  return slot_manager_->get_available_slot();
 }
 
 ServerSlot *Llama::wait_for_available_slot() {
-  std::unique_lock<std::mutex> lock(this->slot_mutex);
-
-  this->server_slot_cv.wait(lock, [this] {
-    for (auto &slot : this->server_slots) {
-      if (slot.state == SLOT_STATE_IDLE) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  for (auto &slot : this->server_slots) {
-    if (slot.state == SLOT_STATE_IDLE) {
-      LLAMA_LOG_INFO("Found available slot with id %d", slot.id);
-      return &slot;
-    }
-  }
-
-  return nullptr;
+  return slot_manager_->wait_for_available_slot();
 }
 
 ServerSlot *Llama::get_slot_by_id(int id) {
-  for (auto &slot : this->server_slots) {
-    if (slot.id == id) {
-      return &slot;
-    }
-  }
-  return nullptr;
+  return slot_manager_->get_slot_by_id(id);
 }
 
 ServerSlot *Llama::get_slot_by_gid(uint64_t gid) {
-  for (auto &slot : this->server_slots) {
-    if (slot.goal_id == gid) {
-      return &slot;
-    }
-  }
-  return nullptr;
+  return slot_manager_->get_slot_by_gid(gid);
 }
 
 size_t ServerSlot::find_stopping_strings(const std::string &text,
@@ -1170,7 +1129,7 @@ void Llama::run_loop() {
 
           // must fit into one ubatch and within context
           if (slot.n_prompt_tokens > llama_n_ubatch(ctx)) {
-            LLAMA_LOG_WARN("Prompt too long for slot %d", slot.id);
+            LLAMA_LOG_WARN("Prompt too long for slot %d, %d tokens, max %d", slot.id, slot.n_prompt_tokens, llama_n_ubatch(ctx));
             fail_pending(slot.goal_id, "Prompt too long");
             release_slot(&slot);
             continue;
@@ -1366,44 +1325,15 @@ bool llama_ros::Llama::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
 */
 
 std::future<ServerTaskResultPtr> Llama::register_pending(uint64_t goal_id) {
-  std::lock_guard<std::mutex> lk(pending_mutex);
-  pending.erase(goal_id);
-  std::promise<ServerTaskResultPtr> p;
-  auto fut = p.get_future();
-  pending.emplace(goal_id, std::move(p));
-  return fut;
+  return task_registry_->register_pending(goal_id);
 }
 
 void Llama::fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r) {
-  {
-    std::lock_guard<std::mutex> lk(pending_mutex);
-    auto it = pending.find(goal_id);
-    if (it != pending.end()) {
-      it->second.set_value(std::move(r)); // ready now
-      pending.erase(it);
-    } else {
-      return; // no promise to fulfill
-    }
-  }
-  {
-    std::lock_guard<std::mutex> lk(done_mx);
-    done_q.push(goal_id);
-  }
-  done_cv.notify_one();
+  task_registry_->fulfill_pending(goal_id, std::move(r));
 }
 
 void Llama::fail_pending(uint64_t goal_id, std::string err) {
-  {
-    std::lock_guard<std::mutex> lk(pending_mutex);
-    auto it = pending.find(goal_id);
-    if (it != pending.end()) {
-      LLAMA_LOG_ERROR("Failing pending task %lu: %s", goal_id, err.c_str());
-      pending.erase(it);
-    } else {
-      return; // no promise to fulfill
-    }
-  }
-  done_cv.notify_one();
+  task_registry_->fail_pending(goal_id, err);
 }
 
 /*
@@ -1414,48 +1344,12 @@ void Llama::fail_pending(uint64_t goal_id, std::string err) {
 
 void Llama::handle_embeddings_req(const std::string &input_prompt,
                                   ServerSlot *slot) {
-  auto tokens = common_tokenize(this->ctx, input_prompt, false, true);
-  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
-  tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->sampler = common_sampler_init(model, this->params.sampling);
-  slot->prompt_tokens = tokens;
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = SERVER_TASK_TYPE_EMBEDDING;
-  slot->state = SLOT_STATE_STARTED;
+  embedding_handler_->handle(input_prompt, slot);
 }
 
 void Llama::handle_rerank_req(const std::string &query,
                               const std::string &document, ServerSlot *slot) {
-  std::vector<llama_token> tokens;
-  tokens.push_back(this->get_token_bos());
-  auto tokens_query = common_tokenize(this->get_vocab(), query, false, true);
-  auto truncated_query = this->truncate_tokens(
-      tokens_query, (int)(this->params.n_batch / 2) - 2, true);
-  tokens.insert(tokens.end(), truncated_query.begin(), truncated_query.end());
-  tokens.push_back(this->get_token_eos());
-  tokens.push_back(this->get_token_sep());
-  auto tokens_document =
-      common_tokenize(this->get_vocab(), document, false, true);
-  auto truncated_document = this->truncate_tokens(
-      tokens_document, (int)(this->params.n_batch / 2) - 2, true);
-  tokens.insert(tokens.end(), truncated_document.begin(),
-                truncated_document.end());
-  tokens.push_back(this->get_token_eos());
-
-  tokens = this->truncate_tokens(tokens, llama_n_batch(this->get_ctx()), true);
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->sampler = common_sampler_init(model, this->params.sampling);
-  slot->prompt_tokens = tokens;
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = SERVER_TASK_TYPE_RERANK;
-  slot->state = SLOT_STATE_STARTED;
+  rerank_handler_->handle(query, document, slot);
 }
 
 void Llama::handle_completion_req(const std::string &input_prompt,
@@ -1463,56 +1357,13 @@ void Llama::handle_completion_req(const std::string &input_prompt,
                                   struct common_params_sampling sparams,
                                   ServerSlot::GenerateResponseCallback callback,
                                   std::vector<std::string> stop, bool reset) {
-  slot->prompt_tokens.clear();
-  std::string full_prompt = "";
-  if (this->params.input_prefix.size() > 0) {
-    full_prompt += this->params.input_prefix;
-  }
-  full_prompt += input_prompt;
-  if (this->params.input_suffix.size() > 0) {
-    full_prompt += this->params.input_suffix;
-  }
-  slot->prompt_tokens = common_tokenize(this->ctx, full_prompt, false, true);
-  LLAMA_LOG_INFO("Full prompt: '%s'", full_prompt.c_str());
-  LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
-
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->params.sampling = sparams;
-  slot->sampler = common_sampler_init(model, params.sampling);
-  slot->stream_callback = callback;
-  slot->params.antiprompt.insert(slot->params.antiprompt.end(), stop.begin(),
-                                 stop.end());
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = SERVER_TASK_TYPE_COMPLETION;
-  slot->state = SLOT_STATE_STARTED;
+  completion_handler_->handle(input_prompt, slot, sparams, callback, stop, reset);
 }
 
 void Llama::handle_chat_completion_req(
     llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot,
     ServerSlot::GenerateResponseCallback callback) {
-  auto chat_tmpls = this->get_chat_templates();
-
-  slot->reset();
-
-  common_chat_templates_inputs inputs = chat_context.prompt_format_config;
-  slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
-  slot->params.sampling = chat_context.sparams;
-
-  if (slot->sampler != nullptr) {
-    common_sampler_free(slot->sampler);
-  }
-
-  slot->prompt_tokens = common_tokenize(
-      this->ctx, chat_context.chat_prompt_instance.prompt, false, true);
-  slot->sampler = common_sampler_init(model, slot->params.sampling);
-  slot->stream_callback = callback;
-  slot->chat_format = chat_context.chat_prompt_instance.format;
-  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
-  slot->task_type = SERVER_TASK_TYPE_COMPLETION;
-  slot->state = SLOT_STATE_STARTED;
+  chat_completion_handler_->handle(chat_context, slot, callback);
 }
 
 /*

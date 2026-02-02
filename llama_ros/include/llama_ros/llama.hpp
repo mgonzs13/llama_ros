@@ -42,6 +42,11 @@
 #include <mtmd.h>
 
 #include "llama_utils/spinner.hpp"
+#include "llama_ros/slot_manager.hpp"
+#include "llama_ros/task_registry.hpp"
+#include "llama_ros/request_handler.hpp"
+#include "llama_ros/result.hpp"
+#include "llama_utils/chat_formatter.hpp"
 
 using json = nlohmann::ordered_json;
 
@@ -727,6 +732,14 @@ class Llama {
 
 public:
   /**
+   * @brief Common parameters for the model.
+   *
+   * This structure contains configuration parameters used to initialize and
+   * manage the model.
+   */
+  struct common_params params;
+
+  /**
    * @brief Constructor for the Llama class.
    *
    * This constructor initializes the Llama object with the given parameters,
@@ -798,9 +811,9 @@ public:
    * @param input_prompt The input text prompt for which embeddings are
    * generated.
    * @param normalization The normalization method to apply (default is 2).
-   * @return A structure containing the generated embeddings and token count.
+   * @return A Result containing embeddings and token count, or an error message.
    */
-  std::optional<ServerTaskResultEmbedding> generate_embeddings(const std::string &text);
+  Result<ServerTaskResultEmbedding> generate_embeddings(const std::string &text);
 
   void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
@@ -816,10 +829,9 @@ public:
    *
    * @param query The query string.
    * @param documents A vector of document strings to rank.
-   * @return A vector of floating-point scores representing the relevance of
-   * each document.
+   * @return A Result containing relevance scores, or an error message.
    */
-  std::optional<std::vector<llama_ros::ServerTaskResultRerank>> rank_documents(const std::string &query,
+  Result<std::vector<llama_ros::ServerTaskResultRerank>> rank_documents(const std::string &query,
                                     const std::vector<std::string> &documents);
 
   /**
@@ -832,28 +844,28 @@ public:
    * response.
    * @param stop (Optional) A list of stop words or phrases to terminate the
    * response generation.
-   * @return A structure containing the generated response and its metadata.
+   * @return A Result containing the generated response and metadata, or an error.
    */
-  std::optional<ServerTaskResultCompletion>
+  Result<ServerTaskResultCompletion>
   generate_response(int slot_id,
                     const std::string &input_prompt,
                     struct common_params_sampling sparams,
                     ServerSlot::GenerateResponseCallback callback = nullptr,
                     std::vector<std::string> stop = {}, bool reset = true);
 
-  std::optional<ServerTaskResultCompletion>
+  Result<ServerTaskResultCompletion>
   generate_chat_response(int slot_gid,
                           llama_utils::ChatCompletionsContext chat_context,
                           ServerSlot::GenerateResponseCallback callback = nullptr);
 
   /**
-   * @brief Retrieves the chat templates used for generating responses.
+   * @brief Gets the chat formatter utility.
    *
-   * @return A unique pointer to the chat templates structure.
+   * @return Pointer to the chat formatter.
    */
-  struct std::unique_ptr<struct common_chat_templates,
-                         common_chat_templates_deleter>
-  get_chat_templates();
+  llama_utils::ChatFormatter* get_chat_formatter() {
+    return chat_formatter_.get();
+  }
 
   /**
    * @brief Retrieves the chat parameters based on the provided templates and
@@ -1062,14 +1074,6 @@ public:
 
 protected:
   /**
-   * @brief Common parameters for the model.
-   *
-   * This structure contains configuration parameters used to initialize and
-   * manage the model.
-   */
-  struct common_params params;
-
-  /**
    * @brief Initialization result for the model.
    *
    * This structure holds the result of the model initialization process.
@@ -1164,14 +1168,17 @@ protected:
   int32_t ga_i;
 
   std::vector<ServerSlot> server_slots;
+  std::unique_ptr<SlotManager> slot_manager_;
+  std::unique_ptr<TaskRegistry> task_registry_;
+  std::unique_ptr<llama_utils::ChatFormatter> chat_formatter_;
+  
+  // Request handlers
+  std::unique_ptr<EmbeddingRequestHandler> embedding_handler_;
+  std::unique_ptr<RerankRequestHandler> rerank_handler_;
+  std::unique_ptr<CompletionRequestHandler> completion_handler_;
+  std::unique_ptr<ChatCompletionRequestHandler> chat_completion_handler_;
+
   void release_slot(ServerSlot *slot);
-
-  std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending;
-  std::mutex pending_mutex;
-
-  std::mutex done_mx;
-  std::condition_variable done_cv;
-  std::queue<uint64_t> done_q; // TODO: Better handle this queue (in general)
 
   std::future<ServerTaskResultPtr> register_pending(uint64_t goal_id);
   void fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r);
@@ -1188,14 +1195,7 @@ protected:
    */
   std::vector<struct TokenProb> get_probs(ServerSlot *slot);
 
-  common_chat_templates_ptr chat_templates;
   OAICompactParserOptions oai_parser_opt;
-  std::condition_variable server_slot_cv;
-
-  /**
-   * @brief A mutex for thread-safe operations.
-   */
-  std::mutex slot_mutex;
 };
 
 } // namespace llama_ros

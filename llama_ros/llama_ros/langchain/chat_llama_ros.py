@@ -538,7 +538,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def get_file_type(self, url: str) -> str:
         try:
             # HEAD is faster and avoids downloading the full file
-            response = requests.head(url, allow_redirects=True, timeout=10)
+            response = requests.head(url, allow_redirects=True, timeout=10, headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+            })
             content_type = response.headers.get("Content-Type", "")
 
             if content_type.startswith("image/"):
@@ -559,10 +561,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 # Extract the URL if an image_url exists
                 for item in message["content"]:
                     if item.get("type") == "image_url":
-                        if self.get_file_type(item["image_url"]["url"]) == "image":
-                            image_urls.append(item["image_url"]["url"])
-                        elif self.get_file_type(item["image_url"]["url"]) == "audio":
-                            audios_urls.append(item["image_url"]["url"])
+                        image_urls.append(item["image_url"]["url"])
+                    if item.get("type") == "audio_url":
+                        audios_urls.append(item["audio_url"]["url"])
 
                 # Remove all 'image_url' type items
                 message["content"] = [
@@ -572,7 +573,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 message["content"] = [
                     item
                     for item in message["content"]
-                    if item.get("type") != "audios_url"
+                    if item.get("type") != "audio_url"
                 ]
 
         return data, image_urls, audios_urls

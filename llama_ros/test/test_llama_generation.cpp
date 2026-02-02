@@ -127,14 +127,15 @@ TEST_F(LlamaGenerationTest, CanGenerateSimpleCompletion) {
       sparams);
   
   // Verify we got a result
-  ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result.is_ok());
   
   // Verify the result contains content
-  EXPECT_FALSE(result->content.empty());
-  EXPECT_GT(result->n_decoded, 0);
+  auto result_value = result.value();
+  EXPECT_FALSE(result_value.content.empty());
+  EXPECT_GT(result_value.n_decoded, 0);
   
   // The result should contain "Paris" or similar
-  std::string lower_content = result->content;
+  std::string lower_content = result_value.content;
   std::transform(lower_content.begin(), lower_content.end(), lower_content.begin(), ::tolower);
   EXPECT_NE(lower_content.find("paris"), std::string::npos);
 }
@@ -151,7 +152,7 @@ TEST_F(LlamaGenerationTest, TemperatureAffectsOutput) {
   sparams_low.seed = 42; // Fixed seed for reproducibility
 
   auto result_low = llama->generate_response(slot->goal_id, prompt, sparams_low);
-  ASSERT_TRUE(result_low.has_value());
+  ASSERT_TRUE(result_low.is_ok());
   
   // Reset for next generation
   llama->reset();
@@ -162,16 +163,18 @@ TEST_F(LlamaGenerationTest, TemperatureAffectsOutput) {
   sparams_high.seed = 42; // Same seed
   
   auto result_high = llama->generate_response(slot->goal_id, prompt, sparams_high);
-  ASSERT_TRUE(result_high.has_value());
+  ASSERT_TRUE(result_high.is_ok());
   
   // Both should generate content
-  EXPECT_FALSE(result_low->content.empty());
-  EXPECT_FALSE(result_high->content.empty());
+  auto result_low_value = result_low.value();
+  auto result_high_value = result_high.value();
+  EXPECT_FALSE(result_low_value.content.empty());
+  EXPECT_FALSE(result_high_value.content.empty());
   
   // Note: With different temperatures but same seed, outputs may still differ
   // We mainly verify both complete successfully
-  EXPECT_GT(result_low->n_decoded, 0);
-  EXPECT_GT(result_high->n_decoded, 0);
+  EXPECT_GT(result_low_value.n_decoded, 0);
+  EXPECT_GT(result_high_value.n_decoded, 0);
 }
 
 /**
@@ -187,9 +190,10 @@ TEST_F(LlamaGenerationTest, TopPSamplingWorks) {
   
   auto result = llama->generate_response(slot->goal_id, prompt, sparams);
   
-  ASSERT_TRUE(result.has_value());
-  EXPECT_FALSE(result->content.empty());
-  EXPECT_GT(result->n_decoded, 0);
+  ASSERT_TRUE(result.is_ok());
+  auto result_value = result.value();
+  EXPECT_FALSE(result_value.content.empty());
+  EXPECT_GT(result_value.n_decoded, 0);
 }
 
 /**
@@ -209,11 +213,12 @@ TEST_F(LlamaGenerationTest, RespectsMaxTokensLimit) {
   
   auto result = llama->generate_response(slot->goal_id, prompt, sparams);
   
-  ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result.is_ok());
   
   // The number of generated tokens should not exceed max_tokens significantly
   // (may be slightly more due to stopping conditions)
-  EXPECT_LE(result->n_decoded, max_tokens + 5);
+  auto result_value = result.value();
+  EXPECT_LE(result_value.n_decoded, max_tokens + 5);
   
   // Restore original n_predict
   slot->n_predict = original_n_predict;
@@ -232,13 +237,14 @@ TEST_F(LlamaGenerationTest, StopSequencesWork) {
   
   auto result = llama->generate_response(slot->goal_id, prompt, sparams, nullptr, stop_sequences);
   
-  ASSERT_TRUE(result.has_value());
-  ASSERT_TRUE(result->content.find("123") != std::string::npos);
-  EXPECT_FALSE(result->content.empty());
+  ASSERT_TRUE(result.is_ok());
+  auto result_value = result.value();
+  ASSERT_TRUE(result_value.content.find("123") != std::string::npos);
+  EXPECT_FALSE(result_value.content.empty());
   
   // The content should stop before generating much past "5"
   // This is a heuristic check since exact behavior depends on tokenization
-  EXPECT_LT(result->content.length(), 100);
+  EXPECT_LT(result_value.content.length(), 100);
 }
 
 /**
@@ -262,7 +268,7 @@ TEST_F(LlamaGenerationTest, StreamingCallbacksWork) {
   
   auto result = llama->generate_response(slot->goal_id, prompt, sparams, callback);
   
-  ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result.is_ok());
   
   // Callback should have been invoked multiple times during generation
   EXPECT_GT(callback_count.load(), 0);

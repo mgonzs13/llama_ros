@@ -37,6 +37,10 @@
 
 namespace llava_ros {
 
+// Forward declarations
+class LlavaCompletionRequestHandler;
+class LlavaChatCompletionRequestHandler;
+
 /**
  * @brief Represents the Llava model, extending the Llama model with image
  * processing capabilities.
@@ -126,13 +130,28 @@ protected:
 
   void process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSlot *slot);
 
-private:
+  /**
+   * @brief Specialized completion handler for Llava.
+   */
+  std::unique_ptr<LlavaCompletionRequestHandler> llava_completion_handler_;
+
+  /**
+   * @brief Specialized chat completion handler for Llava.
+   */
+  std::unique_ptr<LlavaChatCompletionRequestHandler> llava_chat_completion_handler_;
+
   /**
    * @brief Bitmaps for image processing.
    *
    * This structure holds the bitmap data for images used in the model.
    */
   mtmd::bitmaps bitmaps;
+
+  // Declare handlers as friends so they can access bitmaps and other protected members
+  friend class LlavaCompletionRequestHandler;
+  friend class LlavaChatCompletionRequestHandler;
+
+private:
 
   const mtmd::input_chunk_ptr & find_chunk(llama_pos pos, llama_ros::ServerSlot * slot);
 };

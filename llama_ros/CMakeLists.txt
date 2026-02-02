@@ -33,12 +33,25 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCV_BRIDGE_HPP")
 endif()
 
-# llama nodes
-add_executable(llama_node
+# Common source files
+set(LLAMA_CORE_SOURCES
   src/llama_ros/llama.cpp
+  src/llama_ros/slot_manager.cpp
+  src/llama_ros/task_registry.cpp
+  src/llama_ros/request_handler.cpp
+)
+
+set(LLAMA_UTILS_SOURCES
   src/llama_utils/logs.cpp
   src/llama_utils/chat_utils.cpp
+  src/llama_utils/chat_formatter.cpp
   src/llama_utils/llama_params.cpp
+)
+
+# llama nodes
+add_executable(llama_node
+  ${LLAMA_CORE_SOURCES}
+  ${LLAMA_UTILS_SOURCES}
   src/llama_ros/llama_node.cpp
   src/llama_main.cpp
 )
@@ -56,13 +69,12 @@ target_link_libraries(llama_node
 )
 
 add_executable(llava_node
-  src/llama_ros/llama.cpp
+  ${LLAMA_CORE_SOURCES}
+  ${LLAMA_UTILS_SOURCES}
   src/llava_ros/llava.cpp
-  src/llama_utils/logs.cpp
-  src/llama_utils/chat_utils.cpp
-  src/llama_utils/llama_params.cpp
   src/llama_ros/llama_node.cpp
   src/llava_ros/llava_node.cpp
+  src/llava_ros/llava_request_handler.cpp
   src/llava_main.cpp
 )
 target_link_libraries(llava_node
@@ -110,10 +122,8 @@ if(BUILD_TESTING)
     test/test_llama_params.cpp
     test/test_llama_deployment.cpp
     test/test_llama_generation.cpp
-    src/llama_ros/llama.cpp
-    src/llama_utils/logs.cpp
-    src/llama_utils/chat_utils.cpp
-    src/llama_utils/llama_params.cpp
+    ${LLAMA_CORE_SOURCES}
+    ${LLAMA_UTILS_SOURCES}
   )
   
   target_include_directories(${PROJECT_NAME}_tests PUBLIC
