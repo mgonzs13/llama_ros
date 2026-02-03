@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b6692
+  GIT_TAG        b7907
   GIT_SHALLOW    TRUE
 )
 
@@ -59,6 +59,21 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/conformer.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/glm4v.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/internvl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/llama4.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/llava.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/minicpmv.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/youtuvl.cpp
 )
 
 target_include_directories(mtmd
@@ -103,6 +118,7 @@ set(INSTALL_TARGETS
   common
   llama
   mtmd
+  cpp-httplib
 )
 
 if(GGML_CUDA)

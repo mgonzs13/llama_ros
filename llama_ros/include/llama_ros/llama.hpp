@@ -695,7 +695,7 @@ public:
     bool verbose = false;
     std::string oaicompat_model;
     std::string oaicompat_cmpl_id;
-    common_chat_syntax oaicompat_chat_syntax;
+    common_chat_parser_params oaicompat_chat_syntax;
   } params;
 
   std::vector<llama_token> prompt_tokens;
@@ -1078,7 +1078,7 @@ protected:
    *
    * This structure holds the result of the model initialization process.
    */
-  struct common_init_result llama_init;
+  std::unique_ptr<common_init_result> llama_init;
 
   /**
    * @brief Pointer to the llama context.

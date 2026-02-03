@@ -45,15 +45,16 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
              bool initial_reset)
     : params(params), system_prompt(system_prompt) {
 
+  this->llama_init = common_init_from_params(this->params);
+
   print_build_info();
 
   // load model
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  this->llama_init = common_init_from_params(this->params);
-  this->model = llama_init.model.get();
-  this->ctx = llama_init.context.get();
+  this->model = llama_init->model();
+  this->ctx = llama_init->context();
   this->lora_adapters = this->params.lora_adapters;
 
   if (this->model == NULL) {
@@ -69,7 +70,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   for (int i = 0; i < this->params.n_parallel; i++) {
     ServerSlot slot;
     slot.id = i;
-    slot.ctx = llama_init.context.get();
+    slot.ctx = llama_init->context();
     slot.n_ctx = n_ctx_slot;
     slot.n_predict = this->params.n_predict;
     slot.params.sampling = this->params.sampling;
@@ -740,7 +741,7 @@ const common_chat_msg &ServerSlot::update_chat_msg(
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
         static_cast<std::string (*)()>(llama_utils::random_string);
-    new_msg.ensure_tool_call_ids_set(generated_tool_call_ids, gen_tool_call_id);
+    new_msg.set_tool_call_ids(generated_tool_call_ids, gen_tool_call_id);
     chat_msg = new_msg;
     oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(
         previous_msg, new_msg.empty() ? previous_msg : new_msg);
@@ -865,7 +866,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     // still waiting for the rest of a UTF-8 sequence, keep going
     slot->has_next_token = true;
   } else {
-    LLAMA_LOG_INFO("Generated token: '%s'", result->text_to_send.c_str());
+    LLAMA_LOG_DEBUG("Generated token: '%s'", result->text_to_send.c_str());
   }
 
   // if context shifting is disabled, make sure that we don't run out of context

@@ -42,8 +42,6 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
   mparams.use_gpu = params.mmproj_use_gpu;
   mparams.print_timings = false;
   mparams.n_threads = params.cpuparams.n_threads;
-  mparams.verbosity =
-      params.verbosity > 0 ? GGML_LOG_LEVEL_DEBUG : GGML_LOG_LEVEL_INFO;
 
   // load multimodal model
   this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
@@ -180,7 +178,6 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSl
     auto chunk_type = mtmd_input_chunk_get_type(chunk);
 
     if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
-      LLAMA_LOG_INFO("TEXT chunk");
       size_t n_tokens;
       auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
 
@@ -188,7 +185,6 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSl
         slot->prompt_tokens.push_back(tokens[j]);
       }
     } else {
-      LLAMA_LOG_INFO("MEDIA chunk");
       const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
       llama_pos start_pos = slot->prompt_tokens.size();
       for (int i = 0; i < n_pos; ++i) {

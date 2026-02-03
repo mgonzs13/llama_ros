@@ -83,7 +83,7 @@ public:
   static common_chat_msg parse_response(
     const std::string& text,
     bool is_partial,
-    const common_chat_syntax& chat_syntax
+    const common_chat_parser_params& chat_syntax
   );
 
 private:
