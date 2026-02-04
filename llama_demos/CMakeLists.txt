@@ -8,113 +8,34 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
-install(PROGRAMS
-  llama_demos/llama_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_demo_node
+set(DEMO_NODES
+  llama_demo_node
+  llama_embeddings_demo_node
+  llama_rerank_demo_node
+  llama_rag_demo_node
+  llava_demo_node
+  mtmd_audio_demo_node
+  chatllama_demo_node
+  chatllama_audio_demo_node
+  chatllama_multi_audio_demo_node
+  chatllama_multi_image_demo_node
+  chatllama_multi_image_user_demo_node
+  chatllama_structured_demo_node
+  chatllama_tools_demo_node
+  chatllama_streaming_tools_demo_node
+  chatllama_langgraph_demo_node
+  chatllama_reasoning_demo_node
+  chatllama_reasoning_tools_demo_node
+  chatllama_pddl_demo_node
 )
 
-install(PROGRAMS
-  llama_demos/llama_embeddings_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_embeddings_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/llama_rerank_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_rerank_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/llama_rag_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llama_rag_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/llava_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME llava_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/mtmd_audio_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME mtmd_audio_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_audio_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_audio_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_multi_audio_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_multi_audio_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_multi_image_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_multi_image_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_multi_image_user_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_multi_image_user_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_structured_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_structured_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_tools_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_tools_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_streaming_tools_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_streaming_tools_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_langgraph_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_langgraph_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_reasoning_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_reasoning_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_reasoning_tools_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_reasoning_tools_demo_node
-)
-
-install(PROGRAMS
-  llama_demos/chatllama_pddl_demo_node.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME chatllama_pddl_demo_node
-)
+foreach(NODE ${DEMO_NODES})
+  install(PROGRAMS
+    llama_demos/${NODE}.py
+    DESTINATION lib/${PROJECT_NAME}
+    RENAME ${NODE}
+  )
+endforeach()
 
 ament_python_install_package(${PROJECT_NAME})
 ament_package()
