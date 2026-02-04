@@ -122,6 +122,7 @@ if(BUILD_TESTING)
     test/test_llama_params.cpp
     test/test_llama_deployment.cpp
     test/test_llama_generation.cpp
+    test/test_llama_lora.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
   )
