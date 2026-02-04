@@ -1215,7 +1215,7 @@ void Llama::run_loop() {
     // Check if there are no tokens to decode
     if (batch.n_tokens == 0) {
       LLAMA_LOG_ERROR("No tokens to decode in this iteration");
-      return;
+      continue;
     }
 
     int32_t i_next = 0;

@@ -163,22 +163,6 @@ protected:
   struct llama_utils::LlamaParams params;
 
   /**
-   * @brief Goal handle for the GenerateResponse action.
-   *
-   * This shared pointer manages the goal handle for the GenerateResponse action
-   * server.
-   */
-  std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
-
-  /**
-   * @brief Goal handle for the GenerateChatCompletions action.
-   *
-   * This shared pointer manages the goal handle for the GenerateChatCompletions
-   * action server.
-   */
-  std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle_chat_;
-
-  /**
    * @brief Creates and initializes the Llama instance.
    *
    * This virtual method is responsible for creating the Llama object and
@@ -223,8 +207,10 @@ protected:
    * This method sends the generated text response to the client.
    *
    * @param completion The completion output containing the generated text.
+   * @param goal_handle The goal handle for the GenerateResponse action.
    */
-  void send_text(const struct CompletionOutput &completion, int slot_id);
+  void send_text(const struct CompletionOutput &completion, 
+                 const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle, int slot_id);
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -257,8 +243,10 @@ protected:
    *
    * @param completion The completion output containing the generated chat
    * response.
+   * @param goal_handle The goal handle for the GenerateChatCompletions action.
    */
-  void send_text_chat_completions(const struct CompletionOutput &completion, int slot_id);
+  void send_text_chat_completions(const struct CompletionOutput &completion,
+                                   const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle, int slot_id);
 
   /**
    * @brief Thread running the Llama run_loop.

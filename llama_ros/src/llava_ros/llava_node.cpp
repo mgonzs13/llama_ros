@@ -70,12 +70,12 @@ void LlavaNode::execute(
 
   // load images
   if (!this->load_images(images_msg)) {
-    this->goal_handle_->abort(result);
+    goal_handle->abort(result);
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
-    this->goal_handle_->abort(result);
+    goal_handle->abort(result);
   }
 
   // llama_node execute
@@ -106,12 +106,12 @@ void LlavaNode::execute_chat_completions(
 
   // load images
   if (!this->load_images(images_msg)) {
-    this->goal_handle_chat_->abort(result);
+    goal_handle->abort(result);
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
-    this->goal_handle_chat_->abort(result);
+    goal_handle->abort(result);
   }
 
   // llama_node execute_chat_completions

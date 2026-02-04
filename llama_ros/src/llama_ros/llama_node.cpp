@@ -154,7 +154,6 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
             std::bind(&LlamaNode::update_loras_service_callback, this, _1, _2));
 
     // generate response action server
-    this->goal_handle_ = nullptr;
     this->generate_response_action_server_ =
         rclcpp_action::create_server<GenerateResponse>(
             this, "generate_response",
@@ -162,7 +161,6 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
             std::bind(&LlamaNode::handle_cancel, this, _1),
             std::bind(&LlamaNode::handle_accepted, this, _1));
 
-    this->goal_handle_chat_ = nullptr;
     this->generate_chat_completions_action_server_ =
         rclcpp_action::create_server<GenerateChatCompletions>(
             this, "generate_chat_completions",
@@ -210,11 +208,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
     this->update_loras_service_.reset();
     this->update_loras_service_ = nullptr;
 
-    this->goal_handle_ = nullptr;
     this->generate_response_action_server_.reset();
     this->generate_response_action_server_ = nullptr;
 
-    this->goal_handle_chat_ = nullptr;
     this->generate_chat_completions_action_server_.reset();
     this->generate_chat_completions_action_server_ = nullptr;
   }
@@ -480,11 +476,8 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
   (void)uuid;
   (void)goal;
 
-  if (this->goal_handle_ != nullptr && this->goal_handle_->is_active()) {
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
   RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
+
   ServerSlot *slot = this->llama->wait_for_available_slot();
   if (slot == nullptr) {
     RCLCPP_ERROR(this->get_logger(), "No slot available");
@@ -507,7 +500,6 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  this->goal_handle_ = goal_handle;
   int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
   std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot_gid}.detach();
 }
@@ -519,22 +511,19 @@ bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 void LlamaNode::execute(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
     int slot_id) {
-  this->goal_handle_ = goal_handle;
   auto goal = goal_handle->get_goal();
   auto response = std::make_shared<GenerateResponse::Result>();
 
   // Validate goal
   if (this->goal_empty(goal)) {
-    this->goal_handle_->abort(response);
-    this->goal_handle_ = nullptr;
+    goal_handle->abort(response);
     return;
   }
 
   // Check if llama is initialized
   if (!this->llama) {
     RCLCPP_ERROR(this->get_logger(), "Llama is not initialized");
-    this->goal_handle_->abort(response);
-    this->goal_handle_ = nullptr;
+    goal_handle->abort(response);
     return;
   }
 
@@ -544,15 +533,16 @@ void LlamaNode::execute(
   // Execute via Llama
   auto result = this->llama->generate_response(
       slot_id, context.prompt, context.sparams,
-      std::bind(&LlamaNode::send_text, this, _1, slot_id), context.stop,
-      context.reset);
+      [this, goal_handle, slot_id](const struct CompletionOutput &completion, ServerSlot *) {
+        this->send_text(completion, goal_handle, slot_id);
+      },
+      context.stop, context.reset);
 
   // Handle result
   if (result.is_error()) {
     RCLCPP_ERROR(this->get_logger(), "Failed to generate response: %s",
                  result.error().c_str());
-    this->goal_handle_->abort(response);
-    this->goal_handle_ = nullptr;
+    goal_handle->abort(response);
     return;
   }
 
@@ -561,30 +551,30 @@ void LlamaNode::execute(
       llama_utils::generate_completion_result(result.value(), this->llama.get());
 
   // Publish based on stop type
-  if (!rclcpp::ok() || !this->goal_handle_) {
+  if (!rclcpp::ok() || !goal_handle) {
     return;
   }
 
   switch (result.value().stop) {
     case StopType::CANCEL:
-      this->goal_handle_->canceled(response);
+      goal_handle->canceled(response);
       break;
     case StopType::ABORT:
-      this->goal_handle_->abort(response);
+      goal_handle->abort(response);
       break;
     default:
-      this->goal_handle_->succeed(response);
+      goal_handle->succeed(response);
       break;
   }
-  this->goal_handle_ = nullptr;
 }
 
-void LlamaNode::send_text(const struct CompletionOutput &completion, int slot_id) {
-  (void)slot_id;  // Unused parameter
-  if (this->goal_handle_ != nullptr && this->llama) {
+void LlamaNode::send_text(const struct CompletionOutput &completion, 
+                          const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle, int slot_id) {
+  (void)slot_id;
+                            if (goal_handle && this->llama) {
     auto feedback = std::make_shared<GenerateResponse::Feedback>();
     *feedback = llama_utils::create_completion_feedback(completion, this->llama.get());
-    this->goal_handle_->publish_feedback(feedback);
+    goal_handle->publish_feedback(feedback);
   }
 }
 
@@ -600,12 +590,9 @@ rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
   (void)uuid;
   (void)goal;
 
-  if (this->goal_handle_chat_ != nullptr &&
-      this->goal_handle_chat_->is_active()) {
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
   RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
+
+  RCLCPP_INFO(this->get_logger(), "Waiting for available slot");
   ServerSlot *slot = this->llama->wait_for_available_slot();
   if (slot == nullptr) {
     RCLCPP_ERROR(this->get_logger(), "No slot available");
@@ -628,7 +615,6 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel_chat_completions(
 
 void LlamaNode::handle_accepted_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
-  this->goal_handle_chat_ = goal_handle;
   int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
   std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1, _2), goal_handle, slot_gid}.detach();
 }
@@ -641,22 +627,19 @@ bool LlamaNode::goal_empty_chat_completions(
 void LlamaNode::execute_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
     int slot_gid) {
-  this->goal_handle_chat_ = goal_handle;
   auto goal = goal_handle->get_goal();
   auto parsed_result = std::make_shared<GenerateChatCompletions::Result>();
 
   // Validate goal
   if (this->goal_empty_chat_completions(goal)) {
-    this->goal_handle_chat_->abort(parsed_result);
-    this->goal_handle_chat_ = nullptr;
+    goal_handle->abort(parsed_result);
     return;
   }
 
   // Check if llama is initialized
   if (!this->llama) {
     RCLCPP_ERROR(this->get_logger(), "Llama is not initialized");
-    this->goal_handle_chat_->abort(parsed_result);
-    this->goal_handle_chat_ = nullptr;
+    goal_handle->abort(parsed_result);
     return;
   }
 
@@ -667,14 +650,15 @@ void LlamaNode::execute_chat_completions(
   // Execute via Llama
   auto result_data = this->llama->generate_chat_response(
       slot_gid, chat_context,
-      std::bind(&LlamaNode::send_text_chat_completions, this, _1, slot_gid));
+      [this, goal_handle, slot_gid](const struct CompletionOutput &completion, ServerSlot *) {
+        this->send_text_chat_completions(completion, goal_handle, slot_gid);
+      });
 
   // Handle result
   if (result_data.is_error()) {
     RCLCPP_ERROR(this->get_logger(), "Failed to generate response: %s",
                  result_data.error().c_str());
-    this->goal_handle_chat_->abort(parsed_result);
-    this->goal_handle_chat_ = nullptr;
+    goal_handle->abort(parsed_result);
     return;
   }
 
@@ -682,27 +666,29 @@ void LlamaNode::execute_chat_completions(
   *parsed_result = llama_utils::generate_chat_completions_result(result_data.value());
 
   // Publish based on stop type
-  if (!rclcpp::ok() || !this->goal_handle_chat_) {
+  if (!rclcpp::ok() || !goal_handle) {
     return;
   }
 
   switch (result_data.value().stop) {
     case StopType::CANCEL:
-      this->goal_handle_chat_->canceled(parsed_result);
+      goal_handle->canceled(parsed_result);
       break;
     case StopType::ABORT:
-      this->goal_handle_chat_->abort(parsed_result);
+      goal_handle->abort(parsed_result);
       break;
     default:
-      this->goal_handle_chat_->succeed(parsed_result);
+      goal_handle->succeed(parsed_result);
       break;
   }
-  this->goal_handle_chat_ = nullptr;
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion, int slot_id) {
-  if (this->goal_handle_chat_ != nullptr && this->llama) {
+    const struct CompletionOutput &completion,
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle, int slot_id) {
+  if (this->llama && goal_handle) {
+    // Get slot_id from goal_handle's goal
+    auto goal = goal_handle->get_goal();
     auto slot = this->llama->get_slot_by_gid(slot_id);
 
     llama_ros::ServerTaskResultCompletionPartial response_result;
@@ -721,7 +707,7 @@ void LlamaNode::send_text_chat_completions(
         response_result, response_result.oaicompat_msg_diffs);
 
     for (auto &feedback : feedbacks) {
-      this->goal_handle_chat_->publish_feedback(
+      goal_handle->publish_feedback(
           std::make_shared<GenerateChatCompletions::Feedback>(feedback));
     }
   }
