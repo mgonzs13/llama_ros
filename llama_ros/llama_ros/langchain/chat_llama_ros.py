@@ -150,6 +150,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         try:
             with context_manager as response:
                 is_first_chunk = True
+                has_yielded = False
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -169,7 +170,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             logprobs=logprobs,
                         )
                     is_first_chunk = False
+                    has_yielded = True
                     yield generation_chunk
+                
+                # If no chunks were yielded, yield an empty chunk to avoid error
+                if not has_yielded:
+                    yield ChatGenerationChunk(
+                        message=AIMessageChunk(content="")
+                    )
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
@@ -822,8 +830,13 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
     @contextmanager
     def _return_context_manager(self, response):
-        gen = (self._parse_chat_generation_chunk(chunk) for chunk in response)
+        def chunk_generator():
+            for chunk in response:
+                parsed = self._parse_chat_generation_chunk(chunk)
+                if parsed is not None:
+                    yield parsed
+        
         try:
-            yield gen
+            yield chunk_generator()
         finally:
             pass
