@@ -792,6 +792,13 @@ public:
   void cancel();
 
   /**
+   * @brief Cancels a specific goal by its ID.
+   *
+   * @param goal_id The ID of the goal to cancel.
+   */
+  void cancel_goal(uint64_t goal_id);
+
+  /**
    * @brief Lists all available LoRA (Low-Rank Adaptation) models.
    *
    * @return A vector of LoRA structures representing the available models.

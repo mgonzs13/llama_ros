@@ -22,6 +22,7 @@
 
 
 import uuid
+import signal
 from typing import Callable, Tuple, List, Union, Generator
 from threading import Thread, RLock, Condition
 
@@ -65,6 +66,7 @@ class LlamaClientNode(Node):
     _callback_group: ReentrantCallbackGroup = ReentrantCallbackGroup()
     _executor: MultiThreadedExecutor = None
     _spin_thread: Thread = None
+    _original_sigint_handler = None
 
     @staticmethod
     def get_instance() -> "LlamaClientNode":
@@ -164,6 +166,15 @@ class LlamaClientNode(Node):
         self._partial_results = []
         self._action_chat_client.wait_for_server()
 
+        # Override SIGINT handler to cancel goal gracefully
+        def sigint_handler(sig, frame):
+            self.cancel_generate_text()
+            raise KeyboardInterrupt
+
+        self._original_sigint_handler = signal.signal(
+            signal.SIGINT, sigint_handler
+        )
+
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback_chat
 
@@ -227,6 +238,15 @@ class LlamaClientNode(Node):
         self._partial_results = []
         self._action_client.wait_for_server()
 
+        # Override SIGINT handler to cancel goal gracefully
+        def sigint_handler(sig, frame):
+            self.cancel_generate_text()
+            raise KeyboardInterrupt
+
+        self._original_sigint_handler = signal.signal(
+            signal.SIGINT, sigint_handler
+        )
+
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback
 
@@ -277,6 +297,11 @@ class LlamaClientNode(Node):
 
         self._action_result: GenerateResponse.Result = future.result().result
         self._action_status = future.result().status
+
+        # Restore original SIGINT handler
+        if self._original_sigint_handler is not None:
+            signal.signal(signal.SIGINT, self._original_sigint_handler)
+            self._original_sigint_handler = None
 
         with self._action_done_cond:
             self._action_done = True

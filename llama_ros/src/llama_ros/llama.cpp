@@ -455,6 +455,15 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 
 void Llama::cancel() { this->canceled = true; }
 
+void Llama::cancel_goal(uint64_t goal_id) {
+  ServerSlot *slot = this->get_slot_by_gid(goal_id);
+  if (slot != nullptr && slot->is_processing()) {
+    LLAMA_LOG_INFO("Cancelling goal %lu in slot %d", goal_id, slot->id);
+    slot->stop = StopType::CANCEL;
+    slot->has_next_token = false;
+  }
+}
+
 /*
 *******************************
 *         EMBEDDINGS          *
@@ -768,7 +777,6 @@ void Llama::release_slot(ServerSlot *slot) {
 }
 
 void ServerSlot::release() {
-  LLAMA_LOG_INFO("Trying to release slot %d", id);
   if (is_processing()) {
     LLAMA_LOG_INFO("Releasing slot %d", id);
     reset();
@@ -999,6 +1007,15 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 
 void Llama::run_loop() {
   while (!this->canceled) {
+
+    // Check for cancelled slots and send results
+    for (auto &slot : this->server_slots) {
+      if (slot.stop == StopType::CANCEL && slot.is_processing()) {
+        LLAMA_LOG_INFO("Slot %d was cancelled, sending result", slot.id);
+        send_completion_result(&slot);
+        release_slot(&slot);
+      }
+    }
 
     // Check if any slots are being processed
     bool any_processing = false;

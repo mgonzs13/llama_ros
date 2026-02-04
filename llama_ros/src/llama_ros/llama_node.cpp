@@ -492,9 +492,9 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
 
 rclcpp_action::CancelResponse LlamaNode::handle_cancel(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
-  (void)goal_handle;
-  RCLCPP_INFO(this->get_logger(), "Received request to cancel Llama node");
-  this->llama->cancel();
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+  uint64_t goal_id = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
+  this->llama->cancel_goal(goal_id);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -607,9 +607,9 @@ rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
 
 rclcpp_action::CancelResponse LlamaNode::handle_cancel_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
-  (void)goal_handle;
-  RCLCPP_INFO(this->get_logger(), "Received request to cancel Llama node");
-  this->llama->cancel();
+  RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+  uint64_t goal_id = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
+  this->llama->cancel_goal(goal_id);
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 

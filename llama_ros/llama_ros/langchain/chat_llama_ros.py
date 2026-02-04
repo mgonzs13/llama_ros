@@ -815,12 +815,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             result = self.llama_client.generate_chat_completions(
                 chat_request, stream=True, stream_reasoning=self.stream_reasoning
             )
-        else:
-            result, _ = self.llama_client.generate_chat_completions(chat_request)
-
-        if stream:
             return self._return_context_manager(result)
         else:
+            result, _ = self.llama_client.generate_chat_completions(chat_request)
             return self._parse_chat_generation_response(result)
 
     @contextmanager
