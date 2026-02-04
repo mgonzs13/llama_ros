@@ -86,7 +86,6 @@ void llama_utils::declare_llama_params(
                                             {"main_gpu", 0},
                                             {"n_threads", 1},
                                             {"poll", 50},
-                                            {"n_threads_batch", 1},
                                             {"poll_batch", 50},
                                             {"n_predict", 128},
                                             {"n_keep", -1},
@@ -231,8 +230,8 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("strict_cpu", params.params.cpuparams.strict_cpu);
   node->get_parameter("poll", poll);
 
-  node->get_parameter("n_threads_batch",
-                      params.params.cpuparams_batch.n_threads);
+  params.params.cpuparams_batch.n_threads =
+    params.params.cpuparams.n_threads;
   node->get_parameter("cpu_mask_batch", cpu_mask_batch);
   node->get_parameter("cpu_range_batch", cpu_range_batch);
   node->get_parameter("priority_batch", priority_batch);

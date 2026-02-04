@@ -141,7 +141,6 @@ TEST_F(LlamaParamsTest, NegativeSeedBecomesDefault) {
  */
 TEST_F(LlamaParamsTest, ThreadCountDefaults) {
   node->set_parameter(rclcpp::Parameter("n_threads", -1));
-  node->set_parameter(rclcpp::Parameter("n_threads_batch", -1));
   
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
   

@@ -84,7 +84,6 @@ def generate_launch_description():
             "strict_cpu": LaunchConfiguration("strict_cpu", default=False),
             "poll": LaunchConfiguration("poll", default=50),
             # batch CPU params
-            "n_threads_batch": LaunchConfiguration("n_threads_batch", default=1),
             "cpu_mask_batch": LaunchConfiguration("cpu_mask_batch", default=""),
             "cpu_range_batch": LaunchConfiguration("cpu_range_batch", default=""),
             "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
