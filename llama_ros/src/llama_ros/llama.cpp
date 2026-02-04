@@ -457,6 +457,13 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
 
 void Llama::cancel() { this->canceled = true; }
 
+void Llama::cancel_goal(uint64_t goal_id) {
+  auto slot = slot_manager_->get_slot_by_gid(goal_id);
+  if (slot != nullptr) {
+    slot->stop = CANCEL;
+  }
+}
+
 /*
 *******************************
 *         EMBEDDINGS          *
