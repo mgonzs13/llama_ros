@@ -26,14 +26,14 @@
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <queue>
 #include <string>
 #include <vector>
-#include <future>
-#include <queue>
 
 #include "chat.h"
 #include "common.h"
@@ -41,18 +41,18 @@
 #include "sampling.h"
 #include <mtmd.h>
 
-#include "llama_utils/spinner.hpp"
-#include "llama_ros/slot_manager.hpp"
-#include "llama_ros/task_registry.hpp"
 #include "llama_ros/request_handler.hpp"
 #include "llama_ros/result.hpp"
+#include "llama_ros/slot_manager.hpp"
+#include "llama_ros/task_registry.hpp"
 #include "llama_utils/chat_formatter.hpp"
+#include "llama_utils/spinner.hpp"
 
 using json = nlohmann::ordered_json;
 
 // Forward declarations to avoid circular dependencies
 namespace llama_utils {
-  struct ChatCompletionsContext;
+struct ChatCompletionsContext;
 }
 
 namespace llama_ros {
@@ -490,12 +490,11 @@ enum SlotState {
 };
 
 enum ServerTaskType {
-    SERVER_TASK_TYPE_COMPLETION,
-    SERVER_TASK_TYPE_EMBEDDING,
-    SERVER_TASK_TYPE_RERANK,
-    SERVER_TASK_TYPE_CANCEL,
+  SERVER_TASK_TYPE_COMPLETION,
+  SERVER_TASK_TYPE_EMBEDDING,
+  SERVER_TASK_TYPE_RERANK,
+  SERVER_TASK_TYPE_CANCEL,
 };
-
 
 /**
  * @brief Represents a log probability for a token.
@@ -544,28 +543,28 @@ struct ServerTaskResultEmbedding : ServerTaskResult {
 };
 
 struct ServerTaskResultRerank : ServerTaskResult {
-    float score = -1e6;
+  float score = -1e6;
 };
 
 struct ServerTaskResultCompletionPartial : ServerTaskResult {
-    std::string  content;
-    llama_tokens tokens;
+  std::string content;
+  llama_tokens tokens;
 
-    int32_t n_decoded;
-    int32_t n_prompt_tokens;
+  int32_t n_decoded;
+  int32_t n_prompt_tokens;
 
-    TokenProb prob_output;
-    std::string build_info;
-    llama_ros::StopType stop;
-    bool post_sampling_probs;
+  TokenProb prob_output;
+  std::string build_info;
+  llama_ros::StopType stop;
+  bool post_sampling_probs;
 
-    std::string     oaicompat_model;
-    std::string     oaicompat_cmpl_id;
-    std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
+  std::string oaicompat_model;
+  std::string oaicompat_cmpl_id;
+  std::vector<common_chat_msg_diff> oaicompat_msg_diffs;
 };
 
 struct ServerTaskResultCompletion : ServerTaskResult {
-    /**
+  /**
    * @brief The content of the chat response.
    */
   std::string content;
@@ -648,9 +647,10 @@ using ServerTaskResultPtr = std::unique_ptr<ServerTaskResult>;
 class ServerSlot {
 public:
   /**
- * @brief A callback function type for handling generated responses.
- */
-  using GenerateResponseCallback = std::function<void(struct CompletionOutput, ServerSlot *)>;
+   * @brief A callback function type for handling generated responses.
+   */
+  using GenerateResponseCallback =
+      std::function<void(struct CompletionOutput, ServerSlot *)>;
 
   int id;
   uint64_t goal_id;
@@ -666,7 +666,7 @@ public:
   json json_schema;
   std::string stopping_word;
   bool has_next_token = true;
-  bool has_new_line   = false;
+  bool has_new_line = false;
 
   int32_t n_past = 0;
   int32_t n_ctx = 0;
@@ -674,9 +674,9 @@ public:
   int32_t n_predict = -1;
   int32_t i_batch = -1;
   int32_t n_decoded = 0;
-  int32_t ga_i = 0;  
+  int32_t ga_i = 0;
 
-  size_t n_sent_text        = 0;
+  size_t n_sent_text = 0;
   bool stream;
   GenerateResponseCallback stream_callback = nullptr;
 
@@ -684,7 +684,7 @@ public:
     int32_t n_keep = 0;
     int32_t n_discard = 0;
     int32_t n_predict = -1;
-    int32_t n_indent  =  0;
+    int32_t n_indent = 0;
 
     std::vector<common_adapter_lora_info> lora;
 
@@ -699,7 +699,7 @@ public:
   } params;
 
   std::vector<llama_token> prompt_tokens;
-  int32_t n_prompt_tokens           = 0;
+  int32_t n_prompt_tokens = 0;
   int32_t n_prompt_tokens_processed = 0;
   size_t last_nl_pos = 0;
 
@@ -714,10 +714,12 @@ public:
   std::unordered_map<llama_pos, mtmd::input_chunk_ptr> map_pos_to_media;
 
   void reset();
-  const common_chat_msg &update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
+  const common_chat_msg &
+  update_chat_msg(std::vector<common_chat_msg_diff> &diffs);
   void release();
   inline bool is_processing() const { return state != SLOT_STATE_IDLE; }
-  size_t find_stopping_strings(const std::string & text, const size_t last_token_size, bool is_full_stop);
+  size_t find_stopping_strings(const std::string &text,
+                               const size_t last_token_size, bool is_full_stop);
 };
 
 /**
@@ -818,14 +820,24 @@ public:
    * @param input_prompt The input text prompt for which embeddings are
    * generated.
    * @param normalization The normalization method to apply (default is 2).
-   * @return A Result containing embeddings and token count, or an error message.
+   * @return A Result containing embeddings and token count, or an error
+   * message.
    */
-  Result<ServerTaskResultEmbedding> generate_embeddings(const std::string &text);
+  Result<ServerTaskResultEmbedding>
+  generate_embeddings(const std::string &text);
 
-  void handle_rerank_req(const std::string &query, const std::string &document, ServerSlot *slot);
+  void handle_rerank_req(const std::string &query, const std::string &document,
+                         ServerSlot *slot);
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
-  virtual void handle_completion_req(const std::string &input_prompt, ServerSlot *slot, struct common_params_sampling sparams, ServerSlot::GenerateResponseCallback callback, std::vector<std::string> stop, bool reset);
-  virtual void handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot, ServerSlot::GenerateResponseCallback callback);
+  virtual void
+  handle_completion_req(const std::string &input_prompt, ServerSlot *slot,
+                        struct common_params_sampling sparams,
+                        ServerSlot::GenerateResponseCallback callback,
+                        std::vector<std::string> stop, bool reset);
+  virtual void
+  handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context,
+                             ServerSlot *slot,
+                             ServerSlot::GenerateResponseCallback callback);
 
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
@@ -838,8 +850,9 @@ public:
    * @param documents A vector of document strings to rank.
    * @return A Result containing relevance scores, or an error message.
    */
-  Result<std::vector<llama_ros::ServerTaskResultRerank>> rank_documents(const std::string &query,
-                                    const std::vector<std::string> &documents);
+  Result<std::vector<llama_ros::ServerTaskResultRerank>>
+  rank_documents(const std::string &query,
+                 const std::vector<std::string> &documents);
 
   /**
    * @brief Generates a response based on the input prompt and sampling
@@ -851,26 +864,25 @@ public:
    * response.
    * @param stop (Optional) A list of stop words or phrases to terminate the
    * response generation.
-   * @return A Result containing the generated response and metadata, or an error.
+   * @return A Result containing the generated response and metadata, or an
+   * error.
    */
   Result<ServerTaskResultCompletion>
-  generate_response(int slot_id,
-                    const std::string &input_prompt,
+  generate_response(int slot_id, const std::string &input_prompt,
                     struct common_params_sampling sparams,
                     ServerSlot::GenerateResponseCallback callback = nullptr,
                     std::vector<std::string> stop = {}, bool reset = true);
 
-  Result<ServerTaskResultCompletion>
-  generate_chat_response(int slot_gid,
-                          llama_utils::ChatCompletionsContext chat_context,
-                          ServerSlot::GenerateResponseCallback callback = nullptr);
+  Result<ServerTaskResultCompletion> generate_chat_response(
+      int slot_gid, llama_utils::ChatCompletionsContext chat_context,
+      ServerSlot::GenerateResponseCallback callback = nullptr);
 
   /**
    * @brief Gets the chat formatter utility.
    *
    * @return Pointer to the chat formatter.
    */
-  llama_utils::ChatFormatter* get_chat_formatter() {
+  llama_utils::ChatFormatter *get_chat_formatter() {
     return chat_formatter_.get();
   }
 
@@ -1178,7 +1190,7 @@ protected:
   std::unique_ptr<SlotManager> slot_manager_;
   std::unique_ptr<TaskRegistry> task_registry_;
   std::unique_ptr<llama_utils::ChatFormatter> chat_formatter_;
-  
+
   // Request handlers
   std::unique_ptr<EmbeddingRequestHandler> embedding_handler_;
   std::unique_ptr<RerankRequestHandler> rerank_handler_;

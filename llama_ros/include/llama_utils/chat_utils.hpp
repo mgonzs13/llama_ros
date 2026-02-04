@@ -37,10 +37,10 @@
 
 // Forward declarations to avoid circular dependencies
 namespace llama_ros {
-  class Llama;
-  struct ServerTaskResultCompletion;
-  struct CompletionOutput;
-}
+class Llama;
+struct ServerTaskResultCompletion;
+struct CompletionOutput;
+} // namespace llama_ros
 
 namespace llama_utils {
 /**
@@ -69,31 +69,35 @@ static inline std::string random_string(int string_size) {
   return result;
 }
 
-static size_t validate_utf8(const std::string& text) {
-    size_t len = text.size();
-    if (len == 0) return 0;
+static size_t validate_utf8(const std::string &text) {
+  size_t len = text.size();
+  if (len == 0)
+    return 0;
 
-    // Check the last few bytes to see if a multi-byte character is cut off
-    for (size_t i = 1; i <= 4 && i <= len; ++i) {
-        unsigned char c = text[len - i];
-        // Check for start of a multi-byte sequence from the end
-        if ((c & 0xE0) == 0xC0) {
-            // 2-byte character start: 110xxxxx
-            // Needs at least 2 bytes
-            if (i < 2) return len - i;
-        } else if ((c & 0xF0) == 0xE0) {
-            // 3-byte character start: 1110xxxx
-            // Needs at least 3 bytes
-            if (i < 3) return len - i;
-        } else if ((c & 0xF8) == 0xF0) {
-            // 4-byte character start: 11110xxx
-            // Needs at least 4 bytes
-            if (i < 4) return len - i;
-        }
+  // Check the last few bytes to see if a multi-byte character is cut off
+  for (size_t i = 1; i <= 4 && i <= len; ++i) {
+    unsigned char c = text[len - i];
+    // Check for start of a multi-byte sequence from the end
+    if ((c & 0xE0) == 0xC0) {
+      // 2-byte character start: 110xxxxx
+      // Needs at least 2 bytes
+      if (i < 2)
+        return len - i;
+    } else if ((c & 0xF0) == 0xE0) {
+      // 3-byte character start: 1110xxxx
+      // Needs at least 3 bytes
+      if (i < 3)
+        return len - i;
+    } else if ((c & 0xF8) == 0xF0) {
+      // 4-byte character start: 11110xxx
+      // Needs at least 4 bytes
+      if (i < 4)
+        return len - i;
     }
+  }
 
-    // If no cut-off multi-byte character is found, return full length
-    return len;
+  // If no cut-off multi-byte character is found, return full length
+  return len;
 }
 
 static inline std::string random_string() { return random_string(32); }
@@ -143,7 +147,8 @@ struct common_chat_templates_inputs parse_chat_completions_goal(
  * @return The generated result for the action.
  */
 llama_msgs::action::GenerateChatCompletions::Result
-generate_chat_completions_result(const llama_ros::ServerTaskResultCompletion &result);
+generate_chat_completions_result(
+    const llama_ros::ServerTaskResultCompletion &result);
 
 /**
  * @brief Generates feedback for a chat completion action.
@@ -196,8 +201,8 @@ ChatCompletionsContext prepare_chat_completions_call(
  * @return The prepared completion context.
  */
 CompletionContext prepare_completion_call(
-    const std::shared_ptr<
-        const llama_msgs::action::GenerateResponse::Goal> &goal,
+    const std::shared_ptr<const llama_msgs::action::GenerateResponse::Goal>
+        &goal,
     llama_ros::Llama *llama);
 
 /**
@@ -209,7 +214,7 @@ CompletionContext prepare_completion_call(
  */
 llama_msgs::action::GenerateResponse::Result
 generate_completion_result(const llama_ros::ServerTaskResultCompletion &result,
-                          llama_ros::Llama *llama);
+                           llama_ros::Llama *llama);
 
 /**
  * @brief Creates feedback message from CompletionOutput.
@@ -220,9 +225,9 @@ generate_completion_result(const llama_ros::ServerTaskResultCompletion &result,
  */
 llama_msgs::action::GenerateResponse::Feedback
 create_completion_feedback(const llama_ros::CompletionOutput &completion,
-                          llama_ros::Llama *llama);
+                           llama_ros::Llama *llama);
 
-int32_t uuid_to_int32(const std::array<uint8_t, 16>& uuid);
+int32_t uuid_to_int32(const std::array<uint8_t, 16> &uuid);
 uint64_t generate_random_uint64();
 } // namespace llama_utils
 

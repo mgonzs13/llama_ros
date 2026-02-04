@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2023 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +24,9 @@
 #ifndef LLAMA_UTILS__CHAT_FORMATTER_HPP
 #define LLAMA_UTILS__CHAT_FORMATTER_HPP
 
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
 
 #include "chat.h"
 #include "common.h"
@@ -48,7 +49,8 @@ public:
    * @param model The llama model to extract templates from.
    * @param custom_template Optional custom template override.
    */
-  ChatFormatter(const llama_model* model, const std::string& custom_template = "");
+  ChatFormatter(const llama_model *model,
+                const std::string &custom_template = "");
 
   /**
    * @brief Destructor.
@@ -61,16 +63,14 @@ public:
    * @param inputs The chat template inputs (messages, tools, etc.).
    * @return The formatted prompt string and metadata.
    */
-  common_chat_params apply_template(const common_chat_templates_inputs& inputs);
+  common_chat_params apply_template(const common_chat_templates_inputs &inputs);
 
   /**
    * @brief Gets the raw chat templates object.
    *
    * @return Pointer to the chat templates.
    */
-  common_chat_templates* get_templates() const {
-    return chat_templates_.get();
-  }
+  common_chat_templates *get_templates() const { return chat_templates_.get(); }
 
   /**
    * @brief Parses a response string into structured chat message.
@@ -80,17 +80,13 @@ public:
    * @param chat_syntax The chat syntax being used.
    * @return The parsed chat message.
    */
-  static common_chat_msg parse_response(
-    const std::string& text,
-    bool is_partial,
-    const common_chat_parser_params& chat_syntax
-  );
+  static common_chat_msg
+  parse_response(const std::string &text, bool is_partial,
+                 const common_chat_parser_params &chat_syntax);
 
 private:
-  using chat_templates_ptr = std::unique_ptr<
-    common_chat_templates,
-    common_chat_templates_deleter
-  >;
+  using chat_templates_ptr =
+      std::unique_ptr<common_chat_templates, common_chat_templates_deleter>;
 
   chat_templates_ptr chat_templates_;
   std::string custom_template_;

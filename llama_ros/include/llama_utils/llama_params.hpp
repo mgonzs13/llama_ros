@@ -95,14 +95,16 @@ parse_sampling_params(const llama_msgs::msg::SamplingConfig &sampling_config,
                       int n_vocab);
 
 /**
- * @brief Applies EOG (End of Generation) logit biases to sampling configuration.
- * 
- * This function handles the configuration of logit biases for EOG tokens based on
- * the ignore_eos setting. It collects all EOG tokens from the vocabulary and
+ * @brief Applies EOG (End of Generation) logit biases to sampling
+ * configuration.
+ *
+ * This function handles the configuration of logit biases for EOG tokens based
+ * on the ignore_eos setting. It collects all EOG tokens from the vocabulary and
  * adds them to the logit_bias_eog field, then conditionally applies them to
  * the active logit_bias field.
  *
- * @param sampling_config The sampling configuration to modify (passed by reference).
+ * @param sampling_config The sampling configuration to modify (passed by
+ * reference).
  * @param vocab The vocabulary to check for EOG tokens.
  * @param ctx The llama context for token conversion.
  */

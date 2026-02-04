@@ -102,7 +102,8 @@ public:
       std::vector<std::string> stop = {}, bool reset = true) override;
 
   void handle_chat_completion_req(
-      llama_utils::ChatCompletionsContext chat_context, llama_ros::ServerSlot *slot,
+      llama_utils::ChatCompletionsContext chat_context,
+      llama_ros::ServerSlot *slot,
       llama_ros::ServerSlot::GenerateResponseCallback callback) override;
 
 protected:
@@ -128,7 +129,8 @@ protected:
 
   bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
 
-  void process_input_chunks(mtmd::input_chunks &chunks, llama_ros::ServerSlot *slot);
+  void process_input_chunks(mtmd::input_chunks &chunks,
+                            llama_ros::ServerSlot *slot);
 
   /**
    * @brief Specialized completion handler for Llava.
@@ -138,7 +140,8 @@ protected:
   /**
    * @brief Specialized chat completion handler for Llava.
    */
-  std::unique_ptr<LlavaChatCompletionRequestHandler> llava_chat_completion_handler_;
+  std::unique_ptr<LlavaChatCompletionRequestHandler>
+      llava_chat_completion_handler_;
 
   /**
    * @brief Bitmaps for image processing.
@@ -147,13 +150,14 @@ protected:
    */
   mtmd::bitmaps bitmaps;
 
-  // Declare handlers as friends so they can access bitmaps and other protected members
+  // Declare handlers as friends so they can access bitmaps and other protected
+  // members
   friend class LlavaCompletionRequestHandler;
   friend class LlavaChatCompletionRequestHandler;
 
 private:
-
-  const mtmd::input_chunk_ptr & find_chunk(llama_pos pos, llama_ros::ServerSlot * slot);
+  const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,
+                                          llama_ros::ServerSlot *slot);
 };
 
 } // namespace llava_ros

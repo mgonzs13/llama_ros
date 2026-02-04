@@ -29,8 +29,8 @@ namespace llama_ros {
 
 SlotManager::SlotManager(std::vector<ServerSlot> &slots)
     : server_slots_(slots) {
-      LLAMA_LOG_INFO("Slot Manager initialized with %d slots", slots.size());
-    }
+  LLAMA_LOG_INFO("Slot Manager initialized with %d slots", slots.size());
+}
 
 ServerSlot *SlotManager::get_available_slot() {
   for (auto &slot : server_slots_) {
@@ -88,8 +88,6 @@ void SlotManager::release_slot(ServerSlot *slot) {
   slot_cv_.notify_one();
 }
 
-void SlotManager::notify_slot_available() {
-  slot_cv_.notify_one();
-}
+void SlotManager::notify_slot_available() { slot_cv_.notify_one(); }
 
 } // namespace llama_ros

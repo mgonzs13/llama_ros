@@ -44,7 +44,7 @@ protected:
   void SetUp() override {
     // Initialize test parameters with default values
     params = std::make_unique<llama_utils::LlamaParams>();
-    
+
     // Set up basic common_params structure
     params->params.n_ctx = 512;
     params->params.n_batch = 128;
@@ -80,18 +80,19 @@ TEST_F(LlamaDeploymentTest, CanCreateLlamaObject) {
   auto result = huggingface_hub::hf_hub_download_with_shards(
       "bartowski/google_gemma-3-270m-it-GGUF",
       "google_gemma-3-270m-it-Q4_K_M.gguf");
-  
+
   ASSERT_TRUE(result.success) << "Failed to download model";
   ASSERT_FALSE(result.path.empty()) << "Model path is empty";
-  
+
   // Set the downloaded model path
   params->params.model.path = result.path;
-  
+
   // Create Llama object
   ASSERT_NO_THROW({
-    llama = std::make_unique<llama_ros::Llama>(params->params, params->system_prompt);
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
   });
-  
+
   // Verify the object was created
   ASSERT_NE(llama, nullptr);
 }
@@ -104,14 +105,14 @@ TEST_F(LlamaDeploymentTest, CanCreateLlamaObject) {
  */
 TEST_F(LlamaDeploymentTest, CanConfigureParameters) {
   ASSERT_NE(params, nullptr);
-  
+
   // Test setting various parameters
   params->params.n_ctx = 2048;
   params->params.n_batch = 512;
   params->params.n_gpu_layers = 32;
   params->params.embedding = true;
   params->system_prompt = "You are a helpful assistant.";
-  
+
   // Verify parameters were set
   EXPECT_EQ(params->params.n_ctx, 2048);
   EXPECT_EQ(params->params.n_batch, 512);
@@ -133,27 +134,29 @@ TEST_F(LlamaDeploymentTest, CanLoadModel) {
   auto result = huggingface_hub::hf_hub_download_with_shards(
       "bartowski/google_gemma-3-270m-it-GGUF",
       "google_gemma-3-270m-it-Q4_K_M.gguf");
-  
+
   ASSERT_TRUE(result.success) << "Failed to download model";
   ASSERT_FALSE(result.path.empty()) << "Model path is empty";
-  
+
   // Set the downloaded model path
   params->params.model.path = result.path;
-  
+
   // Create and load the model
   ASSERT_NO_THROW({
-    llama = std::make_unique<llama_ros::Llama>(params->params, params->system_prompt);
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
   });
-  
+
   // Verify the model was loaded successfully
   ASSERT_NE(llama, nullptr);
-  
+
   // Verify embedding mode matches our configuration
   EXPECT_EQ(llama->is_embedding(), params->params.embedding);
 }
 
 /**
- * @brief Test that verifies model initialization with invalid path fails gracefully.
+ * @brief Test that verifies model initialization with invalid path fails
+ * gracefully.
  *
  * This test ensures that attempting to load a model with an invalid
  * path is handled correctly without crashing.
@@ -161,14 +164,15 @@ TEST_F(LlamaDeploymentTest, CanLoadModel) {
 TEST_F(LlamaDeploymentTest, InvalidModelPathHandledGracefully) {
   // Set invalid model path
   params->params.model.path = "/nonexistent/path/to/model.gguf";
-  
+
   // Attempting to create Llama with invalid model should handle gracefully
   // The Llama constructor should detect the invalid model and handle it
   // without causing a segfault
   ASSERT_NO_THROW({
-    llama = std::make_unique<llama_ros::Llama>(params->params, params->system_prompt);
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
   });
-  
+
   // The model should fail to load - check if model is NULL
   // (based on llama.cpp implementation, it sets model to NULL on failure)
 }
@@ -184,27 +188,28 @@ TEST_F(LlamaDeploymentTest, CanRetrieveModelMetadata) {
   auto result = huggingface_hub::hf_hub_download_with_shards(
       "bartowski/google_gemma-3-270m-it-GGUF",
       "google_gemma-3-270m-it-Q4_K_M.gguf");
-  
+
   ASSERT_TRUE(result.success) << "Failed to download model";
   ASSERT_FALSE(result.path.empty()) << "Model path is empty";
-  
+
   // Set the downloaded model path
   params->params.model.path = result.path;
-  
+
   // Create and load the model
   ASSERT_NO_THROW({
-    llama = std::make_unique<llama_ros::Llama>(params->params, params->system_prompt);
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
   });
-  
+
   ASSERT_NE(llama, nullptr);
-  
+
   // Retrieve metadata
   llama_ros::Metadata metadata = llama->get_metadata();
-  
+
   // Verify metadata contains expected information
   EXPECT_FALSE(metadata.general.architecture.empty());
   EXPECT_GT(metadata.general.architecture.size(), 0);
-  
+
   // For Gemma models, architecture should contain "gemma"
   EXPECT_NE(metadata.general.architecture.find("gemma"), std::string::npos);
 }
@@ -219,13 +224,13 @@ TEST_F(LlamaDeploymentTest, CanConfigureContextSize) {
   // Test various context sizes
   params->params.n_ctx = 512;
   EXPECT_EQ(params->params.n_ctx, 512);
-  
+
   params->params.n_ctx = 2048;
   EXPECT_EQ(params->params.n_ctx, 2048);
-  
+
   params->params.n_ctx = 4096;
   EXPECT_EQ(params->params.n_ctx, 4096);
-  
+
   // Batch size should not exceed context size in practice
   params->params.n_batch = 256;
   EXPECT_LE(params->params.n_batch, params->params.n_ctx);
@@ -242,25 +247,24 @@ TEST_F(LlamaDeploymentTest, ProperCleanupOnDestruction) {
   auto result = huggingface_hub::hf_hub_download_with_shards(
       "bartowski/google_gemma-3-270m-it-GGUF",
       "google_gemma-3-270m-it-Q4_K_M.gguf");
-  
+
   ASSERT_TRUE(result.success) << "Failed to download model";
   ASSERT_FALSE(result.path.empty()) << "Model path is empty";
-  
+
   // Set the downloaded model path
   params->params.model.path = result.path;
-  
+
   // Create and load the model
   ASSERT_NO_THROW({
-    llama = std::make_unique<llama_ros::Llama>(params->params, params->system_prompt);
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
   });
-  
+
   ASSERT_NE(llama, nullptr);
-  
+
   // Reset (destroy) the Llama object
-  ASSERT_NO_THROW({
-    llama.reset();
-  });
-  
+  ASSERT_NO_THROW({ llama.reset(); });
+
   // Verify it's been cleaned up
   EXPECT_EQ(llama, nullptr);
 }

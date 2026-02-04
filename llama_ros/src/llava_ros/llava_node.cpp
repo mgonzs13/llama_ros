@@ -46,7 +46,7 @@ void LlavaNode::create_llama() {
   run_loop_thread_ = std::thread([this]() {
     try {
       this->llama->run_loop();
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
       RCLCPP_ERROR(this->get_logger(), "Exception in run_loop: %s", e.what());
     } catch (...) {
       RCLCPP_ERROR(this->get_logger(), "Unknown exception in run_loop");
@@ -59,7 +59,8 @@ bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 }
 
 void LlavaNode::execute(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, int slot_gid) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+    int slot_gid) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
   auto images_msg = goal_handle->get_goal()->images;
@@ -93,7 +94,8 @@ bool LlavaNode::goal_empty_chat_completions(
 }
 
 void LlavaNode::execute_chat_completions(
-    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_gid) {
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
+    int slot_gid) {
 
   auto result = std::make_shared<GenerateChatCompletions::Result>();
   auto images_msg = goal_handle->get_goal()->images;

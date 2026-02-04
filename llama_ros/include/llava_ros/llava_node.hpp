@@ -119,8 +119,8 @@ protected:
    * @param goal_handle A shared pointer to the goal handle for the
    * GenerateResponse action.
    */
-  void execute(
-      const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, int slot_id) override;
+  void execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+               int slot_id) override;
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -144,8 +144,8 @@ protected:
    * GenerateChatCompletions action.
    */
   void execute_chat_completions(
-      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_id)
-      override;
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
+      int slot_id) override;
 
   /**
    * @brief Load images from a vector of sensor_msgs::msg::Image messages.

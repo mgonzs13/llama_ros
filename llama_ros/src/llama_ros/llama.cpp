@@ -59,7 +59,7 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
 
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
-    return;
+    throw std::runtime_error("Unable to load model");
   }
 
   // Slots
@@ -92,15 +92,17 @@ Llama::Llama(const struct common_params &params, std::string system_prompt,
   slot_manager_ = std::make_unique<SlotManager>(server_slots);
   task_registry_ = std::make_unique<TaskRegistry>();
   LLAMA_LOG_INFO("Initialized Slot Manager and Task Registry");
-  
+
   embedding_handler_ = std::make_unique<EmbeddingRequestHandler>(this);
   rerank_handler_ = std::make_unique<RerankRequestHandler>(this);
   completion_handler_ = std::make_unique<CompletionRequestHandler>(this);
-  chat_completion_handler_ = std::make_unique<ChatCompletionRequestHandler>(this);
+  chat_completion_handler_ =
+      std::make_unique<ChatCompletionRequestHandler>(this);
   LLAMA_LOG_INFO("Initialized Request Handlers");
 
   // Initialize chat formatter
-  chat_formatter_ = std::make_unique<llama_utils::ChatFormatter>(model, params.chat_template);
+  chat_formatter_ =
+      std::make_unique<llama_utils::ChatFormatter>(model, params.chat_template);
 
   oai_parser_opt = {params.use_jinja,
                     params.prefill_assistant,
@@ -464,7 +466,8 @@ Result<llama_ros::ServerTaskResultEmbedding>
 Llama::generate_embeddings(const std::string &text) {
   auto slot = slot_manager_->wait_for_available_slot();
   if (!slot) {
-    return Result<ServerTaskResultEmbedding>::error("No slot available for embedding generation");
+    return Result<ServerTaskResultEmbedding>::error(
+        "No slot available for embedding generation");
   }
 
   const uint64_t gid = llama_utils::generate_random_uint64();
@@ -480,9 +483,11 @@ Llama::generate_embeddings(const std::string &text) {
     if (auto *out = dynamic_cast<ServerTaskResultEmbedding *>(result.get())) {
       return Result<ServerTaskResultEmbedding>::ok(*out);
     }
-    return Result<ServerTaskResultEmbedding>::error("Invalid result type returned");
-  } catch (const std::exception& e) {
-    return Result<ServerTaskResultEmbedding>::error(std::string("Exception during embedding generation: ") + e.what());
+    return Result<ServerTaskResultEmbedding>::error(
+        "Invalid result type returned");
+  } catch (const std::exception &e) {
+    return Result<ServerTaskResultEmbedding>::error(
+        std::string("Exception during embedding generation: ") + e.what());
   }
 }
 
@@ -547,7 +552,7 @@ Llama::rank_documents(const std::string &query,
 
     while (task_registry_->has_done_tasks()) {
       uint64_t gid = task_registry_->wait_for_done();
-      
+
       if (auto it = futs.find(gid); it != futs.end()) {
         ServerTaskResultPtr ptr = it->second.get();
 
@@ -640,12 +645,14 @@ Llama::generate_response(int slot_gid, const std::string &input_prompt,
                          std::vector<std::string> stop, bool reset) {
   auto slot = slot_manager_->get_slot_by_gid(slot_gid);
   if (!slot) {
-    return Result<ServerTaskResultCompletion>::error("Slot not found for given ID");
+    return Result<ServerTaskResultCompletion>::error(
+        "Slot not found for given ID");
   }
 
   auto fut = task_registry_->register_pending(slot_gid);
 
-  this->handle_completion_req(input_prompt, slot, sparams, callback, stop, reset);
+  this->handle_completion_req(input_prompt, slot, sparams, callback, stop,
+                              reset);
 
   try {
     auto result = fut.get();
@@ -654,9 +661,11 @@ Llama::generate_response(int slot_gid, const std::string &input_prompt,
     if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
       return Result<ServerTaskResultCompletion>::ok(*out);
     }
-    return Result<ServerTaskResultCompletion>::error("Invalid result type returned");
-  } catch (const std::exception& e) {
-    return Result<ServerTaskResultCompletion>::error(std::string("Exception during response generation: ") + e.what());
+    return Result<ServerTaskResultCompletion>::error(
+        "Invalid result type returned");
+  } catch (const std::exception &e) {
+    return Result<ServerTaskResultCompletion>::error(
+        std::string("Exception during response generation: ") + e.what());
   }
 }
 
@@ -666,7 +675,8 @@ Llama::generate_chat_response(int slot_gid,
                               ServerSlot::GenerateResponseCallback callback) {
   auto slot = slot_manager_->get_slot_by_gid(slot_gid);
   if (!slot) {
-    return Result<ServerTaskResultCompletion>::error("Slot not found for given ID");
+    return Result<ServerTaskResultCompletion>::error(
+        "Slot not found for given ID");
   }
 
   auto fut = task_registry_->register_pending(slot_gid);
@@ -680,9 +690,11 @@ Llama::generate_chat_response(int slot_gid,
     if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
       return Result<ServerTaskResultCompletion>::ok(*out);
     }
-    return Result<ServerTaskResultCompletion>::error("Invalid result type returned");
-  } catch (const std::exception& e) {
-    return Result<ServerTaskResultCompletion>::error(std::string("Exception during chat response generation: ") + e.what());
+    return Result<ServerTaskResultCompletion>::error(
+        "Invalid result type returned");
+  } catch (const std::exception &e) {
+    return Result<ServerTaskResultCompletion>::error(
+        std::string("Exception during chat response generation: ") + e.what());
   }
 }
 
@@ -881,7 +893,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
 
   // check the limits (n_predict)
   if (slot->n_decoded > 0 && slot->has_next_token &&
-      slot->params.n_predict != -1 && slot->n_decoded >= slot->params.n_predict) {
+      slot->params.n_predict != -1 &&
+      slot->n_decoded >= slot->params.n_predict) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
@@ -959,11 +972,10 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false; // stop prediction
 
-    LLAMA_LOG_WARN(
-        "stopped by context limit\n"
-        "n_predict (%d) is set for infinite generation. "
-        "Limiting generated tokens to n_ctx_train (%d)\n",
-        slot->params.n_predict, n_ctx_train);
+    LLAMA_LOG_WARN("stopped by context limit\n"
+                   "n_predict (%d) is set for infinite generation. "
+                   "Limiting generated tokens to n_ctx_train (%d)\n",
+                   slot->params.n_predict, n_ctx_train);
   }
 
   auto n_remaining = slot->params.n_predict < 1
@@ -1130,7 +1142,8 @@ void Llama::run_loop() {
 
           // must fit into one ubatch and within context
           if (slot.n_prompt_tokens > llama_n_ubatch(ctx)) {
-            LLAMA_LOG_WARN("Prompt too long for slot %d, %d tokens, max %d", slot.id, slot.n_prompt_tokens, llama_n_ubatch(ctx));
+            LLAMA_LOG_WARN("Prompt too long for slot %d, %d tokens, max %d",
+                           slot.id, slot.n_prompt_tokens, llama_n_ubatch(ctx));
             fail_pending(slot.goal_id, "Prompt too long");
             release_slot(&slot);
             continue;
@@ -1358,7 +1371,8 @@ void Llama::handle_completion_req(const std::string &input_prompt,
                                   struct common_params_sampling sparams,
                                   ServerSlot::GenerateResponseCallback callback,
                                   std::vector<std::string> stop, bool reset) {
-  completion_handler_->handle(input_prompt, slot, sparams, callback, stop, reset);
+  completion_handler_->handle(input_prompt, slot, sparams, callback, stop,
+                              reset);
 }
 
 void Llama::handle_chat_completion_req(

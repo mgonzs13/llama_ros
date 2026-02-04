@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2023 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +25,8 @@
 #define LLAMA_ROS__RESULT_HPP
 
 #include <optional>
-#include <string>
 #include <stdexcept>
+#include <string>
 
 namespace llama_ros {
 
@@ -38,8 +39,7 @@ namespace llama_ros {
  *
  * @tparam T The type of the success value.
  */
-template<typename T>
-class Result {
+template <typename T> class Result {
 public:
   /**
    * @brief Creates a successful result.
@@ -70,18 +70,14 @@ public:
    *
    * @return True if the result contains a value, false otherwise.
    */
-  bool is_ok() const {
-    return value_.has_value();
-  }
+  bool is_ok() const { return value_.has_value(); }
 
   /**
    * @brief Checks if the result is an error.
    *
    * @return True if the result contains an error, false otherwise.
    */
-  bool is_error() const {
-    return error_.has_value();
-  }
+  bool is_error() const { return error_.has_value(); }
 
   /**
    * @brief Gets the success value.
@@ -89,9 +85,9 @@ public:
    * @throws std::runtime_error if the result is an error.
    * @return The success value.
    */
-  T& value() {
+  T &value() {
     if (!value_.has_value()) {
-      throw std::runtime_error("Attempted to access value of error Result: " + 
+      throw std::runtime_error("Attempted to access value of error Result: " +
                                error_.value_or("unknown error"));
     }
     return *value_;
@@ -103,9 +99,9 @@ public:
    * @throws std::runtime_error if the result is an error.
    * @return The success value.
    */
-  const T& value() const {
+  const T &value() const {
     if (!value_.has_value()) {
-      throw std::runtime_error("Attempted to access value of error Result: " + 
+      throw std::runtime_error("Attempted to access value of error Result: " +
                                error_.value_or("unknown error"));
     }
     return *value_;
@@ -116,9 +112,7 @@ public:
    *
    * @return The error message, or empty string if successful.
    */
-  std::string error() const {
-    return error_.value_or("");
-  }
+  std::string error() const { return error_.value_or(""); }
 
   /**
    * @brief Gets the value or a default.
@@ -132,7 +126,7 @@ public:
 
 private:
   Result() = default;
-  
+
   std::optional<T> value_;
   std::optional<std::string> error_;
 };

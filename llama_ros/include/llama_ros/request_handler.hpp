@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2023 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +32,7 @@
 #include "llama.h"
 
 namespace llama_utils {
-  struct ChatCompletionsContext;
+struct ChatCompletionsContext;
 }
 
 namespace llama_ros {
@@ -63,7 +64,7 @@ public:
 
 protected:
   Llama *llama_;
-  
+
   // Declare friendship with Llama to access protected members
   friend class Llama;
 };
@@ -84,8 +85,9 @@ public:
   void handle(const std::string &input_prompt, ServerSlot *slot);
 
 private:
-  std::vector<llama_token> truncate_tokens(const std::vector<llama_token> &tokens, 
-                                          int limit_size, bool add_eos = true);
+  std::vector<llama_token>
+  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                  bool add_eos = true);
 };
 
 /**
@@ -102,11 +104,13 @@ public:
    * @param document The document string to rank.
    * @param slot The slot to prepare.
    */
-  void handle(const std::string &query, const std::string &document, ServerSlot *slot);
+  void handle(const std::string &query, const std::string &document,
+              ServerSlot *slot);
 
 private:
-  std::vector<llama_token> truncate_tokens(const std::vector<llama_token> &tokens, 
-                                          int limit_size, bool add_eos = true);
+  std::vector<llama_token>
+  truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
+                  bool add_eos = true);
 };
 
 /**
@@ -126,12 +130,11 @@ public:
    * @param stop Stop sequences.
    * @param reset Whether to reset the slot.
    */
-  void handle(const std::string &input_prompt, 
-             ServerSlot *slot,
-             struct common_params_sampling sparams,
-             std::function<void(struct CompletionOutput, ServerSlot *)> callback,
-             std::vector<std::string> stop, 
-             bool reset);
+  void
+  handle(const std::string &input_prompt, ServerSlot *slot,
+         struct common_params_sampling sparams,
+         std::function<void(struct CompletionOutput, ServerSlot *)> callback,
+         std::vector<std::string> stop, bool reset);
 };
 
 /**
@@ -148,9 +151,9 @@ public:
    * @param slot The slot to prepare.
    * @param callback Callback for streaming results.
    */
-  void handle(llama_utils::ChatCompletionsContext chat_context, 
-             ServerSlot *slot,
-             std::function<void(struct CompletionOutput, ServerSlot *)> callback);
+  void
+  handle(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot,
+         std::function<void(struct CompletionOutput, ServerSlot *)> callback);
 };
 
 } // namespace llama_ros

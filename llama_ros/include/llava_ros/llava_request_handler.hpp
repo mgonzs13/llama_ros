@@ -1,6 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2024 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Miguel Ángel González Santamarta
+// Copyright (c) 2026 Alejandro González Cantón
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,12 +49,12 @@ public:
    * @param stop Stop sequences.
    * @param reset Whether to reset the slot.
    */
-  void handle(const std::string &input_prompt, 
-             llama_ros::ServerSlot *slot,
-             struct common_params_sampling sparams,
-             std::function<void(struct llama_ros::CompletionOutput, llama_ros::ServerSlot *)> callback,
-             std::vector<std::string> stop, 
-             bool reset);
+  void handle(const std::string &input_prompt, llama_ros::ServerSlot *slot,
+              struct common_params_sampling sparams,
+              std::function<void(struct llama_ros::CompletionOutput,
+                                 llama_ros::ServerSlot *)>
+                  callback,
+              std::vector<std::string> stop, bool reset);
 
 private:
   Llava *llava_;
@@ -74,8 +75,10 @@ public:
    * @param callback Callback for streaming results.
    */
   void handle(llama_utils::ChatCompletionsContext chat_context,
-             llama_ros::ServerSlot *slot,
-             std::function<void(struct llama_ros::CompletionOutput, llama_ros::ServerSlot *)> callback);
+              llama_ros::ServerSlot *slot,
+              std::function<void(struct llama_ros::CompletionOutput,
+                                 llama_ros::ServerSlot *)>
+                  callback);
 
 private:
   Llava *llava_;

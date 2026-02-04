@@ -27,7 +27,8 @@
 
 namespace llama_ros {
 
-std::future<ServerTaskResultPtr> TaskRegistry::register_pending(uint64_t goal_id) {
+std::future<ServerTaskResultPtr>
+TaskRegistry::register_pending(uint64_t goal_id) {
   std::lock_guard<std::mutex> lock(pending_mutex_);
   pending_.erase(goal_id);
   std::promise<ServerTaskResultPtr> promise;
@@ -36,7 +37,8 @@ std::future<ServerTaskResultPtr> TaskRegistry::register_pending(uint64_t goal_id
   return future;
 }
 
-void TaskRegistry::fulfill_pending(uint64_t goal_id, ServerTaskResultPtr result) {
+void TaskRegistry::fulfill_pending(uint64_t goal_id,
+                                   ServerTaskResultPtr result) {
   {
     std::lock_guard<std::mutex> lock(pending_mutex_);
     auto it = pending_.find(goal_id);
@@ -55,7 +57,8 @@ void TaskRegistry::fail_pending(uint64_t goal_id, const std::string &error) {
     std::lock_guard<std::mutex> lock(pending_mutex_);
     auto it = pending_.find(goal_id);
     if (it != pending_.end()) {
-      it->second.set_exception(std::make_exception_ptr(std::runtime_error(error)));
+      it->second.set_exception(
+          std::make_exception_ptr(std::runtime_error(error)));
       pending_.erase(it);
     } else {
       LLAMA_LOG_WARN("Attempted to fail unknown goal_id: %lu", goal_id);
@@ -75,7 +78,7 @@ void TaskRegistry::mark_done(uint64_t goal_id) {
 uint64_t TaskRegistry::wait_for_done() {
   std::unique_lock<std::mutex> lock(done_mutex_);
   done_cv_.wait(lock, [this] { return !done_queue_.empty(); });
-  
+
   uint64_t goal_id = done_queue_.front();
   done_queue_.pop();
   return goal_id;

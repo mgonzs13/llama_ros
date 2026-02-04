@@ -26,13 +26,13 @@
 
 namespace llama_utils {
 
-ChatFormatter::ChatFormatter(const llama_model* model, const std::string& custom_template)
+ChatFormatter::ChatFormatter(const llama_model *model,
+                             const std::string &custom_template)
     : custom_template_(custom_template) {
-  
-  chat_templates_ = chat_templates_ptr(
-    common_chat_templates_init(model, custom_template.empty() ? "" : custom_template.c_str())
-  );
-  
+
+  chat_templates_ = chat_templates_ptr(common_chat_templates_init(
+      model, custom_template.empty() ? "" : custom_template.c_str()));
+
   if (!chat_templates_) {
     LLAMA_LOG_WARN("Failed to initialize chat templates");
   }
@@ -43,7 +43,8 @@ ChatFormatter::~ChatFormatter() {
   // Unique_ptr handles deletion
 }
 
-common_chat_params ChatFormatter::apply_template(const common_chat_templates_inputs& inputs) {
+common_chat_params
+ChatFormatter::apply_template(const common_chat_templates_inputs &inputs) {
   if (!chat_templates_) {
     LLAMA_LOG_ERROR("Chat templates not initialized");
     return common_chat_params{};
@@ -52,11 +53,10 @@ common_chat_params ChatFormatter::apply_template(const common_chat_templates_inp
   return common_chat_templates_apply(chat_templates_.get(), inputs);
 }
 
-common_chat_msg ChatFormatter::parse_response(
-    const std::string& text,
-    bool is_partial,
-    const common_chat_parser_params& chat_syntax) {
-  
+common_chat_msg
+ChatFormatter::parse_response(const std::string &text, bool is_partial,
+                              const common_chat_parser_params &chat_syntax) {
+
   return common_chat_parse(text, is_partial, chat_syntax);
 }
 

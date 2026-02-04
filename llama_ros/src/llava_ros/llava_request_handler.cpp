@@ -22,9 +22,9 @@
 // SOFTWARE.
 
 #include "llava_ros/llava_request_handler.hpp"
-#include "llava_ros/llava.hpp"
-#include "llama_utils/logs.hpp"
 #include "llama_utils/chat_utils.hpp"
+#include "llama_utils/logs.hpp"
+#include "llava_ros/llava.hpp"
 
 using namespace llava_ros;
 
@@ -34,11 +34,14 @@ LlavaCompletionRequestHandler::LlavaCompletionRequestHandler(Llava *llava)
 void LlavaCompletionRequestHandler::handle(
     const std::string &input_prompt, llama_ros::ServerSlot *slot,
     struct common_params_sampling sparams,
-    std::function<void(struct llama_ros::CompletionOutput, llama_ros::ServerSlot *)> callback,
+    std::function<void(struct llama_ros::CompletionOutput,
+                       llama_ros::ServerSlot *)>
+        callback,
     std::vector<std::string> stop, bool reset) {
-  (void)reset;  // Unused parameter
-  
-  LLAMA_LOG_INFO("Handling completion request with prompt: %s", input_prompt.c_str());
+  (void)reset; // Unused parameter
+
+  LLAMA_LOG_INFO("Handling completion request with prompt: %s",
+                 input_prompt.c_str());
 
   slot->prompt_tokens.clear();
   std::string converted_prompt = input_prompt;
@@ -53,24 +56,22 @@ void LlavaCompletionRequestHandler::handle(
   std::string prompt_str = converted_prompt;
   mtmd_input_text inp_txt = {
       prompt_str.c_str(),
-      /* add_special */   true,
+      /* add_special */ true,
       /* parse_special */ true,
   };
   mtmd::input_chunks chunks(mtmd_input_chunks_init());
   auto bitmaps_c_ptr = llava_->bitmaps.c_ptr();
-  int32_t tokenized = mtmd_tokenize(llava_->mtmd_ctx,
-                                      chunks.ptr.get(),
-                                      &inp_txt,
-                                      bitmaps_c_ptr.data(),
-                                      bitmaps_c_ptr.size());
+  int32_t tokenized =
+      mtmd_tokenize(llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
   if (tokenized != 0) {
-      throw std::runtime_error("Failed to tokenize prompt");
+    throw std::runtime_error("Failed to tokenize prompt");
   }
 
   llava_->process_input_chunks(chunks, slot);
 
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
-  
+
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
@@ -85,13 +86,16 @@ void LlavaCompletionRequestHandler::handle(
   slot->state = llama_ros::SLOT_STATE_STARTED;
 }
 
-LlavaChatCompletionRequestHandler::LlavaChatCompletionRequestHandler(Llava *llava)
+LlavaChatCompletionRequestHandler::LlavaChatCompletionRequestHandler(
+    Llava *llava)
     : RequestHandler(llava), llava_(llava) {}
 
 void LlavaChatCompletionRequestHandler::handle(
     llama_utils::ChatCompletionsContext chat_context,
     llama_ros::ServerSlot *slot,
-    std::function<void(struct llama_ros::CompletionOutput, llama_ros::ServerSlot *)> callback) {
+    std::function<void(struct llama_ros::CompletionOutput,
+                       llama_ros::ServerSlot *)>
+        callback) {
   LLAMA_LOG_INFO("Handling chat completion request");
 
   common_chat_templates_inputs inputs = chat_context.prompt_format_config;
@@ -101,18 +105,16 @@ void LlavaChatCompletionRequestHandler::handle(
   std::string prompt_str = chat_context.chat_prompt_instance.prompt;
   mtmd_input_text inp_txt = {
       prompt_str.c_str(),
-      /* add_special */   true,
+      /* add_special */ true,
       /* parse_special */ true,
   };
   mtmd::input_chunks chunks(mtmd_input_chunks_init());
   auto bitmaps_c_ptr = llava_->bitmaps.c_ptr();
-  int32_t tokenized = mtmd_tokenize(llava_->mtmd_ctx,
-                                      chunks.ptr.get(),
-                                      &inp_txt,
-                                      bitmaps_c_ptr.data(),
-                                      bitmaps_c_ptr.size());
+  int32_t tokenized =
+      mtmd_tokenize(llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
   if (tokenized != 0) {
-      throw std::runtime_error("Failed to tokenize prompt");
+    throw std::runtime_error("Failed to tokenize prompt");
   }
 
   llava_->process_input_chunks(chunks, slot);
