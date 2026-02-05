@@ -187,7 +187,8 @@ llama_utils::generate_chat_completions_result(
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 llama_utils::generate_chat_completions_feedback(
     const llama_ros::ServerTaskResultCompletionPartial &result,
-    std::vector<common_chat_msg_diff> deltas) {
+    std::vector<common_chat_msg_diff> deltas,
+    std::vector<llama_msgs::msg::TokenProb> probs) {
   bool first = result.n_decoded == 0;
 
   std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;
@@ -242,6 +243,21 @@ llama_utils::generate_chat_completions_feedback(
       tool_call.name = diff.tool_call_delta.name;
 
       choice.delta.tool_calls.push_back(tool_call);
+    }
+
+    // Add logprobs to the streaming feedback if available
+    if (!probs.empty()) {
+      llama_msgs::msg::TokenProbArray logprobs_msg;
+      logprobs_msg.chosen_token = probs[0].token;
+      for (const auto &prob : probs) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = prob.token;
+        // Convert probability to log probability
+        aux.probability = std::log(prob.probability);
+        aux.token_text = prob.token_text;
+        logprobs_msg.data.push_back(aux);
+      }
+      choice.logprobs = logprobs_msg;
     }
 
     feedback.choices.push_back(choice);

@@ -708,7 +708,6 @@ void LlamaNode::send_text_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle,
     int slot_id) {
   if (this->llama && goal_handle) {
-    // Get slot_id from goal_handle's goal
     auto goal = goal_handle->get_goal();
     auto slot = this->llama->get_slot_by_gid(slot_id);
 
@@ -721,11 +720,28 @@ void LlamaNode::send_text_chat_completions(
     response_result.content = this->llama->detokenize({completion.token});
     response_result.stop = llama_ros::StopType::NO_STOP;
     response_result.post_sampling_probs = false;
+    response_result.n_decoded = slot->n_decoded;
+    response_result.n_prompt_tokens = slot->n_prompt_tokens;
+
+    // Populate the probability output for this token
+    if (!completion.probs.empty()) {
+      response_result.prob_output = completion.probs[0];
+    }
 
     slot->update_chat_msg(response_result.oaicompat_msg_diffs);
 
+    // Prepare token probabilities with text for logprobs
+    std::vector<llama_msgs::msg::TokenProb> probs_with_text;
+    for (const auto &prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = this->llama->detokenize({prob.token});
+      probs_with_text.push_back(aux);
+    }
+
     auto feedbacks = llama_utils::generate_chat_completions_feedback(
-        response_result, response_result.oaicompat_msg_diffs);
+        response_result, response_result.oaicompat_msg_diffs, probs_with_text);
 
     for (auto &feedback : feedbacks) {
       goal_handle->publish_feedback(

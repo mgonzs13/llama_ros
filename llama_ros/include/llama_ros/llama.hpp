@@ -709,6 +709,7 @@ public:
   StopType stop;
   std::string generated_text;
   llama_tokens generated_tokens;
+  std::vector<std::vector<TokenProb>> generated_probs;
   llama_perf_context_data prev_stat_usage;
 
   std::unordered_map<llama_pos, mtmd::input_chunk_ptr> map_pos_to_media;
@@ -1213,6 +1214,14 @@ protected:
    * @return A vector of token probabilities.
    */
   std::vector<struct TokenProb> get_probs(ServerSlot *slot);
+  
+  /**
+   * @brief Convert raw token probabilities to SelectedLogProb format.
+   *
+   * @param slot The slot containing generated tokens and probabilities.
+   * @return Vector of SelectedLogProb with chosen token and alternatives.
+   */
+  std::vector<SelectedLogProb> convert_probs_to_logprobs(ServerSlot *slot);
 
   OAICompactParserOptions oai_parser_opt;
 };

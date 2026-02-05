@@ -724,7 +724,7 @@ std::vector<struct TokenProb> Llama::get_probs(ServerSlot *slot) {
 
   const auto *cur_p = common_sampler_get_candidates(slot->sampler, true);
 
-  const int32_t n_probs = this->params.sampling.n_probs;
+  const int32_t n_probs = slot->params.sampling.n_probs;
 
   for (int i = 0; i < n_probs; ++i) {
     probs.push_back({
@@ -734,6 +734,41 @@ std::vector<struct TokenProb> Llama::get_probs(ServerSlot *slot) {
   }
 
   return probs;
+}
+
+std::vector<SelectedLogProb>
+Llama::convert_probs_to_logprobs(ServerSlot *slot) {
+  std::vector<SelectedLogProb> result;
+
+  // Convert each token's probability data
+  for (size_t i = 0; i < slot->generated_probs.size(); ++i) {
+    const auto &token_probs = slot->generated_probs[i];
+
+    if (token_probs.empty()) {
+      continue;
+    }
+
+    SelectedLogProb selected;
+
+    // First entry is the chosen token
+    selected.chosen_token.token = token_probs[0].token;
+    selected.chosen_token.probability = std::log(token_probs[0].probability);
+    selected.chosen_token.text =
+        common_token_to_piece(this->ctx, token_probs[0].token);
+
+    // Add all alternatives (including the chosen one)
+    for (const auto &tp : token_probs) {
+      LogProb lp;
+      lp.token = tp.token;
+      lp.probability = std::log(tp.probability);
+      lp.text = common_token_to_piece(this->ctx, tp.token);
+      selected.data.push_back(lp);
+    }
+
+    result.push_back(selected);
+  }
+
+  return result;
 }
 
 /*
@@ -786,6 +821,8 @@ void ServerSlot::reset() {
   chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
   generated_tool_call_ids.clear();
   chat_msg = {};
+
+  generated_probs.clear();
 
   map_pos_to_media.clear();
   prompt_tokens.clear();
@@ -1024,7 +1061,8 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
   }
 
   // add eos if not present
-  if (add_eos && !new_tokens.empty() && new_tokens.back() != this->get_token_eos()) {
+  if (add_eos && !new_tokens.empty() &&
+      new_tokens.back() != this->get_token_eos()) {
     new_tokens.push_back(this->get_token_eos());
   }
 
@@ -1335,6 +1373,7 @@ void Llama::run_loop() {
         result.token = id;
         result.text_to_send = common_token_to_piece(ctx, id);
         result.probs = get_probs(&slot);
+        slot.generated_probs.push_back(result.probs);
 
         // Stream token / check stopping conditions
         if (!process_token(&slot, &result)) {
@@ -1349,6 +1388,7 @@ void Llama::run_loop() {
 }
 
 bool llama_ros::Llama::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
+  (void)slot;
   return false;
 }
 
@@ -1490,8 +1530,12 @@ void Llama::send_completion_result(ServerSlot *slot) {
   task_result->tokens = {slot->generated_tokens};
   task_result->stop = slot->stop;
   task_result->prompt = this->detokenize(slot->prompt_tokens);
-  // task_result->probs_output = this->get_probs(slot); // TODO: probs for all
-  // tokens
+  task_result->stream = slot->stream;
+
+  LLAMA_LOG_INFO("size logprobs: %lu for slot %d", slot->generated_probs.size(),
+                 slot->id);
+  task_result->probs_output = convert_probs_to_logprobs(slot);
+  LLAMA_LOG_INFO("Length probs_output: %lu", task_result->probs_output.size());
 
   task_result->build_info =
       "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;

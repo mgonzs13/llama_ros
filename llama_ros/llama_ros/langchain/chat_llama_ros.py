@@ -722,8 +722,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             "bytes": [i_logprob.token],
                         }
                     )
-                # TODO: logprobs chunks
-                # choice_dict["logprobs"] = logprob_obj
+                choice_dict["logprobs"] = logprob_obj
             result_dict["choices"].append(choice_dict)
 
         return result_dict

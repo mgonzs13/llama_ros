@@ -154,12 +154,15 @@ generate_chat_completions_result(
  * @brief Generates feedback for a chat completion action.
  *
  * @param result The response result to convert.
+ * @param deltas The message deltas.
+ * @param probs The token probabilities for this token (with text already filled).
  * @return A vector of feedback messages for the action.
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 generate_chat_completions_feedback(
     const llama_ros::ServerTaskResultCompletionPartial &result,
-    std::vector<common_chat_msg_diff> deltas = {});
+    std::vector<common_chat_msg_diff> deltas = {},
+    std::vector<llama_msgs::msg::TokenProb> probs = {});
 
 /**
  * @brief Represents the context for chat completions.
