@@ -168,13 +168,10 @@ TEST_F(LlamaDeploymentTest, InvalidModelPathHandledGracefully) {
   // Attempting to create Llama with invalid model should handle gracefully
   // The Llama constructor should detect the invalid model and handle it
   // without causing a segfault
-  ASSERT_NO_THROW({
+  ASSERT_THROW({
     llama = std::make_unique<llama_ros::Llama>(params->params,
                                                params->system_prompt);
-  });
-
-  // The model should fail to load - check if model is NULL
-  // (based on llama.cpp implementation, it sets model to NULL on failure)
+  }, std::runtime_error);
 }
 
 /**

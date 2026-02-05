@@ -455,7 +455,10 @@ std::string Llama::detokenize(const std::vector<llama_token> &tokens) {
   return text;
 }
 
-void Llama::cancel() { this->canceled = true; }
+void Llama::cancel() {
+  this->canceled = true;
+  task_registry_->fail_all_pending();
+}
 
 void Llama::cancel_goal(uint64_t goal_id) {
   auto slot = slot_manager_->get_slot_by_gid(goal_id);
@@ -471,6 +474,12 @@ void Llama::cancel_goal(uint64_t goal_id) {
 */
 Result<llama_ros::ServerTaskResultEmbedding>
 Llama::generate_embeddings(const std::string &text) {
+  // Validate input text is not empty
+  if (text.empty()) {
+    return Result<ServerTaskResultEmbedding>::error(
+        "Input text cannot be empty for embedding generation");
+  }
+
   auto slot = slot_manager_->wait_for_available_slot();
   if (!slot) {
     return Result<ServerTaskResultEmbedding>::error(
@@ -1002,14 +1011,20 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 
   std::vector<llama_token> new_tokens = tokens;
 
-  if ((int)tokens.size() > limit_size) {
+  // Reserve space for EOS token if needed
+  int effective_limit = limit_size;
+  if (add_eos && !tokens.empty() && tokens.back() != this->get_token_eos()) {
+    effective_limit = limit_size - 1;
+  }
+
+  if ((int)tokens.size() > effective_limit) {
     LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
                    tokens.size(), limit_size);
-    new_tokens.resize(limit_size);
+    new_tokens.resize(effective_limit);
   }
 
   // add eos if not present
-  if (add_eos && tokens.back() != this->get_token_eos()) {
+  if (add_eos && !new_tokens.empty() && new_tokens.back() != this->get_token_eos()) {
     new_tokens.push_back(this->get_token_eos());
   }
 
@@ -1264,13 +1279,11 @@ void Llama::run_loop() {
 
         if (!err.empty()) {
           LLAMA_LOG_ERROR("Decoding error: %s", err.c_str());
-          for (auto &slot : this->server_slots) {
-            // TODO: Exit here
-          }
+          this->cancel();
           break; // abort the decode loop
         }
 
-        // No readable error → likely KV pressure: backoff and retry smaller
+        // No readable error - likely KV pressure: backoff and retry smaller
         // batch window
         n_batch = std::max(1, n_batch / 2);
         continue; // retry current window with smaller n_batch
@@ -1289,15 +1302,15 @@ void Llama::run_loop() {
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
           if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING) {
             this->send_embedding_result(&slot, batch_view);
+            task_registry_->mark_done(slot.goal_id);
             release_slot(&slot);
-            // TODO: Exit
             slot.i_batch = -1;
             continue;
           }
           if (slot.task_type == SERVER_TASK_TYPE_RERANK) {
             this->send_rerank_result(&slot, batch_view);
+            task_registry_->mark_done(slot.goal_id);
             release_slot(&slot);
-            // TODO: Exit
             slot.i_batch = -1;
             continue;
           }

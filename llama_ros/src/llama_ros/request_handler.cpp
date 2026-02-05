@@ -34,13 +34,19 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
                                          int limit_size, bool add_eos) {
   std::vector<llama_token> new_tokens = tokens;
 
-  if ((int)tokens.size() > limit_size) {
-    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
-                   tokens.size(), limit_size);
-    new_tokens.resize(limit_size);
+  // Reserve space for EOS token if needed
+  int effective_limit = limit_size;
+  if (add_eos && (tokens.empty() || tokens.back() != llama_->get_token_eos())) {
+    effective_limit = limit_size - 1;
   }
 
-  if (add_eos && !tokens.empty() && tokens.back() != llama_->get_token_eos()) {
+  if ((int)tokens.size() > effective_limit) {
+    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
+                   tokens.size(), limit_size);
+    new_tokens.resize(effective_limit);
+  }
+
+  if (add_eos && !new_tokens.empty() && new_tokens.back() != llama_->get_token_eos()) {
     new_tokens.push_back(llama_->get_token_eos());
   }
 
@@ -71,13 +77,19 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
                                       int limit_size, bool add_eos) {
   std::vector<llama_token> new_tokens = tokens;
 
-  if ((int)tokens.size() > limit_size) {
-    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
-                   tokens.size(), limit_size);
-    new_tokens.resize(limit_size);
+  // Reserve space for EOS token if needed
+  int effective_limit = limit_size;
+  if (add_eos && (tokens.empty() || tokens.back() != llama_->get_token_eos())) {
+    effective_limit = limit_size - 1;
   }
 
-  if (add_eos && !tokens.empty() && tokens.back() != llama_->get_token_eos()) {
+  if ((int)tokens.size() > effective_limit) {
+    LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
+                   tokens.size(), limit_size);
+    new_tokens.resize(effective_limit);
+  }
+
+  if (add_eos && !new_tokens.empty() && new_tokens.back() != llama_->get_token_eos()) {
     new_tokens.push_back(llama_->get_token_eos());
   }
 

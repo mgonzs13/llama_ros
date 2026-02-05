@@ -89,4 +89,18 @@ bool TaskRegistry::has_done_tasks() {
   return !done_queue_.empty();
 }
 
+void TaskRegistry::fail_all_pending() {
+  std::lock_guard<std::mutex> lock(pending_mutex_);
+  for (auto &[goal_id, promise] : pending_) {
+    try {
+      promise.set_exception(
+          std::make_exception_ptr(std::runtime_error("Operation cancelled")));
+      mark_done(goal_id);
+    } catch (const std::future_error &) {
+      // Promise already set, ignore
+    }
+  }
+  pending_.clear();
+}
+
 } // namespace llama_ros

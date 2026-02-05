@@ -123,6 +123,8 @@ if(BUILD_TESTING)
     test/test_llama_deployment.cpp
     test/test_llama_generation.cpp
     test/test_llama_lora.cpp
+    test/test_llama_embeddings.cpp
+    test/test_llama_rerank.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
   )

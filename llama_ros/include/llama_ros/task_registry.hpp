@@ -103,6 +103,14 @@ public:
    */
   bool has_done_tasks();
 
+  /**
+   * @brief Fails all pending tasks with a cancellation error.
+   *
+   * This is typically called when the system is being shut down or
+   * all operations need to be cancelled.
+   */
+  void fail_all_pending();
+
 private:
   std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending_;
   std::mutex pending_mutex_;

@@ -377,6 +377,12 @@ void LlamaNode::generate_embeddings_service_callback(
     std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
   RCLCPP_INFO(this->get_logger(), "Generating embeddings");
 
+  // Validate input prompt is not empty
+  if (request->prompt.empty()) {
+    RCLCPP_ERROR(this->get_logger(), "Input prompt cannot be empty for embedding generation");
+    return;
+  }
+
   auto result = this->llama->generate_embeddings(request->prompt);
   if (result.is_error()) {
     RCLCPP_ERROR(this->get_logger(), "Failed to generate embeddings: %s",

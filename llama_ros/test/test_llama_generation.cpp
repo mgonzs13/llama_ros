@@ -293,12 +293,13 @@ TEST_F(LlamaGenerationTest, CanCancelGeneration) {
 
   // Start generation in a separate thread
   std::atomic<bool> generation_started{false};
-  std::atomic<bool> generation_completed{false};
+  std::atomic<bool> generation_cancelled{false};
 
   std::thread generation_thread([&]() {
     generation_started = true;
     auto result = llama->generate_response(slot->goal_id, prompt, sparams);
-    generation_completed = true;
+    // Check if the result is an error (cancelled)
+    generation_cancelled = result.is_error();
   });
 
   // Wait for generation to start
@@ -315,6 +316,6 @@ TEST_F(LlamaGenerationTest, CanCancelGeneration) {
   // Wait for thread to complete
   generation_thread.join();
 
-  // Generation should have completed (either normally or by cancellation)
-  EXPECT_TRUE(generation_completed.load());
+  // Generation should have been cancelled (returned an error)
+  EXPECT_TRUE(generation_cancelled.load());
 }
