@@ -54,7 +54,9 @@ def main():
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
-    vectorstore = Chroma.from_documents(documents=splits, embedding=LlamaROSEmbeddings())
+    vectorstore = Chroma.from_documents(
+        documents=splits, embedding=LlamaROSEmbeddings()
+    )
 
     # retrieve and generate using the relevant snippets of the blog
     retriever = vectorstore.as_retriever(search_kwargs={"k": 20})

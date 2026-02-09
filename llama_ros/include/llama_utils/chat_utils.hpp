@@ -155,7 +155,8 @@ generate_chat_completions_result(
  *
  * @param result The response result to convert.
  * @param deltas The message deltas.
- * @param probs The token probabilities for this token (with text already filled).
+ * @param probs The token probabilities for this token (with text already
+ * filled).
  * @return A vector of feedback messages for the action.
  */
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>

@@ -46,7 +46,8 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
     new_tokens.resize(effective_limit);
   }
 
-  if (add_eos && !new_tokens.empty() && new_tokens.back() != llama_->get_token_eos()) {
+  if (add_eos && !new_tokens.empty() &&
+      new_tokens.back() != llama_->get_token_eos()) {
     new_tokens.push_back(llama_->get_token_eos());
   }
 
@@ -89,7 +90,8 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
     new_tokens.resize(effective_limit);
   }
 
-  if (add_eos && !new_tokens.empty() && new_tokens.back() != llama_->get_token_eos()) {
+  if (add_eos && !new_tokens.empty() &&
+      new_tokens.back() != llama_->get_token_eos()) {
     new_tokens.push_back(llama_->get_token_eos());
   }
 

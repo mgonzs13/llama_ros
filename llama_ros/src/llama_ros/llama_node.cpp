@@ -379,7 +379,8 @@ void LlamaNode::generate_embeddings_service_callback(
 
   // Validate input prompt is not empty
   if (request->prompt.empty()) {
-    RCLCPP_ERROR(this->get_logger(), "Input prompt cannot be empty for embedding generation");
+    RCLCPP_ERROR(this->get_logger(),
+                 "Input prompt cannot be empty for embedding generation");
     return;
   }
 

@@ -147,7 +147,9 @@ class LlamaClientNode(Node):
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
 
-    def rerank_documents(self, req: RerankDocuments.Request) -> RerankDocuments.Response:
+    def rerank_documents(
+        self, req: RerankDocuments.Request
+    ) -> RerankDocuments.Response:
         self._rerank_srv_client.wait_for_service()
         return self._rerank_srv_client.call(req)
 
@@ -169,13 +171,12 @@ class LlamaClientNode(Node):
 
         # Override SIGINT handler to cancel goal gracefully (only in main thread)
         if threading.current_thread() is threading.main_thread():
+
             def sigint_handler(sig, frame):
                 self.cancel_generate_text()
                 raise KeyboardInterrupt
 
-            self._original_sigint_handler = signal.signal(
-                signal.SIGINT, sigint_handler
-            )
+            self._original_sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
 
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback_chat
@@ -242,13 +243,12 @@ class LlamaClientNode(Node):
 
         # Override SIGINT handler to cancel goal gracefully (only in main thread)
         if threading.current_thread() is threading.main_thread():
+
             def sigint_handler(sig, frame):
                 self.cancel_generate_text()
                 raise KeyboardInterrupt
 
-            self._original_sigint_handler = signal.signal(
-                signal.SIGINT, sigint_handler
-            )
+            self._original_sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
 
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback

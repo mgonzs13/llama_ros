@@ -48,7 +48,7 @@ protected:
     params->params.cpuparams.n_threads = 1;
     params->params.cpuparams_batch.n_threads = 1;
     params->params.sampling.seed = LLAMA_DEFAULT_SEED;
-    
+
     // Enable embedding mode
     params->params.embedding = true;
     params->params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
@@ -120,11 +120,11 @@ TEST_F(LlamaEmbeddingsTest, CanGenerateEmbeddings) {
   ASSERT_TRUE(result.is_ok()) << "Failed to generate embeddings";
 
   auto embedding_result = result.value();
-  
+
   // Verify embeddings were generated
   EXPECT_FALSE(embedding_result.embeddings.empty());
   EXPECT_GT(embedding_result.n_tokens, 0);
-  
+
   // Each embedding should be a vector of floats
   for (const auto &emb : embedding_result.embeddings) {
     EXPECT_FALSE(emb.empty()) << "Embedding vector should not be empty";
@@ -155,7 +155,7 @@ TEST_F(LlamaEmbeddingsTest, DifferentTextsProduceDifferentEmbeddings) {
   if (embedding1.embeddings.size() > 0 && embedding2.embeddings.size() > 0) {
     const auto &vec1 = embedding1.embeddings[0];
     const auto &vec2 = embedding2.embeddings[0];
-    
+
     if (vec1.size() == vec2.size()) {
       for (size_t i = 0; i < vec1.size(); ++i) {
         if (std::abs(vec1[i] - vec2[i]) > 1e-6) {
@@ -165,7 +165,7 @@ TEST_F(LlamaEmbeddingsTest, DifferentTextsProduceDifferentEmbeddings) {
       }
     }
   }
-  
+
   EXPECT_TRUE(are_different) << "Embeddings for different texts should differ";
 }
 
@@ -174,7 +174,7 @@ TEST_F(LlamaEmbeddingsTest, DifferentTextsProduceDifferentEmbeddings) {
  */
 TEST_F(LlamaEmbeddingsTest, SimilarTextsProduceSimilarEmbeddings) {
   const std::string text1 = "Hello world";
-  const std::string text2 = "Hello world";  // Identical text
+  const std::string text2 = "Hello world"; // Identical text
 
   auto result1 = llama->generate_embeddings(text1);
   auto result2 = llama->generate_embeddings(text2);
@@ -192,22 +192,23 @@ TEST_F(LlamaEmbeddingsTest, SimilarTextsProduceSimilarEmbeddings) {
   if (embedding1.embeddings.size() > 0 && embedding2.embeddings.size() > 0) {
     const auto &vec1 = embedding1.embeddings[0];
     const auto &vec2 = embedding2.embeddings[0];
-    
+
     ASSERT_EQ(vec1.size(), vec2.size());
-    
+
     // Calculate cosine similarity
     float dot_product = 0.0f;
     float norm1 = 0.0f;
     float norm2 = 0.0f;
-    
+
     for (size_t i = 0; i < vec1.size(); ++i) {
       dot_product += vec1[i] * vec2[i];
       norm1 += vec1[i] * vec1[i];
       norm2 += vec2[i] * vec2[i];
     }
-    
-    float cosine_similarity = dot_product / (std::sqrt(norm1) * std::sqrt(norm2));
-    
+
+    float cosine_similarity =
+        dot_product / (std::sqrt(norm1) * std::sqrt(norm2));
+
     // Identical texts should have cosine similarity very close to 1.0
     EXPECT_NEAR(cosine_similarity, 1.0f, 0.01f);
   }
@@ -240,7 +241,7 @@ TEST_F(LlamaEmbeddingsTest, HandlesLongText) {
 
   ASSERT_TRUE(result.is_ok());
   auto embedding_result = result.value();
-  
+
   EXPECT_FALSE(embedding_result.embeddings.empty());
   EXPECT_GT(embedding_result.n_tokens, 10);
 }

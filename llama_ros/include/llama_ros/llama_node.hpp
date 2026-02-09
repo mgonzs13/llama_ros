@@ -199,7 +199,8 @@ protected:
    * GenerateResponse action.
    */
   virtual void
-  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle, int slot_id);
+  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+          int slot_id);
 
   /**
    * @brief Sends the generated text response.
@@ -209,8 +210,9 @@ protected:
    * @param completion The completion output containing the generated text.
    * @param goal_handle The goal handle for the GenerateResponse action.
    */
-  void send_text(const struct CompletionOutput &completion, 
-                 const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle, int slot_id);
+  void send_text(const struct CompletionOutput &completion,
+                 const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle,
+                 int slot_id);
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -234,7 +236,8 @@ protected:
    * GenerateChatCompletions action.
    */
   virtual void execute_chat_completions(
-      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle, int slot_id);
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
+      int slot_id);
 
   /**
    * @brief Sends the generated chat completion response.
@@ -245,8 +248,10 @@ protected:
    * response.
    * @param goal_handle The goal handle for the GenerateChatCompletions action.
    */
-  void send_text_chat_completions(const struct CompletionOutput &completion,
-                                   const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle, int slot_id);
+  void send_text_chat_completions(
+      const struct CompletionOutput &completion,
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle,
+      int slot_id);
 
   /**
    * @brief Thread running the Llama run_loop.

@@ -1214,7 +1214,7 @@ protected:
    * @return A vector of token probabilities.
    */
   std::vector<struct TokenProb> get_probs(ServerSlot *slot);
-  
+
   /**
    * @brief Convert raw token probabilities to SelectedLogProb format.
    *
