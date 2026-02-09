@@ -227,7 +227,6 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
   node->get_parameter("check_tensors", params.params.check_tensors);
-  node->get_parameter("flash_attn_type", params.params.flash_attn_type);
   node->get_parameter("ctx_shift", params.params.ctx_shift);
   node->get_parameter("swa_full", params.params.swa_full);
 
