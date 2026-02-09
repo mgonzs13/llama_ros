@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 
-from typing import List
 from launch import LaunchDescription, LaunchContext
 from launch_ros.actions import Node
 from launch.actions import OpaqueFunction, DeclareLaunchArgument
@@ -37,33 +36,24 @@ def generate_launch_description():
         reranking = eval(context.perform_substitution(reranking))
 
         params = {
+            # int32_t
             "verbosity": LaunchConfiguration("verbosity", default=0),
             "seed": LaunchConfiguration("seed", default=-1),
-            "n_ctx": LaunchConfiguration("n_ctx", default=512),
+            "n_ctx": LaunchConfiguration("n_ctx", default=4096),
             "n_batch": LaunchConfiguration("n_batch", default=2048),
-            "n_ubatch": LaunchConfiguration("n_batch", default=512),
+            "n_ubatch": LaunchConfiguration("n_ubatch", default=512),
+            "n_keep": LaunchConfiguration("n_keep", default=0),
+            "n_chunks": LaunchConfiguration("n_chunks", default=-1),
+            "n_predict": LaunchConfiguration("n_predict", default=-1),
             "n_parallel": LaunchConfiguration("n_parallel", default=1),
-            # GPU params
+            "n_sequences": LaunchConfiguration("n_sequences", default=1),
+            # GPU
             "devices": LaunchConfiguration("devices", default="['']"),
-            "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=0),
+            "n_gpu_layers": LaunchConfiguration("n_gpu_layers", default=-1),
             "split_mode": LaunchConfiguration("split_mode", default="layer"),
             "main_gpu": LaunchConfiguration("main_gpu", default=0),
             "tensor_split": LaunchConfiguration("tensor_split", default="[0.0]"),
-            # attn params
-            "grp_attn_n": LaunchConfiguration("grp_attn_n", default=1),
-            "grp_attn_w": LaunchConfiguration("grp_attn_w", default=512),
-            # rope params
-            "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
-            "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
-            "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=""),
-            # yarn params
-            "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
-            "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=1.0),
-            "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=32.0),
-            "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=1.0),
-            "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
-            "defrag_thold": LaunchConfiguration("defrag_thold", default=0.1),
-            # bool params
+            # bool
             "embedding": embedding,
             "reranking": reranking,
             "use_mmap": LaunchConfiguration("use_mmap", default=True),
@@ -72,11 +62,16 @@ def generate_launch_description():
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
             "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
             # cache params
+            "ctx_shift": LaunchConfiguration("ctx_shift", default=False),
+            "swa_full": LaunchConfiguration("swa_full", default=False),
+            # KV
             "no_op_offload": LaunchConfiguration("no_op_offload", default=False),
+            "no_extra_bufts": LaunchConfiguration("no_extra_bufts", default=False),
             "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
+            "kv_unified": LaunchConfiguration("kv_unified", default=False),
             "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
             "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
-            # CPU params
+            # CPU
             "n_threads": LaunchConfiguration("n_threads", default=1),
             "cpu_mask": LaunchConfiguration("cpu_mask", default=""),
             "cpu_range": LaunchConfiguration("cpu_range", default=""),
@@ -89,41 +84,58 @@ def generate_launch_description():
             "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
             "strict_cpu_batch": LaunchConfiguration("strict_cpu_batch", default=False),
             "poll_batch": LaunchConfiguration("poll_batch", default=50),
-            # switch context params
-            "n_predict": LaunchConfiguration("n_predict", default=128),
-            "n_keep": LaunchConfiguration("n_keep", default=-1),
-            # multimodal params
+            # Group Attention
+            "grp_attn_n": LaunchConfiguration("grp_attn_n", default=1),
+            "grp_attn_w": LaunchConfiguration("grp_attn_w", default=512),
+            # rope and yarn
+            "rope_freq_base": LaunchConfiguration("rope_freq_base", default=0.0),
+            "rope_freq_scale": LaunchConfiguration("rope_freq_scale", default=0.0),
+            "rope_scaling_type": LaunchConfiguration("rope_scaling_type", default=""),
+            "yarn_ext_factor": LaunchConfiguration("yarn_ext_factor", default=-1.0),
+            "yarn_attn_factor": LaunchConfiguration("yarn_attn_factor", default=-1.0),
+            "yarn_beta_fast": LaunchConfiguration("yarn_beta_fast", default=-1.0),
+            "yarn_beta_slow": LaunchConfiguration("yarn_beta_slow", default=-1.0),
+            "yarn_orig_ctx": LaunchConfiguration("yarn_orig_ctx", default=0),
+            # mmproj
             "mmproj_use_gpu": LaunchConfiguration("mmproj_use_gpu", default=True),
             "no_mmproj": LaunchConfiguration("no_mmproj", default=False),
-            # paths params
+            # models
             "model_path": LaunchConfiguration("model_path", default=""),
             "model_repo": LaunchConfiguration("model_repo", default=""),
             "model_filename": LaunchConfiguration("model_filename", default=""),
             "mmproj_path": LaunchConfiguration("mmproj_path", default=""),
             "mmproj_repo": LaunchConfiguration("mmproj_repo", default=""),
             "mmproj_filename": LaunchConfiguration("mmproj_filename", default=""),
-            "lora_adapters": LaunchConfiguration("lora_adapters", default="['']"),
+            # lora
+            "lora_init_without_apply": LaunchConfiguration(
+                "lora_init_without_apply", default=False
+            ),
+            "lora_adapters": LaunchConfiguration("lora_adapters", default="[]"),
             "lora_adapters_repos": LaunchConfiguration(
-                "lora_adapters_repos", default="['']"
+                "lora_adapters_repos", default="[]"
             ),
             "lora_adapters_filenames": LaunchConfiguration(
-                "lora_adapters_filenames", default="['']"
+                "lora_adapters_filenames", default="[]"
             ),
             "lora_adapters_scales": LaunchConfiguration(
-                "lora_adapters_scales", default="[0.0]"
+                "lora_adapters_scales", default="[]"
             ),
+            # types
             "numa": LaunchConfiguration("numa", default="none"),
+            "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
             "pooling_type": LaunchConfiguration("pooling_type", default=""),
-            # prefix/suffix
+            "attention_type": LaunchConfiguration("attention_type", default=""),
+            # others
+            "cont_batching": LaunchConfiguration("cont_batching", default=True),
+            # prefix, suffix, chat template and stopping words
             "prefix": ParameterValue(
                 LaunchConfiguration("prefix", default=""), value_type=str
             ),
             "suffix": ParameterValue(
                 LaunchConfiguration("suffix", default=""), value_type=str
             ),
-            "stopping_words": LaunchConfiguration("stopping_words", default="['']"),
             "chat_template_file": LaunchConfiguration("chat_template_file", default=""),
-            # prompt params
+            "stopping_words": LaunchConfiguration("stopping_words", default="[]"),
             "system_prompt": ParameterValue(
                 LaunchConfiguration("system_prompt", default=""), value_type=str
             ),

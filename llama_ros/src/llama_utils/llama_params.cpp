@@ -76,25 +76,19 @@ std::string download_model(const std::string &repo_id,
 void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
-  node->declare_parameters<int32_t>("", {
-                                            {"verbosity", 0},
-                                            {"seed", -1},
-                                            {"n_ctx", 512},
-                                            {"n_batch", 2048},
-                                            {"n_ubatch", 512},
-                                            {"n_gpu_layers", 0},
-                                            {"main_gpu", 0},
-                                            {"n_threads", 1},
-                                            {"poll", 50},
-                                            {"poll_batch", 50},
-                                            {"n_predict", 128},
-                                            {"n_keep", -1},
-                                            {"grp_attn_n", 1},
-                                            {"grp_attn_w", 512},
-                                            {"n_parallel", 1},
-                                            {"n_sequences", 1},
-                                            {"yarn_orig_ctx", 0},
-                                        });
+  // Order matches base.launch.py as closely as possible
+  node->declare_parameters<int32_t>(
+      "",
+      {
+          {"verbosity", 0},     {"seed", -1},         {"n_ctx", 4096},
+          {"n_batch", 2048},    {"n_ubatch", 512},    {"n_keep", 0},
+          {"n_chunks", -1},     {"n_predict", -1},    {"n_parallel", 1},
+          {"n_sequences", 1},   {"n_gpu_layers", -1}, {"main_gpu", 0},
+          {"n_threads", 1},     {"poll", 50},         {"n_threads_batch", 1},
+          {"poll_batch", 50},   {"grp_attn_n", 1},    {"grp_attn_w", 512},
+          {"yarn_orig_ctx", 0},
+      });
+
   node->declare_parameters<std::string>("", {
                                                 {"model_path", ""},
                                                 {"model_repo", ""},
@@ -109,9 +103,11 @@ void llama_utils::declare_llama_params(
                                                 {"priority", "normal"},
                                                 {"priority_batch", "normal"},
                                                 {"split_mode", "layer"},
-                                                {"rope_scaling_type", ""},
                                                 {"numa", "none"},
+                                                {"rope_scaling_type", ""},
+                                                {"flash_attn_type", "auto"},
                                                 {"pooling_type", ""},
+                                                {"attention_type", ""},
                                                 {"cache_type_k", "f16"},
                                                 {"cache_type_v", "f16"},
                                                 {"system_prompt", ""},
@@ -121,6 +117,7 @@ void llama_utils::declare_llama_params(
                                                 {"chat_template_file", ""},
                                                 {"flash_attn_type", "auto"},
                                             });
+
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
                 {"devices", std::vector<std::string>({})},
@@ -129,32 +126,40 @@ void llama_utils::declare_llama_params(
                 {"lora_adapters_repos", std::vector<std::string>({})},
                 {"lora_adapters_filenames", std::vector<std::string>({})},
             });
+
   node->declare_parameters<float>("", {
                                           {"rope_freq_base", 0.0f},
                                           {"rope_freq_scale", 0.0f},
                                           {"yarn_ext_factor", -1.0f},
-                                          {"yarn_attn_factor", 1.0f},
-                                          {"yarn_beta_fast", 32.0f},
-                                          {"yarn_beta_slow", 1.0f},
+                                          {"yarn_attn_factor", -1.0f},
+                                          {"yarn_beta_fast", -1.0f},
+                                          {"yarn_beta_slow", -1.0f},
                                       });
+
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
   node->declare_parameter<std::vector<double>>("lora_adapters_scales",
                                                std::vector<double>({}));
+
   node->declare_parameters<bool>("", {
                                          {"embedding", false},
                                          {"reranking", false},
                                          {"use_mmap", true},
                                          {"use_mlock", false},
-                                         {"cont_batching", true},
-                                         {"no_op_offload", false},
-                                         {"no_kv_offload", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
+                                         {"ctx_shift", false},
+                                         {"swa_full", false},
+                                         {"no_op_offload", false},
+                                         {"no_extra_bufts", false},
+                                         {"no_kv_offload", false},
+                                         {"kv_unified", false},
+                                         {"cont_batching", true},
                                          {"strict_cpu", false},
                                          {"strict_cpu_batch", false},
                                          {"mmproj_use_gpu", true},
                                          {"no_mmproj", false},
+                                         {"lora_init_without_apply", false},
                                      });
 }
 
@@ -191,8 +196,9 @@ struct LlamaParams llama_utils::get_llama_params(
   std::string split_mode;
   std::string rope_scaling_type;
   std::string numa;
-  std::string pooling_type;
   std::string flash_attn_type;
+  std::string pooling_type;
+  std::string attention_type;
 
   std::string file_path;
 
@@ -203,6 +209,11 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("n_ctx", params.params.n_ctx);
   node->get_parameter("n_batch", params.params.n_batch);
   node->get_parameter("n_ubatch", params.params.n_ubatch);
+  node->get_parameter("n_keep", params.params.n_keep);
+  node->get_parameter("n_chunks", params.params.n_chunks);
+  node->get_parameter("n_predict", params.params.n_predict);
+  node->get_parameter("n_parallel", params.params.n_parallel);
+  node->get_parameter("n_sequences", params.params.n_sequences);
 
   node->get_parameter("devices", devices);
   node->get_parameter("n_gpu_layers", params.params.n_gpu_layers);
@@ -216,10 +227,14 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
   node->get_parameter("check_tensors", params.params.check_tensors);
-  node->get_parameter("flash_attn_type", flash_attn_type);
+  node->get_parameter("flash_attn_type", params.params.flash_attn_type);
+  node->get_parameter("ctx_shift", params.params.ctx_shift);
+  node->get_parameter("swa_full", params.params.swa_full);
 
   node->get_parameter("no_op_offload", params.params.no_op_offload);
+  node->get_parameter("no_extra_bufts", params.params.no_extra_bufts);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
+  node->get_parameter("kv_unified", params.params.kv_unified);
   node->get_parameter("cache_type_k", cache_type_k);
   node->get_parameter("cache_type_v", cache_type_v);
 
@@ -237,10 +252,6 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("strict_cpu_batch",
                       params.params.cpuparams_batch.strict_cpu);
   node->get_parameter("poll_batch", poll_batch);
-
-  node->get_parameter("n_predict", params.params.n_predict);
-  node->get_parameter("n_keep", params.params.n_keep);
-  node->get_parameter("n_batch", params.params.n_batch);
 
   node->get_parameter("grp_attn_n", params.params.grp_attn_n);
   node->get_parameter("grp_attn_w", params.params.grp_attn_w);
@@ -264,15 +275,19 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("mmproj_path", params.params.mmproj.path);
   node->get_parameter("mmproj_repo", params.params.mmproj.hf_repo);
   node->get_parameter("mmproj_filename", params.params.mmproj.hf_file);
+
+  node->get_parameter("lora_init_without_apply",
+                      params.params.lora_init_without_apply);
   node->get_parameter("lora_adapters", lora_adapters);
   node->get_parameter("lora_adapters_repos", lora_adapters_repos);
   node->get_parameter("lora_adapters_filenames", lora_adapters_filenames);
   node->get_parameter("lora_adapters_scales", lora_adapters_scales);
-  node->get_parameter("numa", numa);
-  node->get_parameter("pooling_type", pooling_type);
 
-  node->get_parameter("n_parallel", params.params.n_parallel);
-  node->get_parameter("n_sequences", params.params.n_sequences);
+  node->get_parameter("numa", numa);
+  node->get_parameter("flash_attn_type", flash_attn_type);
+  node->get_parameter("pooling_type", pooling_type);
+  node->get_parameter("attention_type", attention_type);
+
   node->get_parameter("cont_batching", params.params.cont_batching);
 
   node->get_parameter("prefix", params.params.input_prefix);
@@ -503,6 +518,15 @@ struct LlamaParams llama_utils::get_llama_params(
     params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
   } else {
     params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
+  }
+
+  // attention_type
+  if (attention_type == "causal") {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_CAUSAL;
+  } else if (attention_type == "non_causal") {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_NON_CAUSAL;
+  } else {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_UNSPECIFIED;
   }
 
   // initial prompt

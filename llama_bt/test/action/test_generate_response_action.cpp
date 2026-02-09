@@ -32,6 +32,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #endif
 
+#include "rclcpp/executors.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "llama_bt/action/generate_response_action.hpp"
@@ -65,6 +66,7 @@ public:
     rclcpp::init(0, nullptr);
 
     node_ = std::make_shared<rclcpp::Node>("generate_response_test_fixture");
+    executor_.add_node(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -109,6 +111,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
   BT::NodeConfiguration *config_;
   std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   std::shared_ptr<BT::Tree> tree_;
@@ -241,7 +244,7 @@ TEST_F(GenerateResponseActionTestFixture, test_tick) {
   auto elapsed_time = node_->now() - start_time;
   bool finish = false;
   while (!finish && rclcpp::ok() && elapsed_time.seconds() < 5.0) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor_.spin_some();
 
     finish = tree_->rootNode()->executeTick() != BT::NodeStatus::RUNNING;
     rate.sleep();
