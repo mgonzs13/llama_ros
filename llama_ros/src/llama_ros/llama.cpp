@@ -1114,32 +1114,31 @@ void Llama::run_loop() {
 
             slot.n_past -= n_discard;
           }
+        } else {
+          // Self-Extend
+          const int ga_n = this->params.grp_attn_n;
+          const int ga_w = this->params.grp_attn_w;
 
-          continue;
-        }
+          while (slot.n_past >= slot.ga_i + ga_w) {
+            const int ib = (ga_n * slot.ga_i) / ga_w;
+            const int bd = (ga_w / ga_n) * (ga_n - 1);
+            const int dd = (ga_w / ga_n) - ib * bd - ga_w;
 
-        // Self-Extend
-        const int ga_n = this->params.grp_attn_n;
-        const int ga_w = this->params.grp_attn_w;
+            llama_memory_seq_add(this->get_memory(), slot.id, slot.ga_i,
+                                 slot.n_past, ib * bd);
 
-        while (slot.n_past >= slot.ga_i + ga_w) {
-          const int ib = (ga_n * slot.ga_i) / ga_w;
-          const int bd = (ga_w / ga_n) * (ga_n - 1);
-          const int dd = (ga_w / ga_n) - ib * bd - ga_w;
+            llama_memory_seq_div(this->get_memory(), slot.id,
+                                 slot.ga_i + ib * bd,
+                                 slot.ga_i + ib * bd + ga_w, ga_n);
 
-          llama_memory_seq_add(this->get_memory(), slot.id, slot.ga_i,
-                               slot.n_past, ib * bd);
+            llama_memory_seq_add(this->get_memory(), slot.id,
+                                 slot.ga_i + ib * bd + ga_w,
+                                 slot.n_past + ib * bd, dd);
 
-          llama_memory_seq_div(this->get_memory(), slot.id, slot.ga_i + ib * bd,
-                               slot.ga_i + ib * bd + ga_w, ga_n);
+            slot.n_past -= bd;
 
-          llama_memory_seq_add(this->get_memory(), slot.id,
-                               slot.ga_i + ib * bd + ga_w,
-                               slot.n_past + ib * bd, dd);
-
-          slot.n_past -= bd;
-
-          slot.ga_i += ga_w / ga_n;
+            slot.ga_i += ga_w / ga_n;
+          }
         }
       }
     }
@@ -1208,6 +1207,7 @@ void Llama::run_loop() {
             release_slot(&slot);
             continue;
           }
+
           if (slot.n_prompt_tokens > slot.n_ctx) {
             LLAMA_LOG_WARN("Prompt exceeds context size for slot %d", slot.id);
             fail_pending(slot.goal_id, "Prompt exceeds context size");

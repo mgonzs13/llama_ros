@@ -48,7 +48,10 @@ using std::placeholders::_2;
 LlamaNode::LlamaNode()
     : rclcpp_lifecycle::LifecycleNode("llama_node"), params_declared(false) {}
 
+LlamaNode::~LlamaNode() { this->destroy_llama(); }
+
 void LlamaNode::create_llama() {
+  this->shutting_down_.store(false);
   this->llama =
       std::make_unique<Llama>(this->params.params, this->params.system_prompt);
 
@@ -64,9 +67,13 @@ void LlamaNode::create_llama() {
 }
 
 void LlamaNode::destroy_llama() {
+  this->shutting_down_.store(true);
+
   if (this->llama) {
     this->llama->cancel();
   }
+
+  this->join_worker_threads();
 
   if (run_loop_thread_.joinable()) {
     try {
@@ -79,6 +86,30 @@ void LlamaNode::destroy_llama() {
 
   this->llama.reset();
   this->llama = nullptr;
+}
+
+void LlamaNode::launch_worker_thread(std::thread worker_thread) {
+  std::lock_guard<std::mutex> lock(this->worker_threads_mutex_);
+  this->worker_threads_.push_back(std::move(worker_thread));
+}
+
+void LlamaNode::join_worker_threads() {
+  std::vector<std::thread> workers_to_join;
+  {
+    std::lock_guard<std::mutex> lock(this->worker_threads_mutex_);
+    workers_to_join.swap(this->worker_threads_);
+  }
+
+  for (auto &worker : workers_to_join) {
+    if (worker.joinable()) {
+      try {
+        worker.join();
+      } catch (const std::exception &e) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Exception while joining worker thread: %s", e.what());
+      }
+    }
+  }
 }
 
 /*
@@ -181,19 +212,25 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   RCLCPP_INFO(this->get_logger(), "[%s] Deactivating...", this->get_name());
 
+  const bool is_embedding = this->llama && this->llama->is_embedding() &&
+                            !this->llama->is_reranking();
+  const bool is_reranking = this->llama && this->llama->is_reranking();
+  const bool is_completion = this->llama && !this->llama->is_embedding() &&
+                             !this->llama->is_reranking();
+
   this->destroy_llama();
 
-  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+  if (is_embedding) {
     this->generate_embeddings_service_.reset();
     this->generate_embeddings_service_ = nullptr;
   }
 
-  if (this->llama->is_reranking()) {
+  if (is_reranking) {
     this->rerank_documents_service_.reset();
     this->rerank_documents_service_ = nullptr;
   }
 
-  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+  if (is_completion) {
     this->get_metadata_service_.reset();
     this->get_metadata_service_ = nullptr;
 
@@ -236,6 +273,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 LlamaNode::on_shutdown(const rclcpp_lifecycle::State &) {
 
   RCLCPP_INFO(this->get_logger(), "[%s] Shutting down...", this->get_name());
+  this->destroy_llama();
   RCLCPP_INFO(this->get_logger(), "[%s] Shutted down", this->get_name());
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::
@@ -511,10 +549,15 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel(
 
 void LlamaNode::handle_accepted(
     const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
+  if (this->shutting_down_.load()) {
+    RCLCPP_WARN(this->get_logger(),
+                "Rejecting accepted goal while node is shutting down");
+    return;
+  }
+
   int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
-  std::thread{std::bind(&LlamaNode::execute, this, _1, _2), goal_handle,
-              slot_gid}
-      .detach();
+  this->launch_worker_thread(std::thread{
+      std::bind(&LlamaNode::execute, this, _1, _2), goal_handle, slot_gid});
 }
 
 bool LlamaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -632,10 +675,16 @@ rclcpp_action::CancelResponse LlamaNode::handle_cancel_chat_completions(
 
 void LlamaNode::handle_accepted_chat_completions(
     const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+  if (this->shutting_down_.load()) {
+    RCLCPP_WARN(this->get_logger(),
+                "Rejecting accepted chat goal while node is shutting down");
+    return;
+  }
+
   int slot_gid = llama_utils::uuid_to_int32(goal_handle->get_goal_id());
-  std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1, _2),
-              goal_handle, slot_gid}
-      .detach();
+  this->launch_worker_thread(
+      std::thread{std::bind(&LlamaNode::execute_chat_completions, this, _1, _2),
+                  goal_handle, slot_gid});
 }
 
 bool LlamaNode::goal_empty_chat_completions(

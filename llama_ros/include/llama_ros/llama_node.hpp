@@ -27,8 +27,11 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
@@ -81,6 +84,7 @@ public:
    * Initializes the node and sets up the necessary services and actions.
    */
   LlamaNode();
+  ~LlamaNode() override;
 
   /**
    * @brief Callback for the "configure" lifecycle transition.
@@ -259,6 +263,12 @@ protected:
    * This thread continuously processes slots in the background.
    */
   std::thread run_loop_thread_;
+  std::vector<std::thread> worker_threads_;
+  std::mutex worker_threads_mutex_;
+  std::atomic<bool> shutting_down_{false};
+
+  void launch_worker_thread(std::thread worker_thread);
+  void join_worker_threads();
 
 private:
   /**
