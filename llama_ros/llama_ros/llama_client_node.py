@@ -147,9 +147,7 @@ class LlamaClientNode(Node):
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
 
-    def rerank_documents(
-        self, req: RerankDocuments.Request
-    ) -> RerankDocuments.Response:
+    def rerank_documents(self, req: RerankDocuments.Request) -> RerankDocuments.Response:
         self._rerank_srv_client.wait_for_service()
         return self._rerank_srv_client.call(req)
 
