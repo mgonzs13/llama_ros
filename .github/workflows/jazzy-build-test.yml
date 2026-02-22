@@ -18,6 +18,7 @@ jobs:
         uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: llama_ros llama_bt
+          target-ros2-distro: jazzy
           coverage-result: false
           colcon-defaults: |
             {
