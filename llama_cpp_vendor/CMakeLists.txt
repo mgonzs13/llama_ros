@@ -3,11 +3,12 @@ project(llama_cpp_vendor)
 
 include(FetchContent)
 find_package(ament_cmake REQUIRED)
+find_package(OpenSSL QUIET)
 
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b7907
+  GIT_TAG        b8123
   GIT_SHALLOW    TRUE
 )
 
@@ -46,6 +47,15 @@ if(GGML_CUDA)
   )
 endif()
 
+if(GGML_HIP)
+  set_target_properties(
+    ggml-hip PROPERTIES
+    OUTPUT_NAME "llama_ggml_hip"
+    INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+    CXX_STANDARD 17
+  )
+endif()
+
 # llama
 set_target_properties(
   build_info llama common PROPERTIES
@@ -63,16 +73,19 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/conformer.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/glm4v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/internvl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/kimik25.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llama4.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llava.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/minicpmv.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
-  ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/youtuvl.cpp
 )
 
@@ -86,9 +99,12 @@ target_include_directories(mtmd
     $<INSTALL_INTERFACE:include>   
 )
 
-# CUDA
 if(GGML_CUDA)
   add_compile_definitions(GGML_USE_CUDA)
+endif()
+
+if(GGML_HIP)
+  add_compile_definitions(GGML_USE_HIP)
 endif()
 
 # export
@@ -125,6 +141,10 @@ if(GGML_CUDA)
   list(APPEND INSTALL_TARGETS ggml-cuda)
 endif()
 
+if(GGML_HIP)
+  list(APPEND INSTALL_TARGETS ggml-hip)
+endif()
+
 install(
   TARGETS ${INSTALL_TARGETS}
   EXPORT export_llama
@@ -134,4 +154,5 @@ install(
 
 ament_export_include_directories(include)
 ament_export_targets(export_llama HAS_LIBRARY_TARGET)
+ament_export_dependencies(OpenSSL)
 ament_package()
