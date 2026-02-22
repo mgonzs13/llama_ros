@@ -29,76 +29,76 @@ using namespace llama_ros;
 
 std::future<ServerTaskResultPtr>
 TaskRegistry::register_pending(uint64_t goal_id) {
-  std::lock_guard<std::mutex> lock(pending_mutex_);
-  pending_.erase(goal_id);
+  std::lock_guard<std::mutex> lock(this->pending_mutex_);
+  this->pending_.erase(goal_id);
   std::promise<ServerTaskResultPtr> promise;
   auto future = promise.get_future();
-  pending_.emplace(goal_id, std::move(promise));
+  this->pending_.emplace(goal_id, std::move(promise));
   return future;
 }
 
 void TaskRegistry::fulfill_pending(uint64_t goal_id,
                                    ServerTaskResultPtr result) {
   {
-    std::lock_guard<std::mutex> lock(pending_mutex_);
-    auto it = pending_.find(goal_id);
-    if (it != pending_.end()) {
+    std::lock_guard<std::mutex> lock(this->pending_mutex_);
+    auto it = this->pending_.find(goal_id);
+    if (it != this->pending_.end()) {
       it->second.set_value(std::move(result));
-      pending_.erase(it);
+      this->pending_.erase(it);
     } else {
       LLAMA_LOG_WARN("Attempted to fulfill unknown goal_id: %lu", goal_id);
     }
   }
-  mark_done(goal_id);
+  this->mark_done(goal_id);
 }
 
 void TaskRegistry::fail_pending(uint64_t goal_id, const std::string &error) {
   {
-    std::lock_guard<std::mutex> lock(pending_mutex_);
-    auto it = pending_.find(goal_id);
-    if (it != pending_.end()) {
+    std::lock_guard<std::mutex> lock(this->pending_mutex_);
+    auto it = this->pending_.find(goal_id);
+    if (it != this->pending_.end()) {
       it->second.set_exception(
           std::make_exception_ptr(std::runtime_error(error)));
-      pending_.erase(it);
+      this->pending_.erase(it);
     } else {
       LLAMA_LOG_WARN("Attempted to fail unknown goal_id: %lu", goal_id);
     }
   }
-  mark_done(goal_id);
+  this->mark_done(goal_id);
 }
 
 void TaskRegistry::mark_done(uint64_t goal_id) {
   {
-    std::lock_guard<std::mutex> lock(done_mutex_);
-    done_queue_.push(goal_id);
+    std::lock_guard<std::mutex> lock(this->done_mutex_);
+    this->done_queue_.push(goal_id);
   }
-  done_cv_.notify_one();
+  this->done_cv_.notify_one();
 }
 
 uint64_t TaskRegistry::wait_for_done() {
-  std::unique_lock<std::mutex> lock(done_mutex_);
-  done_cv_.wait(lock, [this] { return !done_queue_.empty(); });
+  std::unique_lock<std::mutex> lock(this->done_mutex_);
+  this->done_cv_.wait(lock, [this] { return !this->done_queue_.empty(); });
 
-  uint64_t goal_id = done_queue_.front();
-  done_queue_.pop();
+  uint64_t goal_id = this->done_queue_.front();
+  this->done_queue_.pop();
   return goal_id;
 }
 
 bool TaskRegistry::has_done_tasks() {
-  std::lock_guard<std::mutex> lock(done_mutex_);
-  return !done_queue_.empty();
+  std::lock_guard<std::mutex> lock(this->done_mutex_);
+  return !this->done_queue_.empty();
 }
 
 void TaskRegistry::fail_all_pending() {
-  std::lock_guard<std::mutex> lock(pending_mutex_);
-  for (auto &[goal_id, promise] : pending_) {
+  std::lock_guard<std::mutex> lock(this->pending_mutex_);
+  for (auto &[goal_id, promise] : this->pending_) {
     try {
       promise.set_exception(
           std::make_exception_ptr(std::runtime_error("Operation cancelled")));
-      mark_done(goal_id);
+      this->mark_done(goal_id);
     } catch (const std::future_error &) {
       // Promise already set, ignore
     }
   }
-  pending_.clear();
+  this->pending_.clear();
 }

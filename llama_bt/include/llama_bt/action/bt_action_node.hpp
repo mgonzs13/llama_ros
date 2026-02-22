@@ -499,9 +499,11 @@ inline bool getInputPortOrBlackboard(const BT::TreeNode &bt_node,
   if (bt_node.getInput<T>(param_name, value)) {
     return true;
   }
+
   if (blackboard.get<T>(param_name, value)) {
     return true;
   }
+
   return false;
 }
 

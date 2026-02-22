@@ -218,7 +218,7 @@ public:
    * @return Pointer to the chat formatter.
    */
   llama_utils::ChatFormatter *get_chat_formatter() {
-    return chat_formatter_.get();
+    return this->chat_formatter_.get();
   }
 
   /**
@@ -392,7 +392,7 @@ public:
    *
    * @return True if the end-of-generation is reached, false otherwise.
    */
-  bool is_eog(ServerSlot *slot = nullptr) {
+  bool is_eog(ServerSlot *slot) {
     return llama_vocab_is_eog(this->get_vocab(),
                               common_sampler_last(slot->sampler));
   }

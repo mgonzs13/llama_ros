@@ -55,7 +55,7 @@ void LlamaNode::create_llama() {
   this->llama =
       std::make_unique<Llama>(this->params.params, this->params.system_prompt);
 
-  run_loop_thread_ = std::thread([this]() {
+  this->run_loop_thread_ = std::thread([this]() {
     try {
       this->llama->run_loop();
     } catch (const std::exception &e) {
@@ -75,9 +75,9 @@ void LlamaNode::destroy_llama() {
 
   this->join_worker_threads();
 
-  if (run_loop_thread_.joinable()) {
+  if (this->run_loop_thread_.joinable()) {
     try {
-      run_loop_thread_.join();
+      this->run_loop_thread_.join();
     } catch (const std::exception &e) {
       RCLCPP_ERROR(this->get_logger(),
                    "Exception while joining run_loop thread: %s", e.what());
@@ -390,7 +390,7 @@ void LlamaNode::tokenize_service_callback(
     const std::shared_ptr<llama_msgs::srv::Tokenize::Request> request,
     std::shared_ptr<llama_msgs::srv::Tokenize::Response> response) {
 
-  response->tokens = this->llama->tokenize(request->text, false, 2);
+  response->tokens = this->llama->tokenize(request->text, false, true);
 }
 
 void LlamaNode::detokenize_service_callback(

@@ -154,10 +154,6 @@ protected:
   // members
   friend class LlavaCompletionRequestHandler;
   friend class LlavaChatCompletionRequestHandler;
-
-private:
-  const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,
-                                          llama_ros::ServerSlot *slot);
 };
 
 } // namespace llava_ros

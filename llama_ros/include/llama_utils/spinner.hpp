@@ -53,10 +53,10 @@ public:
    * string.
    */
   void spin(std::string text) {
-    fprintf(stderr, "%c %s\n", spinner[index], text.c_str());
+    fprintf(stderr, "%c %s\n", this->spinner[this->index], text.c_str());
     fflush(stderr);
     fprintf(stderr, "\033[1A\033[2K");
-    index = (index + 1) % 4;
+    this->index = (this->index + 1) % 4;
   }
 
   /**

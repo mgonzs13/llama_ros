@@ -33,7 +33,7 @@ SlotManager::SlotManager(std::vector<ServerSlot> &slots)
 }
 
 ServerSlot *SlotManager::get_available_slot() {
-  for (auto &slot : server_slots_) {
+  for (auto &slot : this->server_slots_) {
     if (!slot.is_processing()) {
       return &slot;
     }
@@ -42,10 +42,10 @@ ServerSlot *SlotManager::get_available_slot() {
 }
 
 ServerSlot *SlotManager::wait_for_available_slot() {
-  std::unique_lock<std::mutex> lock(slot_mutex_);
+  std::unique_lock<std::mutex> lock(this->slot_mutex_);
 
-  slot_cv_.wait(lock, [this] {
-    for (auto &slot : server_slots_) {
+  this->slot_cv_.wait(lock, [this] {
+    for (auto &slot : this->server_slots_) {
       if (!slot.is_processing()) {
         return true;
       }
@@ -53,7 +53,7 @@ ServerSlot *SlotManager::wait_for_available_slot() {
     return false;
   });
 
-  for (auto &slot : server_slots_) {
+  for (auto &slot : this->server_slots_) {
     if (!slot.is_processing()) {
       return &slot;
     }
@@ -63,7 +63,7 @@ ServerSlot *SlotManager::wait_for_available_slot() {
 }
 
 ServerSlot *SlotManager::get_slot_by_id(int id) {
-  for (auto &slot : server_slots_) {
+  for (auto &slot : this->server_slots_) {
     if (slot.id == id) {
       return &slot;
     }
@@ -72,7 +72,7 @@ ServerSlot *SlotManager::get_slot_by_id(int id) {
 }
 
 ServerSlot *SlotManager::get_slot_by_gid(uint64_t gid) {
-  for (auto &slot : server_slots_) {
+  for (auto &slot : this->server_slots_) {
     if (slot.goal_id == gid) {
       return &slot;
     }
@@ -82,10 +82,10 @@ ServerSlot *SlotManager::get_slot_by_gid(uint64_t gid) {
 
 void SlotManager::release_slot(ServerSlot *slot) {
   {
-    std::lock_guard<std::mutex> lock(slot_mutex_);
+    std::lock_guard<std::mutex> lock(this->slot_mutex_);
     slot->release();
   }
-  slot_cv_.notify_one();
+  this->slot_cv_.notify_one();
 }
 
-void SlotManager::notify_slot_available() { slot_cv_.notify_one(); }
+void SlotManager::notify_slot_available() { this->slot_cv_.notify_one(); }

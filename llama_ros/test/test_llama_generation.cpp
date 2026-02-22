@@ -267,6 +267,7 @@ TEST_F(LlamaGenerationTest, StreamingCallbacksWork) {
   auto callback = [&callback_count,
                    &accumulated_text](struct llama_ros::CompletionOutput output,
                                       llama_ros::ServerSlot *slot) {
+    (void)slot; // Unused in this test
     callback_count++;
     accumulated_text += output.text_to_send;
   };

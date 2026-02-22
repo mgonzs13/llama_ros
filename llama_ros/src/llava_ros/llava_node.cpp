@@ -43,7 +43,7 @@ void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.system_prompt);
 
-  run_loop_thread_ = std::thread([this]() {
+  this->run_loop_thread_ = std::thread([this]() {
     try {
       this->llama->run_loop();
     } catch (const std::exception &e) {
@@ -72,11 +72,13 @@ void LlavaNode::execute(
   // load images
   if (!this->load_images(images_msg)) {
     goal_handle->abort(result);
+    return;
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
     goal_handle->abort(result);
+    return;
   }
 
   // llama_node execute
@@ -109,11 +111,13 @@ void LlavaNode::execute_chat_completions(
   // load images
   if (!this->load_images(images_msg)) {
     goal_handle->abort(result);
+    return;
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
     goal_handle->abort(result);
+    return;
   }
 
   // llama_node execute_chat_completions
@@ -157,7 +161,6 @@ bool LlavaNode::load_audios(
   for (const auto &audio_msg : audios_msgs) {
     if (audio_msg.data.size() > 0) {
       RCLCPP_INFO(this->get_logger(), "Loading audio...");
-      std::vector<uchar> buf;
       audios.push_back(audio_msg.data);
     }
   }

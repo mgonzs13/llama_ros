@@ -39,9 +39,9 @@ Llava::Llava(const common_params &params, std::string system_prompt)
 
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
-  mparams.use_gpu = params.mmproj_use_gpu;
+  mparams.use_gpu = this->params.mmproj_use_gpu;
   mparams.print_timings = false;
-  mparams.n_threads = params.cpuparams.n_threads;
+  mparams.n_threads = this->params.cpuparams.n_threads;
 
   // load multimodal model
   this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
@@ -173,23 +173,22 @@ bool Llava::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
 void Llava::process_input_chunks(mtmd::input_chunks &chunks,
                                  llama_ros::ServerSlot *slot) {
   for (size_t i = 0; i < chunks.size(); i++) {
-    auto chunk = mtmd_input_chunk_copy(chunks[i]);
-    auto chunk_type = mtmd_input_chunk_get_type(chunk);
+    auto chunk_type = mtmd_input_chunk_get_type(chunks[i]);
 
     if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
       size_t n_tokens;
-      auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
+      auto tokens = mtmd_input_chunk_get_tokens_text(chunks[i], &n_tokens);
 
       for (size_t j = 0; j < n_tokens; j++) {
         slot->prompt_tokens.push_back(tokens[j]);
       }
     } else {
-      const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
+      const int n_pos = mtmd_input_chunk_get_n_pos(chunks[i]);
       llama_pos start_pos = slot->prompt_tokens.size();
-      for (int i = 0; i < n_pos; ++i) {
+      for (int k = 0; k < n_pos; ++k) {
         slot->prompt_tokens.emplace_back(LLAMA_TOKEN_NULL);
       }
-      mtmd::input_chunk_ptr new_chunk(mtmd_input_chunk_copy(chunk));
+      mtmd::input_chunk_ptr new_chunk(mtmd_input_chunk_copy(chunks[i]));
       slot->map_pos_to_media[start_pos] = std::move(new_chunk);
     }
   }
@@ -200,13 +199,13 @@ void llava_ros::Llava::handle_completion_req(
     common_params_sampling sparams,
     llama_ros::ServerSlot::GenerateResponseCallback callback,
     std::vector<std::string> stop, bool reset) {
-  llava_completion_handler_->handle(input_prompt, slot, sparams, callback, stop,
-                                    reset);
+  this->llava_completion_handler_->handle(input_prompt, slot, sparams, callback,
+                                          stop, reset);
 }
 
 void llava_ros::Llava::handle_chat_completion_req(
     llama_utils::ChatCompletionsContext chat_context,
     llama_ros::ServerSlot *slot,
     llama_ros::ServerSlot::GenerateResponseCallback callback) {
-  llava_chat_completion_handler_->handle(chat_context, slot, callback);
+  this->llava_chat_completion_handler_->handle(chat_context, slot, callback);
 }

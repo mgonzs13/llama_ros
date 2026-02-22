@@ -30,10 +30,10 @@ ChatFormatter::ChatFormatter(const llama_model *model,
                              const std::string &custom_template)
     : custom_template_(custom_template) {
 
-  chat_templates_ = chat_templates_ptr(common_chat_templates_init(
+  this->chat_templates_ = chat_templates_ptr(common_chat_templates_init(
       model, custom_template.empty() ? "" : custom_template.c_str()));
 
-  if (!chat_templates_) {
+  if (!this->chat_templates_) {
     LLAMA_LOG_WARN("Failed to initialize chat templates");
   }
   LLAMA_LOG_INFO("Initialized Chat Formatter");
@@ -45,12 +45,12 @@ ChatFormatter::~ChatFormatter() {
 
 common_chat_params
 ChatFormatter::apply_template(const common_chat_templates_inputs &inputs) {
-  if (!chat_templates_) {
+  if (!this->chat_templates_) {
     LLAMA_LOG_ERROR("Chat templates not initialized");
     return common_chat_params{};
   }
 
-  return common_chat_templates_apply(chat_templates_.get(), inputs);
+  return common_chat_templates_apply(this->chat_templates_.get(), inputs);
 }
 
 common_chat_msg

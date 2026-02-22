@@ -452,8 +452,8 @@ LlamaParams llama_utils::get_llama_params(
   // Read chat template file if provided
   if (!chat_template_file.empty()) {
 
-    // Check if chat_template_file does not contains "/"
-    if (chat_template_file.find("/") != std::string::npos) {
+    // If the path does not contain "/", prepend the share directory
+    if (chat_template_file.find("/") == std::string::npos) {
       chat_template_file =
           ament_index_cpp::get_package_share_directory("llama_cpp_vendor") +
           "/models/templates/" + chat_template_file;

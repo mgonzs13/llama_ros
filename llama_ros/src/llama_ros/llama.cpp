@@ -53,8 +53,8 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   llama_backend_init();
   llama_numa_init(this->params.numa);
 
-  this->model = llama_init->model();
-  this->ctx = llama_init->context();
+  this->model = this->llama_init->model();
+  this->ctx = this->llama_init->context();
   this->lora_adapters = this->params.lora_adapters;
 
   if (this->model == NULL) {
@@ -70,7 +70,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   for (int i = 0; i < this->params.n_parallel; i++) {
     ServerSlot slot;
     slot.id = i;
-    slot.ctx = llama_init->context();
+    slot.ctx = this->llama_init->context();
     slot.n_ctx = n_ctx_slot;
     slot.n_predict = this->params.n_predict;
     slot.params.sampling = this->params.sampling;
@@ -84,7 +84,8 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   LLAMA_LOG_INFO("Initializing batch context");
 
   const int32_t n_batch = llama_n_batch(this->ctx);
-  this->batch = llama_batch_init(std::max(n_batch, params.n_parallel), 0, 1);
+  this->batch =
+      llama_batch_init(std::max(n_batch, this->params.n_parallel), 0, 1);
 
   LLAMA_LOG_INFO("Model loaded successfully");
 
@@ -102,12 +103,12 @@ Llama::Llama(const common_params &params, std::string system_prompt,
 
   // Initialize chat formatter
   this->chat_formatter_ = std::make_unique<llama_utils::ChatFormatter>(
-      this->model, params.chat_template);
+      this->model, this->params.chat_template);
 
-  this->oai_parser_opt = {params.use_jinja,
-                          params.prefill_assistant,
-                          params.reasoning_format,
-                          params.default_template_kwargs,
+  this->oai_parser_opt = {this->params.use_jinja,
+                          this->params.prefill_assistant,
+                          this->params.reasoning_format,
+                          this->params.default_template_kwargs,
                           this->chat_formatter_->get_templates(),
                           false,
                           false,
@@ -347,8 +348,8 @@ Metadata Llama::get_metadata() {
   metadata.general.uuid = this->get_metadata("general.uuid", 64);
 
   std::string file_type = this->get_metadata("general.file_type", 32);
-  if (gguf_types.find(file_type) == gguf_types.end()) {
-    metadata.general.file_type = gguf_types.at(file_type.c_str());
+  if (gguf_types.find(file_type) != gguf_types.end()) {
+    metadata.general.file_type = gguf_types.at(file_type);
   }
 
   // llm metadata
@@ -494,7 +495,6 @@ Llama::generate_embeddings(const std::string &text) {
 
   try {
     auto result = fut.get();
-    this->task_registry_->mark_done(gid);
 
     if (auto *out = dynamic_cast<ServerTaskResultEmbedding *>(result.get())) {
       return Result<ServerTaskResultEmbedding>::ok(*out);
@@ -621,7 +621,7 @@ void Llama::update_loras(std::vector<LoRA> loras) {
 
   // LoRA updates are thread-safe at llama.cpp level
   for (auto lora : loras) {
-    if (lora.id >= 0 && lora.id <= (int)this->lora_adapters.size()) {
+    if (lora.id >= 0 && lora.id < (int)this->lora_adapters.size()) {
 
       LLAMA_LOG_INFO("Updating LoRA (%d: '%s') from %f to %f", lora.id,
                      this->lora_adapters[lora.id].path.c_str(),
@@ -673,7 +673,6 @@ Llama::generate_response(int slot_gid, const std::string &input_prompt,
 
   try {
     auto result = fut.get();
-    this->task_registry_->mark_done(slot_gid);
 
     if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
       return Result<ServerTaskResultCompletion>::ok(*out);
@@ -704,7 +703,6 @@ Llama::generate_chat_response(int slot_gid,
 
   try {
     auto result = fut.get();
-    this->task_registry_->mark_done(slot_gid);
 
     if (auto *out = dynamic_cast<ServerTaskResultCompletion *>(result.get())) {
       return Result<ServerTaskResultCompletion>::ok(*out);
@@ -857,7 +855,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   }
 
   // if context shifting is disabled, make sure that we don't run out of context
-  if (!params.ctx_shift && slot->n_past + 1 >= slot->n_ctx) {
+  if (!this->params.ctx_shift && slot->n_past + 1 >= slot->n_ctx) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
@@ -916,7 +914,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
   }
 
   // if context shift is disabled, we stop when it reaches the context limit
-  if (!params.ctx_shift && slot->n_past >= slot->n_ctx) {
+  if (!this->params.ctx_shift && slot->n_past >= slot->n_ctx) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false;
 
@@ -940,9 +938,9 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
     slot->stream_callback(*result, slot);
   }
 
-  const auto n_ctx_train = llama_model_n_ctx_train(model);
+  const auto n_ctx_train = llama_model_n_ctx_train(this->model);
 
-  if (slot->params.n_predict < 1 && slot->params.n_predict < 1 &&
+  if (slot->n_predict < 1 && slot->params.n_predict < 1 &&
       slot->n_prompt_tokens + slot->n_decoded >= n_ctx_train) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false; // stop prediction
@@ -1273,7 +1271,6 @@ void Llama::run_loop() {
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
           if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING) {
             this->send_embedding_result(&slot, batch_view);
-            this->task_registry_->mark_done(slot.goal_id);
             this->release_slot(&slot);
             slot.i_batch = -1;
             continue;
@@ -1281,7 +1278,6 @@ void Llama::run_loop() {
 
           if (slot.task_type == SERVER_TASK_TYPE_RERANK) {
             this->send_rerank_result(&slot, batch_view);
-            this->task_registry_->mark_done(slot.goal_id);
             this->release_slot(&slot);
             slot.i_batch = -1;
             continue;
@@ -1309,11 +1305,11 @@ void Llama::run_loop() {
         CompletionOutput result;
         result.token = id;
         result.text_to_send = common_token_to_piece(this->ctx, id);
-        result.probs = get_probs(&slot);
+        result.probs = this->get_probs(&slot);
         slot.generated_probs.push_back(result.probs);
 
         // Stream token / check stopping conditions
-        if (!process_token(&slot, &result)) {
+        if (!this->process_token(&slot, &result)) {
           this->send_completion_result(&slot);
           this->release_slot(&slot);
           continue;
@@ -1388,7 +1384,7 @@ void Llama::send_embedding_result(ServerSlot *slot,
   result->id_slot = slot->id;
   result->id = slot->goal_id;
   result->n_tokens = this->batch.n_tokens;
-  const int n_embd = llama_model_n_embd(model);
+  const int n_embd = llama_model_n_embd(this->model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
 
@@ -1472,7 +1468,7 @@ void Llama::send_completion_result(ServerSlot *slot) {
 
   LLAMA_LOG_INFO("size logprobs: %lu for slot %d", slot->generated_probs.size(),
                  slot->id);
-  task_result->probs_output = convert_probs_to_logprobs(slot);
+  task_result->probs_output = this->convert_probs_to_logprobs(slot);
   LLAMA_LOG_INFO("Length probs_output: %lu", task_result->probs_output.size());
 
   task_result->build_info =

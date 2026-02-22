@@ -20,11 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "llama_utils/chat_utils.hpp"
-#include "llama_ros/llama.hpp"
-#include "llama_utils/llama_params.hpp"
 #include <common.h>
+
 #include <cstddef>
+#include <mutex>
+
+#include "llama_ros/llama.hpp"
+#include "llama_utils/chat_utils.hpp"
+#include "llama_utils/llama_params.hpp"
+
 #include <llama_msgs/action/generate_response.hpp>
 #include <llama_msgs/msg/detail/chat_req_tool__struct.hpp>
 
@@ -133,6 +137,7 @@ llama_utils::generate_chat_completions_result(
   if (!msg.content.empty() || msg.tool_calls.empty()) {
     chat_msg.content = msg.content;
   }
+
   if (!msg.tool_calls.empty()) {
     std::vector<llama_msgs::msg::ChatToolCall> tool_calls;
     for (size_t i = 0; i < msg.tool_calls.size(); ++i) {
@@ -390,6 +395,8 @@ uint64_t llama_utils::generate_random_uint64() {
   static std::random_device rd;
   static std::mt19937_64 eng(rd());
   static std::uniform_int_distribution<uint64_t> distr;
+  static std::mutex rng_mutex;
 
+  std::lock_guard<std::mutex> lock(rng_mutex);
   return distr(eng);
 }

@@ -36,7 +36,8 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
 
   // Reserve space for EOS token if needed
   int effective_limit = limit_size;
-  if (add_eos && (tokens.empty() || tokens.back() != llama_->get_token_eos())) {
+  if (add_eos &&
+      (tokens.empty() || tokens.back() != this->llama_->get_token_eos())) {
     effective_limit = limit_size - 1;
   }
 
@@ -47,8 +48,8 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
   }
 
   if (add_eos && !new_tokens.empty() &&
-      new_tokens.back() != llama_->get_token_eos()) {
-    new_tokens.push_back(llama_->get_token_eos());
+      new_tokens.back() != this->llama_->get_token_eos()) {
+    new_tokens.push_back(this->llama_->get_token_eos());
   }
 
   return new_tokens;
@@ -56,16 +57,18 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
 
 void EmbeddingRequestHandler::handle(const std::string &input_prompt,
                                      ServerSlot *slot) {
-  auto tokens = common_tokenize(llama_->get_ctx(), input_prompt, false, true);
+  auto tokens =
+      common_tokenize(this->llama_->get_ctx(), input_prompt, false, true);
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
-  tokens = truncate_tokens(tokens, llama_n_batch(llama_->get_ctx()), true);
+  tokens = this->truncate_tokens(tokens, llama_n_batch(this->llama_->get_ctx()),
+                                 true);
 
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
 
-  slot->sampler =
-      common_sampler_init(llama_->get_model(), llama_->params.sampling);
+  slot->sampler = common_sampler_init(this->llama_->get_model(),
+                                      this->llama_->params.sampling);
   slot->prompt_tokens = tokens;
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = SERVER_TASK_TYPE_EMBEDDING;
@@ -80,7 +83,8 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
 
   // Reserve space for EOS token if needed
   int effective_limit = limit_size;
-  if (add_eos && (tokens.empty() || tokens.back() != llama_->get_token_eos())) {
+  if (add_eos &&
+      (tokens.empty() || tokens.back() != this->llama_->get_token_eos())) {
     effective_limit = limit_size - 1;
   }
 
@@ -91,8 +95,8 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
   }
 
   if (add_eos && !new_tokens.empty() &&
-      new_tokens.back() != llama_->get_token_eos()) {
-    new_tokens.push_back(llama_->get_token_eos());
+      new_tokens.back() != this->llama_->get_token_eos()) {
+    new_tokens.push_back(this->llama_->get_token_eos());
   }
 
   return new_tokens;
@@ -102,31 +106,33 @@ void RerankRequestHandler::handle(const std::string &query,
                                   const std::string &document,
                                   ServerSlot *slot) {
   std::vector<llama_token> tokens;
-  tokens.push_back(llama_->get_token_bos());
+  tokens.push_back(this->llama_->get_token_bos());
 
-  auto tokens_query = common_tokenize(llama_->get_vocab(), query, false, true);
-  auto truncated_query = truncate_tokens(
-      tokens_query, (int)(llama_->params.n_batch / 2) - 2, true);
+  auto tokens_query =
+      common_tokenize(this->llama_->get_vocab(), query, false, true);
+  auto truncated_query = this->truncate_tokens(
+      tokens_query, (int)(this->llama_->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), truncated_query.begin(), truncated_query.end());
-  tokens.push_back(llama_->get_token_eos());
-  tokens.push_back(llama_->get_token_sep());
+  tokens.push_back(this->llama_->get_token_eos());
+  tokens.push_back(this->llama_->get_token_sep());
 
   auto tokens_document =
-      common_tokenize(llama_->get_vocab(), document, false, true);
-  auto truncated_document = truncate_tokens(
-      tokens_document, (int)(llama_->params.n_batch / 2) - 2, true);
+      common_tokenize(this->llama_->get_vocab(), document, false, true);
+  auto truncated_document = this->truncate_tokens(
+      tokens_document, (int)(this->llama_->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), truncated_document.begin(),
                 truncated_document.end());
-  tokens.push_back(llama_->get_token_eos());
+  tokens.push_back(this->llama_->get_token_eos());
 
-  tokens = truncate_tokens(tokens, llama_n_batch(llama_->get_ctx()), true);
+  tokens = this->truncate_tokens(tokens, llama_n_batch(this->llama_->get_ctx()),
+                                 true);
 
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
 
-  slot->sampler =
-      common_sampler_init(llama_->get_model(), llama_->params.sampling);
+  slot->sampler = common_sampler_init(this->llama_->get_model(),
+                                      this->llama_->params.sampling);
   slot->prompt_tokens = tokens;
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = SERVER_TASK_TYPE_RERANK;
@@ -142,16 +148,16 @@ void CompletionRequestHandler::handle(
   slot->prompt_tokens.clear();
   std::string full_prompt = "";
 
-  if (llama_->params.input_prefix.size() > 0) {
-    full_prompt += llama_->params.input_prefix;
+  if (this->llama_->params.input_prefix.size() > 0) {
+    full_prompt += this->llama_->params.input_prefix;
   }
   full_prompt += input_prompt;
-  if (llama_->params.input_suffix.size() > 0) {
-    full_prompt += llama_->params.input_suffix;
+  if (this->llama_->params.input_suffix.size() > 0) {
+    full_prompt += this->llama_->params.input_suffix;
   }
 
   slot->prompt_tokens =
-      common_tokenize(llama_->get_ctx(), full_prompt, false, true);
+      common_tokenize(this->llama_->get_ctx(), full_prompt, false, true);
   LLAMA_LOG_INFO("Full prompt: '%s'", full_prompt.c_str());
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
 
@@ -161,7 +167,7 @@ void CompletionRequestHandler::handle(
 
   slot->params.sampling = sparams;
   slot->sampler =
-      common_sampler_init(llama_->get_model(), llama_->params.sampling);
+      common_sampler_init(this->llama_->get_model(), slot->params.sampling);
   slot->stream_callback = callback;
   slot->params.antiprompt.insert(slot->params.antiprompt.end(), stop.begin(),
                                  stop.end());
@@ -186,10 +192,11 @@ void ChatCompletionRequestHandler::handle(
     common_sampler_free(slot->sampler);
   }
 
-  slot->prompt_tokens = common_tokenize(
-      llama_->get_ctx(), chat_context.chat_prompt_instance.prompt, false, true);
+  slot->prompt_tokens =
+      common_tokenize(this->llama_->get_ctx(),
+                      chat_context.chat_prompt_instance.prompt, false, true);
   slot->sampler =
-      common_sampler_init(llama_->get_model(), slot->params.sampling);
+      common_sampler_init(this->llama_->get_model(), slot->params.sampling);
   slot->stream_callback = callback;
   slot->chat_format = chat_context.chat_prompt_instance.format;
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
