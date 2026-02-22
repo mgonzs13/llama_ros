@@ -146,14 +146,6 @@ if(BUILD_TESTING)
     ${llama_hfhub_vendor_TARGETS}
     Threads::Threads
   )
-  
-  ament_target_dependencies(${PROJECT_NAME}_tests
-    rclcpp
-    rclcpp_lifecycle
-    llama_msgs
-    llama_cpp_vendor
-    llama_hfhub_vendor
-  )
 endif()
 
 ament_python_install_package(${PROJECT_NAME})
