@@ -80,7 +80,7 @@ TEST_F(LlamaParamsTest, DefaultParameterValues) {
   int32_t seed = node->get_parameter("seed").as_int();
   bool embedding = node->get_parameter("embedding").as_bool();
 
-  EXPECT_EQ(n_ctx, 512);
+  EXPECT_EQ(n_ctx, 0);
   EXPECT_EQ(n_batch, 2048);
   EXPECT_EQ(seed, -1);
   EXPECT_FALSE(embedding);

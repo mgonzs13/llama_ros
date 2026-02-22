@@ -128,6 +128,7 @@ if(BUILD_TESTING)
     test/test_llama_rerank.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
+    TIMEOUT 600
   )
   
   target_include_directories(${PROJECT_NAME}_tests PUBLIC

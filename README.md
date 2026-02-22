@@ -45,7 +45,13 @@ pip3 install -r llama_ros/requirements.txt
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
 colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
+```
+
+To run the tests:
+
+```shell
 colcon test --executor sequential --packages-select llama_ros llama_bt
+colcon test-result --verbose
 ```
 
 ## Docker

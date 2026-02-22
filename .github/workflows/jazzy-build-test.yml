@@ -19,7 +19,7 @@ jobs:
         with:
           package-name: llama_ros llama_bt
           target-ros2-distro: jazzy
-          skip-tests: true
+          skip-tests: false
           coverage-result: false
           colcon-defaults: |
             {
