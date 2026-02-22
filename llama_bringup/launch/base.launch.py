@@ -37,9 +37,9 @@ def generate_launch_description():
 
         params = {
             # int32_t
-            "verbosity": LaunchConfiguration("verbosity", default=0),
+            "verbosity": LaunchConfiguration("verbosity", default=3),
             "seed": LaunchConfiguration("seed", default=-1),
-            "n_ctx": LaunchConfiguration("n_ctx", default=4096),
+            "n_ctx": LaunchConfiguration("n_ctx", default=0),
             "n_batch": LaunchConfiguration("n_batch", default=2048),
             "n_ubatch": LaunchConfiguration("n_ubatch", default=512),
             "n_keep": LaunchConfiguration("n_keep", default=0),
@@ -57,10 +57,10 @@ def generate_launch_description():
             "embedding": embedding,
             "reranking": reranking,
             "use_mmap": LaunchConfiguration("use_mmap", default=True),
+            "use_direct_io": LaunchConfiguration("use_direct_io", default=False),
             "use_mlock": LaunchConfiguration("use_mlock", default=False),
             "warmup": LaunchConfiguration("warmup", default=True),
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
-            "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
             # cache params
             "ctx_shift": LaunchConfiguration("ctx_shift", default=False),
             "swa_full": LaunchConfiguration("swa_full", default=False),
@@ -68,11 +68,13 @@ def generate_launch_description():
             "no_op_offload": LaunchConfiguration("no_op_offload", default=False),
             "no_extra_bufts": LaunchConfiguration("no_extra_bufts", default=False),
             "no_kv_offload": LaunchConfiguration("no_kv_offload", default=False),
+            "no_host": LaunchConfiguration("no_host", default=False),
             "kv_unified": LaunchConfiguration("kv_unified", default=False),
             "cache_type_k": LaunchConfiguration("cache_type_k", default="f16"),
             "cache_type_v": LaunchConfiguration("cache_type_v", default="f16"),
             # CPU
-            "n_threads": LaunchConfiguration("n_threads", default=1),
+            "n_threads": LaunchConfiguration("n_threads", default=-1),
+            "n_threads_batch": LaunchConfiguration("n_threads_batch", default=-1),
             "cpu_mask": LaunchConfiguration("cpu_mask", default=""),
             "cpu_range": LaunchConfiguration("cpu_range", default=""),
             "priority": LaunchConfiguration("priority", default="normal"),
@@ -99,6 +101,9 @@ def generate_launch_description():
             # mmproj
             "mmproj_use_gpu": LaunchConfiguration("mmproj_use_gpu", default=True),
             "no_mmproj": LaunchConfiguration("no_mmproj", default=False),
+            # fit params
+            "fit_params": LaunchConfiguration("fit_params", default=True),
+            "fit_params_min_ctx": LaunchConfiguration("fit_params_min_ctx", default=4096),
             # models
             "model_path": LaunchConfiguration("model_path", default=""),
             "model_repo": LaunchConfiguration("model_repo", default=""),

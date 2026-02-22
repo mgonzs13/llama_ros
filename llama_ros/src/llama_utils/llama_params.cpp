@@ -77,17 +77,28 @@ void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   // Order matches base.launch.py as closely as possible
-  node->declare_parameters<int32_t>(
-      "",
-      {
-          {"verbosity", 0},     {"seed", -1},         {"n_ctx", 4096},
-          {"n_batch", 2048},    {"n_ubatch", 512},    {"n_keep", 0},
-          {"n_chunks", -1},     {"n_predict", -1},    {"n_parallel", 1},
-          {"n_sequences", 1},   {"n_gpu_layers", -1}, {"main_gpu", 0},
-          {"n_threads", 1},     {"poll", 50},         {"n_threads_batch", 1},
-          {"poll_batch", 50},   {"grp_attn_n", 1},    {"grp_attn_w", 512},
-          {"yarn_orig_ctx", 0},
-      });
+  node->declare_parameters<int32_t>("", {
+                                            {"verbosity", 3},
+                                            {"seed", -1},
+                                            {"n_ctx", 0},
+                                            {"n_batch", 2048},
+                                            {"n_ubatch", 512},
+                                            {"n_keep", 0},
+                                            {"n_chunks", -1},
+                                            {"n_predict", -1},
+                                            {"n_parallel", 1},
+                                            {"n_sequences", 1},
+                                            {"n_gpu_layers", -1},
+                                            {"main_gpu", 0},
+                                            {"n_threads", -1},
+                                            {"poll", 50},
+                                            {"n_threads_batch", -1},
+                                            {"poll_batch", 50},
+                                            {"grp_attn_n", 1},
+                                            {"grp_attn_w", 512},
+                                            {"yarn_orig_ctx", 0},
+                                            {"fit_params_min_ctx", 4096},
+                                        });
 
   node->declare_parameters<std::string>("", {
                                                 {"model_path", ""},
@@ -115,7 +126,6 @@ void llama_utils::declare_llama_params(
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"chat_template_file", ""},
-                                                {"flash_attn_type", "auto"},
                                             });
 
   node->declare_parameters<std::vector<std::string>>(
@@ -145,6 +155,7 @@ void llama_utils::declare_llama_params(
                                          {"embedding", false},
                                          {"reranking", false},
                                          {"use_mmap", true},
+                                         {"use_direct_io", false},
                                          {"use_mlock", false},
                                          {"warmup", true},
                                          {"check_tensors", false},
@@ -153,12 +164,14 @@ void llama_utils::declare_llama_params(
                                          {"no_op_offload", false},
                                          {"no_extra_bufts", false},
                                          {"no_kv_offload", false},
+                                         {"no_host", false},
                                          {"kv_unified", false},
                                          {"cont_batching", true},
                                          {"strict_cpu", false},
                                          {"strict_cpu_batch", false},
                                          {"mmproj_use_gpu", true},
                                          {"no_mmproj", false},
+                                         {"fit_params", true},
                                          {"lora_init_without_apply", false},
                                      });
 }
@@ -224,6 +237,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("embedding", params.params.embedding);
   node->get_parameter("reranking", reranking);
   node->get_parameter("use_mmap", params.params.use_mmap);
+  node->get_parameter("use_direct_io", params.params.use_direct_io);
   node->get_parameter("use_mlock", params.params.use_mlock);
   node->get_parameter("warmup", params.params.warmup);
   node->get_parameter("check_tensors", params.params.check_tensors);
@@ -233,6 +247,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("no_op_offload", params.params.no_op_offload);
   node->get_parameter("no_extra_bufts", params.params.no_extra_bufts);
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
+  node->get_parameter("no_host", params.params.no_host);
   node->get_parameter("kv_unified", params.params.kv_unified);
   node->get_parameter("cache_type_k", cache_type_k);
   node->get_parameter("cache_type_v", cache_type_v);
@@ -244,7 +259,8 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("strict_cpu", params.params.cpuparams.strict_cpu);
   node->get_parameter("poll", poll);
 
-  params.params.cpuparams_batch.n_threads = params.params.cpuparams.n_threads;
+  node->get_parameter("n_threads_batch",
+                      params.params.cpuparams_batch.n_threads);
   node->get_parameter("cpu_mask_batch", cpu_mask_batch);
   node->get_parameter("cpu_range_batch", cpu_range_batch);
   node->get_parameter("priority_batch", priority_batch);
@@ -267,6 +283,9 @@ LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("mmproj_use_gpu", params.params.mmproj_use_gpu);
   node->get_parameter("no_mmproj", params.params.no_mmproj);
+
+  node->get_parameter("fit_params", params.params.fit_params);
+  node->get_parameter("fit_params_min_ctx", params.params.fit_params_min_ctx);
 
   node->get_parameter("model_path", params.params.model.path);
   node->get_parameter("model_repo", params.params.model.hf_repo);
@@ -476,6 +495,8 @@ LlamaParams llama_utils::get_llama_params(
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_LINEAR;
   } else if (rope_scaling_type == "yarn") {
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_YARN;
+  } else if (rope_scaling_type == "longrope") {
+    params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_LONGROPE;
   } else {
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED;
   }
@@ -500,6 +521,8 @@ LlamaParams llama_utils::get_llama_params(
     params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
   } else if (flash_attn_type == "enabled") {
     params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+  } else if (flash_attn_type == "disabled") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
   } else {
     params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
   }
@@ -554,7 +577,9 @@ LlamaParams llama_utils::get_llama_params(
 }
 
 enum ggml_sched_priority llama_utils::parse_priority(std::string priority) {
-  if (priority == "normal") {
+  if (priority == "low") {
+    return GGML_SCHED_PRIO_LOW;
+  } else if (priority == "normal") {
     return GGML_SCHED_PRIO_NORMAL;
   } else if (priority == "medium") {
     return GGML_SCHED_PRIO_MEDIUM;
@@ -621,6 +646,9 @@ common_params_sampling llama_utils::parse_sampling_params(
   sparams.dry_allowed_length = sampling_config.dry_allowed_length;
   sparams.dry_penalty_last_n = sampling_config.dry_penalty_last_n;
   sparams.dry_sequence_breakers = sampling_config.dry_sequence_breakers;
+
+  sparams.adaptive_target = sampling_config.adaptive_target;
+  sparams.adaptive_decay = sampling_config.adaptive_decay;
 
   sparams.mirostat = sampling_config.mirostat;
   sparams.mirostat_eta = sampling_config.mirostat_eta;

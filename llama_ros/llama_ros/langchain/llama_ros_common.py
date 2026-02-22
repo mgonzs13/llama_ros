@@ -51,7 +51,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     # sampling params
     n_prev: int = 64
-    n_probs: int = 1
+    n_probs: int = 0
     min_keep: int = 0
 
     ignore_eos: bool = False
@@ -79,6 +79,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     dry_allowed_length: int = 2
     dry_penalty_last_n: int = -1
     dry_sequence_breakers: List[str] = ["\\n", ":", '\\"', "*"]
+
+    adaptive_target: float = -1.0
+    adaptive_decay: float = 0.90
 
     mirostat: int = 0
     mirostat_eta: float = 0.10
@@ -186,6 +189,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.top_k = self.top_k
         sampling_config.top_p = self.top_p
         sampling_config.min_p = self.min_p
+        sampling_config.top_n_sigma = self.top_n_sigma
         sampling_config.xtc_probability = self.xtc_probability
         sampling_config.xtc_threshold = self.xtc_threshold
         sampling_config.typical_p = self.typical_p
@@ -200,6 +204,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.dry_allowed_length = self.dry_allowed_length
         sampling_config.dry_penalty_last_n = self.dry_penalty_last_n
         sampling_config.dry_sequence_breakers = self.dry_sequence_breakers
+
+        sampling_config.adaptive_target = self.adaptive_target
+        sampling_config.adaptive_decay = self.adaptive_decay
 
         sampling_config.mirostat = self.mirostat
         sampling_config.mirostat_eta = self.mirostat_eta
