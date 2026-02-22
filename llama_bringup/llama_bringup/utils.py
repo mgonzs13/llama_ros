@@ -23,13 +23,13 @@
 
 import os
 import yaml
-from typing import Tuple
+from typing import Dict, Any, Tuple
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 
 
-def load_prompt_type(prompt_file_name: str) -> Tuple:
+def load_prompt_type(prompt_file_name: str) -> Tuple[str, str, list, str]:
+    """Load a prompt template YAML and return (prefix, suffix, stopping_words, system_prompt)."""
     file_path = os.path.join(
         get_package_share_directory("llama_bringup"),
         "prompts",
@@ -45,93 +45,171 @@ def load_prompt_type(prompt_file_name: str) -> Tuple:
     )
 
 
-def create_llama_launch_from_yaml(file_path: str) -> IncludeLaunchDescription:
-    with open(file_path, "r") as file:
-        config = yaml.safe_load(file)
-    return create_llama_launch(**config)
+def load_params_from_yaml(file_path: str) -> Dict[str, Any]:
+    """Read a flat YAML file and return its contents as a dict.
+
+    Expected format:
+        key: value
+        key2: value2
+    """
+    with open(file_path, "r") as f:
+        yaml_data = yaml.safe_load(f)
+    return dict(yaml_data)
 
 
-def create_llama_launch(**kwargs) -> IncludeLaunchDescription:
-    prompt_data = (
-        load_prompt_type(kwargs["system_prompt_type"])
-        if kwargs.get("system_prompt_type")
-        else ("", "", [], "")
-    )
-    kwargs["prefix"] = kwargs.get("prefix", prompt_data[0])
-    kwargs["suffix"] = kwargs.get("suffix", prompt_data[1])
-    kwargs["system_prompt"] = kwargs.get("system_prompt", prompt_data[3])
+def _resolve_prompt_type(params: Dict[str, Any]) -> None:
+    """Resolve system_prompt_type into prefix, suffix, stopping_words, system_prompt."""
+    if "system_prompt_type" not in params:
+        return
 
-    # stopping_words
-    kwargs["stopping_words"] = kwargs.get("stopping_words", prompt_data[2])
-    if not kwargs["stopping_words"]:
-        kwargs["stopping_words"] = [""]
-    kwargs["chat_template_file"] = kwargs.get("chat_template_file", "")
-    if kwargs["chat_template_file"]:
-        chat_template_path = ""
+    prompt_data = load_prompt_type(params.pop("system_prompt_type"))
+    params.setdefault("prefix", prompt_data[0])
+    params.setdefault("suffix", prompt_data[1])
+    if "stopping_words" not in params:
+        params["stopping_words"] = prompt_data[2]
+    params.setdefault("system_prompt", prompt_data[3])
 
-        if "/" in kwargs["chat_template_file"]:
-            chat_template_path = kwargs["chat_template_file"]
+
+def _resolve_chat_template(params: Dict[str, Any]) -> None:
+    """Resolve chat_template_file to an absolute path."""
+    chat_template = params.get("chat_template_file", "")
+    if not chat_template:
+        return
+
+    if "/" in chat_template:
+        chat_template_path = chat_template
+    else:
+        chat_template_path = os.path.join(
+            get_package_share_directory("llama_cpp_vendor"),
+            "models",
+            "templates",
+            chat_template,
+        )
+
+    if os.path.exists(chat_template_path):
+        params["chat_template_file"] = chat_template_path
+    else:
+        params["chat_template_file"] = ""
+
+
+def _resolve_lora_adapters(params: Dict[str, Any]) -> None:
+    """Flatten nested lora_adapters dicts into parallel arrays."""
+    lora_adapters_raw = params.get("lora_adapters")
+    if not lora_adapters_raw or not isinstance(lora_adapters_raw, list):
+        return
+
+    # Check if already in flattened format (list of strings)
+    if lora_adapters_raw and isinstance(lora_adapters_raw[0], str):
+        return
+
+    # Nested dict format - flatten to parallel arrays
+    lora_adapters = []
+    lora_repos = []
+    lora_filenames = []
+    lora_scales = []
+
+    for lora in lora_adapters_raw:
+        if not isinstance(lora, dict):
+            continue
+
+        if "repo" in lora and "filename" in lora:
+            lora_adapters.append("HF")
+            lora_repos.append(lora["repo"])
+            lora_filenames.append(lora["filename"])
+        elif "path" in lora:
+            lora_adapters.append(lora["path"])
         else:
-            chat_template_path = os.path.join(
-                get_package_share_directory("llama_cpp_vendor"),
-                "models",
-                "templates",
-                kwargs["chat_template_file"],
-            )
+            continue
 
-        if not os.path.exists(chat_template_path):
-            kwargs["chat_template_file"] = ""
-        else:
-            kwargs["chat_template_file"] = chat_template_path
+        lora_scales.append(lora.get("scale", 1.0))
 
-    # load lora adapters
-    lora_adapters = [""]
-    lora_adapters_repos = [""]
-    lora_adapters_filenames = [""]
-    lora_adapters_scales = [0.0]
+    params["lora_adapters"] = lora_adapters or [""]
+    params["lora_adapters_repos"] = lora_repos or [""]
+    params["lora_adapters_filenames"] = lora_filenames or [""]
+    params["lora_adapters_scales"] = lora_scales or [0.0]
 
-    if "lora_adapters" in kwargs:
-        for i in range(len(kwargs["lora_adapters"])):
-            if not lora_adapters[0]:
-                lora_adapters.clear()
-                lora_adapters_scales.clear()
 
-            lora = kwargs["lora_adapters"][i]
+def process_params(params: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+    """Process parameters: resolve special keys and extract metadata.
 
-            if "repo" in lora and "filename" in lora:
-                if not lora_adapters_repos[0]:
-                    lora_adapters_repos.clear()
-                    lora_adapters_filenames.clear()
+    Returns: (clean_params_dict, use_llava)
+    """
+    _resolve_prompt_type(params)
+    _resolve_chat_template(params)
+    _resolve_lora_adapters(params)
 
-                lora_adapters_repos.append(lora["repo"])
-                lora_adapters_filenames.append(lora["filename"])
-                lora_adapters.append("HF")
+    # Ensure stopping_words has a default
+    if not params.get("stopping_words"):
+        params["stopping_words"] = [""]
 
-            elif "path" in lora:
-                lora_adapters.append(lora["path"])
+    # Extract use_llava (not a C++ node parameter)
+    use_llava = params.pop("use_llava", False)
 
-            else:
-                continue
+    return params, use_llava
 
-            if "scale" not in lora:
-                continue
 
-            lora_adapters_scales.append(lora["scale"])
+def _create_node(
+    params: Dict[str, Any],
+    use_llava: bool,
+    node_name: str = "",
+    namespace: str = "llama",
+) -> Node:
+    """Create the appropriate ROS 2 Node action."""
+    embedding = params.get("embedding", False)
+    reranking = params.get("reranking", False)
 
-    kwargs["lora_adapters"] = lora_adapters
-    kwargs["lora_adapters_repos"] = lora_adapters_repos
-    kwargs["lora_adapters_filenames"] = lora_adapters_filenames
-    kwargs["lora_adapters_scales"] = lora_adapters_scales
+    if use_llava:
+        default_name = "llava_node"
+        executable = "llava_node"
+    elif embedding and not reranking:
+        default_name = "llama_embedding_node"
+        executable = "llama_node"
+    elif reranking:
+        default_name = "llama_reranking_node"
+        executable = "llama_node"
+    else:
+        default_name = "llama_node"
+        executable = "llama_node"
 
-    # use llava
-    if not kwargs.get("use_llava"):
-        kwargs["use_llava"] = False
-
-    return IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("llama_bringup"), "launch", "base.launch.py"
-            )
-        ),
-        launch_arguments={key: str(value) for key, value in kwargs.items()}.items(),
+    return Node(
+        package="llama_ros",
+        executable=executable,
+        name=node_name or default_name,
+        namespace=namespace,
+        parameters=[params],
     )
+
+
+def create_llama_launch_from_yaml(
+    file_path: str,
+    node_name: str = "",
+    namespace: str = "llama",
+) -> Node:
+    """Create a Node action from a YAML params file.
+
+    Supports both ROS 2 params YAML format and legacy flat format.
+
+    Args:
+        file_path: Path to the model YAML file.
+        node_name: Override the node name (default: auto-detected from model type).
+        namespace: Override the namespace (default: "llama").
+    """
+    raw_params = load_params_from_yaml(file_path)
+    params, use_llava = process_params(raw_params)
+    return _create_node(params, use_llava, node_name=node_name, namespace=namespace)
+
+
+def create_llama_launch(
+    node_name: str = "",
+    namespace: str = "llama",
+    **kwargs,
+) -> Node:
+    """Create a Node action from keyword arguments.
+
+    Args:
+        node_name: Override the node name (default: auto-detected from model type).
+        namespace: Override the namespace (default: "llama").
+        **kwargs: Model parameters.
+    """
+    params, use_llava = process_params(dict(kwargs))
+    return _create_node(params, use_llava, node_name=node_name, namespace=namespace)
