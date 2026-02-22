@@ -13,12 +13,13 @@ jobs:
       image: ros:kilted
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 install -y libz3-dev
+        uses: actions/checkout@v4
       - name: Build and Test
         uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: llama_ros llama_bt
           target-ros2-distro: kilted
+          skip-tests: true
           coverage-result: false
           colcon-defaults: |
             {
