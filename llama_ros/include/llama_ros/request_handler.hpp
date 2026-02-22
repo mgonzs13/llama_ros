@@ -130,11 +130,10 @@ public:
    * @param stop Stop sequences.
    * @param reset Whether to reset the slot.
    */
-  void
-  handle(const std::string &input_prompt, ServerSlot *slot,
-         struct common_params_sampling sparams,
-         std::function<void(struct CompletionOutput, ServerSlot *)> callback,
-         std::vector<std::string> stop, bool reset);
+  void handle(const std::string &input_prompt, ServerSlot *slot,
+              common_params_sampling sparams,
+              std::function<void(CompletionOutput, ServerSlot *)> callback,
+              std::vector<std::string> stop, bool reset);
 };
 
 /**
@@ -151,9 +150,9 @@ public:
    * @param slot The slot to prepare.
    * @param callback Callback for streaming results.
    */
-  void
-  handle(llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot,
-         std::function<void(struct CompletionOutput, ServerSlot *)> callback);
+  void handle(llama_utils::ChatCompletionsContext chat_context,
+              ServerSlot *slot,
+              std::function<void(CompletionOutput, ServerSlot *)> callback);
 };
 
 } // namespace llama_ros

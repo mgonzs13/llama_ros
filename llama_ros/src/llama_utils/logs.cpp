@@ -15,7 +15,7 @@
 
 #include "llama_utils/logs.hpp"
 
-namespace llama_utils {
+using namespace llama_utils;
 
 /**
  * @brief Default error logging function.
@@ -110,14 +110,14 @@ void default_log_debug(const char *file, const char *function, int line,
 }
 
 // Initialize the function pointers with default log functions
-LogFunction log_error = default_log_error;
-LogFunction log_warn = default_log_warn;
-LogFunction log_info = default_log_info;
-LogFunction log_debug = default_log_debug;
+llama_utils::LogFunction llama_utils::log_error = default_log_error;
+llama_utils::LogFunction llama_utils::log_warn = default_log_warn;
+llama_utils::LogFunction llama_utils::log_info = default_log_info;
+llama_utils::LogFunction llama_utils::log_debug = default_log_debug;
 
 // Initialize the log level to INFO
-LogLevel log_level = INFO;
+llama_utils::LogLevel llama_utils::log_level = INFO;
 
-void set_log_level(LogLevel log_level) { log_level = log_level; }
-
-} // namespace llama_utils
+void llama_utils::set_log_level(LogLevel level) {
+  llama_utils::log_level = level;
+}

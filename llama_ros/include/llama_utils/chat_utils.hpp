@@ -11,7 +11,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -69,7 +69,7 @@ static inline std::string random_string(int string_size) {
   return result;
 }
 
-static size_t validate_utf8(const std::string &text) {
+inline size_t validate_utf8(const std::string &text) {
   size_t len = text.size();
   if (len == 0)
     return 0;
@@ -135,7 +135,7 @@ common_reasoning_format parse_reasoning_format(const int reasoning_format);
  * @param goal The goal shared pointer from the action server.
  * @return The parsed chat templates inputs.
  */
-struct common_chat_templates_inputs parse_chat_completions_goal(
+common_chat_templates_inputs parse_chat_completions_goal(
     const std::shared_ptr<
         const llama_msgs::action::GenerateChatCompletions::Goal>
         goal);

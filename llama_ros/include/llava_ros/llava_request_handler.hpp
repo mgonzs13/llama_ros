@@ -49,12 +49,12 @@ public:
    * @param stop Stop sequences.
    * @param reset Whether to reset the slot.
    */
-  void handle(const std::string &input_prompt, llama_ros::ServerSlot *slot,
-              struct common_params_sampling sparams,
-              std::function<void(struct llama_ros::CompletionOutput,
-                                 llama_ros::ServerSlot *)>
-                  callback,
-              std::vector<std::string> stop, bool reset);
+  void handle(
+      const std::string &input_prompt, llama_ros::ServerSlot *slot,
+      common_params_sampling sparams,
+      std::function<void(llama_ros::CompletionOutput, llama_ros::ServerSlot *)>
+          callback,
+      std::vector<std::string> stop, bool reset);
 
 private:
   Llava *llava_;
@@ -74,11 +74,11 @@ public:
    * @param slot The slot to prepare.
    * @param callback Callback for streaming results.
    */
-  void handle(llama_utils::ChatCompletionsContext chat_context,
-              llama_ros::ServerSlot *slot,
-              std::function<void(struct llama_ros::CompletionOutput,
-                                 llama_ros::ServerSlot *)>
-                  callback);
+  void handle(
+      llama_utils::ChatCompletionsContext chat_context,
+      llama_ros::ServerSlot *slot,
+      std::function<void(llama_ros::CompletionOutput, llama_ros::ServerSlot *)>
+          callback);
 
 private:
   Llava *llava_;

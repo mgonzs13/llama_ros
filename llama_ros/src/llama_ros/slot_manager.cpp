@@ -25,7 +25,7 @@
 #include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
 
-namespace llama_ros {
+using namespace llama_ros;
 
 SlotManager::SlotManager(std::vector<ServerSlot> &slots)
     : server_slots_(slots) {
@@ -89,5 +89,3 @@ void SlotManager::release_slot(ServerSlot *slot) {
 }
 
 void SlotManager::notify_slot_available() { slot_cv_.notify_one(); }
-
-} // namespace llama_ros

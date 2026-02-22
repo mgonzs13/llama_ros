@@ -11,7 +11,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -54,22 +54,22 @@ llama_utils::parse_reasoning_format(const int reasoning_format) {
   }
 }
 
-struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
+common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
     const std::shared_ptr<
         const llama_msgs::action::GenerateChatCompletions::Goal>
         goal) {
 
-  struct common_chat_templates_inputs inputs;
+  common_chat_templates_inputs inputs;
 
   std::vector<common_chat_msg> messages;
   for (auto message : goal->messages) {
-    struct common_chat_msg msg;
+    common_chat_msg msg;
     msg.role = message.role;
     msg.content = message.content;
     std::vector<common_chat_msg_content_part> content_parts;
 
     for (auto content_part : message.content_parts) {
-      struct common_chat_msg_content_part part;
+      common_chat_msg_content_part part;
       part.type = content_part.type;
       part.text = content_part.text;
       content_parts.push_back(part);
@@ -78,7 +78,7 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 
     std::vector<common_chat_tool_call> tool_calls;
     for (auto tool_call : message.tool_calls) {
-      struct common_chat_tool_call call;
+      common_chat_tool_call call;
       call.name = tool_call.name;
       call.arguments = tool_call.arguments;
       call.id = tool_call.id;
@@ -91,7 +91,7 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 
   std::vector<common_chat_tool> tools;
   for (auto tool : goal->tools) {
-    struct common_chat_tool t;
+    common_chat_tool t;
     t.name = tool.function.name;
     t.description = tool.function.description;
     t.parameters = tool.function.parameters;

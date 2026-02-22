@@ -26,7 +26,7 @@
 #include "llama_utils/chat_utils.hpp"
 #include "llama_utils/logs.hpp"
 
-namespace llama_ros {
+using namespace llama_ros;
 
 // EmbeddingRequestHandler implementation
 std::vector<llama_token>
@@ -136,9 +136,9 @@ void RerankRequestHandler::handle(const std::string &query,
 // CompletionRequestHandler implementation
 void CompletionRequestHandler::handle(
     const std::string &input_prompt, ServerSlot *slot,
-    struct common_params_sampling sparams,
-    std::function<void(struct CompletionOutput, ServerSlot *)> callback,
-    std::vector<std::string> stop, bool reset) {
+    common_params_sampling sparams,
+    std::function<void(CompletionOutput, ServerSlot *)> callback,
+    std::vector<std::string> stop, bool /*reset*/) {
   slot->prompt_tokens.clear();
   std::string full_prompt = "";
 
@@ -173,7 +173,7 @@ void CompletionRequestHandler::handle(
 // ChatCompletionRequestHandler implementation
 void ChatCompletionRequestHandler::handle(
     llama_utils::ChatCompletionsContext chat_context, ServerSlot *slot,
-    std::function<void(struct CompletionOutput, ServerSlot *)> callback) {
+    std::function<void(CompletionOutput, ServerSlot *)> callback) {
   // No longer need to get chat_tmpls - already initialized in ChatFormatter
 
   slot->reset();
@@ -196,5 +196,3 @@ void ChatCompletionRequestHandler::handle(
   slot->task_type = SERVER_TASK_TYPE_COMPLETION;
   slot->state = SLOT_STATE_STARTED;
 }
-
-} // namespace llama_ros

@@ -164,7 +164,7 @@ protected:
    * This structure contains the configuration options for initializing and
    * managing the Llama model.
    */
-  struct llama_utils::LlamaParams params;
+  llama_utils::LlamaParams params;
 
   /**
    * @brief Creates and initializes the Llama instance.
@@ -214,7 +214,7 @@ protected:
    * @param completion The completion output containing the generated text.
    * @param goal_handle The goal handle for the GenerateResponse action.
    */
-  void send_text(const struct CompletionOutput &completion,
+  void send_text(const CompletionOutput &completion,
                  const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle,
                  int slot_id);
 
@@ -253,7 +253,7 @@ protected:
    * @param goal_handle The goal handle for the GenerateChatCompletions action.
    */
   void send_text_chat_completions(
-      const struct CompletionOutput &completion,
+      const CompletionOutput &completion,
       const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle,
       int slot_id);
 

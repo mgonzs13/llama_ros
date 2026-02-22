@@ -25,7 +25,7 @@
 #include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
 
-namespace llama_ros {
+using namespace llama_ros;
 
 std::future<ServerTaskResultPtr>
 TaskRegistry::register_pending(uint64_t goal_id) {
@@ -102,5 +102,3 @@ void TaskRegistry::fail_all_pending() {
   }
   pending_.clear();
 }
-
-} // namespace llama_ros

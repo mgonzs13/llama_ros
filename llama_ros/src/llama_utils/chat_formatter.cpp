@@ -24,7 +24,7 @@
 #include "llama_utils/chat_formatter.hpp"
 #include "llama_utils/logs.hpp"
 
-namespace llama_utils {
+using namespace llama_utils;
 
 ChatFormatter::ChatFormatter(const llama_model *model,
                              const std::string &custom_template)
@@ -59,5 +59,3 @@ ChatFormatter::parse_response(const std::string &text, bool is_partial,
 
   return common_chat_parse(text, is_partial, chat_syntax);
 }
-
-} // namespace llama_utils

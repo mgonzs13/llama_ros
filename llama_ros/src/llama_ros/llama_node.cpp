@@ -499,11 +499,11 @@ void LlamaNode::update_loras_service_callback(
 
   (void)response;
 
-  std::vector<struct LoRA> loras;
+  std::vector<LoRA> loras;
 
   for (auto lora_msg : request->loras) {
 
-    struct LoRA lora_aux;
+    LoRA lora_aux;
     lora_aux.id = lora_msg.id;
     lora_aux.path = lora_msg.path;
     lora_aux.scale = lora_msg.scale;
@@ -589,7 +589,7 @@ void LlamaNode::execute(
   // Execute via Llama
   auto result = this->llama->generate_response(
       slot_id, context.prompt, context.sparams,
-      [this, goal_handle, slot_id](const struct CompletionOutput &completion,
+      [this, goal_handle, slot_id](const CompletionOutput &completion,
                                    ServerSlot *) {
         this->send_text(completion, goal_handle, slot_id);
       },
@@ -626,7 +626,7 @@ void LlamaNode::execute(
 }
 
 void LlamaNode::send_text(
-    const struct CompletionOutput &completion,
+    const CompletionOutput &completion,
     const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle,
     int slot_id) {
   (void)slot_id;
@@ -643,7 +643,6 @@ void LlamaNode::send_text(
 *     GENERATE CHAT         *
 *****************************
 */
-
 rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
     const rclcpp_action::GoalUUID &uuid,
     std::shared_ptr<const GenerateChatCompletions::Goal> goal) {
@@ -718,7 +717,7 @@ void LlamaNode::execute_chat_completions(
   // Execute via Llama
   auto result_data = this->llama->generate_chat_response(
       slot_gid, chat_context,
-      [this, goal_handle, slot_gid](const struct CompletionOutput &completion,
+      [this, goal_handle, slot_gid](const CompletionOutput &completion,
                                     ServerSlot *) {
         this->send_text_chat_completions(completion, goal_handle, slot_gid);
       });
@@ -754,7 +753,7 @@ void LlamaNode::execute_chat_completions(
 }
 
 void LlamaNode::send_text_chat_completions(
-    const struct CompletionOutput &completion,
+    const CompletionOutput &completion,
     const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle,
     int slot_id) {
   if (this->llama && goal_handle) {

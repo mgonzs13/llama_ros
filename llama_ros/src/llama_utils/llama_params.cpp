@@ -11,7 +11,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -163,7 +163,7 @@ void llama_utils::declare_llama_params(
                                      });
 }
 
-struct LlamaParams llama_utils::get_llama_params(
+LlamaParams llama_utils::get_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
   int32_t seed;
@@ -202,7 +202,7 @@ struct LlamaParams llama_utils::get_llama_params(
 
   std::string file_path;
 
-  struct LlamaParams params;
+  LlamaParams params;
 
   node->get_parameter("verbosity", params.params.verbosity);
   node->get_parameter("seed", seed);
@@ -585,10 +585,10 @@ common_grammar_trigger_type llama_utils::parse_grammar_trigger_type(int type) {
   }
 }
 
-struct common_params_sampling llama_utils::parse_sampling_params(
+common_params_sampling llama_utils::parse_sampling_params(
     const llama_msgs::msg::SamplingConfig &sampling_config, int n_vocab) {
 
-  struct common_params_sampling sparams;
+  common_params_sampling sparams;
 
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;

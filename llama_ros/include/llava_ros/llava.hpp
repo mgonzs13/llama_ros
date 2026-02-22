@@ -11,7 +11,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -57,7 +57,7 @@ public:
    * @param params Common parameters for the llama.cpp.
    * @param system_prompt The system prompt to initialize the model's context.
    */
-  Llava(const struct common_params &params, std::string system_prompt = "");
+  Llava(const common_params &params, std::string system_prompt = "");
 
   /**
    * @brief Destroys the Llava instance.
@@ -97,7 +97,7 @@ public:
 
   void handle_completion_req(
       const std::string &input_prompt, llama_ros::ServerSlot *slot,
-      struct common_params_sampling sparams,
+      common_params_sampling sparams,
       llama_ros::ServerSlot::GenerateResponseCallback callback = nullptr,
       std::vector<std::string> stop = {}, bool reset = true) override;
 
@@ -125,7 +125,7 @@ protected:
    * This context is used for managing the state and operations of the
    * multimodal.
    */
-  struct mtmd_context *mtmd_ctx;
+  mtmd_context *mtmd_ctx;
 
   bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
 

@@ -36,6 +36,7 @@ endif()
 # Common source files
 set(LLAMA_CORE_SOURCES
   src/llama_ros/llama.cpp
+  src/llama_ros/server_slot.cpp
   src/llama_ros/slot_manager.cpp
   src/llama_ros/task_registry.cpp
   src/llama_ros/request_handler.cpp

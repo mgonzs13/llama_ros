@@ -11,7 +11,7 @@
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,7 +34,7 @@
 
 using namespace llava_ros;
 
-Llava::Llava(const struct common_params &params, std::string system_prompt)
+Llava::Llava(const common_params &params, std::string system_prompt)
     : llama_ros::Llama(params, system_prompt, false) {
 
   // create mtmd params
@@ -48,9 +48,9 @@ Llava::Llava(const struct common_params &params, std::string system_prompt)
                                        this->get_model(), mparams);
 
   // Initialize Llava-specific handlers
-  llava_completion_handler_ =
+  this->llava_completion_handler_ =
       std::make_unique<LlavaCompletionRequestHandler>(this);
-  llava_chat_completion_handler_ =
+  this->llava_chat_completion_handler_ =
       std::make_unique<LlavaChatCompletionRequestHandler>(this);
 
   // set inital values
@@ -197,7 +197,7 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks,
 
 void llava_ros::Llava::handle_completion_req(
     const std::string &input_prompt, llama_ros::ServerSlot *slot,
-    struct common_params_sampling sparams,
+    common_params_sampling sparams,
     llama_ros::ServerSlot::GenerateResponseCallback callback,
     std::vector<std::string> stop, bool reset) {
   llava_completion_handler_->handle(input_prompt, slot, sparams, callback, stop,
