@@ -34,8 +34,7 @@ LlavaCompletionRequestHandler::LlavaCompletionRequestHandler(Llava *llava)
 void LlavaCompletionRequestHandler::handle(
     const std::string &input_prompt, llama_ros::ServerSlot *slot,
     common_params_sampling sparams,
-    std::function<void(llama_ros::CompletionOutput,
-                       llama_ros::ServerSlot *)>
+    std::function<void(llama_ros::CompletionOutput, llama_ros::ServerSlot *)>
         callback,
     std::vector<std::string> stop, bool reset) {
   (void)reset; // Unused parameter
@@ -93,8 +92,7 @@ LlavaChatCompletionRequestHandler::LlavaChatCompletionRequestHandler(
 void LlavaChatCompletionRequestHandler::handle(
     llama_utils::ChatCompletionsContext chat_context,
     llama_ros::ServerSlot *slot,
-    std::function<void(llama_ros::CompletionOutput,
-                       llama_ros::ServerSlot *)>
+    std::function<void(llama_ros::CompletionOutput, llama_ros::ServerSlot *)>
         callback) {
   LLAMA_LOG_INFO("Handling chat completion request");
 
