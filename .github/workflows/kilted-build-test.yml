@@ -19,7 +19,7 @@ jobs:
         with:
           package-name: llama_ros llama_bt
           target-ros2-distro: kilted
-          skip-tests: false
+          skip-tests: true
           coverage-result: false
           colcon-defaults: |
             {

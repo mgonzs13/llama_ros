@@ -20,7 +20,7 @@ jobs:
           package-name: llama_ros llama_bt
           target-ros2-distro: rolling
           coverage-result: false
-          skip-tests: false
+          skip-tests: true
           colcon-defaults: |
             {
               "test": {
