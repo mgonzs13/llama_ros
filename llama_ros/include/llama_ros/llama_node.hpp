@@ -27,7 +27,11 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
@@ -80,6 +84,7 @@ public:
    * Initializes the node and sets up the necessary services and actions.
    */
   LlamaNode();
+  ~LlamaNode() override;
 
   /**
    * @brief Callback for the "configure" lifecycle transition.
@@ -162,22 +167,6 @@ protected:
   struct llama_utils::LlamaParams params;
 
   /**
-   * @brief Goal handle for the GenerateResponse action.
-   *
-   * This shared pointer manages the goal handle for the GenerateResponse action
-   * server.
-   */
-  std::shared_ptr<GoalHandleGenerateResponse> goal_handle_;
-
-  /**
-   * @brief Goal handle for the GenerateChatCompletions action.
-   *
-   * This shared pointer manages the goal handle for the GenerateChatCompletions
-   * action server.
-   */
-  std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle_chat_;
-
-  /**
    * @brief Creates and initializes the Llama instance.
    *
    * This virtual method is responsible for creating the Llama object and
@@ -214,7 +203,8 @@ protected:
    * GenerateResponse action.
    */
   virtual void
-  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle);
+  execute(const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+          int slot_id);
 
   /**
    * @brief Sends the generated text response.
@@ -222,8 +212,11 @@ protected:
    * This method sends the generated text response to the client.
    *
    * @param completion The completion output containing the generated text.
+   * @param goal_handle The goal handle for the GenerateResponse action.
    */
-  void send_text(const struct CompletionOutput &completion);
+  void send_text(const struct CompletionOutput &completion,
+                 const std::shared_ptr<GoalHandleGenerateResponse> &goal_handle,
+                 int slot_id);
 
   /**
    * @brief Checks if the GenerateChatCompletions goal is empty.
@@ -247,7 +240,8 @@ protected:
    * GenerateChatCompletions action.
    */
   virtual void execute_chat_completions(
-      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle);
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
+      int slot_id);
 
   /**
    * @brief Sends the generated chat completion response.
@@ -256,8 +250,25 @@ protected:
    *
    * @param completion The completion output containing the generated chat
    * response.
+   * @param goal_handle The goal handle for the GenerateChatCompletions action.
    */
-  void send_text_chat_completions(const struct CompletionOutput &completion);
+  void send_text_chat_completions(
+      const struct CompletionOutput &completion,
+      const std::shared_ptr<GoalHandleGenerateChatCompletions> &goal_handle,
+      int slot_id);
+
+  /**
+   * @brief Thread running the Llama run_loop.
+   *
+   * This thread continuously processes slots in the background.
+   */
+  std::thread run_loop_thread_;
+  std::vector<std::thread> worker_threads_;
+  std::mutex worker_threads_mutex_;
+  std::atomic<bool> shutting_down_{false};
+
+  void launch_worker_thread(std::thread worker_thread);
+  void join_worker_threads();
 
 private:
   /**

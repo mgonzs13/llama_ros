@@ -22,8 +22,10 @@
 
 #include "llama_utils/chat_utils.hpp"
 #include "llama_ros/llama.hpp"
+#include "llama_utils/llama_params.hpp"
 #include <common.h>
 #include <cstddef>
+#include <llama_msgs/action/generate_response.hpp>
 #include <llama_msgs/msg/detail/chat_req_tool__struct.hpp>
 
 common_chat_tool_choice llama_utils::parse_chat_tool_choice(int type) {
@@ -112,11 +114,12 @@ struct common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
 }
 
 llama_msgs::action::GenerateChatCompletions::Result
-llama_utils::generate_chat_completions_result(const ResponseResult &result) {
+llama_utils::generate_chat_completions_result(
+    const llama_ros::ServerTaskResultCompletion &result) {
   llama_msgs::msg::ChatMessage chat_msg;
   std::string finish_reason = "stop";
 
-  common_chat_msg msg = result.chat_msg;
+  common_chat_msg msg = result.oaicompat_msg;
 
   if (msg.tool_calls.size() > 0) {
     finish_reason = "tool_calls";
@@ -183,7 +186,9 @@ llama_utils::generate_chat_completions_result(const ResponseResult &result) {
 
 std::vector<llama_msgs::action::GenerateChatCompletions::Feedback>
 llama_utils::generate_chat_completions_feedback(
-    const ResponseResult &result, std::vector<common_chat_msg_diff> deltas) {
+    const llama_ros::ServerTaskResultCompletionPartial &result,
+    std::vector<common_chat_msg_diff> deltas,
+    std::vector<llama_msgs::msg::TokenProb> probs) {
   bool first = result.n_decoded == 0;
 
   std::vector<llama_msgs::action::GenerateChatCompletions::Feedback> feedbacks;
@@ -240,6 +245,21 @@ llama_utils::generate_chat_completions_feedback(
       choice.delta.tool_calls.push_back(tool_call);
     }
 
+    // Add logprobs to the streaming feedback if available
+    if (!probs.empty()) {
+      llama_msgs::msg::TokenProbArray logprobs_msg;
+      logprobs_msg.chosen_token = probs[0].token;
+      for (const auto &prob : probs) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = prob.token;
+        // Convert probability to log probability
+        aux.probability = std::log(prob.probability);
+        aux.token_text = prob.token_text;
+        logprobs_msg.data.push_back(aux);
+      }
+      choice.logprobs = logprobs_msg;
+    }
+
     feedback.choices.push_back(choice);
     feedbacks.push_back(feedback);
   }
@@ -254,10 +274,10 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
   llama_utils::ChatCompletionsContext ctx;
 
   // Get model chat template
-  auto tmpls = llama->get_chat_templates();
+  auto tmpls = llama->get_chat_formatter();
   ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
   ctx.chat_prompt_instance =
-      llama->get_chat_params(tmpls.get(), ctx.prompt_format_config);
+      llama->get_chat_params(tmpls->get_templates(), ctx.prompt_format_config);
   ctx.sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                    llama->get_n_vocab());
 
@@ -283,4 +303,93 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
                              goal->sampling_config.grammar_lazy;
 
   return ctx;
+}
+
+llama_utils::CompletionContext llama_utils::prepare_completion_call(
+    const std::shared_ptr<const llama_msgs::action::GenerateResponse::Goal>
+        &goal,
+    llama_ros::Llama *llama) {
+  llama_utils::CompletionContext ctx;
+
+  ctx.prompt = goal->prompt;
+  ctx.stop = goal->stop;
+  ctx.reset = goal->reset;
+
+  // Apply EOG logit biases to sampling configuration
+  llama_msgs::msg::SamplingConfig sampling_config = goal->sampling_config;
+
+  if (llama && llama->get_vocab() && llama->get_ctx()) {
+    llama_utils::apply_eog_logit_biases(sampling_config, llama->get_vocab(),
+                                        llama->get_ctx());
+  }
+
+  ctx.sparams = llama_utils::parse_sampling_params(
+      sampling_config, llama ? llama->get_n_vocab() : 0);
+
+  return ctx;
+}
+
+llama_msgs::action::GenerateResponse::Result
+llama_utils::generate_completion_result(
+    const llama_ros::ServerTaskResultCompletion &result,
+    llama_ros::Llama *llama) {
+  llama_msgs::action::GenerateResponse::Result ros_result;
+
+  ros_result.response.text = result.content;
+  ros_result.response.tokens = result.tokens;
+
+  if (llama) {
+    for (const auto &probs_msg : result.probs_output) {
+      llama_msgs::msg::TokenProbArray probs_msg_aux;
+      for (const auto &prob : probs_msg.data) {
+        llama_msgs::msg::TokenProb aux;
+        aux.token = prob.token;
+        aux.probability = prob.probability;
+        aux.token_text =
+            llama->detokenize(std::vector<llama_token>{prob.token});
+        probs_msg_aux.data.push_back(aux);
+      }
+      ros_result.response.probs.push_back(probs_msg_aux);
+    }
+  }
+
+  return ros_result;
+}
+
+llama_msgs::action::GenerateResponse::Feedback
+llama_utils::create_completion_feedback(
+    const llama_ros::CompletionOutput &completion, llama_ros::Llama *llama) {
+  llama_msgs::action::GenerateResponse::Feedback feedback;
+
+  if (llama) {
+    feedback.partial_response.text = llama->detokenize({completion.token});
+  }
+  feedback.partial_response.token = completion.token;
+  feedback.partial_response.probs.chosen_token = completion.token;
+
+  if (llama) {
+    for (auto prob : completion.probs) {
+      llama_msgs::msg::TokenProb aux;
+      aux.token = prob.token;
+      aux.probability = prob.probability;
+      aux.token_text = llama->detokenize({prob.token});
+      feedback.partial_response.probs.data.push_back(aux);
+    }
+  }
+
+  return feedback;
+}
+
+int32_t llama_utils::uuid_to_int32(const std::array<uint8_t, 16> &uuid) {
+  int32_t value;
+  std::memcpy(&value, uuid.data(), sizeof(int32_t));
+  return value;
+}
+
+uint64_t llama_utils::generate_random_uint64() {
+  static std::random_device rd;
+  static std::mt19937_64 eng(rd());
+  static std::uniform_int_distribution<uint64_t> distr;
+
+  return distr(eng);
 }

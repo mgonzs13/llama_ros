@@ -26,26 +26,32 @@
 #include "base64.hpp"
 #include "common.h"
 
+#include "llama_ros/llama.hpp"
+#include "llama_utils/chat_utils.hpp"
 #include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
+#include "llava_ros/llava_request_handler.hpp"
 
 using namespace llava_ros;
 
 Llava::Llava(const struct common_params &params, std::string system_prompt)
-    : llama_ros::Llama(params, system_prompt, false),
-      chunks(mtmd_input_chunks_init()) {
+    : llama_ros::Llama(params, system_prompt, false) {
 
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
   mparams.use_gpu = params.mmproj_use_gpu;
   mparams.print_timings = false;
   mparams.n_threads = params.cpuparams.n_threads;
-  mparams.verbosity =
-      params.verbosity > 0 ? GGML_LOG_LEVEL_DEBUG : GGML_LOG_LEVEL_INFO;
 
   // load multimodal model
   this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
                                        this->get_model(), mparams);
+
+  // Initialize Llava-specific handlers
+  llava_completion_handler_ =
+      std::make_unique<LlavaCompletionRequestHandler>(this);
+  llava_chat_completion_handler_ =
+      std::make_unique<LlavaChatCompletionRequestHandler>(this);
 
   // set inital values
   this->reset();
@@ -60,34 +66,6 @@ void Llava::reset() { Llama::reset(); }
 *        LOAD MTMDS         *
 *****************************
 */
-void Llava::load_prompt(const std::string &input_prompt, bool add_pfx,
-                        bool add_sfx) {
-
-  std::string prompt = input_prompt;
-
-  if (add_pfx && !this->check_if_prefix()) {
-    prompt = this->params.input_prefix + prompt;
-  }
-
-  if (add_sfx) {
-    prompt += this->params.input_suffix;
-  }
-
-  mtmd_input_text inp_txt = {
-      prompt.c_str(),
-      /* add_special */ true,
-      /* parse_special */ true,
-  };
-
-  auto bitmaps_c_ptr = this->bitmaps.c_ptr();
-
-  if (mtmd_tokenize(this->mtmd_ctx, this->chunks.ptr.get(), &inp_txt,
-                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size()) != 0) {
-    LLAMA_LOG_ERROR("Failed to tokenize prompt");
-    return;
-  }
-}
-
 // Computes FNV-1a hash of the data
 static std::string fnv_hash(const uint8_t *data, size_t len) {
   const uint64_t fnv_prime = 0x100000001b3ULL;
@@ -139,59 +117,96 @@ void Llava::clear_mtmds() {
   this->bitmaps.entries.clear();
 }
 
-/*
-*****************************
-*        EVAL IMAGE         *
-*****************************
-*/
-bool Llava::eval_prompt() {
+const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,
+                                        llama_ros::ServerSlot *slot) {
+  auto it = slot->map_pos_to_media.find(pos);
+  if (it != slot->map_pos_to_media.end()) {
+    return it->second;
+  } else {
+    throw std::runtime_error("Chunk not found");
+  }
+}
 
-  for (size_t i = 0; i < this->chunks.size(); i++) {
+int32_t process_chunk(llama_context *ctx, mtmd_context *mctx, llama_pos n_past,
+                      int32_t seq_id, llama_pos &n_pos_out,
+                      llama_ros::ServerSlot *slot) {
+  auto &chunk = find_chunk(n_past, slot);
+  const char *name =
+      mtmd_input_chunk_get_type(chunk.get()) == MTMD_INPUT_CHUNK_TYPE_IMAGE
+          ? "image"
+          : "audio";
+  LLAMA_LOG_INFO("processing %s...\n", name);
+  int32_t n_batch = llama_n_batch(ctx);
+  llama_pos new_n_past = n_past;
+  int32_t result = mtmd_helper_eval_chunk_single(mctx, ctx, chunk.get(), n_past,
+                                                 seq_id, n_batch,
+                                                 true, // logits last
+                                                 &new_n_past);
+  if (result != 0) {
+    n_pos_out = n_past;
+    return result;
+  }
+  n_pos_out = new_n_past;
+  return 0;
+}
 
-    auto chunk = mtmd_input_chunk_copy(this->chunks[i]);
+bool Llava::process_mtmd_chunk(llama_ros::ServerSlot *slot) {
+  if (!slot) {
+    return false;
+  }
+
+  int32_t new_n_past;
+  int32_t res = process_chunk(this->ctx, this->mtmd_ctx, slot->n_past, slot->id,
+                              new_n_past, slot);
+  int32_t n_pos = new_n_past - slot->n_past;
+
+  if (res != 0) {
+    LLAMA_LOG_ERROR("failed to process image, res = %d\n", res);
+    return false;
+  }
+
+  slot->n_past += n_pos;
+  slot->n_prompt_tokens_processed += n_pos;
+  return true;
+}
+
+void Llava::process_input_chunks(mtmd::input_chunks &chunks,
+                                 llama_ros::ServerSlot *slot) {
+  for (size_t i = 0; i < chunks.size(); i++) {
+    auto chunk = mtmd_input_chunk_copy(chunks[i]);
     auto chunk_type = mtmd_input_chunk_get_type(chunk);
 
-    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_IMAGE ||
-        chunk_type == MTMD_INPUT_CHUNK_TYPE_AUDIO) {
-
-      LLAMA_LOG_INFO("Evaluating mtmd data");
-
-      if (!this->eval_mtmd_chunk(chunk)) {
-        LLAMA_LOG_ERROR("Error evaluating the image");
-        return false;
-      }
-
-    } else if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
-
-      LLAMA_LOG_INFO("Evaluating text");
-
+    if (chunk_type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
       size_t n_tokens;
       auto tokens = mtmd_input_chunk_get_tokens_text(chunk, &n_tokens);
 
       for (size_t j = 0; j < n_tokens; j++) {
-        this->prompt_tokens.push_back(tokens[j]);
+        slot->prompt_tokens.push_back(tokens[j]);
       }
-
-      if (!Llama::eval_prompt(this->prompt_tokens)) {
-        return false;
+    } else {
+      const int n_pos = mtmd_input_chunk_get_n_pos(chunk);
+      llama_pos start_pos = slot->prompt_tokens.size();
+      for (int i = 0; i < n_pos; ++i) {
+        slot->prompt_tokens.emplace_back(LLAMA_TOKEN_NULL);
       }
+      mtmd::input_chunk_ptr new_chunk(mtmd_input_chunk_copy(chunk));
+      slot->map_pos_to_media[start_pos] = std::move(new_chunk);
     }
-
-    mtmd_input_chunk_free(chunk);
   }
-
-  LLAMA_LOG_INFO("llava prompt: %s",
-                 this->detokenize(this->prompt_tokens).c_str());
-
-  return true;
 }
 
-bool Llava::eval_mtmd_chunk(const mtmd_input_chunk *image_chunk) {
-  return mtmd_helper_eval_chunk_single(this->mtmd_ctx, this->ctx, // contexts
-                                       image_chunk,               // image chunk
-                                       this->n_past,              // n_past
-                                       0,                         // seq_id
-                                       this->params.n_batch,      // batch
-                                       true,                      // logits last
-                                       &this->n_past) == 0;
+void llava_ros::Llava::handle_completion_req(
+    const std::string &input_prompt, llama_ros::ServerSlot *slot,
+    struct common_params_sampling sparams,
+    llama_ros::ServerSlot::GenerateResponseCallback callback,
+    std::vector<std::string> stop, bool reset) {
+  llava_completion_handler_->handle(input_prompt, slot, sparams, callback, stop,
+                                    reset);
+}
+
+void llava_ros::Llava::handle_chat_completion_req(
+    llama_utils::ChatCompletionsContext chat_context,
+    llama_ros::ServerSlot *slot,
+    llama_ros::ServerSlot::GenerateResponseCallback callback) {
+  llava_chat_completion_handler_->handle(chat_context, slot, callback);
 }

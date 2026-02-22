@@ -115,6 +115,7 @@ void llama_utils::declare_llama_params(
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"chat_template_file", ""},
+                                                {"flash_attn_type", "auto"},
                                             });
 
   node->declare_parameters<std::vector<std::string>>(
@@ -243,8 +244,7 @@ struct LlamaParams llama_utils::get_llama_params(
   node->get_parameter("strict_cpu", params.params.cpuparams.strict_cpu);
   node->get_parameter("poll", poll);
 
-  node->get_parameter("n_threads_batch",
-                      params.params.cpuparams_batch.n_threads);
+  params.params.cpuparams_batch.n_threads = params.params.cpuparams.n_threads;
   node->get_parameter("cpu_mask_batch", cpu_mask_batch);
   node->get_parameter("cpu_range_batch", cpu_range_batch);
   node->get_parameter("priority_batch", priority_batch);
@@ -660,4 +660,42 @@ struct common_params_sampling llama_utils::parse_sampling_params(
   sparams.top_k = sparams.top_k <= 0 ? n_vocab : sparams.top_k;
 
   return sparams;
+}
+
+void llama_utils::apply_eog_logit_biases(
+    llama_msgs::msg::SamplingConfig &sampling_config,
+    const struct llama_vocab *vocab, const struct llama_context *ctx) {
+
+  // Check if vocab has an EOS token when ignore_eos is enabled
+  if (sampling_config.ignore_eos &&
+      llama_vocab_eos(vocab) == LLAMA_TOKEN_NULL) {
+    LLAMA_LOG_WARN("vocab does not have an EOS token, ignoring --ignore-eos\n");
+    sampling_config.ignore_eos = false;
+  }
+
+  LLAMA_LOG_INFO("Using ignore_eos = %s",
+                 sampling_config.ignore_eos ? "true" : "false");
+
+  // Collect all EOG tokens and add them to logit_bias_eog
+  for (llama_token i = 0; i < llama_vocab_n_tokens(vocab); i++) {
+    if (llama_vocab_is_eog(vocab, i)) {
+      LLAMA_LOG_WARN("added %s logit bias = %f\n",
+                     common_token_to_piece(ctx, i).c_str(), -INFINITY);
+      llama_msgs::msg::LogitBias bias_eog;
+      bias_eog.token = i;
+      bias_eog.bias = -INFINITY;
+      sampling_config.logit_bias_eog.data.push_back(bias_eog);
+    }
+  }
+
+  LLAMA_LOG_INFO("Using %ld EOG logit biases",
+                 sampling_config.logit_bias_eog.data.size());
+
+  // Apply EOG biases to the active logit bias set if ignore_eos is enabled
+  if (sampling_config.ignore_eos) {
+    sampling_config.logit_bias.data.insert(
+        sampling_config.logit_bias.data.end(),
+        sampling_config.logit_bias_eog.data.begin(),
+        sampling_config.logit_bias_eog.data.end());
+  }
 }

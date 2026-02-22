@@ -52,7 +52,7 @@ def main():
             HumanMessagePromptTemplate.from_template(
                 template=[
                     {"type": "text", "text": f"<__media__>{prompt}"},
-                    {"type": "image_url", "image_url": "{audio_url}"},
+                    {"type": "audio_url", "audio_url": "{audio_url}"},
                 ]
             ),
         ]

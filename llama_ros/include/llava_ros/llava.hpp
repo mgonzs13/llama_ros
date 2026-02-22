@@ -37,6 +37,10 @@
 
 namespace llava_ros {
 
+// Forward declarations
+class LlavaCompletionRequestHandler;
+class LlavaChatCompletionRequestHandler;
+
 /**
  * @brief Represents the Llava model, extending the Llama model with image
  * processing capabilities.
@@ -91,20 +95,18 @@ public:
    */
   void clear_mtmds();
 
-protected:
-  /**
-   * @brief Loads a prompt into the Llava model.
-   *
-   * This method overrides the base Llama class to load a prompt into the Llava
-   * model, with optional prefix and suffix handling.
-   *
-   * @param input_prompt The input text prompt to load.
-   * @param add_pfx Whether to add a prefix to the prompt.
-   * @param add_sfx Whether to add a suffix to the prompt.
-   */
-  void load_prompt(const std::string &input_prompt, bool add_pfx,
-                   bool add_sfx) override;
+  void handle_completion_req(
+      const std::string &input_prompt, llama_ros::ServerSlot *slot,
+      struct common_params_sampling sparams,
+      llama_ros::ServerSlot::GenerateResponseCallback callback = nullptr,
+      std::vector<std::string> stop = {}, bool reset = true) override;
 
+  void handle_chat_completion_req(
+      llama_utils::ChatCompletionsContext chat_context,
+      llama_ros::ServerSlot *slot,
+      llama_ros::ServerSlot::GenerateResponseCallback callback) override;
+
+protected:
   /**
    * @brief Evaluates a specific mtmd chunk in the Llava model.
    *
@@ -118,16 +120,6 @@ protected:
   bool eval_mtmd_chunk(const mtmd_input_chunk *image_chunk);
 
   /**
-   * @brief Evaluates the input prompt in the Llava model.
-   *
-   * This method overrides the base Llama class to evaluate the input prompt,
-   * including image-related context.
-   *
-   * @return True if the prompt evaluation is successful, false otherwise.
-   */
-  bool eval_prompt() override;
-
-  /**
    * @brief Pointer to the multimodal context used for image processing.
    *
    * This context is used for managing the state and operations of the
@@ -135,7 +127,22 @@ protected:
    */
   struct mtmd_context *mtmd_ctx;
 
-private:
+  bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
+
+  void process_input_chunks(mtmd::input_chunks &chunks,
+                            llama_ros::ServerSlot *slot);
+
+  /**
+   * @brief Specialized completion handler for Llava.
+   */
+  std::unique_ptr<LlavaCompletionRequestHandler> llava_completion_handler_;
+
+  /**
+   * @brief Specialized chat completion handler for Llava.
+   */
+  std::unique_ptr<LlavaChatCompletionRequestHandler>
+      llava_chat_completion_handler_;
+
   /**
    * @brief Bitmaps for image processing.
    *
@@ -143,7 +150,14 @@ private:
    */
   mtmd::bitmaps bitmaps;
 
-  mtmd::input_chunks chunks;
+  // Declare handlers as friends so they can access bitmaps and other protected
+  // members
+  friend class LlavaCompletionRequestHandler;
+  friend class LlavaChatCompletionRequestHandler;
+
+private:
+  const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,
+                                          llama_ros::ServerSlot *slot);
 };
 
 } // namespace llava_ros

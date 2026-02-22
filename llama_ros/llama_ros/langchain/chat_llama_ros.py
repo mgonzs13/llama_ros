@@ -150,6 +150,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
         try:
             with context_manager as response:
                 is_first_chunk = True
+                has_yielded = False
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -169,7 +170,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             logprobs=logprobs,
                         )
                     is_first_chunk = False
+                    has_yielded = True
                     yield generation_chunk
+
+                # If no chunks were yielded, yield an empty chunk to avoid error
+                if not has_yielded:
+                    yield ChatGenerationChunk(message=AIMessageChunk(content=""))
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         if hasattr(response, "get_final_completion") and "response_format" in payload:
@@ -538,7 +544,14 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
     def get_file_type(self, url: str) -> str:
         try:
             # HEAD is faster and avoids downloading the full file
-            response = requests.head(url, allow_redirects=True, timeout=10)
+            response = requests.head(
+                url,
+                allow_redirects=True,
+                timeout=10,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+                },
+            )
             content_type = response.headers.get("Content-Type", "")
 
             if content_type.startswith("image/"):
@@ -559,10 +572,9 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 # Extract the URL if an image_url exists
                 for item in message["content"]:
                     if item.get("type") == "image_url":
-                        if self.get_file_type(item["image_url"]["url"]) == "image":
-                            image_urls.append(item["image_url"]["url"])
-                        elif self.get_file_type(item["image_url"]["url"]) == "audio":
-                            audios_urls.append(item["image_url"]["url"])
+                        image_urls.append(item["image_url"]["url"])
+                    if item.get("type") == "audio_url":
+                        audios_urls.append(item["audio_url"]["url"])
 
                 # Remove all 'image_url' type items
                 message["content"] = [
@@ -570,9 +582,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 ]
 
                 message["content"] = [
-                    item
-                    for item in message["content"]
-                    if item.get("type") != "audios_url"
+                    item for item in message["content"] if item.get("type") != "audio_url"
                 ]
 
         return data, image_urls, audios_urls
@@ -713,8 +723,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                             "bytes": [i_logprob.token],
                         }
                     )
-                # TODO: logprobs chunks
-                # choice_dict["logprobs"] = logprob_obj
+                choice_dict["logprobs"] = logprob_obj
             result_dict["choices"].append(choice_dict)
 
         return result_dict
@@ -814,18 +823,20 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             result = self.llama_client.generate_chat_completions(
                 chat_request, stream=True, stream_reasoning=self.stream_reasoning
             )
-        else:
-            result, _ = self.llama_client.generate_chat_completions(chat_request)
-
-        if stream:
             return self._return_context_manager(result)
         else:
+            result, _ = self.llama_client.generate_chat_completions(chat_request)
             return self._parse_chat_generation_response(result)
 
     @contextmanager
     def _return_context_manager(self, response):
-        gen = (self._parse_chat_generation_chunk(chunk) for chunk in response)
+        def chunk_generator():
+            for chunk in response:
+                parsed = self._parse_chat_generation_chunk(chunk)
+                if parsed is not None:
+                    yield parsed
+
         try:
-            yield gen
+            yield chunk_generator()
         finally:
             pass

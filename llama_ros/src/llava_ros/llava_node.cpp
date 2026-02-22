@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "llama_ros/llama.hpp"
 #if defined(CV_BRIDGE_H)
 #include <cv_bridge/cv_bridge.h>
 #else
@@ -41,6 +42,16 @@ LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 void LlavaNode::create_llama() {
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.system_prompt);
+
+  run_loop_thread_ = std::thread([this]() {
+    try {
+      this->llama->run_loop();
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(this->get_logger(), "Exception in run_loop: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception in run_loop");
+    }
+  });
 }
 
 bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
@@ -48,7 +59,8 @@ bool LlavaNode::goal_empty(std::shared_ptr<const GenerateResponse::Goal> goal) {
 }
 
 void LlavaNode::execute(
-    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateResponse> goal_handle,
+    int slot_gid) {
 
   auto result = std::make_shared<GenerateResponse::Result>();
   auto images_msg = goal_handle->get_goal()->images;
@@ -59,16 +71,16 @@ void LlavaNode::execute(
 
   // load images
   if (!this->load_images(images_msg)) {
-    this->goal_handle_->abort(result);
+    goal_handle->abort(result);
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
-    this->goal_handle_->abort(result);
+    goal_handle->abort(result);
   }
 
   // llama_node execute
-  llama_ros::LlamaNode::execute(goal_handle);
+  llama_ros::LlamaNode::execute(goal_handle, slot_gid);
 }
 
 /*
@@ -82,7 +94,8 @@ bool LlavaNode::goal_empty_chat_completions(
 }
 
 void LlavaNode::execute_chat_completions(
-    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle) {
+    const std::shared_ptr<GoalHandleGenerateChatCompletions> goal_handle,
+    int slot_gid) {
 
   auto result = std::make_shared<GenerateChatCompletions::Result>();
   auto images_msg = goal_handle->get_goal()->images;
@@ -95,16 +108,16 @@ void LlavaNode::execute_chat_completions(
 
   // load images
   if (!this->load_images(images_msg)) {
-    this->goal_handle_chat_->abort(result);
+    goal_handle->abort(result);
   }
 
   // load audios
   if (!this->load_audios(audios_msgs)) {
-    this->goal_handle_chat_->abort(result);
+    goal_handle->abort(result);
   }
 
   // llama_node execute_chat_completions
-  llama_ros::LlamaNode::execute_chat_completions(goal_handle);
+  llama_ros::LlamaNode::execute_chat_completions(goal_handle, slot_gid);
 }
 
 bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
@@ -113,7 +126,6 @@ bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
 
   for (const auto &image_msg : images_msg) {
     if (image_msg.data.size() > 0) {
-
       RCLCPP_INFO(this->get_logger(), "Loading image...");
 
       cv_bridge::CvImagePtr cv_ptr =
@@ -125,12 +137,15 @@ bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
     }
   }
 
-  if (!static_cast<Llava *>(this->llama.get())->load_mtmds(images)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to load images");
-    return false;
+  if (images.size() > 0) {
+    if (!static_cast<Llava *>(this->llama.get())->load_mtmds(images)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to load images");
+      return false;
+    }
+    RCLCPP_INFO(this->get_logger(), "Images loaded");
+  } else {
+    RCLCPP_INFO(this->get_logger(), "No images to load");
   }
-
-  RCLCPP_INFO(this->get_logger(), "Images loaded");
   return true;
 }
 
@@ -147,11 +162,14 @@ bool LlavaNode::load_audios(
     }
   }
 
-  if (!static_cast<Llava *>(this->llama.get())->load_mtmds(audios)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to load audios");
-    return false;
+  if (audios.size() > 0) {
+    if (!static_cast<Llava *>(this->llama.get())->load_mtmds(audios)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to load audios");
+      return false;
+    }
+    RCLCPP_INFO(this->get_logger(), "Audios loaded");
+  } else {
+    RCLCPP_INFO(this->get_logger(), "No audios to load");
   }
-
-  RCLCPP_INFO(this->get_logger(), "Audios loaded");
   return true;
 }

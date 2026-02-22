@@ -60,6 +60,8 @@ def generate_launch_description():
             "use_mlock": LaunchConfiguration("use_mlock", default=False),
             "warmup": LaunchConfiguration("warmup", default=True),
             "check_tensors": LaunchConfiguration("check_tensors", default=False),
+            "flash_attn_type": LaunchConfiguration("flash_attn_type", default="auto"),
+            # cache params
             "ctx_shift": LaunchConfiguration("ctx_shift", default=False),
             "swa_full": LaunchConfiguration("swa_full", default=False),
             # KV
@@ -76,7 +78,7 @@ def generate_launch_description():
             "priority": LaunchConfiguration("priority", default="normal"),
             "strict_cpu": LaunchConfiguration("strict_cpu", default=False),
             "poll": LaunchConfiguration("poll", default=50),
-            "n_threads_batch": LaunchConfiguration("n_threads_batch", default=1),
+            # batch CPU params
             "cpu_mask_batch": LaunchConfiguration("cpu_mask_batch", default=""),
             "cpu_range_batch": LaunchConfiguration("cpu_range_batch", default=""),
             "priority_batch": LaunchConfiguration("priority_batch", default="normal"),
