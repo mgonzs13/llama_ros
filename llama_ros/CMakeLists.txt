@@ -9,6 +9,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -61,6 +62,7 @@ target_link_libraries(llama_node
   llama_cpp_vendor::llama
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  ament_index_cpp::ament_index_cpp
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -86,6 +88,7 @@ target_link_libraries(llava_node
   llama_cpp_vendor::mtmd
   llama_cpp_vendor::common
   ${CMAKE_THREAD_LIBS_INIT}
+  ament_index_cpp::ament_index_cpp
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -145,6 +148,7 @@ if(BUILD_TESTING)
     llama_cpp_vendor::llama
     llama_cpp_vendor::common
     ${CMAKE_THREAD_LIBS_INIT}
+    ament_index_cpp::ament_index_cpp
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     ${llama_msgs_TARGETS}
