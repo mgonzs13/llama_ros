@@ -1,0 +1,32 @@
+name: Jazzy Build and Test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1"
+
+jobs:
+  jazzy_build_and_test:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install SMTP dependencies
+        run: |
+          apt-get update
+          apt-get install -y libz3-dev
+      - name: Build and Test
+        uses: ros-tooling/action-ros-ci@v0.4
+        with:
+          vcs-repo-file-url: ${GITHUB_WORKSPACE}/dependencies.repos
+          package-name: llama_ros llama_bt
+          coverage-result: false
+          colcon-defaults: |
+            {
+              "test": {
+                "parallel-workers" : 1
+              }
+            }
