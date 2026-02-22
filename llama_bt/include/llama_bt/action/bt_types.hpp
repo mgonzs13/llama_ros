@@ -24,6 +24,7 @@
 #ifndef LLAMA_BT__ACTION__BT_TYPES_HPP_
 #define LLAMA_BT__ACTION__BT_TYPES_HPP_
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -126,27 +127,34 @@ convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
   fprintf(stderr, "Parsing chat message: %s\n", str.data());
   std::vector<llama_msgs::msg::ChatMessage> output;
   if (!str.empty()) {
-    auto data = nlohmann::json::parse(str.data());
+    std::string json_str(str.data(), str.size());
+    std::replace(json_str.begin(), json_str.end(), '\'', '"');
+    auto data = nlohmann::json::parse(json_str);
+
+    // Support both a single object and an array of objects
+    if (data.is_object()) {
+      data = nlohmann::json::array({data});
+    }
 
     for (size_t i = 0; i < data.size(); i++) {
       auto message = data[i];
       llama_msgs::msg::ChatMessage chat_message;
-      chat_message.role = data["role"];
-      if (data.contains("content")) {
-        chat_message.content = data["content"];
+      chat_message.role = message["role"];
+      if (message.contains("content")) {
+        chat_message.content = message["content"];
       }
-      if (data.contains("reasoning_content")) {
-        chat_message.reasoning_content = data["reasoning_content"];
+      if (message.contains("reasoning_content")) {
+        chat_message.reasoning_content = message["reasoning_content"];
       }
-      if (data.contains("tool_name")) {
-        chat_message.tool_name = data["tool_name"];
+      if (message.contains("tool_name")) {
+        chat_message.tool_name = message["tool_name"];
       }
-      if (data.contains("tool_call_id")) {
-        chat_message.tool_call_id = data["tool_call_id"];
+      if (message.contains("tool_call_id")) {
+        chat_message.tool_call_id = message["tool_call_id"];
       }
-      if (data.contains("content_parts")) {
+      if (message.contains("content_parts")) {
         std::vector<llama_msgs::msg::ChatContent> content_parts;
-        for (const auto &part : data["content_parts"]) {
+        for (const auto &part : message["content_parts"]) {
           llama_msgs::msg::ChatContent content_part;
           content_part.type = part["type"];
           content_part.text = part["text"];
@@ -154,9 +162,9 @@ convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
         }
         chat_message.content_parts = content_parts;
       }
-      if (data.contains("tool_calls")) {
+      if (message.contains("tool_calls")) {
         std::vector<llama_msgs::msg::ChatToolCall> tool_calls;
-        for (const auto &tool_call : data["tool_calls"]) {
+        for (const auto &tool_call : message["tool_calls"]) {
           llama_msgs::msg::ChatToolCall tool_call_msg;
           tool_call_msg.name = tool_call["name"];
           tool_call_msg.id = tool_call["id"];
@@ -188,17 +196,24 @@ convertFromString<std::vector<llama_msgs::msg::ChatReqTool>>(
     BT::StringView str) {
   std::vector<llama_msgs::msg::ChatReqTool> output;
   if (!str.empty()) {
-    auto data = nlohmann::json::parse(str.data());
+    std::string json_str(str.data(), str.size());
+    std::replace(json_str.begin(), json_str.end(), '\'', '"');
+    auto data = nlohmann::json::parse(json_str);
+
+    // Support both a single object and an array of objects
+    if (data.is_object()) {
+      data = nlohmann::json::array({data});
+    }
 
     for (size_t i = 0; i < data.size(); i++) {
       auto tool = data[i];
       llama_msgs::msg::ChatReqTool chat_req_tool;
 
-      if (data.contains("function")) {
+      if (tool.contains("function")) {
         llama_msgs::msg::ChatTool function;
-        function.name = data["function"]["name"];
-        function.description = data["function"]["description"];
-        function.parameters = data["function"]["parameters"];
+        function.name = tool["function"]["name"];
+        function.description = tool["function"]["description"];
+        function.parameters = tool["function"]["parameters"];
         chat_req_tool.function = function;
       }
 

@@ -35,6 +35,7 @@
 #include "rclcpp/executors.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+#include "llama_bt/action/bt_types.hpp"
 #include "llama_bt/action/generate_response_action.hpp"
 #include "utils/test_action_server.hpp"
 
@@ -66,7 +67,8 @@ public:
     rclcpp::init(0, nullptr);
 
     node_ = std::make_shared<rclcpp::Node>("generate_response_test_fixture");
-    executor_.add_node(node_);
+    executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -97,6 +99,7 @@ public:
 
   void TearDown() override {
     tree_.reset();
+    executor_.reset();
     rclcpp::shutdown();
 
     delete config_;
@@ -111,7 +114,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::executors::SingleThreadedExecutor executor_;
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
   BT::NodeConfiguration *config_;
   std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   std::shared_ptr<BT::Tree> tree_;
@@ -244,7 +247,7 @@ TEST_F(GenerateResponseActionTestFixture, test_tick) {
   auto elapsed_time = node_->now() - start_time;
   bool finish = false;
   while (!finish && rclcpp::ok() && elapsed_time.seconds() < 5.0) {
-    executor_.spin_some();
+    executor_->spin_some();
 
     finish = tree_->rootNode()->executeTick() != BT::NodeStatus::RUNNING;
     rate.sleep();

@@ -79,7 +79,8 @@ public:
     rclcpp::init(0, nullptr);
 
     node_ = std::make_shared<rclcpp::Node>("generate_chat_test_fixture");
-    executor_.add_node(node_);
+    executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -107,14 +108,16 @@ public:
     server_ = std::make_shared<GenerateResponseActionServer>();
     server_thread_ = std::thread([this]() { rclcpp::spin(server_); });
 
-    nlohmann::json messages = {{"role", "user"},
-                               {"content", "Hello, how are you?"}};
+    nlohmann::json messages = nlohmann::json::array(
+        {{{"role", "user"}, {"content", "Hello, how are you?"}},
+         {{"role", "assistant"}, {"content", "I am doing well, thank you."}}});
     messages_data = messages.dump();
     std::replace(messages_data.begin(), messages_data.end(), '"', '\'');
   }
 
   void TearDown() override {
     tree_.reset();
+    executor_.reset();
     rclcpp::shutdown();
 
     delete config_;
@@ -129,7 +132,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::executors::SingleThreadedExecutor executor_;
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
   BT::NodeConfiguration *config_;
   std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   std::shared_ptr<BT::Tree> tree_;
@@ -167,11 +170,13 @@ TEST_F(GenerateChatActionTestFixture, test_chat_ports) {
           .has_value());
 
 #if defined(BTV3)
-  xml_txt =
-      R"(
+  xml_txt = std::string(
+                R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <GenerateChatCompletions messages="" tools=""/>
+            <GenerateChatCompletions messages=")") +
+            messages_data +
+            R"(" tools=""/>
         </BehaviorTree>
       </root>)";
 #else
@@ -243,7 +248,7 @@ TEST_F(GenerateChatActionTestFixture, test_chat_tick) {
   auto elapsed_time = node_->now() - start_time;
   bool finish = false;
   while (!finish && rclcpp::ok() && elapsed_time.seconds() < 5.0) {
-    executor_.spin_some();
+    executor_->spin_some();
 
     finish = tree_->rootNode()->executeTick() != BT::NodeStatus::RUNNING;
     rate.sleep();
