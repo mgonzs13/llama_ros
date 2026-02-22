@@ -5,7 +5,7 @@ project(llama_bringup)
 find_package(ament_cmake REQUIRED)
 
 install(DIRECTORY
-  launch prompts models
+  launch models
   DESTINATION share/${PROJECT_NAME}/
 )
 

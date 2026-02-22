@@ -18,6 +18,7 @@
   <depend>llama_msgs</depend>
   <depend>llama_cpp_vendor</depend>
   <depend>llama_hfhub_vendor</depend>
+  <depend>yaml_cpp_vendor</depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

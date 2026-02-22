@@ -28,23 +28,6 @@ from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 
 
-def load_prompt_type(prompt_file_name: str) -> Tuple[str, str, list, str]:
-    """Load a prompt template YAML and return (prefix, suffix, stopping_words, system_prompt)."""
-    file_path = os.path.join(
-        get_package_share_directory("llama_bringup"),
-        "prompts",
-        f"{prompt_file_name}.yaml",
-    )
-    with open(file_path, "r") as file:
-        yaml_data = yaml.safe_load(file)
-    return (
-        yaml_data["prefix"],
-        yaml_data["suffix"],
-        yaml_data["stopping_words"],
-        yaml_data["system_prompt"],
-    )
-
-
 def load_params_from_yaml(file_path: str) -> Dict[str, Any]:
     """Read a flat YAML file and return its contents as a dict.
 
@@ -55,41 +38,6 @@ def load_params_from_yaml(file_path: str) -> Dict[str, Any]:
     with open(file_path, "r") as f:
         yaml_data = yaml.safe_load(f)
     return dict(yaml_data)
-
-
-def _resolve_prompt_type(params: Dict[str, Any]) -> None:
-    """Resolve system_prompt_type into prefix, suffix, stopping_words, system_prompt."""
-    if "system_prompt_type" not in params:
-        return
-
-    prompt_data = load_prompt_type(params.pop("system_prompt_type"))
-    params.setdefault("prefix", prompt_data[0])
-    params.setdefault("suffix", prompt_data[1])
-    if "stopping_words" not in params:
-        params["stopping_words"] = prompt_data[2]
-    params.setdefault("system_prompt", prompt_data[3])
-
-
-def _resolve_chat_template(params: Dict[str, Any]) -> None:
-    """Resolve chat_template_file to an absolute path."""
-    chat_template = params.get("chat_template_file", "")
-    if not chat_template:
-        return
-
-    if "/" in chat_template:
-        chat_template_path = chat_template
-    else:
-        chat_template_path = os.path.join(
-            get_package_share_directory("llama_cpp_vendor"),
-            "models",
-            "templates",
-            chat_template,
-        )
-
-    if os.path.exists(chat_template_path):
-        params["chat_template_file"] = chat_template_path
-    else:
-        params["chat_template_file"] = ""
 
 
 def _resolve_lora_adapters(params: Dict[str, Any]) -> None:
@@ -134,8 +82,6 @@ def process_params(params: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
 
     Returns: (clean_params_dict, use_llava)
     """
-    _resolve_prompt_type(params)
-    _resolve_chat_template(params)
     _resolve_lora_adapters(params)
 
     # Ensure stopping_words has a default

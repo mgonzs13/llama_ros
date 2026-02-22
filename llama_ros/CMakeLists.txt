@@ -18,6 +18,7 @@ find_package(Threads REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(llama_hfhub_vendor REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 include_directories(
   include
@@ -66,6 +67,7 @@ target_link_libraries(llama_node
   ${llama_msgs_TARGETS}
   ${llama_cpp_vendor_TARGETS}
   ${llama_hfhub_vendor_TARGETS}
+  yaml-cpp
   Threads::Threads
 )
 
@@ -90,6 +92,7 @@ target_link_libraries(llava_node
   ${llama_msgs_TARGETS}
   ${llama_cpp_vendor_TARGETS}
   ${llama_hfhub_vendor_TARGETS}
+  yaml-cpp
   Threads::Threads
 )
 
@@ -107,6 +110,7 @@ install(TARGETS
 )
 
 install(DIRECTORY
+  prompts
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -146,6 +150,7 @@ if(BUILD_TESTING)
     ${llama_msgs_TARGETS}
     ${llama_cpp_vendor_TARGETS}
     ${llama_hfhub_vendor_TARGETS}
+    yaml-cpp
     Threads::Threads
   )
 endif()

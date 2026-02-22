@@ -24,10 +24,13 @@
 #include <iostream>
 
 #include "common.h"
-#include "huggingface_hub.h"
 #include "json.hpp"
 
+#include "huggingface_hub.h"
 #include "json-schema-to-grammar.h"
+#include "yaml-cpp/yaml.h"
+
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "llama_utils/llama_params.hpp"
 #include "llama_utils/logs.hpp"
 
@@ -121,11 +124,12 @@ void llama_utils::declare_llama_params(
                                                 {"attention_type", ""},
                                                 {"cache_type_k", "f16"},
                                                 {"cache_type_v", "f16"},
-                                                {"system_prompt", ""},
-                                                {"system_prompt_file", ""},
                                                 {"prefix", ""},
                                                 {"suffix", ""},
+                                                {"system_prompt", ""},
+                                                {"system_prompt_file", ""},
                                                 {"chat_template_file", ""},
+                                                {"system_prompt_type", ""},
                                             });
 
   node->declare_parameters<std::vector<std::string>>(
@@ -187,6 +191,7 @@ LlamaParams llama_utils::get_llama_params(
 
   std::vector<std::string> stopping_words;
   std::string chat_template_file;
+  std::string system_prompt_type;
 
   std::vector<std::string> lora_adapters;
   std::vector<std::string> lora_adapters_repos;
@@ -213,7 +218,7 @@ LlamaParams llama_utils::get_llama_params(
   std::string pooling_type;
   std::string attention_type;
 
-  std::string file_path;
+  std::string system_prompt_file_path;
 
   LlamaParams params;
 
@@ -311,10 +316,10 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("prefix", params.params.input_prefix);
   node->get_parameter("suffix", params.params.input_suffix);
   node->get_parameter("stopping_words", stopping_words);
-  node->get_parameter("chat_template_file", chat_template_file);
-
   node->get_parameter("system_prompt", params.system_prompt);
-  node->get_parameter("system_prompt_file", file_path);
+  node->get_parameter("system_prompt_file", system_prompt_file_path);
+  node->get_parameter("chat_template_file", chat_template_file);
+  node->get_parameter("system_prompt_type", system_prompt_type);
 
   // seed
   if (seed < 0) {
@@ -323,11 +328,11 @@ LlamaParams llama_utils::get_llama_params(
     params.params.sampling.seed = seed;
   }
 
-  // cache type
+  // Cache type
   params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
   params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
 
-  // devices
+  // Devices
   for (const std::string &d : devices) {
 
     if (!d.empty()) {
@@ -341,7 +346,7 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
-  // check threads number
+  // Check threads number
   if (params.params.cpuparams.n_threads < 0) {
     params.params.cpuparams.n_threads = cpu_get_num_math();
   }
@@ -350,7 +355,7 @@ LlamaParams llama_utils::get_llama_params(
     params.params.cpuparams_batch.n_threads = cpu_get_num_math();
   }
 
-  // models
+  // Models
   if (params.params.model.path.empty()) {
     params.params.model.path = download_model(params.params.model.hf_repo,
                                               params.params.model.hf_file);
@@ -361,7 +366,7 @@ LlamaParams llama_utils::get_llama_params(
                                                params.params.mmproj.hf_file);
   }
 
-  // lora_adapters
+  // LoRA adapters
   if (!lora_adapters.empty()) {
     if (lora_adapters.size() != lora_adapters_scales.size()) {
       RCLCPP_ERROR(
@@ -421,7 +426,7 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
-  // stopping words are the antiprompt
+  // Stopping words are the antiprompt
   for (std::string word : stopping_words) {
 
     if (word.empty()) {
@@ -432,19 +437,73 @@ LlamaParams llama_utils::get_llama_params(
     params.params.antiprompt.push_back(word);
   }
 
+  // Initial system prompt
+  if (!system_prompt_file_path.empty() && params.system_prompt.empty()) {
+    std::ifstream file(system_prompt_file_path.c_str());
+    if (!file) {
+      RCLCPP_ERROR(node->get_logger(), "Failed to open file %s",
+                   system_prompt_file_path.c_str());
+    }
+    std::copy(std::istreambuf_iterator<char>(file),
+              std::istreambuf_iterator<char>(),
+              back_inserter(params.system_prompt));
+  }
+
   // Read chat template file if provided
   if (!chat_template_file.empty()) {
+
+    // Check if chat_template_file does not contains "/"
+    if (chat_template_file.find("/") != std::string::npos) {
+      chat_template_file =
+          ament_index_cpp::get_package_share_directory("llama_cpp_vendor") +
+          "/models/templates/" + chat_template_file;
+    }
+
     std::ifstream file(chat_template_file.c_str());
     if (!file) {
       RCLCPP_ERROR(node->get_logger(), "Failed to open chat template file %s",
                    chat_template_file.c_str());
+    } else {
+      std::copy(std::istreambuf_iterator<char>(file),
+                std::istreambuf_iterator<char>(),
+                back_inserter(params.params.chat_template));
     }
-    std::copy(std::istreambuf_iterator<char>(file),
-              std::istreambuf_iterator<char>(),
-              back_inserter(params.params.chat_template));
   }
 
-  // split mode
+  // Read system prompt type data
+  std::string system_prompt_type_file_path =
+      ament_index_cpp::get_package_share_directory("llama_ros") + "/prompts/" +
+      system_prompt_type + ".yaml";
+
+  if (std::filesystem::exists(system_prompt_type_file_path)) {
+    try {
+      YAML::Node yaml = YAML::LoadFile(system_prompt_type_file_path);
+
+      if (yaml["prefix"] && params.params.input_prefix.empty()) {
+        params.params.input_prefix = yaml["prefix"].as<std::string>();
+      }
+
+      if (yaml["suffix"] && params.params.input_suffix.empty()) {
+        params.params.input_suffix = yaml["suffix"].as<std::string>();
+      }
+
+      if (yaml["stopping_words"]) {
+        for (const auto &word : yaml["stopping_words"]) {
+          params.params.antiprompt.push_back(word.as<std::string>());
+        }
+      }
+
+      if (yaml["system_prompt"]) {
+        params.system_prompt = yaml["system_prompt"].as<std::string>();
+      }
+    } catch (const YAML::Exception &e) {
+      RCLCPP_ERROR(node->get_logger(),
+                   "Failed to parse system prompt type file %s: %s",
+                   system_prompt_type_file_path.c_str(), e.what());
+    }
+  }
+
+  // Split mode
   if (split_mode == "none") {
     params.params.split_mode = LLAMA_SPLIT_MODE_NONE;
   } else if (split_mode == "layer") {
@@ -549,18 +608,6 @@ LlamaParams llama_utils::get_llama_params(
     params.params.attention_type = LLAMA_ATTENTION_TYPE_NON_CAUSAL;
   } else {
     params.params.attention_type = LLAMA_ATTENTION_TYPE_UNSPECIFIED;
-  }
-
-  // initial prompt
-  if (!file_path.empty()) {
-    std::ifstream file(file_path.c_str());
-    if (!file) {
-      RCLCPP_ERROR(node->get_logger(), "Failed to open file %s",
-                   file_path.c_str());
-    }
-    std::copy(std::istreambuf_iterator<char>(file),
-              std::istreambuf_iterator<char>(),
-              back_inserter(params.system_prompt));
   }
 
   // split tensors
