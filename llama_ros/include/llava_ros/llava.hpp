@@ -95,12 +95,35 @@ public:
    */
   void clear_mtmds();
 
+  /**
+   * @brief Handles a text completion request with multimodal support.
+   *
+   * Overrides the base Llama implementation to incorporate loaded
+   * images/audio into the prompt before generating the completion.
+   *
+   * @param input_prompt The input text prompt.
+   * @param slot The server slot to use for processing.
+   * @param sparams The sampling parameters for generation.
+   * @param callback Callback invoked for each generated token (streaming).
+   * @param stop A list of stop sequences to terminate generation.
+   * @param reset Whether to reset the slot state before processing.
+   */
   void handle_completion_req(
       const std::string &input_prompt, llama_ros::ServerSlot *slot,
       common_params_sampling sparams,
       llama_ros::ServerSlot::GenerateResponseCallback callback = nullptr,
       std::vector<std::string> stop = {}, bool reset = true) override;
 
+  /**
+   * @brief Handles a chat completion request with multimodal support.
+   *
+   * Overrides the base Llama implementation to incorporate loaded
+   * images/audio into the chat context before generating the completion.
+   *
+   * @param chat_context The chat completions context with messages and config.
+   * @param slot The server slot to use for processing.
+   * @param callback Callback invoked for each generated token (streaming).
+   */
   void handle_chat_completion_req(
       llama_utils::ChatCompletionsContext chat_context,
       llama_ros::ServerSlot *slot,
@@ -127,8 +150,27 @@ protected:
    */
   mtmd_context *mtmd_ctx;
 
+  /**
+   * @brief Processes a multimodal chunk for the given slot.
+   *
+   * Overrides the base Llama implementation to evaluate image/audio
+   * chunks through the multimodal context.
+   *
+   * @param slot The server slot containing the multimodal chunk.
+   * @return True if the chunk was processed successfully, false otherwise.
+   */
   bool process_mtmd_chunk(llama_ros::ServerSlot *slot) override;
 
+  /**
+   * @brief Processes all input chunks for a multimodal prompt.
+   *
+   * Iterates through the tokenized and multimodal input chunks,
+   * dispatching text tokens to the decoder and media chunks to
+   * the multimodal evaluator.
+   *
+   * @param chunks The collection of input chunks to process.
+   * @param slot The server slot to use for processing.
+   */
   void process_input_chunks(mtmd::input_chunks &chunks,
                             llama_ros::ServerSlot *slot);
 

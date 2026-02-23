@@ -34,9 +34,17 @@ class Llava;
 
 /**
  * @brief Handles text completion requests with multimodal support.
+ *
+ * This handler extends the base RequestHandler to process completion
+ * requests that may include image or audio data alongside the text prompt.
  */
 class LlavaCompletionRequestHandler : public llama_ros::RequestHandler {
 public:
+  /**
+   * @brief Constructs a LlavaCompletionRequestHandler.
+   *
+   * @param llava Pointer to the Llava instance that owns this handler.
+   */
   explicit LlavaCompletionRequestHandler(Llava *llava);
 
   /**
@@ -62,9 +70,17 @@ private:
 
 /**
  * @brief Handles chat completion requests with multimodal support.
+ *
+ * This handler extends the base RequestHandler to process chat completion
+ * requests that may include image or audio data alongside chat messages.
  */
 class LlavaChatCompletionRequestHandler : public llama_ros::RequestHandler {
 public:
+  /**
+   * @brief Constructs a LlavaChatCompletionRequestHandler.
+   *
+   * @param llava Pointer to the Llava instance that owns this handler.
+   */
   explicit LlavaChatCompletionRequestHandler(Llava *llava);
 
   /**

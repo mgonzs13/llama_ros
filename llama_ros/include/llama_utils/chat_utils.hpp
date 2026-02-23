@@ -69,6 +69,16 @@ static inline std::string random_string(int string_size) {
   return result;
 }
 
+/**
+ * @brief Validates UTF-8 encoding and returns the safe truncation length.
+ *
+ * Checks the last few bytes of the string to detect if a multi-byte
+ * UTF-8 character has been cut off. Returns the safe length at which
+ * the string can be truncated without splitting a character.
+ *
+ * @param text The UTF-8 encoded string to validate.
+ * @return The safe truncation length in bytes.
+ */
 inline size_t validate_utf8(const std::string &text) {
   size_t len = text.size();
   if (len == 0)
@@ -127,6 +137,15 @@ inline float logit(float x) {
  */
 common_chat_tool_choice parse_chat_tool_choice(int choice);
 
+/**
+ * @brief Parses a reasoning format from an integer value.
+ *
+ * Converts a numeric reasoning format identifier (typically from a ROS
+ * message) into the corresponding common_reasoning_format enum value.
+ *
+ * @param reasoning_format The integer representing the reasoning format.
+ * @return The parsed reasoning format enum value.
+ */
 common_reasoning_format parse_reasoning_format(const int reasoning_format);
 
 /**
@@ -231,7 +250,25 @@ llama_msgs::action::GenerateResponse::Feedback
 create_completion_feedback(const llama_ros::CompletionOutput &completion,
                            llama_ros::Llama *llama);
 
+/**
+ * @brief Converts a UUID byte array to a 32-bit integer.
+ *
+ * Hashes the 16-byte UUID into a compact int32 representation,
+ * suitable for use as a slot or goal identifier.
+ *
+ * @param uuid The 16-byte UUID array.
+ * @return A 32-bit integer derived from the UUID.
+ */
 int32_t uuid_to_int32(const std::array<uint8_t, 16> &uuid);
+
+/**
+ * @brief Generates a random 64-bit unsigned integer.
+ *
+ * Uses a random device to produce a uniformly distributed uint64 value,
+ * used for assigning unique goal identifiers.
+ *
+ * @return A random 64-bit unsigned integer.
+ */
 uint64_t generate_random_uint64();
 } // namespace llama_utils
 

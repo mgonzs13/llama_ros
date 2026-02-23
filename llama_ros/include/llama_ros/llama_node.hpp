@@ -263,11 +263,29 @@ protected:
    * This thread continuously processes slots in the background.
    */
   std::thread run_loop_thread_;
+
+  /// @brief Pool of worker threads handling individual request execution.
   std::vector<std::thread> worker_threads_;
+
+  /// @brief Mutex protecting access to the worker threads pool.
   std::mutex worker_threads_mutex_;
+
+  /// @brief Atomic flag indicating the node is shutting down.
   std::atomic<bool> shutting_down_{false};
 
+  /**
+   * @brief Launches a new worker thread and adds it to the pool.
+   *
+   * @param worker_thread The thread to launch and track.
+   */
   void launch_worker_thread(std::thread worker_thread);
+
+  /**
+   * @brief Joins all completed worker threads.
+   *
+   * Iterates through the worker thread pool and joins any threads that
+   * have finished execution, removing them from the pool.
+   */
   void join_worker_threads();
 
 private:

@@ -93,8 +93,38 @@ public:
    */
   virtual ~Llama();
 
+  /**
+   * @brief Processes a single token for the given slot.
+   *
+   * Samples the next token, checks for stop conditions, and populates
+   * the completion output with the result.
+   *
+   * @param slot The server slot currently being processed.
+   * @param result Pointer to the output structure to populate.
+   * @return True if more tokens should be generated, false if generation
+   *         should stop.
+   */
   bool process_token(ServerSlot *slot, CompletionOutput *result);
+
+  /**
+   * @brief Main processing loop for the server.
+   *
+   * Continuously processes pending tasks by decoding prompt tokens,
+   * sampling new tokens, and dispatching results until cancelled.
+   * This method is typically run in a dedicated background thread.
+   */
   void run_loop();
+
+  /**
+   * @brief Processes a multimodal (mtmd) chunk for the given slot.
+   *
+   * This virtual method allows derived classes (e.g., Llava) to handle
+   * multimodal input chunks such as images or audio during prompt
+   * processing.
+   *
+   * @param slot The server slot containing the multimodal chunk.
+   * @return True if the chunk was processed successfully, false otherwise.
+   */
   virtual bool process_mtmd_chunk(llama_ros::ServerSlot *slot);
 
   /**
@@ -161,19 +191,75 @@ public:
   Result<ServerTaskResultEmbedding>
   generate_embeddings(const std::string &text);
 
+  /**
+   * @brief Handles a reranking request for a query-document pair.
+   *
+   * Prepares the given slot for computing the relevance score between
+   * the query and the document.
+   *
+   * @param query The query string.
+   * @param document The document string to rank against the query.
+   * @param slot The server slot to use for processing.
+   */
   void handle_rerank_req(const std::string &query, const std::string &document,
                          ServerSlot *slot);
+
+  /**
+   * @brief Handles an embeddings generation request.
+   *
+   * Prepares the given slot for generating embeddings from the input prompt.
+   *
+   * @param input_prompt The input text to generate embeddings for.
+   * @param slot The server slot to use for processing.
+   */
   void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
+
+  /**
+   * @brief Handles a text completion request.
+   *
+   * Prepares the given slot for generating a text completion from the
+   * input prompt using the specified sampling parameters.
+   *
+   * @param input_prompt The input text prompt.
+   * @param slot The server slot to use for processing.
+   * @param sparams The sampling parameters for generation.
+   * @param callback Callback invoked for each generated token (streaming).
+   * @param stop A list of stop sequences to terminate generation.
+   * @param reset Whether to reset the slot state before processing.
+   */
   virtual void
   handle_completion_req(const std::string &input_prompt, ServerSlot *slot,
                         common_params_sampling sparams,
                         ServerSlot::GenerateResponseCallback callback,
                         std::vector<std::string> stop, bool reset);
+
+  /**
+   * @brief Handles a chat completion request.
+   *
+   * Prepares the given slot for generating a chat completion using the
+   * provided chat context, which includes messages, templates, and
+   * sampling parameters.
+   *
+   * @param chat_context The chat completions context with messages and config.
+   * @param slot The server slot to use for processing.
+   * @param callback Callback invoked for each generated token (streaming).
+   */
   virtual void
   handle_chat_completion_req(llama_utils::ChatCompletionsContext chat_context,
                              ServerSlot *slot,
                              ServerSlot::GenerateResponseCallback callback);
 
+  /**
+   * @brief Truncates a token sequence to a maximum size.
+   *
+   * If the token sequence exceeds the limit, it is truncated and
+   * optionally an end-of-sequence token is appended.
+   *
+   * @param tokens The input token sequence.
+   * @param limit_size The maximum number of tokens allowed.
+   * @param add_eos Whether to append an EOS token after truncation.
+   * @return The truncated token sequence.
+   */
   std::vector<llama_token>
   truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
                   bool add_eos = true);
@@ -208,6 +294,18 @@ public:
                     ServerSlot::GenerateResponseCallback callback = nullptr,
                     std::vector<std::string> stop = {}, bool reset = true);
 
+  /**
+   * @brief Generates a chat completion response.
+   *
+   * Submits a chat completion task to the server and waits for the result.
+   * The chat context includes messages, templates, and sampling parameters.
+   *
+   * @param slot_gid The goal ID to assign to the slot.
+   * @param chat_context The chat completions context with messages and config.
+   * @param callback (Optional) Callback for streaming partial results.
+   * @return A Result containing the completion response and metadata, or an
+   *         error.
+   */
   Result<ServerTaskResultCompletion> generate_chat_response(
       int slot_gid, llama_utils::ChatCompletionsContext chat_context,
       ServerSlot::GenerateResponseCallback callback = nullptr);
@@ -418,9 +516,36 @@ public:
    */
   llama_token get_token_sep() { return llama_vocab_sep(this->get_vocab()); }
 
+  /**
+   * @brief Attempts to get an available (idle) slot without blocking.
+   *
+   * @return Pointer to an available slot, or nullptr if none available.
+   */
   ServerSlot *get_available_slot();
+
+  /**
+   * @brief Waits for an available slot to become free.
+   *
+   * Blocks the calling thread until a slot becomes available.
+   *
+   * @return Pointer to the newly available slot.
+   */
   ServerSlot *wait_for_available_slot();
+
+  /**
+   * @brief Retrieves a slot by its numeric ID.
+   *
+   * @param id The slot ID.
+   * @return Pointer to the slot, or nullptr if not found.
+   */
   ServerSlot *get_slot_by_id(int id);
+
+  /**
+   * @brief Retrieves a slot by its associated goal ID.
+   *
+   * @param gid The goal ID.
+   * @return Pointer to the slot, or nullptr if not found.
+   */
   ServerSlot *get_slot_by_gid(uint64_t gid);
 
 protected:
@@ -459,6 +584,7 @@ protected:
    */
   common_sampler *sampler;
 
+  /// @brief The batch used for batched token decoding.
   llama_batch batch;
 
   /**
@@ -518,25 +644,94 @@ protected:
    */
   int32_t ga_i;
 
+  /// @brief The collection of server slots for concurrent request processing.
   std::vector<ServerSlot> server_slots;
+
+  /// @brief Manages allocation and lifecycle of server slots.
   std::unique_ptr<SlotManager> slot_manager_;
+
+  /// @brief Manages asynchronous task registration and completion.
   std::unique_ptr<TaskRegistry> task_registry_;
+
+  /// @brief Handles chat template formatting and response parsing.
   std::unique_ptr<llama_utils::ChatFormatter> chat_formatter_;
 
-  // Request handlers
+  /// @brief Handler for embedding generation requests.
   std::unique_ptr<EmbeddingRequestHandler> embedding_handler_;
+
+  /// @brief Handler for document reranking requests.
   std::unique_ptr<RerankRequestHandler> rerank_handler_;
+
+  /// @brief Handler for text completion requests.
   std::unique_ptr<CompletionRequestHandler> completion_handler_;
+
+  /// @brief Handler for chat completion requests.
   std::unique_ptr<ChatCompletionRequestHandler> chat_completion_handler_;
 
+  /**
+   * @brief Releases a slot back to the pool.
+   *
+   * Resets the slot state and notifies the slot manager that it is
+   * available for reuse.
+   *
+   * @param slot Pointer to the slot to release.
+   */
   void release_slot(ServerSlot *slot);
 
+  /**
+   * @brief Registers a pending task and returns a future for the result.
+   *
+   * @param goal_id The unique identifier for the task.
+   * @return A future that will contain the task result when fulfilled.
+   */
   std::future<ServerTaskResultPtr> register_pending(uint64_t goal_id);
+
+  /**
+   * @brief Fulfills a pending task with a successful result.
+   *
+   * @param goal_id The unique identifier for the task.
+   * @param r The result to deliver to the waiting future.
+   */
   void fulfill_pending(uint64_t goal_id, ServerTaskResultPtr r);
+
+  /**
+   * @brief Fails a pending task with an error message.
+   *
+   * @param goal_id The unique identifier for the task.
+   * @param err The error description.
+   */
   void fail_pending(uint64_t goal_id, std::string err);
 
+  /**
+   * @brief Sends the embedding result for a completed slot.
+   *
+   * Extracts the embeddings from the decoded batch and fulfills the
+   * pending task associated with the slot.
+   *
+   * @param slot The slot that produced the embeddings.
+   * @param batch The batch containing the decoded output.
+   */
   void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
+
+  /**
+   * @brief Sends the rerank result for a completed slot.
+   *
+   * Extracts the relevance score from the decoded batch and fulfills
+   * the pending task associated with the slot.
+   *
+   * @param slot The slot that produced the rerank score.
+   * @param batch The batch containing the decoded output.
+   */
   void send_rerank_result(ServerSlot *slot, const llama_batch &batch);
+
+  /**
+   * @brief Sends the completion result for a finished generation slot.
+   *
+   * Gathers all generated tokens, text, and probabilities from the slot
+   * and fulfills the pending task.
+   *
+   * @param slot The slot that produced the completion.
+   */
   void send_completion_result(ServerSlot *slot);
 
   /**
@@ -554,6 +749,7 @@ protected:
    */
   std::vector<SelectedLogProb> convert_probs_to_logprobs(ServerSlot *slot);
 
+  /// @brief Options for the OpenAI-compatible response parser.
   OAICompactParserOptions oai_parser_opt;
 };
 
