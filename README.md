@@ -351,26 +351,27 @@ LoRAs using the `/llama/list_loras` service and modify their scales values by us
 <summary>Click to expand</summary>
 
 ```yaml
-n_ctx: 2048
-n_batch: 8
-n_gpu_layers: 0
-n_threads: 1
-n_predict: 2048
-
-model_repo: "bartowski/Phi-3.5-mini-instruct-GGUF"
-model_filename: "Phi-3.5-mini-instruct-Q4_K_M.gguf"
-
-loras:
-  - name: code_writer
-    repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"
-    filename: "Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf"
-    scale: 0.5
-  - name: summarization
-    repo: "zhhan/adapter-Phi-3-mini-4k-instruct_summarization"
-    filename: "Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf"
-    scale: 0.5
-
-system_prompt_type: "Phi-3"
+/**:
+  ros__parameters:
+    n_ctx: 2048
+    n_batch: 8
+    n_gpu_layers: 0
+    n_threads: 1
+    n_predict: 2048
+    model_repo: bartowski/Phi-3.5-mini-instruct-GGUF
+    model_filename: Phi-3.5-mini-instruct-Q4_K_M.gguf
+    loras:
+      - code_writer
+      - summarization
+    code_writer:
+      repo: zhhan/adapter-Phi-3-mini-4k-instruct_code_writing
+      filename: Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf
+      scale: 0.5
+    summarization:
+      repo: zhhan/adapter-Phi-3-mini-4k-instruct_summarization
+      filename: Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf
+      scale: 0.5
+    system_prompt_type: Phi-3
 ```
 
 </details>
@@ -444,7 +445,7 @@ _Remember to launch llama_ros with embedding set to true to be able of generatin
 
 ```python
 from rclpy.node import Node
-from llama_msgs.srv import Embeddings
+from llama_msgs.srv import GenerateEmbeddings
 
 
 class ExampleNode(Node):
@@ -452,12 +453,12 @@ class ExampleNode(Node):
         super().__init__("example_node")
 
         # create the client
-        self.srv_client = self.create_client(Embeddings, "/llama/generate_embeddings")
+        self.srv_client = self.create_client(GenerateEmbeddings, "/llama/generate_embeddings")
 
         # create the request
-        req = Embeddings.Request()
+        req = GenerateEmbeddings.Request()
         req.prompt = "Example text"
-        req.normalize = True
+        req.normalization = 2  # -1=none, 0=max abs int16, 1=taxicab, 2=euclidean, >2=p-norm
 
         # call the embedding service
         self.srv_client.wait_for_service()
@@ -554,6 +555,109 @@ class ExampleNode(Node):
         # wait again and take the result
         rclpy.spin_until_future_complete(self, get_result_future)
         result: GenerateResponse.Result = get_result_future.result().result
+```
+
+</details>
+
+#### Generate Chat Completions
+
+<details>
+<summary>Click to expand</summary>
+
+The `GenerateChatCompletions` action provides an OpenAI-compatible chat completions interface with support for tool calling, reasoning, and streaming.
+
+```python
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
+from llama_msgs.action import GenerateChatCompletions
+from llama_msgs.msg import ChatMessage
+
+
+class ExampleNode(Node):
+    def __init__(self) -> None:
+        super().__init__("example_node")
+
+        # create the client
+        self.action_client = ActionClient(
+            self, GenerateChatCompletions, "/llama/generate_chat_completions")
+
+        # create the goal
+        goal = GenerateChatCompletions.Goal()
+        goal.messages = [
+            ChatMessage(role="system", content="You are a helpful assistant."),
+            ChatMessage(role="user", content="What is ROS 2?")
+        ]
+        goal.sampling_config.temp = 0.2
+        goal.stream = True
+
+        # wait for the server and send the goal
+        self.action_client.wait_for_server()
+        send_goal_future = self.action_client.send_goal_async(goal)
+
+        # wait for the server
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        get_result_future = send_goal_future.result().get_result_async()
+
+        # wait again and take the result
+        rclpy.spin_until_future_complete(self, get_result_future)
+        result = get_result_future.result().result
+```
+
+</details>
+
+#### Get Metadata
+
+<details>
+<summary>Click to expand</summary>
+
+```python
+from rclpy.node import Node
+from llama_msgs.srv import GetMetadata
+
+
+class ExampleNode(Node):
+    def __init__(self) -> None:
+        super().__init__("example_node")
+
+        # create the client
+        self.srv_client = self.create_client(GetMetadata, "/llama/get_metadata")
+
+        # call the metadata service
+        req = GetMetadata.Request()
+        self.srv_client.wait_for_service()
+        metadata = self.srv_client.call(req).metadata
+```
+
+</details>
+
+#### Rerank Documents
+
+<details>
+<summary>Click to expand</summary>
+
+_Remember to launch llama_ros with reranking set to true._
+
+```python
+from rclpy.node import Node
+from llama_msgs.srv import RerankDocuments
+
+
+class ExampleNode(Node):
+    def __init__(self) -> None:
+        super().__init__("example_node")
+
+        # create the client
+        self.srv_client = self.create_client(RerankDocuments, "/llama/rerank_documents")
+
+        # create the request
+        req = RerankDocuments.Request()
+        req.query = "What is robotics?"
+        req.documents = ["Robotics is a field of engineering.", "The weather is sunny."]
+
+        # call the reranking service
+        self.srv_client.wait_for_service()
+        scores = self.srv_client.call(req).scores
 ```
 
 </details>
@@ -695,7 +799,7 @@ rclpy.shutdown()
 
 </details>
 
-#### llama_ros (Renranker)
+#### llama_ros (Reranker)
 
 <details>
 <summary>Click to expand</summary>
@@ -1262,7 +1366,91 @@ ros2 run llama_demos chatllama_reasoning_demo_node
 
 [DeepSeekR1 ChatLlama](https://github.com/user-attachments/assets/3f268614-eabc-4499-b50f-a76d76908d9d)
 
-### Langgraph Demo
+### Streaming Tools Demo
+
+```shell
+ros2 llama launch Qwen2.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_streaming_tools_demo_node
+```
+
+### Reasoning + Tools Demo
+
+A reasoning model is required (e.g., DeepSeek-R1 or Qwen3 with thinking enabled).
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_reasoning_tools_demo_node
+```
+
+### Multi-Image Demo
+
+```shell
+ros2 llama launch MiniCPM-2.6.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_multi_image_demo_node
+```
+
+### Multi-Image (User Input) Demo
+
+```shell
+ros2 llama launch MiniCPM-2.6.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_multi_image_user_demo_node
+```
+
+### Audio Demo
+
+```shell
+ros2 llama launch Qwen2-Audio.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_audio_demo_node
+```
+
+### Multi-Audio Demo
+
+```shell
+ros2 llama launch Qwen2-Audio.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_multi_audio_demo_node
+```
+
+### MTMD Audio Demo
+
+This demo sends raw audio data directly to the model using the `GenerateResponse` action.
+
+```shell
+ros2 llama launch Qwen2-Audio.yaml
+```
+
+```shell
+ros2 run llama_demos mtmd_audio_demo_node
+```
+
+### PDDL Demo
+
+```shell
+ros2 llama launch Qwen2.yaml
+```
+
+```shell
+ros2 run llama_demos chatllama_pddl_demo_node
+```
+
+### LangGraph Demo
 
 ```shell
 ros2 llama launch Qwen2.yaml
