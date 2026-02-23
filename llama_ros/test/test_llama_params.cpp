@@ -67,7 +67,7 @@ TEST_F(LlamaParamsTest, CanDeclareParameters) {
   ASSERT_TRUE(node->has_parameter("n_batch"));
   ASSERT_TRUE(node->has_parameter("n_gpu_layers"));
   ASSERT_TRUE(node->has_parameter("seed"));
-  ASSERT_TRUE(node->has_parameter("model_path"));
+  ASSERT_TRUE(node->has_parameter("model.path"));
   ASSERT_TRUE(node->has_parameter("embedding"));
 }
 
@@ -112,7 +112,7 @@ TEST_F(LlamaParamsTest, GetLlamaParamsReturnsValidStruct) {
   node->set_parameter(rclcpp::Parameter("n_batch", 1024));
   node->set_parameter(rclcpp::Parameter("n_gpu_layers", 32));
   node->set_parameter(rclcpp::Parameter("seed", 12345));
-  node->set_parameter(rclcpp::Parameter("model_path", "/path/to/model.gguf"));
+  node->set_parameter(rclcpp::Parameter("model.path", "/path/to/model.gguf"));
 
   // Get the params structure
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
@@ -141,7 +141,7 @@ TEST_F(LlamaParamsTest, NegativeSeedBecomesDefault) {
  * @brief Test that verifies thread count defaults.
  */
 TEST_F(LlamaParamsTest, ThreadCountDefaults) {
-  node->set_parameter(rclcpp::Parameter("n_threads", -1));
+  node->set_parameter(rclcpp::Parameter("cpu.n_threads", -1));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -241,17 +241,17 @@ TEST_F(LlamaParamsTest, SplitModeConfiguration) {
  */
 TEST_F(LlamaParamsTest, RoPEScalingTypeConfiguration) {
   // Test "linear" scaling
-  node->set_parameter(rclcpp::Parameter("rope_scaling_type", "linear"));
+  node->set_parameter(rclcpp::Parameter("rope.scaling_type", "linear"));
   llama_utils::LlamaParams params1 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params1.params.rope_scaling_type, LLAMA_ROPE_SCALING_TYPE_LINEAR);
 
   // Test "yarn" scaling
-  node->set_parameter(rclcpp::Parameter("rope_scaling_type", "yarn"));
+  node->set_parameter(rclcpp::Parameter("rope.scaling_type", "yarn"));
   llama_utils::LlamaParams params2 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params2.params.rope_scaling_type, LLAMA_ROPE_SCALING_TYPE_YARN);
 
   // Test "none" scaling
-  node->set_parameter(rclcpp::Parameter("rope_scaling_type", "none"));
+  node->set_parameter(rclcpp::Parameter("rope.scaling_type", "none"));
   llama_utils::LlamaParams params3 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params3.params.rope_scaling_type, LLAMA_ROPE_SCALING_TYPE_NONE);
 }
@@ -337,8 +337,8 @@ TEST_F(LlamaParamsTest, ParsePriorityFunction) {
  * @brief Test that verifies CPU priority configuration.
  */
 TEST_F(LlamaParamsTest, CPUPriorityConfiguration) {
-  node->set_parameter(rclcpp::Parameter("priority", "high"));
-  node->set_parameter(rclcpp::Parameter("priority_batch", "medium"));
+  node->set_parameter(rclcpp::Parameter("cpu.priority", "high"));
+  node->set_parameter(rclcpp::Parameter("cpu_batch.priority", "medium"));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 

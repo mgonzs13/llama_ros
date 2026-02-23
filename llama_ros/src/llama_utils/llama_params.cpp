@@ -79,7 +79,7 @@ std::string download_model(const std::string &repo_id,
 void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
-  // Order matches base.launch.py as closely as possible
+  // General integer parameters
   node->declare_parameters<int32_t>("", {
                                             {"verbosity", 3},
                                             {"seed", -1},
@@ -93,37 +93,38 @@ void llama_utils::declare_llama_params(
                                             {"n_sequences", 1},
                                             {"n_gpu_layers", -1},
                                             {"main_gpu", 0},
-                                            {"n_threads", -1},
-                                            {"poll", 50},
-                                            {"n_threads_batch", -1},
-                                            {"poll_batch", 50},
-                                            {"grp_attn_n", 1},
-                                            {"grp_attn_w", 512},
-                                            {"yarn_orig_ctx", 0},
-                                            {"fit_params_min_ctx", 4096},
                                         });
 
+  node->declare_parameters<int32_t>("cpu", {
+                                               {"n_threads", -1},
+                                               {"poll", 50},
+                                           });
+
+  node->declare_parameters<int32_t>("cpu_batch", {
+                                                     {"n_threads", -1},
+                                                     {"poll", 50},
+                                                 });
+
+  node->declare_parameters<int32_t>("grp_attn", {
+                                                    {"n", 1},
+                                                    {"w", 512},
+                                                });
+
+  node->declare_parameters<int32_t>("yarn", {
+                                                {"orig_ctx", 0},
+                                            });
+
+  node->declare_parameters<int32_t>("fit", {
+                                               {"min_ctx", 4096},
+                                           });
+
+  // General string parameters
   node->declare_parameters<std::string>("", {
-                                                {"model_path", ""},
-                                                {"model_repo", ""},
-                                                {"model_filename", ""},
-                                                {"mmproj_path", ""},
-                                                {"mmproj_repo", ""},
-                                                {"mmproj_filename", ""},
-                                                {"cpu_mask", ""},
-                                                {"cpu_range", ""},
-                                                {"cpu_mask_batch", ""},
-                                                {"cpu_range_batch", ""},
-                                                {"priority", "normal"},
-                                                {"priority_batch", "normal"},
                                                 {"split_mode", "layer"},
                                                 {"numa", "none"},
-                                                {"rope_scaling_type", ""},
                                                 {"flash_attn_type", "auto"},
                                                 {"pooling_type", ""},
                                                 {"attention_type", ""},
-                                                {"cache_type_k", "f16"},
-                                                {"cache_type_v", "f16"},
                                                 {"prefix", ""},
                                                 {"suffix", ""},
                                                 {"system_prompt", ""},
@@ -132,6 +133,39 @@ void llama_utils::declare_llama_params(
                                                 {"system_prompt_type", ""},
                                             });
 
+  node->declare_parameters<std::string>("model", {
+                                                     {"path", ""},
+                                                     {"repo", ""},
+                                                     {"filename", ""},
+                                                 });
+
+  node->declare_parameters<std::string>("mmproj", {
+                                                      {"path", ""},
+                                                      {"repo", ""},
+                                                      {"filename", ""},
+                                                  });
+
+  node->declare_parameters<std::string>("cpu", {
+                                                   {"mask", ""},
+                                                   {"range", ""},
+                                                   {"priority", "normal"},
+                                               });
+
+  node->declare_parameters<std::string>("cpu_batch", {
+                                                         {"mask", ""},
+                                                         {"range", ""},
+                                                         {"priority", "normal"},
+                                                     });
+
+  node->declare_parameters<std::string>("rope", {
+                                                    {"scaling_type", ""},
+                                                });
+
+  node->declare_parameters<std::string>("cache", {
+                                                     {"type_k", "f16"},
+                                                     {"type_v", "f16"},
+                                                 });
+
   node->declare_parameters<std::vector<std::string>>(
       {""}, {
                 {"devices", std::vector<std::string>({})},
@@ -139,18 +173,24 @@ void llama_utils::declare_llama_params(
                 {"loras", std::vector<std::string>({})},
             });
 
-  node->declare_parameters<float>("", {
-                                          {"rope_freq_base", 0.0f},
-                                          {"rope_freq_scale", 0.0f},
-                                          {"yarn_ext_factor", -1.0f},
-                                          {"yarn_attn_factor", -1.0f},
-                                          {"yarn_beta_fast", -1.0f},
-                                          {"yarn_beta_slow", -1.0f},
-                                      });
+  // RoPE float parameters
+  node->declare_parameters<float>("rope", {
+                                              {"freq_base", 0.0f},
+                                              {"freq_scale", 0.0f},
+                                          });
+
+  // Yarn float parameters
+  node->declare_parameters<float>("yarn", {
+                                              {"ext_factor", -1.0f},
+                                              {"attn_factor", -1.0f},
+                                              {"beta_fast", -1.0f},
+                                              {"beta_slow", -1.0f},
+                                          });
 
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
 
+  // General boolean parameters
   node->declare_parameters<bool>("", {
                                          {"embedding", false},
                                          {"reranking", false},
@@ -167,13 +207,25 @@ void llama_utils::declare_llama_params(
                                          {"no_host", false},
                                          {"kv_unified", false},
                                          {"cont_batching", true},
-                                         {"strict_cpu", false},
-                                         {"strict_cpu_batch", false},
-                                         {"mmproj_use_gpu", true},
-                                         {"no_mmproj", false},
-                                         {"fit_params", true},
                                          {"lora_init_without_apply", false},
                                      });
+
+  node->declare_parameters<bool>("cpu", {
+                                            {"strict", false},
+                                        });
+
+  node->declare_parameters<bool>("cpu_batch", {
+                                                  {"strict", false},
+                                              });
+
+  node->declare_parameters<bool>("mmproj", {
+                                               {"use_gpu", true},
+                                               {"disabled", false},
+                                           });
+
+  node->declare_parameters<bool>("fit", {
+                                            {"enabled", true},
+                                        });
 }
 
 LlamaParams llama_utils::get_llama_params(
@@ -247,50 +299,50 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("no_kv_offload", params.params.no_kv_offload);
   node->get_parameter("no_host", params.params.no_host);
   node->get_parameter("kv_unified", params.params.kv_unified);
-  node->get_parameter("cache_type_k", cache_type_k);
-  node->get_parameter("cache_type_v", cache_type_v);
+  node->get_parameter("cache.type_k", cache_type_k);
+  node->get_parameter("cache.type_v", cache_type_v);
 
-  node->get_parameter("n_threads", params.params.cpuparams.n_threads);
-  node->get_parameter("cpu_mask", cpu_mask);
-  node->get_parameter("cpu_range", cpu_range);
-  node->get_parameter("priority", priority);
-  node->get_parameter("strict_cpu", params.params.cpuparams.strict_cpu);
-  node->get_parameter("poll", poll);
+  node->get_parameter("cpu.n_threads", params.params.cpuparams.n_threads);
+  node->get_parameter("cpu.mask", cpu_mask);
+  node->get_parameter("cpu.range", cpu_range);
+  node->get_parameter("cpu.priority", priority);
+  node->get_parameter("cpu.strict", params.params.cpuparams.strict_cpu);
+  node->get_parameter("cpu.poll", poll);
 
-  node->get_parameter("n_threads_batch",
+  node->get_parameter("cpu_batch.n_threads",
                       params.params.cpuparams_batch.n_threads);
-  node->get_parameter("cpu_mask_batch", cpu_mask_batch);
-  node->get_parameter("cpu_range_batch", cpu_range_batch);
-  node->get_parameter("priority_batch", priority_batch);
-  node->get_parameter("strict_cpu_batch",
+  node->get_parameter("cpu_batch.mask", cpu_mask_batch);
+  node->get_parameter("cpu_batch.range", cpu_range_batch);
+  node->get_parameter("cpu_batch.priority", priority_batch);
+  node->get_parameter("cpu_batch.strict",
                       params.params.cpuparams_batch.strict_cpu);
-  node->get_parameter("poll_batch", poll_batch);
+  node->get_parameter("cpu_batch.poll", poll_batch);
 
-  node->get_parameter("grp_attn_n", params.params.grp_attn_n);
-  node->get_parameter("grp_attn_w", params.params.grp_attn_w);
+  node->get_parameter("grp_attn.n", params.params.grp_attn_n);
+  node->get_parameter("grp_attn.w", params.params.grp_attn_w);
 
-  node->get_parameter("rope_freq_base", params.params.rope_freq_base);
-  node->get_parameter("rope_freq_scale", params.params.rope_freq_scale);
-  node->get_parameter("rope_scaling_type", rope_scaling_type);
+  node->get_parameter("rope.freq_base", params.params.rope_freq_base);
+  node->get_parameter("rope.freq_scale", params.params.rope_freq_scale);
+  node->get_parameter("rope.scaling_type", rope_scaling_type);
 
-  node->get_parameter("yarn_ext_factor", params.params.yarn_ext_factor);
-  node->get_parameter("yarn_attn_factor", params.params.yarn_attn_factor);
-  node->get_parameter("yarn_beta_fast", params.params.yarn_beta_fast);
-  node->get_parameter("yarn_beta_slow", params.params.yarn_beta_slow);
-  node->get_parameter("yarn_orig_ctx", params.params.yarn_orig_ctx);
+  node->get_parameter("yarn.ext_factor", params.params.yarn_ext_factor);
+  node->get_parameter("yarn.attn_factor", params.params.yarn_attn_factor);
+  node->get_parameter("yarn.beta_fast", params.params.yarn_beta_fast);
+  node->get_parameter("yarn.beta_slow", params.params.yarn_beta_slow);
+  node->get_parameter("yarn.orig_ctx", params.params.yarn_orig_ctx);
 
-  node->get_parameter("mmproj_use_gpu", params.params.mmproj_use_gpu);
-  node->get_parameter("no_mmproj", params.params.no_mmproj);
+  node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
+  node->get_parameter("mmproj.disabled", params.params.no_mmproj);
 
-  node->get_parameter("fit_params", params.params.fit_params);
-  node->get_parameter("fit_params_min_ctx", params.params.fit_params_min_ctx);
+  node->get_parameter("fit.enabled", params.params.fit_params);
+  node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
 
-  node->get_parameter("model_path", params.params.model.path);
-  node->get_parameter("model_repo", params.params.model.hf_repo);
-  node->get_parameter("model_filename", params.params.model.hf_file);
-  node->get_parameter("mmproj_path", params.params.mmproj.path);
-  node->get_parameter("mmproj_repo", params.params.mmproj.hf_repo);
-  node->get_parameter("mmproj_filename", params.params.mmproj.hf_file);
+  node->get_parameter("model.path", params.params.model.path);
+  node->get_parameter("model.repo", params.params.model.hf_repo);
+  node->get_parameter("model.filename", params.params.model.hf_file);
+  node->get_parameter("mmproj.path", params.params.mmproj.path);
+  node->get_parameter("mmproj.repo", params.params.mmproj.hf_repo);
+  node->get_parameter("mmproj.filename", params.params.mmproj.hf_file);
 
   node->get_parameter("lora_init_without_apply",
                       params.params.lora_init_without_apply);

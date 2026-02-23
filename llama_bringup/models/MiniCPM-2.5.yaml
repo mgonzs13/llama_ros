@@ -2,11 +2,14 @@
   ros__parameters:
     n_ctx: 8192
     n_batch: 512
-    n_gpu_layers: 20
-    n_threads: -1
     n_predict: 8192
-    model_repo: openbmb/MiniCPM-Llama3-V-2_5-gguf
-    model_filename: ggml-model-Q4_K_M.gguf
-    mmproj_repo: openbmb/MiniCPM-Llama3-V-2_5-gguf
-    mmproj_filename: mmproj-model-f16.gguf
+    n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+    model:
+      repo: openbmb/MiniCPM-Llama3-V-2_5-gguf
+      filename: ggml-model-Q4_K_M.gguf
+    mmproj:
+      repo: openbmb/MiniCPM-Llama3-V-2_5-gguf
+      filename: mmproj-model-f16.gguf
     system_prompt_type: Llama-3

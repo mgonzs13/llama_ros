@@ -2,9 +2,11 @@
   ros__parameters:
     n_ctx: 4096
     n_batch: 8
-    n_gpu_layers: 0
-    n_threads: 1
     n_predict: 4096
-    model_repo: ggml-org/gpt-oss-20b-GGUF
-    model_filename: gpt-oss-20b-mxfp4.gguf
+    n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    model:
+      repo: ggml-org/gpt-oss-20b-GGUF
+      filename: gpt-oss-20b-mxfp4.gguf
     system_prompt_type: GPT

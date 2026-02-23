@@ -2,9 +2,11 @@
   ros__parameters:
     n_ctx: 2048
     n_batch: 8
-    n_gpu_layers: 0
-    n_threads: 1
     n_predict: 2048
-    model_repo: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
-    model_filename: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+    n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    model:
+      repo: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
+      filename: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
     system_prompt_type: Llama-3

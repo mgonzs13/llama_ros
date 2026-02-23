@@ -24,6 +24,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 4. [Usage](#usage)
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
+   - [ROS 2 Parameters](#ros-2-parameters)
    - [LoRA Adapters](#lora-adapters)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
@@ -123,11 +124,11 @@ def generate_launch_description():
             parameters=[{
                 "n_ctx": 2048,
                 "n_batch": 8,
-                "n_gpu_layers": 0,
-                "n_threads": 1,
                 "n_predict": 2048,
-                "model_repo": "TheBloke/Marcoroni-7B-v3-GGUF",
-                "model_filename": "marcoroni-7b-v3.Q4_K_M.gguf",
+                "n_gpu_layers": 0,
+                "cpu.n_threads": 1,
+                "model.repo": "TheBloke/Marcoroni-7B-v3-GGUF",
+                "model.filename": "marcoroni-7b-v3.Q4_K_M.gguf",
                 "system_prompt_type": "Alpaca",
             }],
         )
@@ -150,11 +151,13 @@ ros2 launch llama_bringup marcoroni.launch.py
   ros__parameters:
     n_ctx: 2048
     n_batch: 8
-    n_gpu_layers: 0
-    n_threads: 1
     n_predict: 2048
-    model_repo: "cstr/Spaetzle-v60-7b-GGUF"
-    model_filename: "Spaetzle-v60-7b-q4-k-m.gguf"
+    n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    model:
+      repo: "cstr/Spaetzle-v60-7b-GGUF"
+      filename: "Spaetzle-v60-7b-q4-k-m.gguf"
     system_prompt_type: "Alpaca"
 ```
 
@@ -193,12 +196,14 @@ ros2 launch llama_bringup spaetzle.launch.py
 ```yaml
 n_ctx: 2048 # context of the LLM in tokens
 n_batch: 8 # batch size in tokens
-n_gpu_layers: 0 # layers to load in GPU
-n_threads: 1 # threads
 n_predict: 2048 # max tokens, -1 == inf
+n_gpu_layers: 0 # layers to load in GPU
+cpu:
+  n_threads: 1 # threads
 
-model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF" # Hugging Face repo
-model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf" # model shard file in repo
+model:
+  repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF" # Hugging Face repo
+  filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf" # model shard file in repo
 
 system_prompt_type: "ChatML" # system prompt type
 ```
@@ -230,12 +235,12 @@ def generate_launch_description():
                 "n_ctx": 8192,
                 "n_batch": 512,
                 "n_gpu_layers": 33,
-                "n_threads": 1,
+                "cpu.n_threads": 1,
                 "n_predict": 8192,
-                "model_repo": "cjpais/llava-1.6-mistral-7b-gguf",
-                "model_filename": "llava-v1.6-mistral-7b.Q4_K_M.gguf",
-                "mmproj_repo": "cjpais/llava-1.6-mistral-7b-gguf",
-                "mmproj_filename": "mmproj-model-f16.gguf",
+                "model.repo": "cjpais/llava-1.6-mistral-7b-gguf",
+                "model.filename": "llava-v1.6-mistral-7b.Q4_K_M.gguf",
+                "mmproj.repo": "cjpais/llava-1.6-mistral-7b-gguf",
+                "mmproj.filename": "mmproj-model-f16.gguf",
                 "system_prompt_type": "Mistral",
             }],
         )
@@ -258,13 +263,16 @@ ros2 launch llama_bringup llava.launch.py
   ros__parameters:
     n_ctx: 8192
     n_batch: 512
-    n_gpu_layers: 33
-    n_threads: 1
     n_predict: 8192
-    model_repo: "cjpais/llava-1.6-mistral-7b-gguf"
-    model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
-    mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf"
-    mmproj_filename: "mmproj-model-f16.gguf"
+    n_gpu_layers: 33
+    cpu:
+      n_threads: 1
+    model:
+      repo: "cjpais/llava-1.6-mistral-7b-gguf"
+      filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
+    mmproj:
+      repo: "cjpais/llava-1.6-mistral-7b-gguf"
+      filename: "mmproj-model-f16.gguf"
     system_prompt_type: "Mistral"
 ```
 
@@ -305,13 +313,16 @@ ros2 launch llama_bringup llava.launch.py
   ros__parameters:
     n_ctx: 8192
     n_batch: 512
-    n_gpu_layers: 29
-    n_threads: -1
     n_predict: 8192
-    model_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
-    model_filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
-    mmproj_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
-    mmproj_filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
+    n_gpu_layers: 29
+    cpu:
+      n_threads: -1
+    model:
+      repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+      filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
+    mmproj:
+      repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+      filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
     system_prompt_type: "ChatML"
 ```
 
@@ -342,6 +353,151 @@ ros2 launch llama_bringup llava.launch.py
 
 </details>
 
+### ROS 2 Parameters
+
+The following tables list all the ROS 2 parameters available when launching `llama_node` or `llava_node`. Parameters are organized by namespace.
+
+#### General
+
+| Param             | Type       | Default   | Description                                                                     |
+| ----------------- | ---------- | --------- | ------------------------------------------------------------------------------- |
+| `verbosity`       | `int32`    | `3`       | Log verbosity level                                                             |
+| `seed`            | `int32`    | `-1`      | RNG seed for sampling (`-1` for default)                                        |
+| `n_ctx`           | `int32`    | `0`       | Context size in tokens (`0` for model default)                                  |
+| `n_batch`         | `int32`    | `2048`    | Logical batch size for prompt processing                                        |
+| `n_ubatch`        | `int32`    | `512`     | Physical batch size                                                             |
+| `n_keep`          | `int32`    | `0`       | Number of tokens to keep from the initial prompt on context shift               |
+| `n_chunks`        | `int32`    | `-1`      | Max number of chunks to process (`-1` for unlimited)                            |
+| `n_predict`       | `int32`    | `-1`      | Max tokens to predict (`-1` for unlimited)                                      |
+| `n_parallel`      | `int32`    | `1`       | Number of parallel sequences to decode                                          |
+| `n_sequences`     | `int32`    | `1`       | Number of sequences to decode                                                   |
+| `n_gpu_layers`    | `int32`    | `-1`      | Number of layers to offload to GPU (`-1` for all)                               |
+| `main_gpu`        | `int32`    | `0`       | Main GPU index                                                                  |
+| `split_mode`      | `string`   | `"layer"` | GPU split mode: `none`, `layer`, or `row`                                       |
+| `tensor_split`    | `double[]` | `[0.0]`   | Tensor split proportions across GPUs                                            |
+| `devices`         | `string[]` | `[]`      | GPU device names to use                                                         |
+| `numa`            | `string`   | `"none"`  | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
+| `flash_attn_type` | `string`   | `"auto"`  | Flash attention type: `auto`, `enabled`, or `disabled`                          |
+| `pooling_type`    | `string`   | `""`      | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                        |
+| `attention_type`  | `string`   | `""`      | Attention type: `causal` or `non_causal`                                        |
+| `embedding`       | `bool`     | `false`   | Enable embedding mode                                                           |
+| `reranking`       | `bool`     | `false`   | Enable reranking mode (sets pooling to `rerank` and enables embedding)          |
+| `use_mmap`        | `bool`     | `true`    | Use memory-mapped files for model loading                                       |
+| `use_direct_io`   | `bool`     | `false`   | Use direct I/O for model loading                                                |
+| `use_mlock`       | `bool`     | `false`   | Lock model in RAM to prevent swapping                                           |
+| `warmup`          | `bool`     | `true`    | Run a warmup inference on load                                                  |
+| `check_tensors`   | `bool`     | `false`   | Validate model tensor data on load                                              |
+| `ctx_shift`       | `bool`     | `false`   | Enable context shifting                                                         |
+| `swa_full`        | `bool`     | `false`   | Enable full sliding window attention                                            |
+| `no_op_offload`   | `bool`     | `false`   | Disable operation offloading                                                    |
+| `no_extra_bufts`  | `bool`     | `false`   | Disable extra buffer types                                                      |
+| `no_kv_offload`   | `bool`     | `false`   | Disable KV cache offloading to GPU                                              |
+| `no_host`         | `bool`     | `false`   | Disable host buffer usage                                                       |
+| `kv_unified`      | `bool`     | `false`   | Use unified KV cache                                                            |
+| `cont_batching`   | `bool`     | `true`    | Enable continuous batching                                                      |
+
+#### Model (`model.*`)
+
+| Param            | Type     | Default | Description                                          |
+| ---------------- | -------- | ------- | ---------------------------------------------------- |
+| `model.path`     | `string` | `""`    | Local file path to the GGUF model                    |
+| `model.repo`     | `string` | `""`    | HuggingFace repository ID to download the model from |
+| `model.filename` | `string` | `""`    | Filename of the model in the HuggingFace repository  |
+
+#### Multimodal Projector (`mmproj.*`)
+
+| Param             | Type     | Default | Description                                              |
+| ----------------- | -------- | ------- | -------------------------------------------------------- |
+| `mmproj.path`     | `string` | `""`    | Local file path to the multimodal projector              |
+| `mmproj.repo`     | `string` | `""`    | HuggingFace repository ID to download the projector from |
+| `mmproj.filename` | `string` | `""`    | Filename of the projector in the HuggingFace repository  |
+| `mmproj.use_gpu`  | `bool`   | `true`  | Use GPU for the multimodal projector                     |
+| `mmproj.disabled` | `bool`   | `false` | Disable loading the multimodal projector                 |
+
+#### CPU (`cpu.*`)
+
+| Param           | Type     | Default    | Description                                                                  |
+| --------------- | -------- | ---------- | ---------------------------------------------------------------------------- |
+| `cpu.n_threads` | `int32`  | `-1`       | Number of threads for generation (`-1` for auto-detect)                      |
+| `cpu.poll`      | `int32`  | `50`       | Thread pool polling interval                                                 |
+| `cpu.mask`      | `string` | `""`       | CPU affinity mask for generation threads                                     |
+| `cpu.range`     | `string` | `""`       | CPU range for generation threads                                             |
+| `cpu.priority`  | `string` | `"normal"` | Thread scheduling priority: `low`, `normal`, `medium`, `high`, or `realtime` |
+| `cpu.strict`    | `bool`   | `false`    | Strict CPU affinity for generation threads                                   |
+
+#### CPU Batch (`cpu_batch.*`)
+
+| Param                 | Type     | Default    | Description                                                   |
+| --------------------- | -------- | ---------- | ------------------------------------------------------------- |
+| `cpu_batch.n_threads` | `int32`  | `-1`       | Number of threads for batch processing (`-1` for auto-detect) |
+| `cpu_batch.poll`      | `int32`  | `50`       | Thread pool polling interval for batch processing             |
+| `cpu_batch.mask`      | `string` | `""`       | CPU affinity mask for batch processing threads                |
+| `cpu_batch.range`     | `string` | `""`       | CPU range for batch processing threads                        |
+| `cpu_batch.priority`  | `string` | `"normal"` | Thread scheduling priority for batch processing               |
+| `cpu_batch.strict`    | `bool`   | `false`    | Strict CPU affinity for batch processing threads              |
+
+#### RoPE (`rope.*`)
+
+| Param               | Type     | Default | Description                                                |
+| ------------------- | -------- | ------- | ---------------------------------------------------------- |
+| `rope.freq_base`    | `float`  | `0.0`   | RoPE base frequency (`0.0` for model default)              |
+| `rope.freq_scale`   | `float`  | `0.0`   | RoPE frequency scale factor (`0.0` for model default)      |
+| `rope.scaling_type` | `string` | `""`    | RoPE scaling type: `none`, `linear`, `yarn`, or `longrope` |
+
+#### YaRN (`yarn.*`)
+
+| Param              | Type    | Default | Description                                              |
+| ------------------ | ------- | ------- | -------------------------------------------------------- |
+| `yarn.ext_factor`  | `float` | `-1.0`  | YaRN extrapolation mix factor (`-1.0` for model default) |
+| `yarn.attn_factor` | `float` | `-1.0`  | YaRN attention magnitude scaling factor                  |
+| `yarn.beta_fast`   | `float` | `-1.0`  | YaRN low correction dimension                            |
+| `yarn.beta_slow`   | `float` | `-1.0`  | YaRN high correction dimension                           |
+| `yarn.orig_ctx`    | `int32` | `0`     | YaRN original context size                               |
+
+#### Group Attention (`grp_attn.*`)
+
+| Param        | Type    | Default | Description                                           |
+| ------------ | ------- | ------- | ----------------------------------------------------- |
+| `grp_attn.n` | `int32` | `1`     | Self-extend group attention factor (`1` for disabled) |
+| `grp_attn.w` | `int32` | `512`   | Self-extend group attention width                     |
+
+#### KV Cache (`cache.*`)
+
+| Param          | Type     | Default | Description                                                                                      |
+| -------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `cache.type_k` | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1` |
+| `cache.type_v` | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                           |
+
+#### Fit Parameters (`fit.*`)
+
+| Param         | Type    | Default | Description                                            |
+| ------------- | ------- | ------- | ------------------------------------------------------ |
+| `fit.enabled` | `bool`  | `true`  | Automatically fit model parameters to available memory |
+| `fit.min_ctx` | `int32` | `4096`  | Minimum context size when fitting parameters           |
+
+#### Prompt & Chat
+
+| Param                | Type       | Default | Description                                                               |
+| -------------------- | ---------- | ------- | ------------------------------------------------------------------------- |
+| `prefix`             | `string`   | `""`    | Text prepended to every user prompt                                       |
+| `suffix`             | `string`   | `""`    | Text appended to every user prompt                                        |
+| `system_prompt`      | `string`   | `""`    | Initial system prompt                                                     |
+| `system_prompt_file` | `string`   | `""`    | Path to a file containing the system prompt                               |
+| `system_prompt_type` | `string`   | `""`    | System prompt type (loads from a predefined YAML in `llama_ros/prompts/`) |
+| `chat_template_file` | `string`   | `""`    | Path to a Jinja chat template file                                        |
+| `stopping_words`     | `string[]` | `[]`    | List of words/tokens that stop generation                                 |
+
+#### LoRA Adapters
+
+| Param                     | Type       | Default | Description                                         |
+| ------------------------- | ---------- | ------- | --------------------------------------------------- |
+| `loras`                   | `string[]` | `[]`    | List of LoRA adapter names to load                  |
+| `lora_init_without_apply` | `bool`     | `false` | Load LoRA adapters without applying them            |
+| `<lora_name>.repo`        | `string`   | `""`    | HuggingFace repository for the LoRA adapter         |
+| `<lora_name>.filename`    | `string`   | `""`    | Filename of the LoRA adapter in the repository      |
+| `<lora_name>.file_path`   | `string`   | `""`    | Local file path to the LoRA adapter                 |
+| `<lora_name>.scale`       | `double`   | `1.0`   | LoRA adapter scale factor (clamped to `[0.0, 1.0]`) |
+
 ### LoRA Adapters
 
 You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3. You can lis the
@@ -355,11 +511,13 @@ LoRAs using the `/llama/list_loras` service and modify their scales values by us
   ros__parameters:
     n_ctx: 2048
     n_batch: 8
-    n_gpu_layers: 0
-    n_threads: 1
     n_predict: 2048
-    model_repo: bartowski/Phi-3.5-mini-instruct-GGUF
-    model_filename: Phi-3.5-mini-instruct-Q4_K_M.gguf
+    n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    model:
+      repo: bartowski/Phi-3.5-mini-instruct-GGUF
+      filename: Phi-3.5-mini-instruct-Q4_K_M.gguf
     loras:
       - code_writer
       - summarization
@@ -1313,13 +1471,16 @@ ros2 llama launch MiniCPM-2.6.yaml
   ros__parameters:
     n_ctx: 8192
     n_batch: 512
-    n_gpu_layers: 20
-    n_threads: -1
     n_predict: 8192
-    model_repo: "openbmb/MiniCPM-V-2_6-gguf"
-    model_filename: "ggml-model-Q4_K_M.gguf"
-    mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
-    mmproj_filename: "mmproj-model-f16.gguf"
+    n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+    model:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "ggml-model-Q4_K_M.gguf"
+    mmproj:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "mmproj-model-f16.gguf"
 ```
 
 </details>
@@ -1462,12 +1623,14 @@ ros2 llama launch Qwen2.yaml
 ```yaml
 _ctx: 4096
 n_batch: 256
-n_gpu_layers: 29
-n_threads: -1
 n_predict: -1
+n_gpu_layers: 29
+cpu:
+  n_threads: -1
 
-model_repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF"
-model_filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf"
+model:
+  repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF"
+  filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf"
 ```
 
 </details>
@@ -1498,12 +1661,14 @@ ros2 llama launch Qwen2.yaml
 ```yaml
 _ctx: 4096
 n_batch: 256
-n_gpu_layers: 29
-n_threads: -1
 n_predict: -1
+n_gpu_layers: 29
+cpu:
+  n_threads: -1
 
-model_repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
-model_filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
+model:
+  repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
+  filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
 
 stopping_words: ["<|im_end|>"]
 ```

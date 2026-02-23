@@ -65,7 +65,8 @@ def _detect_executable(file_path: str) -> str:
                 params = inner["ros__parameters"]
                 break
 
-    if params.get("mmproj_repo") or params.get("mmproj_path"):
+    mmproj = params.get("mmproj", {})
+    if mmproj.get("repo") or mmproj.get("path"):
         return "llava_node"
     return "llama_node"
 

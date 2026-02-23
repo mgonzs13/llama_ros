@@ -2,9 +2,11 @@
   ros__parameters:
     n_ctx: 2048
     n_batch: 8
-    n_gpu_layers: 0
-    n_threads: 1
     n_predict: 2048
-    model_repo: tiiuae/Falcon3-1B-Instruct-GGUF
-    model_filename: Falcon3-1B-Instruct-q4_k_m.gguf
+    n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    model:
+      repo: tiiuae/Falcon3-1B-Instruct-GGUF
+      filename: Falcon3-1B-Instruct-q4_k_m.gguf
     system_prompt_type: Phi-3
