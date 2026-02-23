@@ -23,19 +23,25 @@
 
 import os
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch_from_yaml
+from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
     return LaunchDescription(
         [
-            create_llama_launch_from_yaml(
-                os.path.join(
-                    get_package_share_directory("llama_bringup"),
-                    "models",
-                    "MiniCPM-2.6.yaml",
-                )
+            Node(
+                package="llama_ros",
+                executable="llava_node",
+                name="llava_node",
+                namespace="llama",
+                parameters=[
+                    os.path.join(
+                        get_package_share_directory("llama_bringup"),
+                        "models",
+                        "MiniCPM-2.6.yaml",
+                    )
+                ],
             )
         ]
     )

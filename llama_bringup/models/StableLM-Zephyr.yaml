@@ -1,10 +1,10 @@
-n_ctx: 2048
-n_batch: 8
-n_gpu_layers: 0
-n_threads: 1
-n_predict: 2048
-
-model_repo: "duyntnet/stablelm-zephyr-3b-imatrix-GGUF"
-model_filename: "stablelm-zephyr-3b-Q4_K_M.gguf"
-
-system_prompt_type: "StableLM-Zephyr"
+/**:
+  ros__parameters:
+    n_ctx: 2048
+    n_batch: 8
+    n_gpu_layers: 0
+    n_threads: 1
+    n_predict: 2048
+    model_repo: duyntnet/stablelm-zephyr-3b-imatrix-GGUF
+    model_filename: stablelm-zephyr-3b-Q4_K_M.gguf
+    system_prompt_type: StableLM-Zephyr

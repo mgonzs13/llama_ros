@@ -21,31 +21,32 @@
 # SOFTWARE.
 
 
-from launch import LaunchDescription, LaunchContext
-from launch.actions import OpaqueFunction, DeclareLaunchArgument
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
-from llama_bringup.utils import create_llama_launch_from_yaml
 
 
 def generate_launch_description():
 
-    def run_llama(context: LaunchContext, params_file, node_name, namespace):
-        file_path = context.perform_substitution(params_file)
-        name = context.perform_substitution(node_name)
-        ns = context.perform_substitution(namespace)
-        return [create_llama_launch_from_yaml(file_path, node_name=name, namespace=ns)]
-
     params_file = LaunchConfiguration("params_file")
     params_file_cmd = DeclareLaunchArgument(
         "params_file",
-        description="Path to the model params YAML file for the LLM",
+        description="Path to the ROS 2 params YAML file for the model",
+    )
+
+    executable = LaunchConfiguration("executable")
+    executable_cmd = DeclareLaunchArgument(
+        "executable",
+        default_value="llama_node",
+        description="Executable to run (llama_node or llava_node)",
     )
 
     node_name = LaunchConfiguration("node_name")
     node_name_cmd = DeclareLaunchArgument(
         "node_name",
-        default_value="",
-        description="Override the node name (default: auto-detected from model type)",
+        default_value="llama_node",
+        description="Name for the node",
     )
 
     namespace = LaunchConfiguration("namespace")
@@ -55,11 +56,20 @@ def generate_launch_description():
         description="Namespace for the node",
     )
 
+    llama_node = Node(
+        package="llama_ros",
+        executable=executable,
+        name=node_name,
+        namespace=namespace,
+        parameters=[params_file],
+    )
+
     return LaunchDescription(
         [
             params_file_cmd,
+            executable_cmd,
             node_name_cmd,
             namespace_cmd,
-            OpaqueFunction(function=run_llama, args=[params_file, node_name, namespace]),
+            llama_node,
         ]
     )

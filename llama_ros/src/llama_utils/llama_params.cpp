@@ -136,9 +136,7 @@ void llama_utils::declare_llama_params(
       {""}, {
                 {"devices", std::vector<std::string>({})},
                 {"stopping_words", std::vector<std::string>({})},
-                {"lora_adapters", std::vector<std::string>({})},
-                {"lora_adapters_repos", std::vector<std::string>({})},
-                {"lora_adapters_filenames", std::vector<std::string>({})},
+                {"loras", std::vector<std::string>({})},
             });
 
   node->declare_parameters<float>("", {
@@ -152,8 +150,6 @@ void llama_utils::declare_llama_params(
 
   node->declare_parameter<std::vector<double>>("tensor_split",
                                                std::vector<double>({0.0}));
-  node->declare_parameter<std::vector<double>>("lora_adapters_scales",
-                                               std::vector<double>({}));
 
   node->declare_parameters<bool>("", {
                                          {"embedding", false},
@@ -193,10 +189,7 @@ LlamaParams llama_utils::get_llama_params(
   std::string chat_template_file;
   std::string system_prompt_type;
 
-  std::vector<std::string> lora_adapters;
-  std::vector<std::string> lora_adapters_repos;
-  std::vector<std::string> lora_adapters_filenames;
-  std::vector<double> lora_adapters_scales;
+  std::vector<std::string> loras;
 
   std::vector<std::string> devices;
   std::vector<double> tensor_split;
@@ -301,10 +294,7 @@ LlamaParams llama_utils::get_llama_params(
 
   node->get_parameter("lora_init_without_apply",
                       params.params.lora_init_without_apply);
-  node->get_parameter("lora_adapters", lora_adapters);
-  node->get_parameter("lora_adapters_repos", lora_adapters_repos);
-  node->get_parameter("lora_adapters_filenames", lora_adapters_filenames);
-  node->get_parameter("lora_adapters_scales", lora_adapters_scales);
+  node->get_parameter("loras", loras);
 
   node->get_parameter("numa", numa);
   node->get_parameter("flash_attn_type", flash_attn_type);
@@ -367,63 +357,64 @@ LlamaParams llama_utils::get_llama_params(
   }
 
   // LoRA adapters
-  if (!lora_adapters.empty()) {
-    if (lora_adapters.size() != lora_adapters_scales.size()) {
-      RCLCPP_ERROR(
-          node->get_logger(),
-          "lora_adapters and lora_adapters_scales must have the same size");
+  for (const std::string &lora_name : loras) {
 
-    } else {
-
-      while (!lora_adapters.empty()) {
-
-        // get lora
-        std::string lora = lora_adapters.front();
-        lora_adapters.erase(lora_adapters.begin());
-
-        // get scale
-        float scale = (float)lora_adapters_scales.front();
-        lora_adapters_scales.erase(lora_adapters_scales.begin());
-
-        // check if lora is from HF
-        if (lora == "HF") {
-          if (lora_adapters_repos.empty() || lora_adapters_filenames.empty()) {
-            RCLCPP_ERROR(node->get_logger(),
-                         "lora_adapters_repos and lora_adapters_filenames "
-                         "must have the same size");
-            continue;
-          }
-
-          std::string repo = lora_adapters_repos.front();
-          std::string filename = lora_adapters_filenames.front();
-
-          lora_adapters_repos.erase(lora_adapters_repos.begin());
-          lora_adapters_filenames.erase(lora_adapters_filenames.begin());
-
-          lora = download_model(repo, filename);
-        }
-
-        if (lora.empty()) {
-          continue;
-        }
-
-        // fix scale
-        if (scale < 0.0) {
-          RCLCPP_WARN(node->get_logger(),
-                      "Scale %f cannot be lower than 0.0, setting it to 0.0",
-                      scale);
-          scale = 0.0;
-        } else if (scale > 1.0) {
-          RCLCPP_WARN(node->get_logger(),
-                      "Scale %f cannot be greater than 1.0, setting it to 1.0",
-                      scale);
-          scale = 1.0;
-        }
-
-        // add lora
-        params.params.lora_adapters.push_back({lora, scale, "", "", nullptr});
-      }
+    if (lora_name.empty()) {
+      continue;
     }
+
+    // Declare and get per-lora parameters
+    if (!node->has_parameter(lora_name + ".repo")) {
+      node->declare_parameter<std::string>(lora_name + ".repo", "");
+    }
+    if (!node->has_parameter(lora_name + ".filename")) {
+      node->declare_parameter<std::string>(lora_name + ".filename", "");
+    }
+    if (!node->has_parameter(lora_name + ".scale")) {
+      node->declare_parameter<double>(lora_name + ".scale", 1.0);
+    }
+    if (!node->has_parameter(lora_name + ".file_path")) {
+      node->declare_parameter<std::string>(lora_name + ".file_path", "");
+    }
+
+    std::string repo, filename, file_path;
+    double scale_d;
+
+    node->get_parameter(lora_name + ".repo", repo);
+    node->get_parameter(lora_name + ".filename", filename);
+    node->get_parameter(lora_name + ".scale", scale_d);
+    node->get_parameter(lora_name + ".file_path", file_path);
+
+    float scale = static_cast<float>(scale_d);
+
+    // Resolve lora path: prefer file_path, then download from HF
+    std::string lora_path = file_path;
+    if (lora_path.empty() && !repo.empty() && !filename.empty()) {
+      lora_path = download_model(repo, filename);
+    }
+
+    if (lora_path.empty()) {
+      RCLCPP_ERROR(node->get_logger(),
+                   "LoRA '%s' has no file_path and no valid repo/filename",
+                   lora_name.c_str());
+      continue;
+    }
+
+    // fix scale
+    if (scale < 0.0) {
+      RCLCPP_WARN(node->get_logger(),
+                  "Scale %f cannot be lower than 0.0, setting it to 0.0",
+                  scale);
+      scale = 0.0;
+    } else if (scale > 1.0) {
+      RCLCPP_WARN(node->get_logger(),
+                  "Scale %f cannot be greater than 1.0, setting it to 1.0",
+                  scale);
+      scale = 1.0;
+    }
+
+    // add lora
+    params.params.lora_adapters.push_back({lora_path, scale, "", "", nullptr});
   }
 
   // Stopping words are the antiprompt

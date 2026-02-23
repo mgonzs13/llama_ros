@@ -23,9 +23,10 @@
 
 from launch import LaunchService
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch_from_yaml
+from launch_ros.actions import Node
 
 import os
+import yaml
 import rclpy
 from argparse import ArgumentTypeError
 from llama_msgs.action import GenerateResponse
@@ -47,12 +48,42 @@ def positive_float(inval):
     return ret
 
 
+def _detect_executable(file_path: str) -> str:
+    """Detect the ROS 2 executable from a params YAML file.
+
+    Returns 'llava_node' if mmproj params are set, otherwise 'llama_node'.
+    """
+    with open(file_path, "r") as f:
+        data = yaml.safe_load(f)
+
+    # Navigate into ROS 2 params format
+    params = {}
+    if isinstance(data, dict):
+        for key in data:
+            inner = data[key]
+            if isinstance(inner, dict) and "ros__parameters" in inner:
+                params = inner["ros__parameters"]
+                break
+
+    if params.get("mmproj_repo") or params.get("mmproj_path"):
+        return "llava_node"
+    return "llama_node"
+
+
 def launch_llm(file_path: str) -> None:
     if not os.path.exists(file_path):
         print(f"File '{file_path}' does not exists")
         return
 
-    ld = LaunchDescription([create_llama_launch_from_yaml(file_path)])
+    executable = _detect_executable(file_path)
+    node = Node(
+        package="llama_ros",
+        executable=executable,
+        name=executable,
+        namespace="llama",
+        parameters=[file_path],
+    )
+    ld = LaunchDescription([node])
     ls = LaunchService()
     ls.include_launch_description(ld)
     ls.run()

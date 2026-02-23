@@ -109,23 +109,27 @@ First of all, you need to create a launch file to use llama_ros or llava_ros. Th
 
 ```python
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
 
     return LaunchDescription([
-        create_llama_launch(
-            n_ctx=2048, # context of the LLM in tokens
-            n_batch=8, # batch size in tokens
-            n_gpu_layers=0, # layers to load in GPU
-            n_threads=1, # threads
-            n_predict=2048, # max tokens, -1 == inf
-
-            model_repo="TheBloke/Marcoroni-7B-v3-GGUF", # Hugging Face repo
-            model_filename="marcoroni-7b-v3.Q4_K_M.gguf", # model file in repo
-
-            system_prompt_type="Alpaca" # system prompt type
+        Node(
+            package="llama_ros",
+            executable="llama_node",
+            name="llama_node",
+            namespace="llama",
+            parameters=[{
+                "n_ctx": 2048,
+                "n_batch": 8,
+                "n_gpu_layers": 0,
+                "n_threads": 1,
+                "n_predict": 2048,
+                "model_repo": "TheBloke/Marcoroni-7B-v3-GGUF",
+                "model_filename": "marcoroni-7b-v3.Q4_K_M.gguf",
+                "system_prompt_type": "Alpaca",
+            }],
         )
     ])
 ```
@@ -142,29 +146,36 @@ ros2 launch llama_bringup marcoroni.launch.py
 <summary>Click to expand</summary>
 
 ```yaml
-n_ctx: 2048 # context of the LLM in tokens
-n_batch: 8 # batch size in tokens
-n_gpu_layers: 0 # layers to load in GPU
-n_threads: 1 # threads
-n_predict: 2048 # max tokens, -1 == inf
-
-model_repo: "cstr/Spaetzle-v60-7b-GGUF" # Hugging Face repo
-model_filename: "Spaetzle-v60-7b-q4-k-m.gguf" # model file in repo
-
-system_prompt_type: "Alpaca" # system prompt type
+/**:
+  ros__parameters:
+    n_ctx: 2048
+    n_batch: 8
+    n_gpu_layers: 0
+    n_threads: 1
+    n_predict: 2048
+    model_repo: "cstr/Spaetzle-v60-7b-GGUF"
+    model_filename: "Spaetzle-v60-7b-q4-k-m.gguf"
+    system_prompt_type: "Alpaca"
 ```
 
 ```python
 import os
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch_from_yaml
+from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
     return LaunchDescription([
-        create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"), "models", "Spaetzle.yaml"))
+        Node(
+            package="llama_ros",
+            executable="llama_node",
+            name="llama_node",
+            namespace="llama",
+            parameters=[os.path.join(
+                get_package_share_directory("llama_bringup"),
+                "models", "Spaetzle.yaml")],
+        )
     ])
 ```
 
@@ -205,27 +216,28 @@ ros2 llama launch Qwen2.yaml
 
 ```python
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch
+from launch_ros.actions import Node
 
 def generate_launch_description():
 
     return LaunchDescription([
-        create_llama_launch(
-            use_llava=True, # enable llava
-
-            n_ctx=8192, # context of the LLM in tokens, use a huge context size to load images
-            n_batch=512, # batch size in tokens
-            n_gpu_layers=33, # layers to load in GPU
-            n_threads=1, # threads
-            n_predict=8192, # max tokens, -1 == inf
-
-            model_repo="cjpais/llava-1.6-mistral-7b-gguf", # Hugging Face repo
-            model_filename="llava-v1.6-mistral-7b.Q4_K_M.gguf", # model file in repo
-
-            mmproj_repo="cjpais/llava-1.6-mistral-7b-gguf", # Hugging Face repo
-            mmproj_filename="mmproj-model-f16.gguf", # mmproj file in repo
-
-            system_prompt_type="Mistral" # system prompt type
+        Node(
+            package="llama_ros",
+            executable="llava_node",
+            name="llava_node",
+            namespace="llama",
+            parameters=[{
+                "n_ctx": 8192,
+                "n_batch": 512,
+                "n_gpu_layers": 33,
+                "n_threads": 1,
+                "n_predict": 8192,
+                "model_repo": "cjpais/llava-1.6-mistral-7b-gguf",
+                "model_filename": "llava-v1.6-mistral-7b.Q4_K_M.gguf",
+                "mmproj_repo": "cjpais/llava-1.6-mistral-7b-gguf",
+                "mmproj_filename": "mmproj-model-f16.gguf",
+                "system_prompt_type": "Mistral",
+            }],
         )
     ])
 ```
@@ -242,29 +254,38 @@ ros2 launch llama_bringup llava.launch.py
 <summary>Click to expand</summary>
 
 ```yaml
-use_llava: True # enable llava
-
-n_ctx: 8192 # context of the LLM in tokens use a huge context size to load images
-n_batch: 512 # batch size in tokens
-n_gpu_layers: 33 # layers to load in GPU
-n_threads: 1 # threads
-n_predict: 8192 # max tokens -1 : :  inf
-
-model_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
-model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf" # model file in repo
-
-mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf" # Hugging Face repo
-mmproj_filename: "mmproj-model-f16.gguf" # mmproj file in repo
-
-system_prompt_type: "mistral" # system prompt type
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_gpu_layers: 33
+    n_threads: 1
+    n_predict: 8192
+    model_repo: "cjpais/llava-1.6-mistral-7b-gguf"
+    model_filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
+    mmproj_repo: "cjpais/llava-1.6-mistral-7b-gguf"
+    mmproj_filename: "mmproj-model-f16.gguf"
+    system_prompt_type: "Mistral"
 ```
 
 ```python
+import os
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+
+
 def generate_launch_description():
     return LaunchDescription([
-        create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"),
-            "models", "llava-1.6-mistral-7b-gguf.yaml"))
+        Node(
+            package="llama_ros",
+            executable="llava_node",
+            name="llava_node",
+            namespace="llama",
+            parameters=[os.path.join(
+                get_package_share_directory("llama_bringup"),
+                "models", "llava-mistral.yaml")],
+        )
     ])
 ```
 
@@ -280,29 +301,38 @@ ros2 launch llama_bringup llava.launch.py
 <summary>Click to expand</summary>
 
 ```yaml
-use_llava: True
-
-n_ctx: 8192
-n_batch: 512
-n_gpu_layers: 29
-n_threads: -1
-n_predict: 8192
-
-model_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
-model_filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
-
-mmproj_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
-mmproj_filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
-
-system_prompt_type: "ChatML"
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_gpu_layers: 29
+    n_threads: -1
+    n_predict: 8192
+    model_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+    model_filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
+    mmproj_repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
+    mmproj_filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
+    system_prompt_type: "ChatML"
 ```
 
 ```python
+import os
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+
+
 def generate_launch_description():
     return LaunchDescription([
-        create_llama_launch_from_yaml(os.path.join(
-            get_package_share_directory("llama_bringup"),
-            "models", "Qwen2-Audio.yaml"))
+        Node(
+            package="llama_ros",
+            executable="llava_node",
+            name="llava_node",
+            namespace="llama",
+            parameters=[os.path.join(
+                get_package_share_directory("llama_bringup"),
+                "models", "Qwen2-Audio.yaml")],
+        )
     ])
 ```
 
@@ -330,11 +360,13 @@ n_predict: 2048
 model_repo: "bartowski/Phi-3.5-mini-instruct-GGUF"
 model_filename: "Phi-3.5-mini-instruct-Q4_K_M.gguf"
 
-lora_adapters:
-  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"
+loras:
+  - name: code_writer
+    repo: "zhhan/adapter-Phi-3-mini-4k-instruct_code_writing"
     filename: "Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf"
     scale: 0.5
-  - repo: "zhhan/adapter-Phi-3-mini-4k-instruct_summarization"
+  - name: summarization
+    repo: "zhhan/adapter-Phi-3-mini-4k-instruct_summarization"
     filename: "Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf"
     scale: 0.5
 
@@ -1173,19 +1205,17 @@ ros2 llama launch MiniCPM-2.6.yaml
 <summary>Click to expand MiniCPM-2.6.yaml</summary>
 
 ```yaml
-use_llava: True
-
-n_ctx: 8192
-n_batch: 512
-n_gpu_layers: 20
-n_threads: -1
-n_predict: 8192
-
-model_repo: "openbmb/MiniCPM-V-2_6-gguf"
-model_filename: "ggml-model-Q4_K_M.gguf"
-
-mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
-mmproj_filename: "mmproj-model-f16.gguf"
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_gpu_layers: 20
+    n_threads: -1
+    n_predict: 8192
+    model_repo: "openbmb/MiniCPM-V-2_6-gguf"
+    model_filename: "ggml-model-Q4_K_M.gguf"
+    mmproj_repo: "openbmb/MiniCPM-V-2_6-gguf"
+    mmproj_filename: "mmproj-model-f16.gguf"
 ```
 
 </details>

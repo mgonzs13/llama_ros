@@ -154,12 +154,18 @@ TEST_F(LlamaParamsTest, ThreadCountDefaults) {
  * @brief Test that verifies LoRA adapter configuration.
  */
 TEST_F(LlamaParamsTest, LoRAAdapterConfiguration) {
-  std::vector<std::string> adapters = {"/path/to/adapter1.bin",
-                                       "/path/to/adapter2.bin"};
-  std::vector<double> scales = {0.5, 0.8};
+  std::vector<std::string> loras = {"adapter1", "adapter2"};
 
-  node->set_parameter(rclcpp::Parameter("lora_adapters", adapters));
-  node->set_parameter(rclcpp::Parameter("lora_adapters_scales", scales));
+  node->set_parameter(rclcpp::Parameter("loras", loras));
+
+  // Declare and set per-lora parameters (simulating what get_llama_params does
+  // internally)
+  node->declare_parameter<std::string>("adapter1.file_path",
+                                       "/path/to/adapter1.bin");
+  node->declare_parameter<double>("adapter1.scale", 0.5);
+  node->declare_parameter<std::string>("adapter2.file_path",
+                                       "/path/to/adapter2.bin");
+  node->declare_parameter<double>("adapter2.scale", 0.8);
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -173,12 +179,17 @@ TEST_F(LlamaParamsTest, LoRAAdapterConfiguration) {
  * @brief Test that verifies LoRA scale clamping (0.0 to 1.0).
  */
 TEST_F(LlamaParamsTest, LoRAScaleClamping) {
-  std::vector<std::string> adapters = {"/path/to/adapter1.bin",
-                                       "/path/to/adapter2.bin"};
-  std::vector<double> scales = {-0.5, 1.5}; // Invalid scales
+  std::vector<std::string> loras = {"adapter1", "adapter2"};
 
-  node->set_parameter(rclcpp::Parameter("lora_adapters", adapters));
-  node->set_parameter(rclcpp::Parameter("lora_adapters_scales", scales));
+  node->set_parameter(rclcpp::Parameter("loras", loras));
+
+  // Declare per-lora parameters with invalid scales
+  node->declare_parameter<std::string>("adapter1.file_path",
+                                       "/path/to/adapter1.bin");
+  node->declare_parameter<double>("adapter1.scale", -0.5);
+  node->declare_parameter<std::string>("adapter2.file_path",
+                                       "/path/to/adapter2.bin");
+  node->declare_parameter<double>("adapter2.scale", 1.5);
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 

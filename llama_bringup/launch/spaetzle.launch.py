@@ -23,19 +23,25 @@
 
 import os
 from launch import LaunchDescription
-from llama_bringup.utils import create_llama_launch_from_yaml
+from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
     return LaunchDescription(
         [
-            create_llama_launch_from_yaml(
-                os.path.join(
-                    get_package_share_directory("llama_bringup"),
-                    "models",
-                    "Spaetzle.yaml",
-                )
+            Node(
+                package="llama_ros",
+                executable="llama_node",
+                name="llama_node",
+                namespace="llama",
+                parameters=[
+                    os.path.join(
+                        get_package_share_directory("llama_bringup"),
+                        "models",
+                        "Spaetzle.yaml",
+                    )
+                ],
             )
         ]
     )
