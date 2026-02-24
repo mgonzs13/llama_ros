@@ -33,7 +33,9 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers.contextual_compression import (
+    ContextualCompressionRetriever,
+)
 
 from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 

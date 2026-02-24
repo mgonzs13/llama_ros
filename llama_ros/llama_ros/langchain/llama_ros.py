@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Iterator
 
 from langchain_core.outputs import GenerationChunk
 from langchain_core.language_models.llms import LLM
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks import CallbackManagerForLLMRun
 
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize

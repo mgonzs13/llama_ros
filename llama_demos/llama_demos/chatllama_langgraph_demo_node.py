@@ -27,7 +27,7 @@
 import time
 import rclpy
 from random import randint
-from langchain.tools import tool
+from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import create_react_agent
 from llama_ros.langchain import ChatLlamaROS
