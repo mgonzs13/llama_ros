@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 2048
+    n_predict: 2048
+    n_gpu_layers: -1
+    n_parallel: 1
+    cpu:
+      n_threads: -1
+    model:
+      repo: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
+      filename: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+    speculative:
+      type: draft
+      n_max: 16
+      n_min: 5
+      p_min: 0.75
+      n_gpu_layers: -1
+      model:
+        repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
+        filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
+    system_prompt_type: Llama-3

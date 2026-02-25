@@ -38,6 +38,7 @@
 #include "common.h"
 #include "llama.h"
 #include "sampling.h"
+#include "speculative.h"
 
 #include "llama_ros/metadata.hpp"
 #include "llama_ros/request_handler.hpp"
@@ -751,6 +752,39 @@ protected:
 
   /// @brief Options for the OpenAI-compatible response parser.
   OAICompactParserOptions oai_parser_opt;
+
+  /// @brief Speculative decoding context (nullptr if disabled).
+  common_speculative *speculative_ = nullptr;
+
+  /// @brief Draft model for speculative decoding (nullptr if disabled).
+  llama_model *model_dft_ = nullptr;
+
+  /**
+   * @brief Checks whether speculative decoding is enabled.
+   *
+   * @return True if speculative decoding is active, false otherwise.
+   */
+  bool is_speculative() const { return this->speculative_ != nullptr; }
+
+  /**
+   * @brief Initializes the speculative decoding system.
+   *
+   * Loads the draft model (if configured), creates the speculative decoder,
+   * and validates compatibility with the target model.
+   */
+  void init_speculative();
+
+  /**
+   * @brief Runs a single speculative-decoding generation step for a slot.
+   *
+   * Generates draft tokens, evaluates them in a batch on the target model,
+   * verifies with common_sampler_sample_and_accept_n, and processes the
+   * accepted tokens.
+   *
+   * @param slot The server slot in GENERATING state.
+   * @return True if more tokens should be generated, false if done.
+   */
+  bool speculative_generation_step(ServerSlot *slot);
 };
 
 } // namespace llama_ros

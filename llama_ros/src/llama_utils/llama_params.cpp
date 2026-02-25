@@ -25,6 +25,7 @@
 
 #include "common.h"
 #include "json.hpp"
+#include "speculative.h"
 
 #include "huggingface_hub.h"
 #include "json-schema-to-grammar.h"
@@ -223,6 +224,29 @@ void llama_utils::declare_llama_params(
                                                {"disabled", false},
                                            });
 
+  // Speculative decoding parameters
+  node->declare_parameters<std::string>("speculative", {
+                                                           {"type", "none"},
+                                                       });
+
+  node->declare_parameters<std::string>("speculative.model",
+                                        {
+                                            {"path", ""},
+                                            {"repo", ""},
+                                            {"filename", ""},
+                                        });
+
+  node->declare_parameters<int32_t>("speculative", {
+                                                       {"n_max", 16},
+                                                       {"n_min", 5},
+                                                       {"n_ctx", 0},
+                                                       {"n_gpu_layers", -1},
+                                                   });
+
+  node->declare_parameters<double>("speculative", {
+                                                      {"p_min", 0.75},
+                                                  });
+
   node->declare_parameters<bool>("fit", {
                                             {"enabled", true},
                                         });
@@ -334,6 +358,24 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
   node->get_parameter("mmproj.disabled", params.params.no_mmproj);
 
+  // Speculative decoding parameters
+  std::string speculative_type;
+  double speculative_p_min;
+  node->get_parameter("speculative.type", speculative_type);
+  node->get_parameter("speculative.n_max", params.params.speculative.n_max);
+  node->get_parameter("speculative.n_min", params.params.speculative.n_min);
+  node->get_parameter("speculative.p_min", speculative_p_min);
+  node->get_parameter("speculative.n_ctx", params.params.speculative.n_ctx);
+  node->get_parameter("speculative.n_gpu_layers",
+                      params.params.speculative.n_gpu_layers);
+  node->get_parameter("speculative.model.path",
+                      params.params.speculative.mparams_dft.path);
+  node->get_parameter("speculative.model.repo",
+                      params.params.speculative.mparams_dft.hf_repo);
+  node->get_parameter("speculative.model.filename",
+                      params.params.speculative.mparams_dft.hf_file);
+  params.params.speculative.p_min = static_cast<float>(speculative_p_min);
+
   node->get_parameter("fit.enabled", params.params.fit_params);
   node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
 
@@ -397,6 +439,20 @@ LlamaParams llama_utils::get_llama_params(
     params.params.cpuparams_batch.n_threads = cpu_get_num_math();
   }
 
+  // Speculative type
+  {
+    auto spec_type = common_speculative_type_from_name(speculative_type);
+    if (spec_type == COMMON_SPECULATIVE_TYPE_COUNT) {
+      LLAMA_LOG_WARN("Unknown speculative type '%s', disabling speculative "
+                     "decoding. Valid types: %s",
+                     speculative_type.c_str(),
+                     common_speculative_type_name_str().c_str());
+      params.params.speculative.type = COMMON_SPECULATIVE_TYPE_NONE;
+    } else {
+      params.params.speculative.type = spec_type;
+    }
+  }
+
   // Models
   if (params.params.model.path.empty()) {
     params.params.model.path = download_model(params.params.model.hf_repo,
@@ -406,6 +462,13 @@ LlamaParams llama_utils::get_llama_params(
   if (params.params.mmproj.path.empty()) {
     params.params.mmproj.path = download_model(params.params.mmproj.hf_repo,
                                                params.params.mmproj.hf_file);
+  }
+
+  // Download draft model if needed
+  if (params.params.speculative.mparams_dft.path.empty()) {
+    params.params.speculative.mparams_dft.path =
+        download_model(params.params.speculative.mparams_dft.hf_repo,
+                       params.params.speculative.mparams_dft.hf_file);
   }
 
   // LoRA adapters

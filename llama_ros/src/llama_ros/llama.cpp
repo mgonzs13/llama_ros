@@ -35,6 +35,7 @@
 #include "common.h"
 #include "llama_utils/chat_utils.hpp"
 #include "sampling.h"
+#include "speculative.h"
 
 #include "llama_ros/llama.hpp"
 #include "llama_utils/logs.hpp"
@@ -198,10 +199,25 @@ Llama::Llama(const common_params &params, std::string system_prompt,
       this->params.grp_attn_w);
 
   llama_set_embeddings(this->ctx, this->is_embedding() || this->is_reranking());
+
+  // Initialize speculative decoding if configured
+  this->init_speculative();
 }
 
 Llama::~Llama() {
   this->canceled = true;
+
+  // Free speculative decoding resources
+  if (this->speculative_ != nullptr) {
+    common_speculative_print_stats(this->speculative_);
+    common_speculative_free(this->speculative_);
+    this->speculative_ = nullptr;
+  }
+
+  if (this->model_dft_ != nullptr) {
+    llama_model_free(this->model_dft_);
+    this->model_dft_ = nullptr;
+  }
 
   for (ServerSlot &slot : this->server_slots) {
     if (slot.sampler != nullptr) {
@@ -989,6 +1005,229 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
   return new_tokens;
 }
 
+/*
+*****************************
+*  SPECULATIVE DECODING     *
+*****************************
+*/
+void Llama::init_speculative() {
+  auto &spec_params = this->params.speculative;
+
+  // Check if speculative decoding is configured
+  bool has_draft = spec_params.has_dft();
+  bool has_self_spec = (spec_params.type != COMMON_SPECULATIVE_TYPE_NONE &&
+                        spec_params.type != COMMON_SPECULATIVE_TYPE_DRAFT &&
+                        spec_params.type != COMMON_SPECULATIVE_TYPE_EAGLE3);
+
+  if (!has_draft && !has_self_spec) {
+    LLAMA_LOG_INFO("Speculative decoding not configured, skipping "
+                   "initialization");
+    return;
+  }
+
+  // Skip speculative for embedding/reranking models
+  if (this->is_embedding() || this->is_reranking()) {
+    LLAMA_LOG_WARN(
+        "Speculative decoding is not supported with embedding/reranking "
+        "models, skipping");
+    return;
+  }
+
+  // Only supported with n_parallel=1 (single slot)
+  if (this->params.n_parallel != 1) {
+    LLAMA_LOG_WARN("Speculative decoding requires n_parallel=1, but got %d. "
+                   "Skipping speculative initialization",
+                   this->params.n_parallel);
+    return;
+  }
+
+  // Check compatibility
+  if (!common_speculative_is_compat(this->ctx)) {
+    LLAMA_LOG_WARN("Target context is not compatible with speculative "
+                   "decoding, skipping");
+    return;
+  }
+
+  // Load draft model if using draft-based speculative decoding
+  if (has_draft) {
+    LLAMA_LOG_INFO("Loading draft model for speculative decoding: %s",
+                   spec_params.mparams_dft.path.c_str());
+
+    // Prepare params for draft model loading
+    common_params params_dft;
+    params_dft.model.path = spec_params.mparams_dft.path;
+    params_dft.n_gpu_layers = spec_params.n_gpu_layers;
+    if (spec_params.n_ctx > 0) {
+      params_dft.n_ctx = spec_params.n_ctx;
+    }
+
+    // Use target model's thread settings if not overridden
+    if (spec_params.cpuparams.n_threads <= 0) {
+      params_dft.cpuparams.n_threads = this->params.cpuparams.n_threads;
+      params_dft.cpuparams_batch.n_threads =
+          this->params.cpuparams_batch.n_threads;
+    } else {
+      params_dft.cpuparams = spec_params.cpuparams;
+      params_dft.cpuparams_batch = spec_params.cpuparams_batch;
+    }
+
+    auto mparams_dft = common_model_params_to_llama(params_dft);
+    this->model_dft_ =
+        llama_model_load_from_file(params_dft.model.path.c_str(), mparams_dft);
+
+    if (this->model_dft_ == nullptr) {
+      LLAMA_LOG_ERROR("Failed to load draft model '%s', speculative decoding "
+                      "will be disabled",
+                      params_dft.model.path.c_str());
+      return;
+    }
+
+    spec_params.model_dft = this->model_dft_;
+    spec_params.cparams_dft = common_context_params_to_llama(params_dft);
+
+    // Infer speculative type from draft model if type is "none"
+    if (spec_params.type == COMMON_SPECULATIVE_TYPE_NONE) {
+      spec_params.type = COMMON_SPECULATIVE_TYPE_DRAFT;
+    }
+
+    LLAMA_LOG_INFO("Draft model loaded successfully");
+  }
+
+  // Initialize speculative decoder
+  this->speculative_ = common_speculative_init(spec_params, this->ctx);
+
+  if (this->speculative_ == nullptr) {
+    LLAMA_LOG_ERROR("Failed to initialize speculative decoder");
+    if (this->model_dft_ != nullptr) {
+      llama_model_free(this->model_dft_);
+      this->model_dft_ = nullptr;
+    }
+    return;
+  }
+
+  LLAMA_LOG_INFO("Speculative decoding initialized (type: %s, n_max: %d, "
+                 "n_min: %d, p_min: %.2f)",
+                 common_speculative_type_to_str(spec_params.type).c_str(),
+                 spec_params.n_max, spec_params.n_min, spec_params.p_min);
+}
+
+bool Llama::speculative_generation_step(ServerSlot *slot) {
+  const auto &spec_params = this->params.speculative;
+
+  // We need the prompt_tgt (all tokens processed so far, excluding the last
+  // one) and id_last (the last token sampled).
+
+  // Build prompt_tgt from the slot's prompt tokens (already KV-cached)
+  // plus any generated tokens so far (excluding the most recent one which
+  // is id_last).
+  llama_tokens prompt_tgt;
+  prompt_tgt.reserve(slot->prompt_tokens.size() +
+                     slot->generated_tokens.size());
+
+  // Add all prompt tokens
+  for (auto token : slot->prompt_tokens) {
+    if (token != LLAMA_TOKEN_NULL) {
+      prompt_tgt.push_back(token);
+    }
+  }
+
+  // Add all generated tokens except the last (which is id_last)
+  if (!slot->generated_tokens.empty()) {
+    for (size_t i = 0; i < slot->generated_tokens.size() - 1; ++i) {
+      prompt_tgt.push_back(slot->generated_tokens[i]);
+    }
+  }
+
+  llama_token id_last = slot->generated_tokens.empty()
+                            ? slot->prompt_tokens.back()
+                            : slot->generated_tokens.back();
+
+  // Generate draft tokens
+  llama_tokens draft = common_speculative_draft(this->speculative_, spec_params,
+                                                prompt_tgt, id_last);
+
+  // Build batch: [id_last, draft0, draft1, ..., draftN-1]
+  common_batch_clear(this->batch);
+  common_batch_add(this->batch, id_last, slot->n_past, {slot->id}, true);
+
+  // Skip small drafts
+  if ((int)draft.size() < spec_params.n_min) {
+    draft.clear();
+  }
+
+  for (size_t i = 0; i < draft.size(); ++i) {
+    common_batch_add(this->batch, draft[i], slot->n_past + 1 + i, {slot->id},
+                     true);
+  }
+
+  // Decode the batch on the target model
+  const int ret = llama_decode(this->ctx, this->batch);
+  if (ret != 0) {
+    LLAMA_LOG_ERROR("Speculative decode failed with error %d", ret);
+    slot->stop = ABORT;
+    slot->has_next_token = false;
+    return false;
+  }
+
+  // Verify draft tokens using the target sampler
+  const auto ids =
+      common_sampler_sample_and_accept_n(slot->sampler, this->ctx, draft);
+
+  // ids always has at least 1 token (the one the target model would have
+  // sampled) ids.size()-1 draft tokens were accepted
+
+  const int n_accepted = (int)ids.size() - 1;
+  common_speculative_accept(this->speculative_, n_accepted);
+
+  LLAMA_LOG_DEBUG("Speculative: drafted %d, accepted %d/%d", (int)draft.size(),
+                  n_accepted, (int)draft.size());
+
+  // Process accepted tokens + the final sampled token
+  slot->n_past += ids.size();
+  bool should_continue = true;
+
+  for (size_t i = 0; i < ids.size(); ++i) {
+    // Update prompt_tgt for future calls
+    prompt_tgt.push_back(id_last);
+    id_last = ids[i];
+
+    // Check for end of generation
+    if (llama_vocab_is_eog(this->get_vocab(), id_last)) {
+      slot->stop = FULL_STOP;
+      slot->has_next_token = false;
+      should_continue = false;
+
+      LLAMA_LOG_INFO("Speculative: stopped by EOS");
+      break;
+    }
+
+    // Build CompletionOutput for this token
+    CompletionOutput result;
+    result.token = id_last;
+    result.text_to_send = common_token_to_piece(this->ctx, id_last);
+    result.probs = this->get_probs(slot);
+    slot->generated_probs.push_back(result.probs);
+
+    slot->n_decoded += 1;
+
+    // Run process_token to handle stop words, limits, etc.
+    if (!this->process_token(slot, &result)) {
+      should_continue = false;
+      break;
+    }
+  }
+
+  // Clear KV cache for any extra draft tokens that were rejected
+  llama_memory_seq_rm(llama_get_memory(this->ctx), slot->id, slot->n_past, -1);
+
+  if (!should_continue) {
+    this->send_completion_result(slot);
+    this->release_slot(slot);
+  }
+
+  return should_continue;
+}
+
 void Llama::run_loop() {
   while (!this->canceled) {
 
@@ -1066,11 +1305,47 @@ void Llama::run_loop() {
 
     ServerSlot *slot_batched = nullptr;
 
+    // ====================================================================
+    // Speculative decoding path: process generating slots with speculation
+    // ====================================================================
+    if (this->is_speculative()) {
+      bool handled_speculative = false;
+      for (auto &slot : this->server_slots) {
+        if (slot.state == SLOT_STATE_GENERATING &&
+            slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
+          this->speculative_generation_step(&slot);
+          handled_speculative = true;
+        }
+      }
+      // If we handled speculative generation, skip normal generation batch
+      // but still need to handle prompt processing below
+      if (handled_speculative) {
+        // Check if there are any prompt-processing slots that still need work
+        bool has_prompt_work = false;
+        for (auto &slot : this->server_slots) {
+          if (slot.state == SLOT_STATE_PROCESSING_PROMPT ||
+              slot.state == SLOT_STATE_STARTED) {
+            has_prompt_work = true;
+            break;
+          }
+        }
+        if (!has_prompt_work) {
+          continue; // all generating slots handled by speculation
+        }
+      }
+    }
+
     // start populating the batch for this iteration
     common_batch_clear(this->batch);
 
     for (auto &slot : this->server_slots) {
       if (slot.state != SLOT_STATE_GENERATING) {
+        continue;
+      }
+
+      // Skip generating slots that are handled by speculative decoding
+      if (this->is_speculative() &&
+          slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
         continue;
       }
 
@@ -1285,6 +1560,41 @@ void Llama::run_loop() {
 
           // Default path: continue into text generation
           slot.state = SLOT_STATE_GENERATING;
+
+          // If speculative decoding is enabled, sample the first token here
+          // (id_last) and then defer to the speculative path on next iteration.
+          if (this->is_speculative() &&
+              slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
+            const int tok_idx = slot.i_batch - i;
+            llama_token id =
+                common_sampler_sample(slot.sampler, this->ctx, tok_idx);
+            slot.i_batch = -1;
+
+            common_sampler_accept(slot.sampler, id, true);
+            slot.n_decoded += 1;
+
+            // Initialize the speculative decoder with the prompt
+            llama_tokens prompt_tgt;
+            prompt_tgt.reserve(slot.prompt_tokens.size());
+            for (auto token : slot.prompt_tokens) {
+              if (token != LLAMA_TOKEN_NULL) {
+                prompt_tgt.push_back(token);
+              }
+            }
+            common_speculative_begin(this->speculative_, prompt_tgt);
+
+            CompletionOutput result;
+            result.token = id;
+            result.text_to_send = common_token_to_piece(this->ctx, id);
+            result.probs = this->get_probs(&slot);
+            slot.generated_probs.push_back(result.probs);
+
+            if (!this->process_token(&slot, &result)) {
+              this->send_completion_result(&slot);
+              this->release_slot(&slot);
+            }
+            continue;
+          }
 
         } else if (slot.state != SLOT_STATE_GENERATING) {
           continue;
