@@ -13,7 +13,7 @@
     speculative:
       type: draft
       n_max: 16
-      n_min: 5
+      n_min: 0
       p_min: 0.75
       n_gpu_layers: -1
       model:

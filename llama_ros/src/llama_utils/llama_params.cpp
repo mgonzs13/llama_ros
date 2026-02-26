@@ -238,7 +238,7 @@ void llama_utils::declare_llama_params(
 
   node->declare_parameters<int32_t>("speculative", {
                                                        {"n_max", 16},
-                                                       {"n_min", 5},
+                                                       {"n_min", 0},
                                                        {"n_ctx", 0},
                                                        {"n_gpu_layers", -1},
                                                    });

@@ -1183,7 +1183,6 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
                   n_accepted, (int)draft.size());
 
   // Process accepted tokens + the final sampled token
-  slot->n_past += ids.size();
   bool should_continue = true;
 
   for (size_t i = 0; i < ids.size(); ++i) {
@@ -1191,15 +1190,8 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
     prompt_tgt.push_back(id_last);
     id_last = ids[i];
 
-    // Check for end of generation
-    if (llama_vocab_is_eog(this->get_vocab(), id_last)) {
-      slot->stop = FULL_STOP;
-      slot->has_next_token = false;
-      should_continue = false;
-
-      LLAMA_LOG_INFO("Speculative: stopped by EOS");
-      break;
-    }
+    // Advance n_past for each accepted/sampled token
+    slot->n_past += 1;
 
     // Build CompletionOutput for this token
     CompletionOutput result;
@@ -1210,7 +1202,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
 
     slot->n_decoded += 1;
 
-    // Run process_token to handle stop words, limits, etc.
+    // Run process_token to handle stop words, limits, EOG, etc.
     if (!this->process_token(slot, &result)) {
       should_continue = false;
       break;

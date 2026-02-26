@@ -25,6 +25,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
    - [llama_cli](#llama_cli)
    - [Launch Files](#launch-files)
    - [ROS 2 Parameters](#ros-2-parameters)
+   - [Speculative Decoding](#speculative-decoding-speculative)
    - [LoRA Adapters](#lora-adapters)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
@@ -210,6 +211,44 @@ system_prompt_type: "ChatML" # system prompt type
 
 ```shell
 ros2 llama launch Qwen2.yaml
+```
+
+</details>
+
+#### llama_ros (Speculative Decoding)
+
+<details>
+<summary>Click to expand</summary>
+
+[Speculative decoding](https://arxiv.org/abs/2302.01318) uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the larger target model. This can significantly speed up text generation when using a small draft model from the same model family. Note that speculative decoding requires `n_parallel: 1`.
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 2048
+    n_predict: 2048
+    n_gpu_layers: -1
+    n_parallel: 1
+    cpu:
+      n_threads: -1
+    model:
+      repo: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
+      filename: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+    speculative:
+      type: draft
+      n_max: 16
+      n_min: 0
+      p_min: 0.75
+      n_gpu_layers: -1
+      model:
+        repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
+        filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
+    system_prompt_type: Llama-3
+```
+
+```shell
+ros2 launch llama_bringup llama-3-speculative.launch.py
 ```
 
 </details>
@@ -474,6 +513,24 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | ------------- | ------- | ------- | ------------------------------------------------------ |
 | `fit.enabled` | `bool`  | `true`  | Automatically fit model parameters to available memory |
 | `fit.min_ctx` | `int32` | `4096`  | Minimum context size when fitting parameters           |
+
+#### Speculative Decoding (`speculative.*`)
+
+Speculative decoding uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the main model. This can significantly speed up text generation, especially when using a large target model with a smaller draft model from the same model family.
+
+**Note:** Speculative decoding requires `n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
+
+| Param                        | Type     | Default  | Description                                                                                                                                                                                             |
+| ---------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.type`           | `string` | `"none"` | Speculative decoding type: `none`, `draft`, `eagle3`, `ngram_simple`, `ngram_map_k`, `ngram_map_k4v`, `ngram_mod`, or `ngram_cache`                                                                     |
+| `speculative.n_max`          | `int32`  | `16`     | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
+| `speculative.n_min`          | `int32`  | `0`      | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
+| `speculative.p_min`          | `double` | `0.75`   | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
+| `speculative.n_ctx`          | `int32`  | `0`      | Context size for the draft model (`0` for same as target)                                                                                                                                               |
+| `speculative.n_gpu_layers`   | `int32`  | `-1`     | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
+| `speculative.model.path`     | `string` | `""`     | Local file path to the draft model GGUF file                                                                                                                                                            |
+| `speculative.model.repo`     | `string` | `""`     | HuggingFace repository ID for the draft model                                                                                                                                                           |
+| `speculative.model.filename` | `string` | `""`     | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
 
 #### Prompt & Chat
 
@@ -1420,6 +1477,28 @@ ros2 run llama_demos llama_demo_node
 <!-- https://user-images.githubusercontent.com/25979134/229344687-9dda3446-9f1f-40ab-9723-9929597a042c.mp4 -->
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11c8efefdac4
+
+### Speculative Decoding Demo
+
+Launch the speculative decoding model using a Llama 3.1 8B target model with a Llama 3.2 1B draft model:
+
+```shell
+ros2 launch llama_bringup llama-3-speculative.launch.py
+```
+
+Then run any of the text generation demos, for example:
+
+```shell
+ros2 run llama_demos llama_demo_node
+```
+
+or the chat demo:
+
+```shell
+ros2 run llama_demos chatllama_demo_node
+```
+
+Speculative decoding accelerates text generation by drafting multiple tokens with the smaller model and verifying them in parallel with the larger model. You should see improved tokens-per-second throughput compared to running the 8B model alone. The speculative decoding statistics (drafted tokens, accepted tokens, acceptance rate) are printed when the node is shut down.
 
 ### Embeddings Generation Demo
 
