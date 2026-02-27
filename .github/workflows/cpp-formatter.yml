@@ -12,5 +12,5 @@ jobs:
       - name: Clang Formatter
         uses: DoozyX/clang-format-lint-action@v0.18.1
         with:
-          clangFormatVersion: 14
+          clangFormatVersion: 18
           source: "."
