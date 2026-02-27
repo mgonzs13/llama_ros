@@ -1387,17 +1387,6 @@ void Llama::run_loop() {
             continue;
           }
 
-          // must fit into one ubatch and within context
-          if (static_cast<uint32_t>(slot.n_prompt_tokens) >
-              llama_n_ubatch(this->ctx)) {
-            LLAMA_LOG_WARN("Prompt too long for slot %d, %d tokens, max %d",
-                           slot.id, slot.n_prompt_tokens,
-                           llama_n_ubatch(this->ctx));
-            this->fail_pending(slot.goal_id, "Prompt too long");
-            this->release_slot(&slot);
-            continue;
-          }
-
           if (slot.n_prompt_tokens > slot.n_ctx) {
             LLAMA_LOG_WARN("Prompt exceeds context size for slot %d", slot.id);
             this->fail_pending(slot.goal_id, "Prompt exceeds context size");
@@ -1416,8 +1405,8 @@ void Llama::run_loop() {
           slot.n_prompt_tokens_processed = 0;
         }
 
-        // enforce prompt fits in current batch too
-        if (static_cast<uint32_t>(this->batch.n_tokens + slot.n_prompt_tokens) >
+        // skip if batch is already full
+        if (static_cast<uint32_t>(this->batch.n_tokens) >=
             llama_n_batch(this->ctx)) {
           continue;
         }
@@ -1428,8 +1417,13 @@ void Llama::run_loop() {
           process_mtmd_chunk(&slot);
         }
 
-        // enqueue all prompt tokens (must fit fully in one batch)
+        // enqueue prompt tokens up to the available batch capacity
         while (slot.n_past < slot.n_prompt_tokens) {
+          if (static_cast<uint32_t>(this->batch.n_tokens) >=
+              llama_n_batch(this->ctx)) {
+            break; // batch is full, continue in the next iteration
+          }
+
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
           if (cur_tok == LLAMA_TOKEN_NULL) {
             break; // end of text chunk
@@ -1443,8 +1437,9 @@ void Llama::run_loop() {
           slot.n_past++;
         }
 
-        LLAMA_LOG_INFO("Added %d prompt tokens for slot %d",
-                       slot.n_prompt_tokens_processed, slot.id);
+        LLAMA_LOG_INFO("Processed %d/%d prompt tokens for slot %d",
+                       slot.n_prompt_tokens_processed, slot.n_prompt_tokens,
+                       slot.id);
 
         if (slot.n_past == slot.n_prompt_tokens) {
           slot.state = SLOT_STATE_DONE_PROMPT;
@@ -1472,7 +1467,8 @@ void Llama::run_loop() {
 
         if (static_cast<uint32_t>(this->batch.n_tokens) >=
             llama_n_batch(this->ctx)) {
-          LLAMA_LOG_ERROR("Batch full after adding prompts");
+          LLAMA_LOG_DEBUG("Batch full, remaining prompt tokens will be "
+                          "processed in the next iteration");
           continue;
         }
       }
@@ -1680,18 +1676,17 @@ void Llama::handle_chat_completion_req(
 *   RESULT HANDLERS         *
 *****************************
 */
-void Llama::send_embedding_result(ServerSlot *slot,
-                                  const llama_batch & /*batch*/) {
+void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
   auto result = std::make_unique<ServerTaskResultEmbedding>();
   result->id_slot = slot->id;
   result->id = slot->goal_id;
-  result->n_tokens = this->batch.n_tokens;
+  result->n_tokens = batch.n_tokens;
   const int n_embd = llama_model_n_embd(this->model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
 
-  for (int i = 0; i < this->batch.n_tokens; ++i) {
-    if (!this->batch.logits[i] || this->batch.seq_id[i][0] != slot->id) {
+  for (int i = 0; i < batch.n_tokens; ++i) {
+    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
       continue;
     }
 
@@ -1699,12 +1694,12 @@ void Llama::send_embedding_result(ServerSlot *slot,
     if (llama_pooling_type(this->ctx) == LLAMA_POOLING_TYPE_NONE) {
       embd = llama_get_embeddings_ith(this->ctx, i);
     } else {
-      embd = llama_get_embeddings_seq(this->ctx, this->batch.seq_id[i][0]);
+      embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
     }
 
     if (embd == nullptr) {
       LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
-                      this->batch.token[i], this->batch.seq_id[i][0]);
+                      batch.token[i], batch.seq_id[i][0]);
 
       result->embeddings.push_back(std::vector<float>(n_embd, 0.0f));
       continue;
@@ -1725,25 +1720,23 @@ void Llama::send_embedding_result(ServerSlot *slot,
   this->fulfill_pending(id, std::move(result));
 }
 
-void Llama::send_rerank_result(ServerSlot *slot,
-                               const llama_batch & /*batch*/) {
+void Llama::send_rerank_result(ServerSlot *slot, const llama_batch &batch) {
   auto result = std::make_unique<ServerTaskResultRerank>();
   result->id_slot = slot->id;
   result->id = slot->goal_id;
-  for (int i = 0; i < this->batch.n_tokens; ++i) {
-    if (!this->batch.logits[i] || this->batch.seq_id[i][0] != slot->id) {
+  for (int i = 0; i < batch.n_tokens; ++i) {
+    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
       continue;
     }
 
-    const float *embd =
-        llama_get_embeddings_seq(this->ctx, this->batch.seq_id[i][0]);
+    const float *embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
     if (embd == NULL) {
       embd = llama_get_embeddings_ith(this->ctx, i);
     }
 
     if (embd == NULL) {
       LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
-                      this->batch.token[i], this->batch.seq_id[i][0]);
+                      batch.token[i], batch.seq_id[i][0]);
 
       result->score = -1e6;
       continue;

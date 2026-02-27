@@ -569,12 +569,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         for message in data.get("messages", []):
             if isinstance(message.get("content"), list):
-                # Extract the URL if an image_url exists
+                # Extract the URL if an image_url or audio_url exists
                 for item in message["content"]:
                     if item.get("type") == "image_url":
-                        image_urls.append(item["image_url"]["url"])
+                        val = item["image_url"]
+                        url = val["url"] if isinstance(val, dict) else val
+                        file_type = self.get_file_type(url)
+                        if file_type == "audio":
+                            audios_urls.append(url)
+                        else:
+                            image_urls.append(url)
                     if item.get("type") == "audio_url":
-                        audios_urls.append(item["audio_url"]["url"])
+                        val = item["audio_url"]
+                        audios_urls.append(val["url"] if isinstance(val, dict) else val)
 
                 # Remove all 'image_url' type items
                 message["content"] = [

@@ -1,12 +1,12 @@
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 8
-    n_predict: 2048
-    n_gpu_layers: 0
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
     cpu:
       n_threads: 1
     model:
-      repo: unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
-      filename: DeepSeek-R1-Distill-Qwen-1.5B-Q8_0.gguf
+      repo: unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF
+      filename: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
     chat_template_file: llama-cpp-deepseek-r1.jinja

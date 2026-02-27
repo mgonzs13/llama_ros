@@ -60,13 +60,13 @@ colcon test-result --verbose
 
 Build the llama_ros docker or download an image from [DockerHub](https://hub.docker.com/repository/docker/mgons/llama_ros). You can choose to build llama_ros with CUDA (`USE_CUDA`) and choose the CUDA version (`CUDA_VERSION`). Remember that you have to use `DOCKER_BUILDKIT=0` to compile llama_ros with CUDA when building the image.
 
-<!-- To build using CUDA you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [configure the default runtime to NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/1.12.1/user-guide.html#daemon-configuration-file). -->
+<!-- To build using CUDA you have to install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [configure the default runtime to NVIDIA](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/1.12.1/user-guide.html#daemon-configuration-file). -->
 
 ```shell
 DOCKER_BUILDKIT=0 docker build -t llama_ros --build-arg USE_CUDA=1 --build-arg CUDA_VERSION=12-6 .
 ```
 
-Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Tollkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.
+Run the docker container. If you want to use CUDA, you have to install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and add `--gpus all`.
 
 ```shell
 docker run -it --rm --gpus all llama_ros
@@ -557,7 +557,7 @@ Speculative decoding uses a smaller draft model to predict multiple tokens ahead
 
 ### LoRA Adapters
 
-You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3. You can lis the
+You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3. You can list the
 LoRAs using the `/llama/list_loras` service and modify their scales values by using the `/llama/update_loras` service. A scale value of 0.0 means not using that LoRA.
 
 <details>
@@ -1266,8 +1266,9 @@ if __name__ == "__main__":
 
 ```python
 import rclpy
+from typing import Optional
 
-from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from llama_ros.langchain import ChatLlamaROS
 from pydantic import BaseModel, Field
 
@@ -1302,7 +1303,7 @@ chain = prompt | structured_chat
 
 res = chain.invoke({"prompt": "Tell me a joke about cats"})
 
-print(f"Response: {response.content.strip()}")
+print(f"Response: {res}")
 
 rclpy.shutdown()
 ```
@@ -1321,7 +1322,7 @@ from random import randint
 
 import rclpy
 
-from langchain.tools import tool
+from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from llama_ros.langchain import ChatLlamaROS
 
@@ -1421,7 +1422,7 @@ from random import randint
 
 import rclpy
 
-from langchain.tools import tool
+from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import create_react_agent
 from llama_ros.langchain import ChatLlamaROS
@@ -1442,10 +1443,10 @@ def get_curr_temperature(city: str) -> int:
 chat = ChatLlamaROS(temp=0.0)
 
 agent_executor = create_react_agent(
-    self.chat, [get_inhabitants, get_curr_temperature]
+    chat, [get_inhabitants, get_curr_temperature]
 )
 
-response = self.agent_executor.invoke(
+response = agent_executor.invoke(
     {
         "messages": [
             HumanMessage(
@@ -1492,14 +1493,6 @@ Then run any of the text generation demos, for example:
 ros2 run llama_demos llama_demo_node
 ```
 
-or the chat demo:
-
-```shell
-ros2 run llama_demos chatllama_demo_node
-```
-
-Speculative decoding accelerates text generation by drafting multiple tokens with the smaller model and verifying them in parallel with the larger model. You should see improved tokens-per-second throughput compared to running the 8B model alone. The speculative decoding statistics (drafted tokens, accepted tokens, acceptance rate) are printed when the node is shut down.
-
 ### Embeddings Generation Demo
 
 ```shell
@@ -1531,7 +1524,7 @@ ros2 launch llama_bringup minicpm-2.6.launch.py
 ```
 
 ```shell
-ros2 run llama_demos llava_demo_node --ros-args -p prompt:="your prompt" -p image_url:="url of the image" -p use_image:="whether to send the image"
+ros2 run llama_demos llava_demo_node
 ```
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
@@ -1570,11 +1563,31 @@ ros2 run llama_demos chatllama_demo_node
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
 
-### Chat Structed Output Demo
+### Chat Structured Output Demo
 
 ```shell
 ros2 llama launch Qwen2.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen2.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 2048
+    n_batch: 8
+    n_predict: 2048
+    n_gpu_layers: -1
+    cpu:
+      n_threads: 1
+    model:
+      repo: Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
+      filename: qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf
+    stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_structured_demo_node
@@ -1585,8 +1598,28 @@ ros2 run llama_demos chatllama_structured_demo_node
 ### Chat Tools Demo
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_tools_demo_node
@@ -1600,6 +1633,26 @@ ros2 run llama_demos chatllama_tools_demo_node
 ros2 llama launch DeepSeek-R1.yaml
 ```
 
+<details>
+<summary>Click to expand DeepSeek-R1.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: 1
+    model:
+      repo: unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF
+      filename: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
+    chat_template_file: llama-cpp-deepseek-r1.jinja
+```
+
+</details>
+
 ```shell
 ros2 run llama_demos chatllama_reasoning_demo_node
 ```
@@ -1609,8 +1662,28 @@ ros2 run llama_demos chatllama_reasoning_demo_node
 ### Streaming Tools Demo
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_streaming_tools_demo_node
@@ -1618,11 +1691,29 @@ ros2 run llama_demos chatllama_streaming_tools_demo_node
 
 ### Reasoning + Tools Demo
 
-A reasoning model is required (e.g., DeepSeek-R1 or Qwen3 with thinking enabled).
-
 ```shell
 ros2 llama launch Qwen3.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_reasoning_tools_demo_node
@@ -1634,6 +1725,28 @@ ros2 run llama_demos chatllama_reasoning_tools_demo_node
 ros2 llama launch MiniCPM-2.6.yaml
 ```
 
+<details>
+<summary>Click to expand MiniCPM-2.6.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_predict: 8192
+    n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+    model:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "ggml-model-Q4_K_M.gguf"
+    mmproj:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "mmproj-model-f16.gguf"
+```
+
+</details>
+
 ```shell
 ros2 run llama_demos chatllama_multi_image_demo_node
 ```
@@ -1643,6 +1756,28 @@ ros2 run llama_demos chatllama_multi_image_demo_node
 ```shell
 ros2 llama launch MiniCPM-2.6.yaml
 ```
+
+<details>
+<summary>Click to expand MiniCPM-2.6.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_predict: 8192
+    n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+    model:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "ggml-model-Q4_K_M.gguf"
+    mmproj:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "mmproj-model-f16.gguf"
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_multi_image_user_demo_node
@@ -1654,6 +1789,29 @@ ros2 run llama_demos chatllama_multi_image_user_demo_node
 ros2 llama launch Qwen2-Audio.yaml
 ```
 
+<details>
+<summary>Click to expand Qwen2-Audio.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_predict: 8192
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
+    mmproj:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
+    system_prompt_type: ChatML
+```
+
+</details>
+
 ```shell
 ros2 run llama_demos chatllama_audio_demo_node
 ```
@@ -1664,17 +1822,60 @@ ros2 run llama_demos chatllama_audio_demo_node
 ros2 llama launch Qwen2-Audio.yaml
 ```
 
+<details>
+<summary>Click to expand Qwen2-Audio.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_predict: 8192
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
+    mmproj:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
+```
+
+</details>
+
 ```shell
 ros2 run llama_demos chatllama_multi_audio_demo_node
 ```
 
 ### MTMD Audio Demo
 
-This demo sends raw audio data directly to the model using the `GenerateResponse` action.
-
 ```shell
 ros2 llama launch Qwen2-Audio.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen2-Audio.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 8192
+    n_batch: 512
+    n_predict: 8192
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
+    mmproj:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
+    system_prompt_type: ChatML
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos mtmd_audio_demo_node
@@ -1683,8 +1884,28 @@ ros2 run llama_demos mtmd_audio_demo_node
 ### PDDL Demo
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    stopping_words: ["<|im_end|>"]
+```
+
+</details>
 
 ```shell
 ros2 run llama_demos chatllama_pddl_demo_node
@@ -1693,23 +1914,25 @@ ros2 run llama_demos chatllama_pddl_demo_node
 ### LangGraph Demo
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
 
 <details>
-<summary>Click to expand Qwen2.yaml</summary>
+<summary>Click to expand Qwen3.yaml</summary>
 
 ```yaml
-_ctx: 4096
-n_batch: 256
-n_predict: -1
-n_gpu_layers: 29
-cpu:
-  n_threads: -1
-
-model:
-  repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF"
-  filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf"
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1738,18 +1961,18 @@ ros2 llama launch Qwen2.yaml
 <summary>Click to expand Qwen2.yaml</summary>
 
 ```yaml
-_ctx: 4096
-n_batch: 256
-n_predict: -1
-n_gpu_layers: 29
-cpu:
-  n_threads: -1
-
-model:
-  repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
-  filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
-
-stopping_words: ["<|im_end|>"]
+/**:
+  ros__parameters:
+    n_ctx: 4096
+    n_batch: 256
+    n_predict: -1
+    n_gpu_layers: 29
+    cpu:
+      n_threads: -1
+    model:
+      repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
+      filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
+    stopping_words: ["<|im_end|>"]
 ```
 
 </details>

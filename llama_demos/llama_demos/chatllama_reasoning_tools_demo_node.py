@@ -67,6 +67,8 @@ def main():
         formatted_output = f"{tool['name']}({''.join(tool['args'].values())})"
         print(f"Calling tool: {formatted_output}")
 
+    print(all_tools_res.additional_kwargs["reasoning_content"])
+
     if "reasoning_content" in all_tools_res.additional_kwargs:
         print(
             f"Reasoning length: {len(all_tools_res.additional_kwargs['reasoning_content'])} characters"
