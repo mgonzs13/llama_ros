@@ -63,22 +63,22 @@ TEST_F(LlamaParamsTest, CanDeclareParameters) {
   ASSERT_NE(node, nullptr);
 
   // Verify some key parameters exist
-  ASSERT_TRUE(node->has_parameter("n_ctx"));
-  ASSERT_TRUE(node->has_parameter("n_batch"));
-  ASSERT_TRUE(node->has_parameter("n_gpu_layers"));
-  ASSERT_TRUE(node->has_parameter("seed"));
+  ASSERT_TRUE(node->has_parameter("context.n_ctx"));
+  ASSERT_TRUE(node->has_parameter("context.n_batch"));
+  ASSERT_TRUE(node->has_parameter("gpu.n_gpu_layers"));
+  ASSERT_TRUE(node->has_parameter("context.seed"));
   ASSERT_TRUE(node->has_parameter("model.path"));
-  ASSERT_TRUE(node->has_parameter("embedding"));
+  ASSERT_TRUE(node->has_parameter("context.embedding"));
 }
 
 /**
  * @brief Test that verifies default parameter values.
  */
 TEST_F(LlamaParamsTest, DefaultParameterValues) {
-  int32_t n_ctx = node->get_parameter("n_ctx").as_int();
-  int32_t n_batch = node->get_parameter("n_batch").as_int();
-  int32_t seed = node->get_parameter("seed").as_int();
-  bool embedding = node->get_parameter("embedding").as_bool();
+  int32_t n_ctx = node->get_parameter("context.n_ctx").as_int();
+  int32_t n_batch = node->get_parameter("context.n_batch").as_int();
+  int32_t seed = node->get_parameter("context.seed").as_int();
+  bool embedding = node->get_parameter("context.embedding").as_bool();
 
   EXPECT_EQ(n_ctx, 0);
   EXPECT_EQ(n_batch, 2048);
@@ -91,16 +91,16 @@ TEST_F(LlamaParamsTest, DefaultParameterValues) {
  */
 TEST_F(LlamaParamsTest, CanSetParameters) {
   // Set custom values
-  node->set_parameter(rclcpp::Parameter("n_ctx", 1024));
-  node->set_parameter(rclcpp::Parameter("n_batch", 512));
-  node->set_parameter(rclcpp::Parameter("seed", 42));
-  node->set_parameter(rclcpp::Parameter("embedding", true));
+  node->set_parameter(rclcpp::Parameter("context.n_ctx", 1024));
+  node->set_parameter(rclcpp::Parameter("context.n_batch", 512));
+  node->set_parameter(rclcpp::Parameter("context.seed", 42));
+  node->set_parameter(rclcpp::Parameter("context.embedding", true));
 
   // Verify they were set
-  EXPECT_EQ(node->get_parameter("n_ctx").as_int(), 1024);
-  EXPECT_EQ(node->get_parameter("n_batch").as_int(), 512);
-  EXPECT_EQ(node->get_parameter("seed").as_int(), 42);
-  EXPECT_TRUE(node->get_parameter("embedding").as_bool());
+  EXPECT_EQ(node->get_parameter("context.n_ctx").as_int(), 1024);
+  EXPECT_EQ(node->get_parameter("context.n_batch").as_int(), 512);
+  EXPECT_EQ(node->get_parameter("context.seed").as_int(), 42);
+  EXPECT_TRUE(node->get_parameter("context.embedding").as_bool());
 }
 
 /**
@@ -108,10 +108,10 @@ TEST_F(LlamaParamsTest, CanSetParameters) {
  */
 TEST_F(LlamaParamsTest, GetLlamaParamsReturnsValidStruct) {
   // Set some test parameters
-  node->set_parameter(rclcpp::Parameter("n_ctx", 2048));
-  node->set_parameter(rclcpp::Parameter("n_batch", 1024));
-  node->set_parameter(rclcpp::Parameter("n_gpu_layers", 32));
-  node->set_parameter(rclcpp::Parameter("seed", 12345));
+  node->set_parameter(rclcpp::Parameter("context.n_ctx", 2048));
+  node->set_parameter(rclcpp::Parameter("context.n_batch", 1024));
+  node->set_parameter(rclcpp::Parameter("gpu.n_gpu_layers", 32));
+  node->set_parameter(rclcpp::Parameter("context.seed", 12345));
   node->set_parameter(rclcpp::Parameter("model.path", "/path/to/model.gguf"));
 
   // Get the params structure
@@ -129,7 +129,7 @@ TEST_F(LlamaParamsTest, GetLlamaParamsReturnsValidStruct) {
  * @brief Test that verifies seed handling (negative seed becomes default).
  */
 TEST_F(LlamaParamsTest, NegativeSeedBecomesDefault) {
-  node->set_parameter(rclcpp::Parameter("seed", -1));
+  node->set_parameter(rclcpp::Parameter("context.seed", -1));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -156,16 +156,16 @@ TEST_F(LlamaParamsTest, ThreadCountDefaults) {
 TEST_F(LlamaParamsTest, LoRAAdapterConfiguration) {
   std::vector<std::string> loras = {"adapter1", "adapter2"};
 
-  node->set_parameter(rclcpp::Parameter("loras", loras));
+  node->set_parameter(rclcpp::Parameter("lora.adapters", loras));
 
   // Declare and set per-lora parameters (simulating what get_llama_params does
   // internally)
-  node->declare_parameter<std::string>("adapter1.file_path",
+  node->declare_parameter<std::string>("lora.adapter1.file_path",
                                        "/path/to/adapter1.bin");
-  node->declare_parameter<double>("adapter1.scale", 0.5);
-  node->declare_parameter<std::string>("adapter2.file_path",
+  node->declare_parameter<double>("lora.adapter1.scale", 0.5);
+  node->declare_parameter<std::string>("lora.adapter2.file_path",
                                        "/path/to/adapter2.bin");
-  node->declare_parameter<double>("adapter2.scale", 0.8);
+  node->declare_parameter<double>("lora.adapter2.scale", 0.8);
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -181,15 +181,15 @@ TEST_F(LlamaParamsTest, LoRAAdapterConfiguration) {
 TEST_F(LlamaParamsTest, LoRAScaleClamping) {
   std::vector<std::string> loras = {"adapter1", "adapter2"};
 
-  node->set_parameter(rclcpp::Parameter("loras", loras));
+  node->set_parameter(rclcpp::Parameter("lora.adapters", loras));
 
   // Declare per-lora parameters with invalid scales
-  node->declare_parameter<std::string>("adapter1.file_path",
+  node->declare_parameter<std::string>("lora.adapter1.file_path",
                                        "/path/to/adapter1.bin");
-  node->declare_parameter<double>("adapter1.scale", -0.5);
-  node->declare_parameter<std::string>("adapter2.file_path",
+  node->declare_parameter<double>("lora.adapter1.scale", -0.5);
+  node->declare_parameter<std::string>("lora.adapter2.file_path",
                                        "/path/to/adapter2.bin");
-  node->declare_parameter<double>("adapter2.scale", 1.5);
+  node->declare_parameter<double>("lora.adapter2.scale", 1.5);
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -204,7 +204,7 @@ TEST_F(LlamaParamsTest, LoRAScaleClamping) {
 TEST_F(LlamaParamsTest, StoppingWordsConfiguration) {
   std::vector<std::string> stop_words = {"STOP", "END", "\\n\\n"};
 
-  node->set_parameter(rclcpp::Parameter("stopping_words", stop_words));
+  node->set_parameter(rclcpp::Parameter("prompt.stopping_words", stop_words));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -221,17 +221,17 @@ TEST_F(LlamaParamsTest, StoppingWordsConfiguration) {
  */
 TEST_F(LlamaParamsTest, SplitModeConfiguration) {
   // Test "layer" mode
-  node->set_parameter(rclcpp::Parameter("split_mode", "layer"));
+  node->set_parameter(rclcpp::Parameter("gpu.split_mode", "layer"));
   llama_utils::LlamaParams params1 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params1.params.split_mode, LLAMA_SPLIT_MODE_LAYER);
 
   // Test "none" mode
-  node->set_parameter(rclcpp::Parameter("split_mode", "none"));
+  node->set_parameter(rclcpp::Parameter("gpu.split_mode", "none"));
   llama_utils::LlamaParams params2 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params2.params.split_mode, LLAMA_SPLIT_MODE_NONE);
 
   // Test "row" mode
-  node->set_parameter(rclcpp::Parameter("split_mode", "row"));
+  node->set_parameter(rclcpp::Parameter("gpu.split_mode", "row"));
   llama_utils::LlamaParams params3 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params3.params.split_mode, LLAMA_SPLIT_MODE_ROW);
 }
@@ -261,17 +261,17 @@ TEST_F(LlamaParamsTest, RoPEScalingTypeConfiguration) {
  */
 TEST_F(LlamaParamsTest, PoolingTypeConfiguration) {
   // Test "mean" pooling
-  node->set_parameter(rclcpp::Parameter("pooling_type", "mean"));
+  node->set_parameter(rclcpp::Parameter("context.pooling_type", "mean"));
   llama_utils::LlamaParams params1 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params1.params.pooling_type, LLAMA_POOLING_TYPE_MEAN);
 
   // Test "cls" pooling
-  node->set_parameter(rclcpp::Parameter("pooling_type", "cls"));
+  node->set_parameter(rclcpp::Parameter("context.pooling_type", "cls"));
   llama_utils::LlamaParams params2 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params2.params.pooling_type, LLAMA_POOLING_TYPE_CLS);
 
   // Test reranking mode (should set pooling to RANK and embedding to true)
-  node->set_parameter(rclcpp::Parameter("reranking", true));
+  node->set_parameter(rclcpp::Parameter("context.reranking", true));
   llama_utils::LlamaParams params3 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params3.params.pooling_type, LLAMA_POOLING_TYPE_RANK);
   EXPECT_TRUE(params3.params.embedding);
@@ -282,17 +282,17 @@ TEST_F(LlamaParamsTest, PoolingTypeConfiguration) {
  */
 TEST_F(LlamaParamsTest, NUMAConfiguration) {
   // Test "distribute" strategy
-  node->set_parameter(rclcpp::Parameter("numa", "distribute"));
+  node->set_parameter(rclcpp::Parameter("context.numa", "distribute"));
   llama_utils::LlamaParams params1 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params1.params.numa, GGML_NUMA_STRATEGY_DISTRIBUTE);
 
   // Test "isolate" strategy
-  node->set_parameter(rclcpp::Parameter("numa", "isolate"));
+  node->set_parameter(rclcpp::Parameter("context.numa", "isolate"));
   llama_utils::LlamaParams params2 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params2.params.numa, GGML_NUMA_STRATEGY_ISOLATE);
 
   // Test "none" strategy
-  node->set_parameter(rclcpp::Parameter("numa", "none"));
+  node->set_parameter(rclcpp::Parameter("context.numa", "none"));
   llama_utils::LlamaParams params3 = llama_utils::get_llama_params(node);
   EXPECT_EQ(params3.params.numa, GGML_NUMA_STRATEGY_DISABLED);
 }
@@ -302,7 +302,7 @@ TEST_F(LlamaParamsTest, NUMAConfiguration) {
  */
 TEST_F(LlamaParamsTest, SystemPromptConfiguration) {
   std::string test_prompt = "You are a helpful assistant.";
-  node->set_parameter(rclcpp::Parameter("system_prompt", test_prompt));
+  node->set_parameter(rclcpp::Parameter("prompt.system_prompt", test_prompt));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -313,8 +313,8 @@ TEST_F(LlamaParamsTest, SystemPromptConfiguration) {
  * @brief Test that verifies prefix and suffix configuration.
  */
 TEST_F(LlamaParamsTest, PrefixSuffixConfiguration) {
-  node->set_parameter(rclcpp::Parameter("prefix", "### Instruction:\n"));
-  node->set_parameter(rclcpp::Parameter("suffix", "\n### Response:\n"));
+  node->set_parameter(rclcpp::Parameter("prompt.prefix", "### Instruction:\n"));
+  node->set_parameter(rclcpp::Parameter("prompt.suffix", "\n### Response:\n"));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
@@ -350,9 +350,9 @@ TEST_F(LlamaParamsTest, CPUPriorityConfiguration) {
  * @brief Test that verifies parallel processing configuration.
  */
 TEST_F(LlamaParamsTest, ParallelProcessingConfiguration) {
-  node->set_parameter(rclcpp::Parameter("n_parallel", 4));
-  node->set_parameter(rclcpp::Parameter("n_sequences", 2));
-  node->set_parameter(rclcpp::Parameter("cont_batching", false));
+  node->set_parameter(rclcpp::Parameter("context.n_parallel", 4));
+  node->set_parameter(rclcpp::Parameter("context.n_sequences", 2));
+  node->set_parameter(rclcpp::Parameter("context.cont_batching", false));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
