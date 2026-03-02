@@ -2014,6 +2014,42 @@ ros2 run llama_demos chatllama_langgraph_demo_node
 
 [Langgraph ChatLlama](https://github.com/user-attachments/assets/a0991cb4-f7f4-43d5-b629-3b1819aead0d)
 
+### Parallel Slots Demo
+
+This demo shows how to use multiple parallel slots (`context.n_parallel`) to process several requests concurrently via continuous batching. Launch the model with `n_parallel: 4`:
+
+```shell
+ros2 llama launch SmolLM2-slots.yaml
+```
+
+<details>
+<summary>Click to expand SmolLM2-slots.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/SmolLM2-1.7B-Instruct-GGUF
+      filename: SmolLM2-1.7B-Instruct-Q4_K_L.gguf
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+      n_parallel: 4
+    gpu:
+      n_gpu_layers: 0
+    cpu:
+      n_threads: -1
+    prompt:
+      system_prompt_type: ChatML
+```
+
+</details>
+
+```shell
+ros2 run llama_demos llama_slots_demo_node
+```
+
 ### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell

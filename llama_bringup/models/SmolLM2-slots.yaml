@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: bartowski/SmolLM2-1.7B-Instruct-GGUF
+      filename: SmolLM2-1.7B-Instruct-Q4_K_L.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+      n_parallel: 4
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 0
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML
