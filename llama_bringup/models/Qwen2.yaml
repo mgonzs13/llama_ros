@@ -1,12 +1,24 @@
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 8
-    n_predict: 2048
-    n_gpu_layers: 0
-    cpu:
-      n_threads: 1
+    # Model parameters
     model:
       repo: Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
       filename: qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf
-    system_prompt_type: ChatML
+
+    # Context / inference parameters
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 0
+
+    # CPU parameters
+    cpu:
+      n_threads: 1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML

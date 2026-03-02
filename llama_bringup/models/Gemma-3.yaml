@@ -1,12 +1,24 @@
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: 27
-    cpu:
-      n_threads: -1
+    # Model parameters
     model:
       repo: vinimuchulski/gemma-3-1b-it-qat-q4_0-gguf
       filename: gemma-3-1b-it-q4_0.gguf
-    system_prompt_type: Gemma-3
+
+    # Context / inference parameters
+    context:
+      n_ctx: 2048
+      n_batch: 256
+      n_predict: -1
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 27
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: Gemma-3

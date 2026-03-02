@@ -80,71 +80,97 @@ std::string download_model(const std::string &repo_id,
 void llama_utils::declare_llama_params(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) {
 
-  // General integer parameters
-  node->declare_parameters<int32_t>("", {
-                                            {"verbosity", 3},
-                                            {"seed", -1},
-                                            {"n_ctx", 0},
-                                            {"n_batch", 2048},
-                                            {"n_ubatch", 512},
-                                            {"n_keep", 0},
-                                            {"n_chunks", -1},
-                                            {"n_predict", -1},
-                                            {"n_parallel", 1},
-                                            {"n_sequences", 1},
-                                            {"n_gpu_layers", -1},
-                                            {"main_gpu", 0},
-                                        });
+  // General parameters
+  node->declare_parameter<int32_t>("verbosity", 3);
 
-  node->declare_parameters<int32_t>("cpu", {
-                                               {"n_threads", -1},
-                                               {"poll", 50},
-                                           });
-
-  node->declare_parameters<int32_t>("cpu_batch", {
-                                                     {"n_threads", -1},
-                                                     {"poll", 50},
-                                                 });
-
-  node->declare_parameters<int32_t>("grp_attn", {
-                                                    {"n", 1},
-                                                    {"w", 512},
-                                                });
-
-  node->declare_parameters<int32_t>("yarn", {
-                                                {"orig_ctx", 0},
-                                            });
-
-  node->declare_parameters<int32_t>("fit", {
-                                               {"min_ctx", 4096},
-                                           });
-
-  // General string parameters
-  node->declare_parameters<std::string>("", {
-                                                {"split_mode", "layer"},
-                                                {"numa", "none"},
-                                                {"flash_attn_type", "auto"},
-                                                {"pooling_type", ""},
-                                                {"attention_type", ""},
-                                                {"prefix", ""},
-                                                {"suffix", ""},
-                                                {"system_prompt", ""},
-                                                {"system_prompt_file", ""},
-                                                {"chat_template_file", ""},
-                                                {"system_prompt_type", ""},
-                                            });
-
+  // Model parameters (model.*)
   node->declare_parameters<std::string>("model", {
                                                      {"path", ""},
                                                      {"repo", ""},
                                                      {"filename", ""},
                                                  });
 
+  node->declare_parameters<bool>("model", {
+                                              {"warmup", true},
+                                              {"check_tensors", false},
+                                          });
+
+  // Multimodal projector parameters (mmproj.*)
   node->declare_parameters<std::string>("mmproj", {
                                                       {"path", ""},
                                                       {"repo", ""},
                                                       {"filename", ""},
                                                   });
+
+  node->declare_parameters<bool>("mmproj", {
+                                               {"use_gpu", true},
+                                               {"disabled", false},
+                                           });
+
+  // Context / inference parameters (context.*)
+  node->declare_parameters<int32_t>("context", {
+                                                   {"seed", -1},
+                                                   {"n_ctx", 0},
+                                                   {"n_batch", 2048},
+                                                   {"n_ubatch", 512},
+                                                   {"n_keep", 0},
+                                                   {"n_chunks", -1},
+                                                   {"n_predict", -1},
+                                                   {"n_parallel", 1},
+                                                   {"n_sequences", 1},
+                                               });
+
+  node->declare_parameters<std::string>("context", {
+                                                       {"numa", "none"},
+                                                       {"pooling_type", ""},
+                                                       {"attention_type", ""},
+                                                   });
+
+  node->declare_parameters<bool>("context", {
+                                                {"embedding", false},
+                                                {"reranking", false},
+                                                {"ctx_shift", false},
+                                                {"swa_full", false},
+                                                {"cont_batching", true},
+                                            });
+
+  // GPU / backend parameters (gpu.*)
+  node->declare_parameters<int32_t>("gpu", {
+                                               {"n_gpu_layers", -1},
+                                               {"main_gpu", 0},
+                                           });
+
+  node->declare_parameters<std::string>("gpu", {
+                                                   {"split_mode", "layer"},
+                                                   {"flash_attn_type", "auto"},
+                                               });
+
+  node->declare_parameters<bool>("gpu", {
+                                            {"no_kv_offload", false},
+                                            {"no_op_offload", false},
+                                            {"no_host", false},
+                                            {"no_extra_bufts", false},
+                                        });
+
+  node->declare_parameter<std::vector<double>>("gpu.tensor_split",
+                                               std::vector<double>({0.0}));
+
+  node->declare_parameter<std::vector<std::string>>(
+      "gpu.devices", std::vector<std::string>({}));
+
+  // Memory parameters (memory.*)
+  node->declare_parameters<bool>("memory", {
+                                               {"use_mmap", true},
+                                               {"use_direct_io", false},
+                                               {"use_mlock", false},
+                                               {"kv_unified", false},
+                                           });
+
+  // CPU parameters (cpu.*)
+  node->declare_parameters<int32_t>("cpu", {
+                                               {"n_threads", -1},
+                                               {"poll", 50},
+                                           });
 
   node->declare_parameters<std::string>("cpu", {
                                                    {"mask", ""},
@@ -152,35 +178,57 @@ void llama_utils::declare_llama_params(
                                                    {"priority", "normal"},
                                                });
 
+  node->declare_parameters<bool>("cpu", {
+                                            {"strict", false},
+                                        });
+
+  // CPU batch parameters (cpu_batch.*)
+  node->declare_parameters<int32_t>("cpu_batch", {
+                                                     {"n_threads", -1},
+                                                     {"poll", 50},
+                                                 });
+
   node->declare_parameters<std::string>("cpu_batch", {
                                                          {"mask", ""},
                                                          {"range", ""},
                                                          {"priority", "normal"},
                                                      });
 
-  node->declare_parameters<std::string>("rope", {
-                                                    {"scaling_type", ""},
-                                                });
+  node->declare_parameters<bool>("cpu_batch", {
+                                                  {"strict", false},
+                                              });
 
-  node->declare_parameters<std::string>("cache", {
-                                                     {"type_k", "f16"},
-                                                     {"type_v", "f16"},
-                                                 });
+  // Prompt & chat parameters (prompt.*)
+  node->declare_parameters<std::string>("prompt",
+                                        {
+                                            {"prefix", ""},
+                                            {"suffix", ""},
+                                            {"system_prompt", ""},
+                                            {"system_prompt_file", ""},
+                                            {"system_prompt_type", ""},
+                                            {"chat_template_file", ""},
+                                        });
 
-  node->declare_parameters<std::vector<std::string>>(
-      {""}, {
-                {"devices", std::vector<std::string>({})},
-                {"stopping_words", std::vector<std::string>({})},
-                {"loras", std::vector<std::string>({})},
-            });
+  node->declare_parameter<std::vector<std::string>>(
+      "prompt.stopping_words", std::vector<std::string>({}));
 
-  // RoPE float parameters
+  // LoRA adapter parameters (lora.*)
+  node->declare_parameter<std::vector<std::string>>(
+      "lora.adapters", std::vector<std::string>({}));
+
+  node->declare_parameter<bool>("lora.init_without_apply", false);
+
+  // RoPE parameters (rope.*)
   node->declare_parameters<float>("rope", {
                                               {"freq_base", 0.0f},
                                               {"freq_scale", 0.0f},
                                           });
 
-  // Yarn float parameters
+  node->declare_parameters<std::string>("rope", {
+                                                    {"scaling_type", ""},
+                                                });
+
+  // YaRN parameters (yarn.*)
   node->declare_parameters<float>("yarn", {
                                               {"ext_factor", -1.0f},
                                               {"attn_factor", -1.0f},
@@ -188,43 +236,32 @@ void llama_utils::declare_llama_params(
                                               {"beta_slow", -1.0f},
                                           });
 
-  node->declare_parameter<std::vector<double>>("tensor_split",
-                                               std::vector<double>({0.0}));
+  node->declare_parameters<int32_t>("yarn", {
+                                                {"orig_ctx", 0},
+                                            });
 
-  // General boolean parameters
-  node->declare_parameters<bool>("", {
-                                         {"embedding", false},
-                                         {"reranking", false},
-                                         {"use_mmap", true},
-                                         {"use_direct_io", false},
-                                         {"use_mlock", false},
-                                         {"warmup", true},
-                                         {"check_tensors", false},
-                                         {"ctx_shift", false},
-                                         {"swa_full", false},
-                                         {"no_op_offload", false},
-                                         {"no_extra_bufts", false},
-                                         {"no_kv_offload", false},
-                                         {"no_host", false},
-                                         {"kv_unified", false},
-                                         {"cont_batching", true},
-                                         {"lora_init_without_apply", false},
-                                     });
+  // Group attention parameters (grp_attn.*)
+  node->declare_parameters<int32_t>("grp_attn", {
+                                                    {"n", 1},
+                                                    {"w", 512},
+                                                });
 
-  node->declare_parameters<bool>("cpu", {
-                                            {"strict", false},
+  // KV cache parameters (cache.*)
+  node->declare_parameters<std::string>("cache", {
+                                                     {"type_k", "f16"},
+                                                     {"type_v", "f16"},
+                                                 });
+
+  // Fit parameters (fit.*)
+  node->declare_parameters<bool>("fit", {
+                                            {"enabled", true},
                                         });
 
-  node->declare_parameters<bool>("cpu_batch", {
-                                                  {"strict", false},
-                                              });
-
-  node->declare_parameters<bool>("mmproj", {
-                                               {"use_gpu", true},
-                                               {"disabled", false},
+  node->declare_parameters<int32_t>("fit", {
+                                               {"min_ctx", 4096},
                                            });
 
-  // Speculative decoding parameters
+  // Speculative decoding parameters (speculative.*)
   node->declare_parameters<std::string>("speculative", {
                                                            {"type", "none"},
                                                        });
@@ -246,10 +283,6 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<double>("speculative", {
                                                       {"p_min", 0.75},
                                                   });
-
-  node->declare_parameters<bool>("fit", {
-                                            {"enabled", true},
-                                        });
 }
 
 LlamaParams llama_utils::get_llama_params(
@@ -291,41 +324,61 @@ LlamaParams llama_utils::get_llama_params(
 
   LlamaParams params;
 
+  // General
   node->get_parameter("verbosity", params.params.verbosity);
-  node->get_parameter("seed", seed);
-  node->get_parameter("n_ctx", params.params.n_ctx);
-  node->get_parameter("n_batch", params.params.n_batch);
-  node->get_parameter("n_ubatch", params.params.n_ubatch);
-  node->get_parameter("n_keep", params.params.n_keep);
-  node->get_parameter("n_chunks", params.params.n_chunks);
-  node->get_parameter("n_predict", params.params.n_predict);
-  node->get_parameter("n_parallel", params.params.n_parallel);
-  node->get_parameter("n_sequences", params.params.n_sequences);
 
-  node->get_parameter("devices", devices);
-  node->get_parameter("n_gpu_layers", params.params.n_gpu_layers);
-  node->get_parameter("split_mode", split_mode);
-  node->get_parameter("main_gpu", params.params.main_gpu);
-  node->get_parameter("tensor_split", tensor_split);
+  // Model parameters (model.*)
+  node->get_parameter("model.path", params.params.model.path);
+  node->get_parameter("model.repo", params.params.model.hf_repo);
+  node->get_parameter("model.filename", params.params.model.hf_file);
+  node->get_parameter("model.warmup", params.params.warmup);
+  node->get_parameter("model.check_tensors", params.params.check_tensors);
 
-  node->get_parameter("embedding", params.params.embedding);
-  node->get_parameter("reranking", reranking);
-  node->get_parameter("use_mmap", params.params.use_mmap);
-  node->get_parameter("use_direct_io", params.params.use_direct_io);
-  node->get_parameter("use_mlock", params.params.use_mlock);
-  node->get_parameter("warmup", params.params.warmup);
-  node->get_parameter("check_tensors", params.params.check_tensors);
-  node->get_parameter("ctx_shift", params.params.ctx_shift);
-  node->get_parameter("swa_full", params.params.swa_full);
+  // Multimodal projector parameters (mmproj.*)
+  node->get_parameter("mmproj.path", params.params.mmproj.path);
+  node->get_parameter("mmproj.repo", params.params.mmproj.hf_repo);
+  node->get_parameter("mmproj.filename", params.params.mmproj.hf_file);
+  node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
+  node->get_parameter("mmproj.disabled", params.params.no_mmproj);
 
-  node->get_parameter("no_op_offload", params.params.no_op_offload);
-  node->get_parameter("no_extra_bufts", params.params.no_extra_bufts);
-  node->get_parameter("no_kv_offload", params.params.no_kv_offload);
-  node->get_parameter("no_host", params.params.no_host);
-  node->get_parameter("kv_unified", params.params.kv_unified);
-  node->get_parameter("cache.type_k", cache_type_k);
-  node->get_parameter("cache.type_v", cache_type_v);
+  // Context / inference parameters (context.*)
+  node->get_parameter("context.seed", seed);
+  node->get_parameter("context.n_ctx", params.params.n_ctx);
+  node->get_parameter("context.n_batch", params.params.n_batch);
+  node->get_parameter("context.n_ubatch", params.params.n_ubatch);
+  node->get_parameter("context.n_keep", params.params.n_keep);
+  node->get_parameter("context.n_chunks", params.params.n_chunks);
+  node->get_parameter("context.n_predict", params.params.n_predict);
+  node->get_parameter("context.n_parallel", params.params.n_parallel);
+  node->get_parameter("context.n_sequences", params.params.n_sequences);
+  node->get_parameter("context.numa", numa);
+  node->get_parameter("context.pooling_type", pooling_type);
+  node->get_parameter("context.attention_type", attention_type);
+  node->get_parameter("context.embedding", params.params.embedding);
+  node->get_parameter("context.reranking", reranking);
+  node->get_parameter("context.ctx_shift", params.params.ctx_shift);
+  node->get_parameter("context.swa_full", params.params.swa_full);
+  node->get_parameter("context.cont_batching", params.params.cont_batching);
 
+  // GPU / backend parameters (gpu.*)
+  node->get_parameter("gpu.n_gpu_layers", params.params.n_gpu_layers);
+  node->get_parameter("gpu.main_gpu", params.params.main_gpu);
+  node->get_parameter("gpu.split_mode", split_mode);
+  node->get_parameter("gpu.flash_attn_type", flash_attn_type);
+  node->get_parameter("gpu.no_kv_offload", params.params.no_kv_offload);
+  node->get_parameter("gpu.no_op_offload", params.params.no_op_offload);
+  node->get_parameter("gpu.no_host", params.params.no_host);
+  node->get_parameter("gpu.no_extra_bufts", params.params.no_extra_bufts);
+  node->get_parameter("gpu.tensor_split", tensor_split);
+  node->get_parameter("gpu.devices", devices);
+
+  // Memory parameters (memory.*)
+  node->get_parameter("memory.use_mmap", params.params.use_mmap);
+  node->get_parameter("memory.use_direct_io", params.params.use_direct_io);
+  node->get_parameter("memory.use_mlock", params.params.use_mlock);
+  node->get_parameter("memory.kv_unified", params.params.kv_unified);
+
+  // CPU parameters (cpu.*)
   node->get_parameter("cpu.n_threads", params.params.cpuparams.n_threads);
   node->get_parameter("cpu.mask", cpu_mask);
   node->get_parameter("cpu.range", cpu_range);
@@ -333,6 +386,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("cpu.strict", params.params.cpuparams.strict_cpu);
   node->get_parameter("cpu.poll", poll);
 
+  // CPU batch parameters (cpu_batch.*)
   node->get_parameter("cpu_batch.n_threads",
                       params.params.cpuparams_batch.n_threads);
   node->get_parameter("cpu_batch.mask", cpu_mask_batch);
@@ -342,23 +396,45 @@ LlamaParams llama_utils::get_llama_params(
                       params.params.cpuparams_batch.strict_cpu);
   node->get_parameter("cpu_batch.poll", poll_batch);
 
-  node->get_parameter("grp_attn.n", params.params.grp_attn_n);
-  node->get_parameter("grp_attn.w", params.params.grp_attn_w);
+  // Prompt & chat parameters (prompt.*)
+  node->get_parameter("prompt.prefix", params.params.input_prefix);
+  node->get_parameter("prompt.suffix", params.params.input_suffix);
+  node->get_parameter("prompt.stopping_words", stopping_words);
+  node->get_parameter("prompt.system_prompt", params.system_prompt);
+  node->get_parameter("prompt.system_prompt_file", system_prompt_file_path);
+  node->get_parameter("prompt.chat_template_file", chat_template_file);
+  node->get_parameter("prompt.system_prompt_type", system_prompt_type);
 
+  // LoRA adapter parameters (lora.*)
+  node->get_parameter("lora.init_without_apply",
+                      params.params.lora_init_without_apply);
+  node->get_parameter("lora.adapters", loras);
+
+  // RoPE parameters (rope.*)
   node->get_parameter("rope.freq_base", params.params.rope_freq_base);
   node->get_parameter("rope.freq_scale", params.params.rope_freq_scale);
   node->get_parameter("rope.scaling_type", rope_scaling_type);
 
+  // YaRN parameters (yarn.*)
   node->get_parameter("yarn.ext_factor", params.params.yarn_ext_factor);
   node->get_parameter("yarn.attn_factor", params.params.yarn_attn_factor);
   node->get_parameter("yarn.beta_fast", params.params.yarn_beta_fast);
   node->get_parameter("yarn.beta_slow", params.params.yarn_beta_slow);
   node->get_parameter("yarn.orig_ctx", params.params.yarn_orig_ctx);
 
-  node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
-  node->get_parameter("mmproj.disabled", params.params.no_mmproj);
+  // Group attention parameters (grp_attn.*)
+  node->get_parameter("grp_attn.n", params.params.grp_attn_n);
+  node->get_parameter("grp_attn.w", params.params.grp_attn_w);
 
-  // Speculative decoding parameters
+  // KV cache parameters (cache.*)
+  node->get_parameter("cache.type_k", cache_type_k);
+  node->get_parameter("cache.type_v", cache_type_v);
+
+  // Fit parameters (fit.*)
+  node->get_parameter("fit.enabled", params.params.fit_params);
+  node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
+
+  // Speculative decoding parameters (speculative.*)
   std::string speculative_type;
   double speculative_p_min;
   node->get_parameter("speculative.type", speculative_type);
@@ -375,35 +451,6 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("speculative.model.filename",
                       params.params.speculative.mparams_dft.hf_file);
   params.params.speculative.p_min = static_cast<float>(speculative_p_min);
-
-  node->get_parameter("fit.enabled", params.params.fit_params);
-  node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
-
-  node->get_parameter("model.path", params.params.model.path);
-  node->get_parameter("model.repo", params.params.model.hf_repo);
-  node->get_parameter("model.filename", params.params.model.hf_file);
-  node->get_parameter("mmproj.path", params.params.mmproj.path);
-  node->get_parameter("mmproj.repo", params.params.mmproj.hf_repo);
-  node->get_parameter("mmproj.filename", params.params.mmproj.hf_file);
-
-  node->get_parameter("lora_init_without_apply",
-                      params.params.lora_init_without_apply);
-  node->get_parameter("loras", loras);
-
-  node->get_parameter("numa", numa);
-  node->get_parameter("flash_attn_type", flash_attn_type);
-  node->get_parameter("pooling_type", pooling_type);
-  node->get_parameter("attention_type", attention_type);
-
-  node->get_parameter("cont_batching", params.params.cont_batching);
-
-  node->get_parameter("prefix", params.params.input_prefix);
-  node->get_parameter("suffix", params.params.input_suffix);
-  node->get_parameter("stopping_words", stopping_words);
-  node->get_parameter("system_prompt", params.system_prompt);
-  node->get_parameter("system_prompt_file", system_prompt_file_path);
-  node->get_parameter("chat_template_file", chat_template_file);
-  node->get_parameter("system_prompt_type", system_prompt_type);
 
   // seed
   if (seed < 0) {
@@ -478,27 +525,29 @@ LlamaParams llama_utils::get_llama_params(
       continue;
     }
 
+    std::string lora_prefix = "lora." + lora_name;
+
     // Declare and get per-lora parameters
-    if (!node->has_parameter(lora_name + ".repo")) {
-      node->declare_parameter<std::string>(lora_name + ".repo", "");
+    if (!node->has_parameter(lora_prefix + ".repo")) {
+      node->declare_parameter<std::string>(lora_prefix + ".repo", "");
     }
-    if (!node->has_parameter(lora_name + ".filename")) {
-      node->declare_parameter<std::string>(lora_name + ".filename", "");
+    if (!node->has_parameter(lora_prefix + ".filename")) {
+      node->declare_parameter<std::string>(lora_prefix + ".filename", "");
     }
-    if (!node->has_parameter(lora_name + ".scale")) {
-      node->declare_parameter<double>(lora_name + ".scale", 1.0);
+    if (!node->has_parameter(lora_prefix + ".scale")) {
+      node->declare_parameter<double>(lora_prefix + ".scale", 1.0);
     }
-    if (!node->has_parameter(lora_name + ".file_path")) {
-      node->declare_parameter<std::string>(lora_name + ".file_path", "");
+    if (!node->has_parameter(lora_prefix + ".file_path")) {
+      node->declare_parameter<std::string>(lora_prefix + ".file_path", "");
     }
 
     std::string repo, filename, file_path;
     double scale_d;
 
-    node->get_parameter(lora_name + ".repo", repo);
-    node->get_parameter(lora_name + ".filename", filename);
-    node->get_parameter(lora_name + ".scale", scale_d);
-    node->get_parameter(lora_name + ".file_path", file_path);
+    node->get_parameter(lora_prefix + ".repo", repo);
+    node->get_parameter(lora_prefix + ".filename", filename);
+    node->get_parameter(lora_prefix + ".scale", scale_d);
+    node->get_parameter(lora_prefix + ".file_path", file_path);
 
     float scale = static_cast<float>(scale_d);
 

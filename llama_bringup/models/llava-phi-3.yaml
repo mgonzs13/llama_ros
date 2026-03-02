@@ -1,15 +1,29 @@
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 33
-    cpu:
-      n_threads: -1
+    # Model parameters
     model:
       repo: xtuner/llava-phi-3-mini-gguf
       filename: llava-phi-3-mini-int4.gguf
+
+    # Multimodal projector parameters
     mmproj:
       repo: xtuner/llava-phi-3-mini-gguf
       filename: llava-phi-3-mini-mmproj-f16.gguf
-    system_prompt_type: Phi-3
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 33
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: Phi-3

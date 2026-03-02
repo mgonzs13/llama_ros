@@ -1,15 +1,29 @@
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 20
-    cpu:
-      n_threads: -1
+    # Model parameters
     model:
       repo: openbmb/MiniCPM-o-2_6-gguf
       filename: Model-7.6B-Q4_K_M.gguf
+
+    # Multimodal projector parameters
     mmproj:
       repo: openbmb/MiniCPM-o-2_6-gguf
       filename: mmproj-model-f16.gguf
-    system_prompt_type: ChatML
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 20
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML

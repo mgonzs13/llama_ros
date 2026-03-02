@@ -123,14 +123,14 @@ def generate_launch_description():
             name="llama_node",
             namespace="llama",
             parameters=[{
-                "n_ctx": 2048,
-                "n_batch": 8,
-                "n_predict": 2048,
-                "n_gpu_layers": 0,
+                "context.n_ctx": 2048,
+                "context.n_batch": 8,
+                "context.n_predict": 2048,
+                "gpu.n_gpu_layers": 0,
                 "cpu.n_threads": 1,
                 "model.repo": "TheBloke/Marcoroni-7B-v3-GGUF",
                 "model.filename": "marcoroni-7b-v3.Q4_K_M.gguf",
-                "system_prompt_type": "Alpaca",
+                "prompt.system_prompt_type": "Alpaca",
             }],
         )
     ])
@@ -150,16 +150,19 @@ ros2 launch llama_bringup marcoroni.launch.py
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 8
-    n_predict: 2048
-    n_gpu_layers: 0
-    cpu:
-      n_threads: 1
     model:
       repo: "cstr/Spaetzle-v60-7b-GGUF"
       filename: "Spaetzle-v60-7b-q4-k-m.gguf"
-    system_prompt_type: "Alpaca"
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+    gpu:
+      n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    prompt:
+      system_prompt_type: "Alpaca"
 ```
 
 ```python
@@ -195,18 +198,23 @@ ros2 launch llama_bringup spaetzle.launch.py
 <summary>Click to expand</summary>
 
 ```yaml
-n_ctx: 2048 # context of the LLM in tokens
-n_batch: 8 # batch size in tokens
-n_predict: 2048 # max tokens, -1 == inf
-n_gpu_layers: 0 # layers to load in GPU
-cpu:
-  n_threads: 1 # threads
-
 model:
   repo: "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF" # Hugging Face repo
   filename: "qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf" # model shard file in repo
 
-system_prompt_type: "ChatML" # system prompt type
+context:
+  n_ctx: 2048 # context of the LLM in tokens
+  n_batch: 8 # batch size in tokens
+  n_predict: 2048 # max tokens, -1 == inf
+
+gpu:
+  n_gpu_layers: 0 # layers to load in GPU
+
+cpu:
+  n_threads: 1 # threads
+
+prompt:
+  system_prompt_type: "ChatML" # system prompt type
 ```
 
 ```shell
@@ -220,21 +228,25 @@ ros2 llama launch Qwen2.yaml
 <details>
 <summary>Click to expand</summary>
 
-[Speculative decoding](https://arxiv.org/abs/2302.01318) uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the larger target model. This can significantly speed up text generation when using a small draft model from the same model family. Note that speculative decoding requires `n_parallel: 1`.
+[Speculative decoding](https://arxiv.org/abs/2302.01318) uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the larger target model. This can significantly speed up text generation when using a small draft model from the same model family. Note that speculative decoding requires `context.n_parallel: 1`.
 
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 2048
-    n_predict: 2048
-    n_gpu_layers: -1
-    n_parallel: 1
-    cpu:
-      n_threads: -1
     model:
       repo: lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF
       filename: Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 2048
+      n_predict: 2048
+      n_parallel: 1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      system_prompt_type: Llama-3
     speculative:
       type: draft
       n_max: 16
@@ -244,7 +256,6 @@ ros2 llama launch Qwen2.yaml
       model:
         repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
         filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
-    system_prompt_type: Llama-3
 ```
 
 ```shell
@@ -271,16 +282,16 @@ def generate_launch_description():
             name="llava_node",
             namespace="llama",
             parameters=[{
-                "n_ctx": 8192,
-                "n_batch": 512,
-                "n_gpu_layers": 33,
+                "context.n_ctx": 8192,
+                "context.n_batch": 512,
+                "gpu.n_gpu_layers": 33,
                 "cpu.n_threads": 1,
-                "n_predict": 8192,
+                "context.n_predict": 8192,
                 "model.repo": "cjpais/llava-1.6-mistral-7b-gguf",
                 "model.filename": "llava-v1.6-mistral-7b.Q4_K_M.gguf",
                 "mmproj.repo": "cjpais/llava-1.6-mistral-7b-gguf",
                 "mmproj.filename": "mmproj-model-f16.gguf",
-                "system_prompt_type": "Mistral",
+                "prompt.system_prompt_type": "Mistral",
             }],
         )
     ])
@@ -300,19 +311,22 @@ ros2 launch llama_bringup llava.launch.py
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 33
-    cpu:
-      n_threads: 1
     model:
       repo: "cjpais/llava-1.6-mistral-7b-gguf"
       filename: "llava-v1.6-mistral-7b.Q4_K_M.gguf"
     mmproj:
       repo: "cjpais/llava-1.6-mistral-7b-gguf"
       filename: "mmproj-model-f16.gguf"
-    system_prompt_type: "Mistral"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 33
+    cpu:
+      n_threads: 1
+    prompt:
+      system_prompt_type: "Mistral"
 ```
 
 ```python
@@ -350,19 +364,22 @@ ros2 launch llama_bringup llava.launch.py
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 29
-    cpu:
-      n_threads: -1
     model:
       repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
       filename: "Qwen2-Audio-7B-Instruct.Q4_K_M.gguf"
     mmproj:
       repo: "mradermacher/Qwen2-Audio-7B-Instruct-GGUF"
       filename: "Qwen2-Audio-7B-Instruct.mmproj-f16.gguf"
-    system_prompt_type: "ChatML"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 29
+    cpu:
+      n_threads: -1
+    prompt:
+      system_prompt_type: "ChatML"
 ```
 
 ```python
@@ -398,50 +415,19 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### General
 
-| Param             | Type       | Default   | Description                                                                     |
-| ----------------- | ---------- | --------- | ------------------------------------------------------------------------------- |
-| `verbosity`       | `int32`    | `3`       | Log verbosity level                                                             |
-| `seed`            | `int32`    | `-1`      | RNG seed for sampling (`-1` for default)                                        |
-| `n_ctx`           | `int32`    | `0`       | Context size in tokens (`0` for model default)                                  |
-| `n_batch`         | `int32`    | `2048`    | Logical batch size for prompt processing                                        |
-| `n_ubatch`        | `int32`    | `512`     | Physical batch size                                                             |
-| `n_keep`          | `int32`    | `0`       | Number of tokens to keep from the initial prompt on context shift               |
-| `n_chunks`        | `int32`    | `-1`      | Max number of chunks to process (`-1` for unlimited)                            |
-| `n_predict`       | `int32`    | `-1`      | Max tokens to predict (`-1` for unlimited)                                      |
-| `n_parallel`      | `int32`    | `1`       | Number of parallel sequences to decode                                          |
-| `n_sequences`     | `int32`    | `1`       | Number of sequences to decode                                                   |
-| `n_gpu_layers`    | `int32`    | `-1`      | Number of layers to offload to GPU (`-1` for all)                               |
-| `main_gpu`        | `int32`    | `0`       | Main GPU index                                                                  |
-| `split_mode`      | `string`   | `"layer"` | GPU split mode: `none`, `layer`, or `row`                                       |
-| `tensor_split`    | `double[]` | `[0.0]`   | Tensor split proportions across GPUs                                            |
-| `devices`         | `string[]` | `[]`      | GPU device names to use                                                         |
-| `numa`            | `string`   | `"none"`  | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
-| `flash_attn_type` | `string`   | `"auto"`  | Flash attention type: `auto`, `enabled`, or `disabled`                          |
-| `pooling_type`    | `string`   | `""`      | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                        |
-| `attention_type`  | `string`   | `""`      | Attention type: `causal` or `non_causal`                                        |
-| `embedding`       | `bool`     | `false`   | Enable embedding mode                                                           |
-| `reranking`       | `bool`     | `false`   | Enable reranking mode (sets pooling to `rerank` and enables embedding)          |
-| `use_mmap`        | `bool`     | `true`    | Use memory-mapped files for model loading                                       |
-| `use_direct_io`   | `bool`     | `false`   | Use direct I/O for model loading                                                |
-| `use_mlock`       | `bool`     | `false`   | Lock model in RAM to prevent swapping                                           |
-| `warmup`          | `bool`     | `true`    | Run a warmup inference on load                                                  |
-| `check_tensors`   | `bool`     | `false`   | Validate model tensor data on load                                              |
-| `ctx_shift`       | `bool`     | `false`   | Enable context shifting                                                         |
-| `swa_full`        | `bool`     | `false`   | Enable full sliding window attention                                            |
-| `no_op_offload`   | `bool`     | `false`   | Disable operation offloading                                                    |
-| `no_extra_bufts`  | `bool`     | `false`   | Disable extra buffer types                                                      |
-| `no_kv_offload`   | `bool`     | `false`   | Disable KV cache offloading to GPU                                              |
-| `no_host`         | `bool`     | `false`   | Disable host buffer usage                                                       |
-| `kv_unified`      | `bool`     | `false`   | Use unified KV cache                                                            |
-| `cont_batching`   | `bool`     | `true`    | Enable continuous batching                                                      |
+| Param       | Type    | Default | Description         |
+| ----------- | ------- | ------- | ------------------- |
+| `verbosity` | `int32` | `3`     | Log verbosity level |
 
 #### Model (`model.*`)
 
-| Param            | Type     | Default | Description                                          |
-| ---------------- | -------- | ------- | ---------------------------------------------------- |
-| `model.path`     | `string` | `""`    | Local file path to the GGUF model                    |
-| `model.repo`     | `string` | `""`    | HuggingFace repository ID to download the model from |
-| `model.filename` | `string` | `""`    | Filename of the model in the HuggingFace repository  |
+| Param                 | Type     | Default | Description                                          |
+| --------------------- | -------- | ------- | ---------------------------------------------------- |
+| `model.path`          | `string` | `""`    | Local file path to the GGUF model                    |
+| `model.repo`          | `string` | `""`    | HuggingFace repository ID to download the model from |
+| `model.filename`      | `string` | `""`    | Filename of the model in the HuggingFace repository  |
+| `model.warmup`        | `bool`   | `true`  | Run a warmup inference on load                       |
+| `model.check_tensors` | `bool`   | `false` | Validate model tensor data on load                   |
 
 #### Multimodal Projector (`mmproj.*`)
 
@@ -452,6 +438,52 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `mmproj.filename` | `string` | `""`    | Filename of the projector in the HuggingFace repository  |
 | `mmproj.use_gpu`  | `bool`   | `true`  | Use GPU for the multimodal projector                     |
 | `mmproj.disabled` | `bool`   | `false` | Disable loading the multimodal projector                 |
+
+#### Context / Inference (`context.*`)
+
+| Param                    | Type     | Default  | Description                                                                     |
+| ------------------------ | -------- | -------- | ------------------------------------------------------------------------------- |
+| `context.seed`           | `int32`  | `-1`     | RNG seed for sampling (`-1` for default)                                        |
+| `context.n_ctx`          | `int32`  | `0`      | Context size in tokens (`0` for model default)                                  |
+| `context.n_batch`        | `int32`  | `2048`   | Logical batch size for prompt processing                                        |
+| `context.n_ubatch`       | `int32`  | `512`    | Physical batch size                                                             |
+| `context.n_keep`         | `int32`  | `0`      | Number of tokens to keep from the initial prompt on context shift               |
+| `context.n_chunks`       | `int32`  | `-1`     | Max number of chunks to process (`-1` for unlimited)                            |
+| `context.n_predict`      | `int32`  | `-1`     | Max tokens to predict (`-1` for unlimited)                                      |
+| `context.n_parallel`     | `int32`  | `1`      | Number of parallel sequences to decode                                          |
+| `context.n_sequences`    | `int32`  | `1`      | Number of sequences to decode                                                   |
+| `context.numa`           | `string` | `"none"` | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
+| `context.pooling_type`   | `string` | `""`     | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                        |
+| `context.attention_type` | `string` | `""`     | Attention type: `causal` or `non_causal`                                        |
+| `context.embedding`      | `bool`   | `false`  | Enable embedding mode                                                           |
+| `context.reranking`      | `bool`   | `false`  | Enable reranking mode (sets pooling to `rerank` and enables embedding)          |
+| `context.ctx_shift`      | `bool`   | `false`  | Enable context shifting                                                         |
+| `context.swa_full`       | `bool`   | `false`  | Enable full sliding window attention                                            |
+| `context.cont_batching`  | `bool`   | `true`   | Enable continuous batching                                                      |
+
+#### GPU / Backend (`gpu.*`)
+
+| Param                 | Type       | Default   | Description                                            |
+| --------------------- | ---------- | --------- | ------------------------------------------------------ |
+| `gpu.n_gpu_layers`    | `int32`    | `-1`      | Number of layers to offload to GPU (`-1` for all)      |
+| `gpu.main_gpu`        | `int32`    | `0`       | Main GPU index                                         |
+| `gpu.split_mode`      | `string`   | `"layer"` | GPU split mode: `none`, `layer`, or `row`              |
+| `gpu.flash_attn_type` | `string`   | `"auto"`  | Flash attention type: `auto`, `enabled`, or `disabled` |
+| `gpu.tensor_split`    | `double[]` | `[0.0]`   | Tensor split proportions across GPUs                   |
+| `gpu.devices`         | `string[]` | `[]`      | GPU device names to use                                |
+| `gpu.no_kv_offload`   | `bool`     | `false`   | Disable KV cache offloading to GPU                     |
+| `gpu.no_op_offload`   | `bool`     | `false`   | Disable operation offloading                           |
+| `gpu.no_host`         | `bool`     | `false`   | Disable host buffer usage                              |
+| `gpu.no_extra_bufts`  | `bool`     | `false`   | Disable extra buffer types                             |
+
+#### Memory (`memory.*`)
+
+| Param                  | Type   | Default | Description                           |
+| ---------------------- | ------ | ------- | ------------------------------------- |
+| `memory.use_mmap`      | `bool` | `true`  | Use memory-mapped files for loading   |
+| `memory.use_direct_io` | `bool` | `false` | Use direct I/O for model loading      |
+| `memory.use_mlock`     | `bool` | `false` | Lock model in RAM to prevent swapping |
+| `memory.kv_unified`    | `bool` | `false` | Use unified KV cache                  |
 
 #### CPU (`cpu.*`)
 
@@ -518,7 +550,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 Speculative decoding uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the main model. This can significantly speed up text generation, especially when using a large target model with a smaller draft model from the same model family.
 
-**Note:** Speculative decoding requires `n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
+**Note:** Speculative decoding requires `context.n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
 
 | Param                        | Type     | Default  | Description                                                                                                                                                                                             |
 | ---------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -532,28 +564,28 @@ Speculative decoding uses a smaller draft model to predict multiple tokens ahead
 | `speculative.model.repo`     | `string` | `""`     | HuggingFace repository ID for the draft model                                                                                                                                                           |
 | `speculative.model.filename` | `string` | `""`     | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
 
-#### Prompt & Chat
+#### Prompt & Chat (`prompt.*`)
 
-| Param                | Type       | Default | Description                                                               |
-| -------------------- | ---------- | ------- | ------------------------------------------------------------------------- |
-| `prefix`             | `string`   | `""`    | Text prepended to every user prompt                                       |
-| `suffix`             | `string`   | `""`    | Text appended to every user prompt                                        |
-| `system_prompt`      | `string`   | `""`    | Initial system prompt                                                     |
-| `system_prompt_file` | `string`   | `""`    | Path to a file containing the system prompt                               |
-| `system_prompt_type` | `string`   | `""`    | System prompt type (loads from a predefined YAML in `llama_ros/prompts/`) |
-| `chat_template_file` | `string`   | `""`    | Path to a Jinja chat template file                                        |
-| `stopping_words`     | `string[]` | `[]`    | List of words/tokens that stop generation                                 |
+| Param                       | Type       | Default | Description                                                               |
+| --------------------------- | ---------- | ------- | ------------------------------------------------------------------------- |
+| `prompt.prefix`             | `string`   | `""`    | Text prepended to every user prompt                                       |
+| `prompt.suffix`             | `string`   | `""`    | Text appended to every user prompt                                        |
+| `prompt.system_prompt`      | `string`   | `""`    | Initial system prompt                                                     |
+| `prompt.system_prompt_file` | `string`   | `""`    | Path to a file containing the system prompt                               |
+| `prompt.system_prompt_type` | `string`   | `""`    | System prompt type (loads from a predefined YAML in `llama_ros/prompts/`) |
+| `prompt.chat_template_file` | `string`   | `""`    | Path to a Jinja chat template file                                        |
+| `prompt.stopping_words`     | `string[]` | `[]`    | List of words/tokens that stop generation                                 |
 
-#### LoRA Adapters
+#### LoRA Adapters (`lora.*`)
 
-| Param                     | Type       | Default | Description                                         |
-| ------------------------- | ---------- | ------- | --------------------------------------------------- |
-| `loras`                   | `string[]` | `[]`    | List of LoRA adapter names to load                  |
-| `lora_init_without_apply` | `bool`     | `false` | Load LoRA adapters without applying them            |
-| `<lora_name>.repo`        | `string`   | `""`    | HuggingFace repository for the LoRA adapter         |
-| `<lora_name>.filename`    | `string`   | `""`    | Filename of the LoRA adapter in the repository      |
-| `<lora_name>.file_path`   | `string`   | `""`    | Local file path to the LoRA adapter                 |
-| `<lora_name>.scale`       | `double`   | `1.0`   | LoRA adapter scale factor (clamped to `[0.0, 1.0]`) |
+| Param                        | Type       | Default | Description                                         |
+| ---------------------------- | ---------- | ------- | --------------------------------------------------- |
+| `lora.adapters`              | `string[]` | `[]`    | List of LoRA adapter names to load                  |
+| `lora.init_without_apply`    | `bool`     | `false` | Load LoRA adapters without applying them            |
+| `lora.<lora_name>.repo`      | `string`   | `""`    | HuggingFace repository for the LoRA adapter         |
+| `lora.<lora_name>.filename`  | `string`   | `""`    | Filename of the LoRA adapter in the repository      |
+| `lora.<lora_name>.file_path` | `string`   | `""`    | Local file path to the LoRA adapter                 |
+| `lora.<lora_name>.scale`     | `double`   | `1.0`   | LoRA adapter scale factor (clamped to `[0.0, 1.0]`) |
 
 ### LoRA Adapters
 
@@ -566,27 +598,31 @@ LoRAs using the `/llama/list_loras` service and modify their scales values by us
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 8
-    n_predict: 2048
-    n_gpu_layers: 0
-    cpu:
-      n_threads: 1
     model:
       repo: bartowski/Phi-3.5-mini-instruct-GGUF
       filename: Phi-3.5-mini-instruct-Q4_K_M.gguf
-    loras:
-      - code_writer
-      - summarization
-    code_writer:
-      repo: zhhan/adapter-Phi-3-mini-4k-instruct_code_writing
-      filename: Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf
-      scale: 0.5
-    summarization:
-      repo: zhhan/adapter-Phi-3-mini-4k-instruct_summarization
-      filename: Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf
-      scale: 0.5
-    system_prompt_type: Phi-3
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+    gpu:
+      n_gpu_layers: 0
+    cpu:
+      n_threads: 1
+    prompt:
+      system_prompt_type: Phi-3
+    lora:
+      adapters:
+        - code_writer
+        - summarization
+      code_writer:
+        repo: zhhan/adapter-Phi-3-mini-4k-instruct_code_writing
+        filename: Phi-3-mini-4k-instruct-adaptor-f16-code_writer.gguf
+        scale: 0.5
+      summarization:
+        repo: zhhan/adapter-Phi-3-mini-4k-instruct_summarization
+        filename: Phi-3-mini-4k-instruct-adaptor-f16-summarization.gguf
+        scale: 0.5
 ```
 
 </details>
@@ -1541,18 +1577,20 @@ ros2 llama launch MiniCPM-2.6.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 20
-    cpu:
-      n_threads: -1
     model:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "ggml-model-Q4_K_M.gguf"
     mmproj:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "mmproj-model-f16.gguf"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 20
+    cpu:
+      n_threads: -1
 ```
 
 </details>
@@ -1575,16 +1613,19 @@ ros2 llama launch Qwen2.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 8
-    n_predict: 2048
-    n_gpu_layers: -1
-    cpu:
-      n_threads: 1
     model:
       repo: Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
       filename: qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 2048
+      n_batch: 8
+      n_predict: 2048
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: 1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1607,16 +1648,19 @@ ros2 llama launch Qwen3.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: bartowski/Qwen_Qwen3-8B-GGUF
       filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1639,16 +1683,19 @@ ros2 llama launch DeepSeek-R1.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: 1
     model:
       repo: unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF
       filename: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
-    chat_template_file: llama-cpp-deepseek-r1.jinja
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: 1
+    prompt:
+      chat_template_file: llama-cpp-deepseek-r1.jinja
 ```
 
 </details>
@@ -1671,16 +1718,19 @@ ros2 llama launch Qwen3.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: bartowski/Qwen_Qwen3-8B-GGUF
       filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1701,16 +1751,19 @@ ros2 llama launch Qwen3.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: bartowski/Qwen_Qwen3-8B-GGUF
       filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1731,18 +1784,20 @@ ros2 llama launch MiniCPM-2.6.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 20
-    cpu:
-      n_threads: -1
     model:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "ggml-model-Q4_K_M.gguf"
     mmproj:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "mmproj-model-f16.gguf"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 20
+    cpu:
+      n_threads: -1
 ```
 
 </details>
@@ -1763,18 +1818,20 @@ ros2 llama launch MiniCPM-2.6.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: 20
-    cpu:
-      n_threads: -1
     model:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "ggml-model-Q4_K_M.gguf"
     mmproj:
       repo: "openbmb/MiniCPM-V-2_6-gguf"
       filename: "mmproj-model-f16.gguf"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 20
+    cpu:
+      n_threads: -1
 ```
 
 </details>
@@ -1795,19 +1852,22 @@ ros2 llama launch Qwen2-Audio.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
     mmproj:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
-    system_prompt_type: ChatML
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      system_prompt_type: ChatML
 ```
 
 </details>
@@ -1828,18 +1888,20 @@ ros2 llama launch Qwen2-Audio.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
     mmproj:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
 ```
 
 </details>
@@ -1860,19 +1922,22 @@ ros2 llama launch Qwen2-Audio.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 8192
-    n_batch: 512
-    n_predict: 8192
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
     mmproj:
       repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
       filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
-    system_prompt_type: ChatML
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      system_prompt_type: ChatML
 ```
 
 </details>
@@ -1893,16 +1958,19 @@ ros2 llama launch Qwen3.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: bartowski/Qwen_Qwen3-8B-GGUF
       filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1923,16 +1991,19 @@ ros2 llama launch Qwen3.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: -1
-    cpu:
-      n_threads: -1
     model:
       repo: bartowski/Qwen_Qwen3-8B-GGUF
       filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>
@@ -1963,16 +2034,19 @@ ros2 llama launch Qwen2.yaml
 ```yaml
 /**:
   ros__parameters:
-    n_ctx: 4096
-    n_batch: 256
-    n_predict: -1
-    n_gpu_layers: 29
-    cpu:
-      n_threads: -1
     model:
       repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
       filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
-    stopping_words: ["<|im_end|>"]
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: 29
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
 ```
 
 </details>

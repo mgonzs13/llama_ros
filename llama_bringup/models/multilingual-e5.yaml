@@ -1,12 +1,21 @@
 /**:
   ros__parameters:
-    n_ctx: 2048
-    n_batch: 1024
-    n_predict: 2048
-    n_gpu_layers: 0
-    cpu:
-      n_threads: -1
-    embedding: true
+    # Model parameters
     model:
       repo: nnch/multilingual-e5-large-Q4_K_M-GGUF
       filename: multilingual-e5-large-q4_k_m.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 2048
+      n_batch: 1024
+      n_predict: 2048
+      embedding: true
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 0
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
