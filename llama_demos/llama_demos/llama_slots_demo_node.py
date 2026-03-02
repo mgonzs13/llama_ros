@@ -32,7 +32,6 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from llama_msgs.action import GenerateResponse
 
-
 PROMPTS = [
     "Tell me a brief fun fact about cats.",
     "Tell me a brief fun fact about dogs.",
