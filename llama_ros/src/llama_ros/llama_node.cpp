@@ -533,6 +533,7 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
     return rclcpp_action::GoalResponse::REJECT;
   }
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
+  slot->state = SLOT_STATE_STARTED;
   RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu", slot->id,
               slot->goal_id);
 
@@ -658,6 +659,7 @@ rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
     return rclcpp_action::GoalResponse::REJECT;
   }
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
+  slot->state = SLOT_STATE_STARTED;
   RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu", slot->id,
               slot->goal_id);
 

@@ -63,6 +63,7 @@ class SlotsDemoNode(Node):
         goal.sampling_config.temp = 0.2
 
         tokens = 0
+        full_response = []
         initial_time = time.time()
         eval_time = -1
         done_event = threading.Event()
@@ -74,6 +75,7 @@ class SlotsDemoNode(Node):
                 eval_time = time.time()
             tokens += 1
             text = feedback.feedback.partial_response.text
+            full_response.append(text)
             with self._print_lock:
                 print(f"[Slot {slot_idx}] {text}", end="", flush=True)
 
@@ -82,6 +84,7 @@ class SlotsDemoNode(Node):
             end_time = time.time()
             result_data = {
                 "tokens": tokens,
+                "full_response": "".join(full_response),
                 "time_to_eval": (eval_time - initial_time if eval_time > 0 else 0),
                 "speed": (
                     tokens / (end_time - eval_time) if eval_time > 0 and tokens > 0 else 0
@@ -145,6 +148,9 @@ def main():
             f"speed: {r['speed']:.2f} t/s, "
             f"total: {r['total_time']:.4f}s"
         )
+        print(f"  Prompt : {PROMPTS[i]}")
+        print(f"  Response: {r['full_response'].strip()}")
+        print()
 
     print(f"{'='*60}")
     print(f"Total time: {total_time:.4f}s")
