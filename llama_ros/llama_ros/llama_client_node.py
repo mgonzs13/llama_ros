@@ -84,7 +84,9 @@ class LlamaClientNode(Node):
             raise Exception("This class is a Singleton")
 
         super().__init__(
-            f"client_{str(uuid.uuid4()).replace('-', '_')}_node", namespace=namespace
+            f"client_{str(uuid.uuid4()).replace('-', '_')}_node",
+            namespace=namespace,
+            parameter_overrides=False,
         )
 
         self._get_metadata_srv_client = self.create_client(
