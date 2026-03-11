@@ -22,8 +22,6 @@
 
 
 import uuid
-import signal
-import threading
 from typing import Callable, Tuple, List, Union, Generator
 from threading import Thread, RLock, Condition
 
@@ -67,7 +65,6 @@ class LlamaClientNode(Node):
     _callback_group: ReentrantCallbackGroup = ReentrantCallbackGroup()
     _executor: MultiThreadedExecutor = None
     _spin_thread: Thread = None
-    _original_sigint_handler = None
 
     @staticmethod
     def get_instance() -> "LlamaClientNode":
@@ -167,15 +164,6 @@ class LlamaClientNode(Node):
         self._partial_results = []
         self._action_chat_client.wait_for_server()
 
-        # Override SIGINT handler to cancel goal gracefully (only in main thread)
-        if threading.current_thread() is threading.main_thread():
-
-            def sigint_handler(sig, frame):
-                self.cancel_generate_text()
-                raise KeyboardInterrupt
-
-            self._original_sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
-
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback_chat
 
@@ -239,15 +227,6 @@ class LlamaClientNode(Node):
         self._partial_results = []
         self._action_client.wait_for_server()
 
-        # Override SIGINT handler to cancel goal gracefully (only in main thread)
-        if threading.current_thread() is threading.main_thread():
-
-            def sigint_handler(sig, frame):
-                self.cancel_generate_text()
-                raise KeyboardInterrupt
-
-            self._original_sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
-
         if feedback_cb is None and stream:
             feedback_cb = self._feedback_callback
 
@@ -291,6 +270,16 @@ class LlamaClientNode(Node):
 
         with self._goal_handle_lock:
             self._goal_handle = future.result()
+            if not self._goal_handle.accepted:
+                self.get_logger().error(
+                    "Goal was REJECTED by the action server."
+                )
+                self._goal_handle = None
+                with self._action_done_cond:
+                    self._action_done = True
+                    self._action_done_cond.notify_all()
+                return
+            self.get_logger().debug("Goal accepted by action server.")
             get_result_future = self._goal_handle.get_result_async()
             get_result_future.add_done_callback(self._get_result_callback)
 
@@ -299,11 +288,26 @@ class LlamaClientNode(Node):
         self._action_result: GenerateResponse.Result = future.result().result
         self._action_status = future.result().status
 
-        # Restore original SIGINT handler (only in main thread)
-        if threading.current_thread() is threading.main_thread():
-            if self._original_sigint_handler is not None:
-                signal.signal(signal.SIGINT, self._original_sigint_handler)
-                self._original_sigint_handler = None
+        _STATUS_NAMES = {
+            GoalStatus.STATUS_UNKNOWN: "UNKNOWN",
+            GoalStatus.STATUS_ACCEPTED: "ACCEPTED",
+            GoalStatus.STATUS_EXECUTING: "EXECUTING",
+            GoalStatus.STATUS_CANCELING: "CANCELING",
+            GoalStatus.STATUS_SUCCEEDED: "SUCCEEDED",
+            GoalStatus.STATUS_CANCELED: "CANCELED",
+            GoalStatus.STATUS_ABORTED: "ABORTED",
+        }
+        status_name = _STATUS_NAMES.get(
+            self._action_status, f"UNKNOWN({self._action_status})"
+        )
+        if self._action_status != GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().error(
+                f"Action finished with non-success status: {status_name} "
+                f"(code={self._action_status}). "
+                "Check llama_node logs for the RCLCPP_ERROR above this."
+            )
+        else:
+            self.get_logger().debug(f"Action finished with status: {status_name}")
 
         with self._action_done_cond:
             self._action_done = True
