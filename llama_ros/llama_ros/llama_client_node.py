@@ -144,7 +144,9 @@ class LlamaClientNode(Node):
         self._embeddings_srv_client.wait_for_service()
         return self._embeddings_srv_client.call(req)
 
-    def rerank_documents(self, req: RerankDocuments.Request) -> RerankDocuments.Response:
+    def rerank_documents(
+        self, req: RerankDocuments.Request
+    ) -> RerankDocuments.Response:
         self._rerank_srv_client.wait_for_service()
         return self._rerank_srv_client.call(req)
 
@@ -271,9 +273,7 @@ class LlamaClientNode(Node):
         with self._goal_handle_lock:
             self._goal_handle = future.result()
             if not self._goal_handle.accepted:
-                self.get_logger().error(
-                    "Goal was REJECTED by the action server."
-                )
+                self.get_logger().error("Goal was REJECTED by the action server.")
                 self._goal_handle = None
                 with self._action_done_cond:
                     self._action_done = True

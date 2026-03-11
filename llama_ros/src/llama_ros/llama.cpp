@@ -1516,18 +1516,17 @@ void Llama::run_loop() {
 
         if (!err.empty()) {
           LLAMA_LOG_ERROR("Decoding error: %s (ret=%d, n_batch=%d, i=%d, "
-                         "batch_n_tokens=%d)",
-                         err.c_str(), ret, n_tokens, i,
-                         this->batch.n_tokens);
+                          "batch_n_tokens=%d)",
+                          err.c_str(), ret, n_tokens, i, this->batch.n_tokens);
           // Log all active slots so we know who triggered this
           for (const auto &slot : this->server_slots) {
             if (slot.is_processing()) {
               LLAMA_LOG_ERROR(
                   "  Active slot id=%d gid=%lu state=%d task_type=%d "
                   "n_past=%d n_ctx=%d n_prompt_tokens=%d n_decoded=%d",
-                  slot.id, slot.goal_id, (int)slot.state,
-                  (int)slot.task_type, slot.n_past, slot.n_ctx,
-                  slot.n_prompt_tokens, slot.n_decoded);
+                  slot.id, slot.goal_id, (int)slot.state, (int)slot.task_type,
+                  slot.n_past, slot.n_ctx, slot.n_prompt_tokens,
+                  slot.n_decoded);
             }
           }
           this->cancel();
