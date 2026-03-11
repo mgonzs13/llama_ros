@@ -139,9 +139,9 @@ struct EmbeddingsOutput {
  * @brief Represents the state of a server slot.
  */
 enum SlotState {
-  SLOT_STATE_IDLE,              ///< The slot is idle.
+  SLOT_STATE_IDLE,     ///< The slot is idle.
   SLOT_STATE_RESERVED, ///< The slot is reserved but prompt not yet populated.
-  SLOT_STATE_STARTED,           ///< The slot has started processing.
+  SLOT_STATE_STARTED,  ///< The slot has started processing.
   SLOT_STATE_PROCESSING_PROMPT, ///< The slot is processing the prompt.
   SLOT_STATE_DONE_PROMPT, ///< The slot has finished processing the prompt.
   SLOT_STATE_GENERATING   ///< The slot is generating tokens.
