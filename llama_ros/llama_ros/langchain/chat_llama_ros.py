@@ -105,6 +105,7 @@ from llama_msgs.msg import (
     ChatReasoningFormat,
 )
 from llama_msgs.action import GenerateChatCompletions
+from action_msgs.msg import GoalStatus
 import openai
 import json
 from pydantic import Field
@@ -465,6 +466,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+
+        if not generations:
+            raise ValueError(
+                "LlamaROS chat completion returned no choices. "
+                "The action may have been rejected or aborted by the server."
+            )
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -832,7 +839,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             )
             return self._return_context_manager(result)
         else:
-            result, _ = self.llama_client.generate_chat_completions(chat_request)
+            result, status = self.llama_client.generate_chat_completions(chat_request)
+            if result is None or status != GoalStatus.STATUS_SUCCEEDED:
+                raise RuntimeError(
+                    f"LlamaROS chat completion action did not succeed (status={status}). "
+                    "The server may have rejected or aborted the goal."
+                )
             return self._parse_chat_generation_response(result)
 
     @contextmanager
