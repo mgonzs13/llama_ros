@@ -533,7 +533,7 @@ LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
     return rclcpp_action::GoalResponse::REJECT;
   }
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
-  slot->state = SLOT_STATE_STARTED;
+  slot->state = SLOT_STATE_RESERVED;
   RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu", slot->id,
               slot->goal_id);
 
@@ -615,9 +615,15 @@ void LlamaNode::execute(
 
   switch (result.value().stop) {
   case StopType::CANCEL:
+    RCLCPP_WARN(this->get_logger(), "generate_response: goal cancelled");
     goal_handle->canceled(response);
     break;
   case StopType::ABORT:
+    RCLCPP_ERROR(this->get_logger(),
+                 "generate_response: goal aborted (StopType::ABORT). "
+                 "n_decoded=%d, n_prompt_tokens=%d, generated_text='%s'",
+                 result.value().n_decoded, result.value().n_prompt_tokens,
+                 result.value().content.c_str());
     goal_handle->abort(response);
     break;
   default:
@@ -659,7 +665,7 @@ rclcpp_action::GoalResponse LlamaNode::handle_goal_chat_completions(
     return rclcpp_action::GoalResponse::REJECT;
   }
   slot->goal_id = llama_utils::uuid_to_int32(uuid);
-  slot->state = SLOT_STATE_STARTED;
+  slot->state = SLOT_STATE_RESERVED;
   RCLCPP_INFO(this->get_logger(), "Assigned slot %d to goal %lu", slot->id,
               slot->goal_id);
 
@@ -743,9 +749,16 @@ void LlamaNode::execute_chat_completions(
 
   switch (result_data.value().stop) {
   case StopType::CANCEL:
+    RCLCPP_WARN(this->get_logger(), "execute_chat_completions: goal cancelled");
     goal_handle->canceled(parsed_result);
     break;
   case StopType::ABORT:
+    RCLCPP_ERROR(this->get_logger(),
+                 "execute_chat_completions: goal aborted (StopType::ABORT). "
+                 "n_decoded=%d, n_prompt_tokens=%d, content='%s'",
+                 result_data.value().n_decoded,
+                 result_data.value().n_prompt_tokens,
+                 result_data.value().content.c_str());
     goal_handle->abort(parsed_result);
     break;
   default:

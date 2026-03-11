@@ -1163,7 +1163,10 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   // Decode the batch on the target model
   const int ret = llama_decode(this->ctx, this->batch);
   if (ret != 0) {
-    LLAMA_LOG_ERROR("Speculative decode failed with error %d", ret);
+    LLAMA_LOG_ERROR("Speculative decode failed with error %d (slot id=%d "
+                    "gid=%lu n_past=%d n_ctx=%d n_decoded=%d)",
+                    ret, slot->id, slot->goal_id, slot->n_past, slot->n_ctx,
+                    slot->n_decoded);
     slot->stop = ABORT;
     slot->has_next_token = false;
     return false;
@@ -1474,9 +1477,11 @@ void Llama::run_loop() {
       }
     }
 
-    // Check if there are no tokens to decode
+    // Check if there are no tokens to decode (expected when slots are
+    // SLOT_STATE_RESERVED — waiting for prompt population by the worker thread)
     if (this->batch.n_tokens == 0) {
-      LLAMA_LOG_ERROR("No tokens to decode in this iteration");
+      LLAMA_LOG_DEBUG("No tokens to decode in this iteration (slot may be "
+                      "reserved, waiting for prompt)");
       continue;
     }
 
@@ -1510,7 +1515,21 @@ void Llama::run_loop() {
         }
 
         if (!err.empty()) {
-          LLAMA_LOG_ERROR("Decoding error: %s", err.c_str());
+          LLAMA_LOG_ERROR("Decoding error: %s (ret=%d, n_batch=%d, i=%d, "
+                         "batch_n_tokens=%d)",
+                         err.c_str(), ret, n_tokens, i,
+                         this->batch.n_tokens);
+          // Log all active slots so we know who triggered this
+          for (const auto &slot : this->server_slots) {
+            if (slot.is_processing()) {
+              LLAMA_LOG_ERROR(
+                  "  Active slot id=%d gid=%lu state=%d task_type=%d "
+                  "n_past=%d n_ctx=%d n_prompt_tokens=%d n_decoded=%d",
+                  slot.id, slot.goal_id, (int)slot.state,
+                  (int)slot.task_type, slot.n_past, slot.n_ctx,
+                  slot.n_prompt_tokens, slot.n_decoded);
+            }
+          }
           this->cancel();
           break; // abort the decode loop
         }
