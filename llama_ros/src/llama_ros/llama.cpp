@@ -880,7 +880,7 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
         slot->n_past, slot->n_ctx);
   }
 
-  // check the limits (n_predict)
+  // Check the limits (n_predict)
   if (slot->n_decoded > 0 && slot->has_next_token &&
       slot->params.n_predict != -1 &&
       slot->n_decoded >= slot->params.n_predict) {
@@ -1242,7 +1242,7 @@ void Llama::run_loop() {
       continue;
     }
 
-    // apply context shift
+    // Apply context shift
     if (this->params.ctx_shift) {
       for (auto &slot : this->server_slots) {
         if (slot.state != SLOT_STATE_GENERATING) {

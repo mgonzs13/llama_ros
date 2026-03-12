@@ -449,7 +449,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `context.n_ubatch`       | `int32`  | `512`    | Physical batch size                                                             |
 | `context.n_keep`         | `int32`  | `0`      | Number of tokens to keep from the initial prompt on context shift               |
 | `context.n_chunks`       | `int32`  | `-1`     | Max number of chunks to process (`-1` for unlimited)                            |
-| `context.n_predict`      | `int32`  | `-1`     | Max tokens to predict (`-1` for unlimited)                                      |
+| `context.n_predict`      | `int32`  | `-1`     | Max tokens to predict (`-1` for unlimited when using ctx_shift)                 |
 | `context.n_parallel`     | `int32`  | `1`      | Number of parallel sequences to decode                                          |
 | `context.n_sequences`    | `int32`  | `1`      | Number of sequences to decode                                                   |
 | `context.numa`           | `string` | `"none"` | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
