@@ -956,7 +956,8 @@ bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
 
   const auto n_ctx_train = llama_model_n_ctx_train(this->model);
 
-  if (slot->n_predict < 1 && slot->params.n_predict < 1 &&
+  if (!this->params.ctx_shift && slot->n_predict < 1 &&
+      slot->params.n_predict < 1 &&
       slot->n_prompt_tokens + slot->n_decoded >= n_ctx_train) {
     slot->stop = FULL_STOP;
     slot->has_next_token = false; // stop prediction
