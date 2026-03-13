@@ -817,11 +817,14 @@ common_params_sampling llama_utils::parse_sampling_params(
 
   common_params_sampling sparams;
 
+  sparams.seed = sampling_config.seed;
   sparams.n_prev = sampling_config.n_prev;
   sparams.n_probs = sampling_config.n_probs;
   sparams.min_keep = sampling_config.min_keep;
 
   sparams.ignore_eos = sampling_config.ignore_eos;
+  sparams.no_perf = sampling_config.no_perf;
+  sparams.timing_per_token = sampling_config.timing_per_token;
   for (auto logit_bias : sampling_config.logit_bias.data) {
     sparams.logit_bias.push_back({logit_bias.token, logit_bias.bias});
   }
@@ -874,6 +877,8 @@ common_params_sampling llama_utils::parse_sampling_params(
   sparams.preserved_tokens =
       std::set<llama_token>(sampling_config.preserved_tokens.begin(),
                             sampling_config.preserved_tokens.end());
+
+  sparams.backend_sampling = sampling_config.backend_sampling;
 
   if (sparams.grammar.size() == 0 &&
       sampling_config.grammar_schema.size() > 0) {

@@ -50,11 +50,14 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     stream_reasoning: bool = False
 
     # sampling params
+    seed: int = 4294967295  # LLAMA_DEFAULT_SEED (random)
     n_prev: int = 64
     n_probs: int = 0
     min_keep: int = 0
 
     ignore_eos: bool = False
+    no_perf: bool = False
+    timing_per_token: bool = False
     logit_bias: Dict[int, float] = {}
 
     temp: float = 0.80
@@ -94,6 +97,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     grammar_lazy: bool = False
     grammar_triggers: List[List[Union[int, str]]] = []
     preserved_tokens: List[int] = []
+    backend_sampling: bool = False
 
     enable_thinking: bool = False
 
@@ -171,11 +175,14 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     def _set_sampling_config(self):
         sampling_config = SamplingConfig()
+        sampling_config.seed = self.seed
         sampling_config.n_prev = self.n_prev
         sampling_config.n_probs = self.n_probs
         sampling_config.min_keep = self.min_keep
 
         sampling_config.ignore_eos = self.ignore_eos
+        sampling_config.no_perf = self.no_perf
+        sampling_config.timing_per_token = self.timing_per_token
         for key in self.logit_bias:
             lb = LogitBias()
             lb.token = key
@@ -219,5 +226,6 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar_lazy = self.grammar_lazy
         sampling_config.grammar_triggers = self.grammar_triggers
         sampling_config.preserved_tokens = self.preserved_tokens
+        sampling_config.backend_sampling = self.backend_sampling
 
         return sampling_config

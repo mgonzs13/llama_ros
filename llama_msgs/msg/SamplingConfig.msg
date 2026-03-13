@@ -1,8 +1,11 @@
+uint32 seed                         4294967295                      # the seed used to initialize llama_sampler (4294967295 = LLAMA_DEFAULT_SEED, i.e. random)
 int32 n_prev                        64                              # number of previous tokens to remember
 int32 n_probs                       0                               # if greater than 0, output the probabilities of top n_probs tokens
 int32 min_keep                      0                               # 0 = disabled, otherwise samplers should return at least min_keep tokens
 
 bool ignore_eos                     false                           # ignore end of stream token and continue generating (implies --logit-bias 2-inf)
+bool no_perf                        false                           # disable performance metrics
+bool timing_per_token               false                           # collect per-token timing data
 LogitBiasArray logit_bias                                           # logit bias for specific tokens
 LogitBiasArray logit_bias_eog                                       # pre-calculated logit biases for EOG tokens
 
@@ -43,3 +46,4 @@ string grammar_schema               ""                              # grammar sc
 bool grammar_lazy                                                   # whether to use lazy grammar
 GrammarTrigger[] grammar_triggers                                   # triggers for lazy grammar
 int32[] preserved_tokens                                            # tokens to preserve
+bool backend_sampling               false                           # use backend (hardware-accelerated) sampling if available
