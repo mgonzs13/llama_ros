@@ -64,11 +64,16 @@ def main():
     initial_time = time.time()
     response = chain.invoke({"prompt": "Tell me a joke about cats"})
     message: AIMessage = response["raw"]
-    joke: Joke = response["parsed"]
+    joke: Optional[Joke] = response["parsed"]
     final_time = time.time()
 
     print(f"Prompt: Tell me a joke about cats")
-    print(joke.model_dump_json())
+    if joke is not None:
+        print(joke.model_dump_json())
+    else:
+        parsing_error = response.get("parsing_error")
+        print(f"Parsing error: {parsing_error}")
+        print(f"Raw response: {message.content}")
     print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
     print(
         f"Tokens per second: {message.usage_metadata['output_tokens'] / (final_time - initial_time):.2f} t/s"

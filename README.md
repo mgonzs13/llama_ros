@@ -1604,26 +1604,26 @@ ros2 run llama_demos chatllama_demo_node
 ### Chat Structured Output Demo
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
 
 <details>
-<summary>Click to expand Qwen2.yaml</summary>
+<summary>Click to expand Qwen3.yaml</summary>
 
 ```yaml
 /**:
   ros__parameters:
     model:
-      repo: Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
-      filename: qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
     context:
-      n_ctx: 2048
-      n_batch: 8
-      n_predict: 2048
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
     gpu:
       n_gpu_layers: -1
     cpu:
-      n_threads: 1
+      n_threads: -1
     prompt:
       stopping_words: ["<|im_end|>"]
 ```
@@ -2061,24 +2061,24 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yam
 ```
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch Qwen3.yaml
 ```
 
 <details>
-<summary>Click to expand Qwen2.yaml</summary>
+<summary>Click to expand Qwen3.yaml</summary>
 
 ```yaml
 /**:
   ros__parameters:
     model:
-      repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF"
-      filename: "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
     context:
       n_ctx: 4096
       n_batch: 256
       n_predict: -1
     gpu:
-      n_gpu_layers: 29
+      n_gpu_layers: -1
     cpu:
       n_threads: -1
     prompt:
