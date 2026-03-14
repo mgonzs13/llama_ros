@@ -23,6 +23,7 @@
 
 import cv2
 import json
+import re
 import base64
 import requests
 import numpy as np
@@ -215,7 +216,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 # 'any' is not natively supported by OpenAI API.
                 # We support 'any' since other models use this instead of 'required'.
                 if tool_choice == "any":
-                    tool_choice = "auto"
+                    tool_choice = "required"
             elif isinstance(tool_choice, bool):
                 tool_choice = "required"
             elif isinstance(tool_choice, dict):
@@ -601,6 +602,41 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         return data, image_urls, audios_urls
 
+    def _extract_tool_calls_from_content(self, content: str) -> tuple[list[dict], str]:
+        """Parse <tool_call>...</tool_call> blocks from model content into
+        OpenAI-style tool_call dicts, returning (tool_calls, remaining_content).
+        """
+        tool_calls = []
+        tool_call_id_counter = [0]
+
+        def _replace(match: re.Match) -> str:
+            raw = match.group(1).strip()
+            try:
+                data = json.loads(raw)
+                tc = {
+                    "id": f"call_{tool_call_id_counter[0]}",
+                    "type": "function",
+                    "function": {
+                        "name": data.get("name", ""),
+                        "arguments": json.dumps(
+                            data.get("arguments", data.get("parameters", {}))
+                        ),
+                    },
+                }
+                tool_call_id_counter[0] += 1
+                tool_calls.append(tc)
+            except json.JSONDecodeError:
+                pass
+            return ""
+
+        remaining = re.sub(
+            r"<tool_call>\s*(.*?)\s*</tool_call>",
+            _replace,
+            content,
+            flags=re.DOTALL,
+        ).strip()
+        return tool_calls, remaining
+
     def _parse_chat_generation_response(
         self, result: GenerateChatCompletions.Result
     ) -> dict:
@@ -650,6 +686,19 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 tool_call_dict["function"]["arguments"] = tool_call.arguments
 
                 msg_dict["tool_calls"].append(tool_call_dict)
+
+            # Extract any <tool_call>...</tool_call> blocks from content.
+            # The upstream PEG parser may only capture a subset of tool calls
+            # (e.g. for templates that wrap each call in its own XML tag pair).
+            # When content contains tool-call blocks, use those as the
+            # authoritative list to avoid duplicates with partial C++ parses.
+            if msg_dict["content"]:
+                parsed_tool_calls, remaining_content = (
+                    self._extract_tool_calls_from_content(msg_dict["content"])
+                )
+                if parsed_tool_calls:
+                    msg_dict["tool_calls"] = parsed_tool_calls
+                    msg_dict["content"] = remaining_content or None
 
             choice_dict["message"] = msg_dict
 
@@ -720,6 +769,18 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 tool_call_dict["function"]["arguments"] = tool_call.arguments
 
                 choice_dict["delta"]["tool_calls"].append(tool_call_dict)
+
+            # Extract any <tool_call>...</tool_call> blocks from content.
+            if choice_dict["delta"]["content"]:
+                parsed_tool_calls, remaining_content = (
+                    self._extract_tool_calls_from_content(choice_dict["delta"]["content"])
+                )
+                if parsed_tool_calls:
+                    base_idx = len(choice_dict["delta"]["tool_calls"])
+                    for idx, tc in enumerate(parsed_tool_calls):
+                        tc["index"] = base_idx + idx
+                    choice_dict["delta"]["tool_calls"] = parsed_tool_calls
+                    choice_dict["delta"]["content"] = remaining_content or None
 
             if choice.logprobs and len(choice.logprobs.data) > 0:
                 logprob = choice.logprobs

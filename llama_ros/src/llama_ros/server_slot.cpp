@@ -30,18 +30,35 @@ const common_chat_msg &ServerSlot::update_chat_msg(
     std::vector<common_chat_msg_diff> &oaicompat_msg_diffs) {
 
   auto previous_msg = this->chat_msg;
-  auto new_msg =
-      common_chat_parse(this->generated_text,
-                        /* is_partial= */ this->stop != StopType::FULL_STOP,
-                        this->params.oaicompat_chat_syntax);
+  common_chat_msg new_msg;
+  bool parse_fallback = false;
+
+  try {
+    new_msg =
+        common_chat_parse(this->generated_text,
+                          /* is_partial= */ this->stop != StopType::FULL_STOP,
+                          this->params.oaicompat_chat_syntax);
+  } catch (const std::exception &e) {
+    // PEG parser may fail when the grammar allows output the parser cannot
+    // fully consume (e.g. multiple <tool_call> blocks with a single-block
+    // parser). Fall back to treating everything as raw content; the Python
+    // layer will extract all tool calls via regex.
+    LLAMA_LOG_INFO("PEG parse failed, falling back to raw content: %s",
+                   e.what());
+    new_msg.role = "assistant";
+    new_msg.content = this->generated_text;
+    parse_fallback = true;
+  }
 
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
         static_cast<std::string (*)()>(llama_utils::random_string);
     new_msg.set_tool_call_ids(this->generated_tool_call_ids, gen_tool_call_id);
     this->chat_msg = new_msg;
-    oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(
-        previous_msg, new_msg.empty() ? previous_msg : new_msg);
+    if (!parse_fallback) {
+      oaicompat_msg_diffs = common_chat_msg_diff::compute_diffs(
+          previous_msg, new_msg.empty() ? previous_msg : new_msg);
+    }
   }
 
   return this->chat_msg;

@@ -24,6 +24,7 @@
 
 #include <cstddef>
 #include <mutex>
+#include <regex>
 
 #include "llama_ros/llama.hpp"
 #include "llama_utils/chat_utils.hpp"
@@ -298,12 +299,129 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
       !goal->tools.empty() &&
       ctx.prompt_format_config.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;
 
+  // Load the PEG parser from the chat template so that common_chat_parse
+  // can properly extract tool calls and structured output from the response.
+  if (!ctx.chat_prompt_instance.parser.empty()) {
+    ctx.oaicompat_chat_syntax.parser.load(ctx.chat_prompt_instance.parser);
+  }
+
+  // Add preserved tokens to the sampling config.
+  // These are special tokens required by the chat template parser
+  // (e.g. <tool_call>, </tool_call>) that must be tokenized as single tokens.
+  if (llama) {
+    const llama_vocab *vocab = llama->get_vocab();
+    for (const auto &token_str : ctx.chat_prompt_instance.preserved_tokens) {
+      auto ids = common_tokenize(vocab, token_str,
+                                 /* add_special= */ false,
+                                 /* parse_special= */ true);
+      if (ids.size() == 1) {
+        ctx.sparams.preserved_tokens.insert(ids[0]);
+      }
+    }
+  }
+
   if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
     ctx.sparams.grammar = ctx.chat_prompt_instance.grammar;
+
+    // Workaround for llama.cpp autoparser bug (b8261): when a template uses
+    // per-call wrapping tags (e.g. <tool_call>...</tool_call> for each call,
+    // as in Qwen3) but the JSON inside uses standard format, the autoparser
+    // detects it as JSON_NATIVE and puts ALL calls inside a SINGLE tag pair
+    // with comma separation. This is wrong — the model expects each call in
+    // its own tag pair. Fix the grammar when parallel_tool_calls is true by
+    // rewriting the tool-call rule so each call gets its own wrapper.
+    if (ctx.prompt_format_config.parallel_tool_calls &&
+        !ctx.sparams.grammar.empty()) {
+      // Look for the tool-call rule that has comma-separated repetition
+      // inside a single pair of XML-like tags. Pattern in the grammar:
+      //   tool-call ::= "OPEN" space CHOICES (space "," space CHOICES)* space
+      //   "CLOSE"
+      // We rewrite to:
+      //   tool-call ::= "OPEN" space CHOICES space "CLOSE" (space "OPEN" space
+      //   CHOICES space "CLOSE")*
+      std::string &grammar = ctx.sparams.grammar;
+
+      // Find the tool-call rule
+      std::string rule_marker = "tool-call ::= ";
+      auto rule_pos = grammar.find(rule_marker);
+      if (rule_pos != std::string::npos) {
+        // Find the end of this rule (next rule or end of string)
+        auto rule_start = rule_pos + rule_marker.size();
+        auto next_rule = grammar.find('\n', rule_start);
+        if (next_rule == std::string::npos)
+          next_rule = grammar.size();
+
+        std::string rule_body =
+            grammar.substr(rule_start, next_rule - rule_start);
+
+        // Check if this rule has the comma-separated pattern inside XML tags.
+        // Look for: (space "," space CHOICES)*
+        auto comma_pat_pos = rule_body.find("(space \",\" space ");
+        // Also check for opening XML tag pattern: starts with "< ...
+        bool has_xml_open =
+            rule_body.size() > 1 && rule_body[0] == '"' && rule_body[1] == '<';
+
+        if (comma_pat_pos != std::string::npos && has_xml_open) {
+          // Extract the opening tag: everything from start to first " space "
+          // e.g. "<tool_call>\n" space
+          // Find the first occurrence of '" space' after the opening quote
+          auto space_after_open = rule_body.find("\" space ");
+          if (space_after_open != std::string::npos) {
+            // Opening tag includes up to and including ' space '
+            std::string open_tag =
+                rule_body.substr(0, space_after_open + 8); // +8 for `" space `
+
+            // Extract the choices group between open_tag and comma pattern
+            std::string choices = rule_body.substr(
+                open_tag.size(), comma_pat_pos - open_tag.size());
+            // Trim trailing whitespace from choices
+            while (!choices.empty() &&
+                   (choices.back() == ' ' || choices.back() == '\t'))
+              choices.pop_back();
+
+            // Extract closing tag: after the comma-repetition pattern
+            // The pattern ends with ")* space CLOSE"
+            // Find ")* " after comma_pat_pos
+            auto rep_end = rule_body.find(")*", comma_pat_pos);
+            if (rep_end != std::string::npos) {
+              std::string close_tag =
+                  rule_body.substr(rep_end + 2); // after ")*"
+              // Trim leading whitespace
+              while (!close_tag.empty() &&
+                     (close_tag.front() == ' ' || close_tag.front() == '\t'))
+                close_tag.erase(close_tag.begin());
+
+              // Build the corrected rule:
+              // tool-call ::= OPEN CHOICES CLOSE (space OPEN CHOICES CLOSE)*
+              std::string one_call = open_tag + choices + " " + close_tag;
+              std::string fixed_rule = one_call + " (space " + one_call + ")*";
+
+              grammar.replace(rule_start, next_rule - rule_start, fixed_rule);
+            }
+          }
+        }
+      }
+    }
   }
+
   if (goal->sampling_config.grammar_triggers.empty()) {
-    ctx.sparams.grammar_triggers = ctx.chat_prompt_instance.grammar_triggers;
+    // Resolve WORD triggers to TOKEN triggers when possible,
+    // matching the llama.cpp server behavior.
+    for (auto trigger : ctx.chat_prompt_instance.grammar_triggers) {
+      if (trigger.type == COMMON_GRAMMAR_TRIGGER_TYPE_WORD && llama) {
+        const llama_vocab *vocab = llama->get_vocab();
+        auto ids = common_tokenize(vocab, trigger.value,
+                                   /* add_special= */ false,
+                                   /* parse_special= */ true);
+        if (ids.size() == 1) {
+          trigger.type = COMMON_GRAMMAR_TRIGGER_TYPE_TOKEN;
+          trigger.token = ids[0];
+        }
+      }
+      ctx.sparams.grammar_triggers.push_back(trigger);
+    }
   }
+
   ctx.sparams.grammar_lazy = ctx.chat_prompt_instance.grammar_lazy ||
                              goal->sampling_config.grammar_lazy;
 
