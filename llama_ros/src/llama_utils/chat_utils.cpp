@@ -111,9 +111,10 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
   inputs.use_jinja = goal->use_jinja;
   inputs.tool_choice = llama_utils::parse_chat_tool_choice(goal->tool_choice);
   inputs.parallel_tool_calls = goal->parallel_tool_calls;
+  inputs.reasoning_format =
+      llama_utils::parse_reasoning_format(goal->reasoning_format.value);
   inputs.enable_thinking =
-      goal->reasoning_format.value !=
-      llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_NONE;
+      inputs.reasoning_format != COMMON_REASONING_FORMAT_NONE;
 
   return inputs;
 }
@@ -291,7 +292,7 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
   ctx.oaicompat_chat_syntax.reasoning_format =
       llama_utils::parse_reasoning_format(goal->reasoning_format.value);
   ctx.oaicompat_chat_syntax.reasoning_in_content =
-      goal->stream && ctx.oaicompat_chat_syntax.reasoning_format !=
+      goal->stream && ctx.oaicompat_chat_syntax.reasoning_format ==
                           COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
   ctx.oaicompat_chat_syntax.thinking_forced_open =
       ctx.chat_prompt_instance.thinking_forced_open;
