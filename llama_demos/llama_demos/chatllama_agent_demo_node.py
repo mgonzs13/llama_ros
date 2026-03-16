@@ -29,7 +29,7 @@ import rclpy
 from random import randint
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from llama_ros.langchain import ChatLlamaROS
 
 
@@ -48,7 +48,7 @@ def get_curr_temperature(city: str) -> int:
 def main():
     rclpy.init()
     chat = ChatLlamaROS(temp=0.0)
-    agent_executor = create_react_agent(chat, [get_inhabitants, get_curr_temperature])
+    agent_executor = create_agent(chat, [get_inhabitants, get_curr_temperature])
 
     initial_time = time.time()
     response = agent_executor.invoke(

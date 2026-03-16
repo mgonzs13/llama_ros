@@ -1447,7 +1447,7 @@ rclpy.shutdown()
 
 </details>
 
-#### chat_llama_ros (LangGraph)
+#### chat_llama_ros (Agent)
 
 <details>
 <summary>Click to expand</summary>
@@ -1460,7 +1460,7 @@ import rclpy
 
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from llama_ros.langchain import ChatLlamaROS
 
 rclpy.init()
@@ -1478,7 +1478,7 @@ def get_curr_temperature(city: str) -> int:
 
 chat = ChatLlamaROS(temp=0.0)
 
-agent_executor = create_react_agent(
+agent_executor = create_agent(
     chat, [get_inhabitants, get_curr_temperature]
 )
 
@@ -1553,6 +1553,49 @@ ros2 run llama_demos llama_rerank_demo_node
 
 https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 
+### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
+
+```shell
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
+```
+
+```shell
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
+```
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos llama_rag_demo_node
+```
+
+https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6
+
 ### VLM Demo
 
 ```shell
@@ -1564,213 +1607,6 @@ ros2 run llama_demos llava_demo_node
 ```
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
-
-### Chat Template Demo
-
-```shell
-ros2 llama launch MiniCPM-2.6.yaml
-```
-
-<details>
-<summary>Click to expand MiniCPM-2.6.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: "openbmb/MiniCPM-V-2_6-gguf"
-      filename: "ggml-model-Q4_K_M.gguf"
-    mmproj:
-      repo: "openbmb/MiniCPM-V-2_6-gguf"
-      filename: "mmproj-model-f16.gguf"
-    context:
-      n_ctx: 8192
-      n_batch: 512
-      n_predict: 8192
-    gpu:
-      n_gpu_layers: 20
-    cpu:
-      n_threads: -1
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_demo_node
-```
-
-[ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
-
-### Chat Structured Output Demo
-
-```shell
-ros2 llama launch Qwen3.yaml
-```
-
-<details>
-<summary>Click to expand Qwen3.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: bartowski/Qwen_Qwen3-8B-GGUF
-      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      stopping_words: ["<|im_end|>"]
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_structured_demo_node
-```
-
-[Structured Output ChatLlama](https://github.com/user-attachments/assets/e0bf4031-50c0-4790-94a0-1f6aed5734ec)
-
-### Chat Tools Demo
-
-```shell
-ros2 llama launch Qwen3.yaml
-```
-
-<details>
-<summary>Click to expand Qwen3.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: bartowski/Qwen_Qwen3-8B-GGUF
-      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      stopping_words: ["<|im_end|>"]
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_tools_demo_node
-```
-
-[Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
-
-### Chat Reasoning Demo (DeepSeek-R1)
-
-```shell
-ros2 llama launch DeepSeek-R1.yaml
-```
-
-<details>
-<summary>Click to expand DeepSeek-R1.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF
-      filename: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: 1
-    prompt:
-      chat_template_file: llama-cpp-deepseek-r1.jinja
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_reasoning_demo_node
-```
-
-[DeepSeekR1 ChatLlama](https://github.com/user-attachments/assets/3f268614-eabc-4499-b50f-a76d76908d9d)
-
-### Streaming Tools Demo
-
-```shell
-ros2 llama launch Qwen3.yaml
-```
-
-<details>
-<summary>Click to expand Qwen3.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: bartowski/Qwen_Qwen3-8B-GGUF
-      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      stopping_words: ["<|im_end|>"]
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_streaming_tools_demo_node
-```
-
-### Reasoning + Tools Demo
-
-```shell
-ros2 llama launch Qwen3.yaml
-```
-
-<details>
-<summary>Click to expand Qwen3.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: bartowski/Qwen_Qwen3-8B-GGUF
-      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      stopping_words: ["<|im_end|>"]
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_reasoning_tools_demo_node
-```
 
 ### Multi-Image Demo
 
@@ -1946,6 +1782,213 @@ ros2 llama launch Qwen2-Audio.yaml
 ros2 run llama_demos mtmd_audio_demo_node
 ```
 
+### Chat Template Demo
+
+```shell
+ros2 llama launch MiniCPM-2.6.yaml
+```
+
+<details>
+<summary>Click to expand MiniCPM-2.6.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "ggml-model-Q4_K_M.gguf"
+    mmproj:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "mmproj-model-f16.gguf"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_demo_node
+```
+
+[ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+
+### Chat Structured Output Demo
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_structured_demo_node
+```
+
+[Structured Output ChatLlama](https://github.com/user-attachments/assets/e0bf4031-50c0-4790-94a0-1f6aed5734ec)
+
+### Chat Tools Demo
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_tools_demo_node
+```
+
+[Tools ChatLlama](https://github.com/user-attachments/assets/b912ee29-1466-4d6a-888b-9a2d9c16ae1d)
+
+### Streaming Tools Demo
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_streaming_tools_demo_node
+```
+
+### Chat Reasoning Demo (DeepSeek-R1)
+
+```shell
+ros2 llama launch DeepSeek-R1.yaml
+```
+
+<details>
+<summary>Click to expand DeepSeek-R1.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF
+      filename: DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: 1
+    prompt:
+      chat_template_file: llama-cpp-deepseek-r1.jinja
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_reasoning_demo_node
+```
+
+[DeepSeekR1 ChatLlama](https://github.com/user-attachments/assets/3f268614-eabc-4499-b50f-a76d76908d9d)
+
+### Reasoning + Tools Demo
+
+```shell
+ros2 llama launch Qwen3.yaml
+```
+
+<details>
+<summary>Click to expand Qwen3.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: bartowski/Qwen_Qwen3-8B-GGUF
+      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+    prompt:
+      stopping_words: ["<|im_end|>"]
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_reasoning_tools_demo_node
+```
+
 ### PDDL Demo
 
 ```shell
@@ -1979,7 +2022,7 @@ ros2 llama launch Qwen3.yaml
 ros2 run llama_demos chatllama_pddl_demo_node
 ```
 
-### LangGraph Demo
+### Agent Demo
 
 ```shell
 ros2 llama launch Qwen3.yaml
@@ -2009,10 +2052,10 @@ ros2 llama launch Qwen3.yaml
 </details>
 
 ```shell
-ros2 run llama_demos chatllama_langgraph_demo_node
+ros2 run llama_demos chatllama_agent_demo_node
 ```
 
-[Langgraph ChatLlama](https://github.com/user-attachments/assets/a0991cb4-f7f4-43d5-b629-3b1819aead0d)
+[Agent ChatLlama](https://github.com/user-attachments/assets/a0991cb4-f7f4-43d5-b629-3b1819aead0d)
 
 ### Parallel Slots Demo
 
@@ -2049,46 +2092,3 @@ ros2 llama launch SmolLM2-slots.yaml
 ```shell
 ros2 run llama_demos llama_slots_demo_node
 ```
-
-### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
-
-```shell
-ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.yaml
-```
-
-```shell
-ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/jina-reranker.yaml
-```
-
-```shell
-ros2 llama launch Qwen3.yaml
-```
-
-<details>
-<summary>Click to expand Qwen3.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: bartowski/Qwen_Qwen3-8B-GGUF
-      filename: Qwen_Qwen3-8B-Q4_K_M.gguf
-    context:
-      n_ctx: 4096
-      n_batch: 256
-      n_predict: -1
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      stopping_words: ["<|im_end|>"]
-```
-
-</details>
-
-```shell
-ros2 run llama_demos llama_rag_demo_node
-```
-
-https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6

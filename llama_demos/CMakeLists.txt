@@ -23,7 +23,7 @@ set(DEMO_NODES
   chatllama_structured_demo_node
   chatllama_tools_demo_node
   chatllama_streaming_tools_demo_node
-  chatllama_langgraph_demo_node
+  chatllama_agent_demo_node
   chatllama_reasoning_demo_node
   chatllama_reasoning_tools_demo_node
   chatllama_pddl_demo_node

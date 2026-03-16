@@ -4,5 +4,4 @@ langchain-community==0.4.1
 langchain-core==1.2.15
 langchain-openai==1.1.10
 langchain-text-splitters==1.1.1
-langgraph==1.0.9
 pydantic==2.12.5
