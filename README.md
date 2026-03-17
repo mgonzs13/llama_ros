@@ -1517,13 +1517,9 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 
 ### Speculative Decoding Demo
 
-Launch the speculative decoding model using a Llama 3.1 8B target model with a Llama 3.2 1B draft model:
-
 ```shell
 ros2 launch llama_bringup llama-3-speculative.launch.py
 ```
-
-Then run any of the text generation demos, for example:
 
 ```shell
 ros2 run llama_demos llama_demo_node
@@ -1596,6 +1592,42 @@ ros2 run llama_demos llama_rag_demo_node
 
 https://github.com/user-attachments/assets/b4e3957d-1f92-427b-a1a8-cfc76737c0d6
 
+### Chat Template Demo
+
+```shell
+ros2 llama launch MiniCPM-2.6.yaml
+```
+
+<details>
+<summary>Click to expand MiniCPM-2.6.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "ggml-model-Q4_K_M.gguf"
+    mmproj:
+      repo: "openbmb/MiniCPM-V-2_6-gguf"
+      filename: "mmproj-model-f16.gguf"
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: 20
+    cpu:
+      n_threads: -1
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_demo_node
+```
+
+[ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+
 ### VLM Demo
 
 ```shell
@@ -1608,7 +1640,7 @@ ros2 run llama_demos llava_demo_node
 
 https://github.com/mgonzs13/llama_ros/assets/25979134/4a9ef92f-9099-41b4-8350-765336e3503c
 
-### Multi-Image Demo
+### Chat Multi-Image Demo
 
 ```shell
 ros2 llama launch MiniCPM-2.6.yaml
@@ -1642,7 +1674,7 @@ ros2 llama launch MiniCPM-2.6.yaml
 ros2 run llama_demos chatllama_multi_image_demo_node
 ```
 
-### Multi-Image (User Input) Demo
+### Chat Multi-Image (User Input) Demo
 
 ```shell
 ros2 llama launch MiniCPM-2.6.yaml
@@ -1674,76 +1706,6 @@ ros2 llama launch MiniCPM-2.6.yaml
 
 ```shell
 ros2 run llama_demos chatllama_multi_image_user_demo_node
-```
-
-### Audio Demo
-
-```shell
-ros2 llama launch Qwen2-Audio.yaml
-```
-
-<details>
-<summary>Click to expand Qwen2-Audio.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
-      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
-    mmproj:
-      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
-      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
-    context:
-      n_ctx: 8192
-      n_batch: 512
-      n_predict: 8192
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-    prompt:
-      system_prompt_type: ChatML
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_audio_demo_node
-```
-
-### Multi-Audio Demo
-
-```shell
-ros2 llama launch Qwen2-Audio.yaml
-```
-
-<details>
-<summary>Click to expand Qwen2-Audio.yaml</summary>
-
-```yaml
-/**:
-  ros__parameters:
-    model:
-      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
-      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
-    mmproj:
-      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
-      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
-    context:
-      n_ctx: 8192
-      n_batch: 512
-      n_predict: 8192
-    gpu:
-      n_gpu_layers: -1
-    cpu:
-      n_threads: -1
-```
-
-</details>
-
-```shell
-ros2 run llama_demos chatllama_multi_audio_demo_node
 ```
 
 ### MTMD Audio Demo
@@ -1782,30 +1744,30 @@ ros2 llama launch Qwen2-Audio.yaml
 ros2 run llama_demos mtmd_audio_demo_node
 ```
 
-### Chat Template Demo
+### Chat Audio Demo
 
 ```shell
-ros2 llama launch MiniCPM-2.6.yaml
+ros2 llama launch Qwen2-Audio.yaml
 ```
 
 <details>
-<summary>Click to expand MiniCPM-2.6.yaml</summary>
+<summary>Click to expand Qwen2-Audio.yaml</summary>
 
 ```yaml
 /**:
   ros__parameters:
     model:
-      repo: "openbmb/MiniCPM-V-2_6-gguf"
-      filename: "ggml-model-Q4_K_M.gguf"
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
     mmproj:
-      repo: "openbmb/MiniCPM-V-2_6-gguf"
-      filename: "mmproj-model-f16.gguf"
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
     context:
       n_ctx: 8192
       n_batch: 512
       n_predict: 8192
     gpu:
-      n_gpu_layers: 20
+      n_gpu_layers: -1
     cpu:
       n_threads: -1
 ```
@@ -1813,10 +1775,42 @@ ros2 llama launch MiniCPM-2.6.yaml
 </details>
 
 ```shell
-ros2 run llama_demos chatllama_demo_node
+ros2 run llama_demos chatllama_audio_demo_node
 ```
 
-[ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
+### Chat Multi-Audio Demo
+
+```shell
+ros2 llama launch Qwen2-Audio.yaml
+```
+
+<details>
+<summary>Click to expand Qwen2-Audio.yaml</summary>
+
+```yaml
+/**:
+  ros__parameters:
+    model:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.Q4_K_M.gguf
+    mmproj:
+      repo: mradermacher/Qwen2-Audio-7B-Instruct-GGUF
+      filename: Qwen2-Audio-7B-Instruct.mmproj-f16.gguf
+    context:
+      n_ctx: 8192
+      n_batch: 512
+      n_predict: 8192
+    gpu:
+      n_gpu_layers: -1
+    cpu:
+      n_threads: -1
+```
+
+</details>
+
+```shell
+ros2 run llama_demos chatllama_multi_audio_demo_node
+```
 
 ### Chat Structured Output Demo
 
