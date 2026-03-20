@@ -29,7 +29,7 @@ from abc import ABC
 import urllib.request
 from cv_bridge import CvBridge
 from pydantic import model_validator
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict
 
 from langchain_core.language_models import BaseLanguageModel
 
@@ -39,6 +39,7 @@ from llama_msgs.srv import GetMetadata
 from llama_msgs.msg import LogitBias
 from llama_msgs.msg import Metadata
 from llama_msgs.msg import SamplingConfig
+from llama_msgs.msg import GrammarTrigger
 from sensor_msgs.msg import Image
 
 
@@ -95,7 +96,7 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     grammar: str = ""
     grammar_schema: str = ""
     grammar_lazy: bool = False
-    grammar_triggers: List[List[Union[int, str]]] = []
+    grammar_triggers: List[str] = []
     preserved_tokens: List[int] = []
     backend_sampling: bool = False
 
@@ -224,7 +225,15 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar = self.grammar
         sampling_config.grammar_schema = self.grammar_schema
         sampling_config.grammar_lazy = self.grammar_lazy
-        sampling_config.grammar_triggers = self.grammar_triggers
+
+        grammar_trigger_msgs = []
+        for trigger in self.grammar_triggers:
+            grammar_trigger_msg = GrammarTrigger()
+            grammar_trigger_msg.type = GrammarTrigger.GRAMMAR_TRIGGER_TYPE_WORD
+            grammar_trigger_msg.value = trigger
+            grammar_trigger_msgs.append(grammar_trigger_msg)
+
+        sampling_config.grammar_triggers = grammar_trigger_msgs
         sampling_config.preserved_tokens = self.preserved_tokens
         sampling_config.backend_sampling = self.backend_sampling
 
