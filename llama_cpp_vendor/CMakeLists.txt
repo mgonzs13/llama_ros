@@ -69,9 +69,15 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-image.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/conformer.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/deepseekocr.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/dotsocr.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4a.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/glm4v.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/hunyuanocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/internvl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimik25.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
@@ -83,8 +89,10 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3a.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/youtuvl.cpp
 )
