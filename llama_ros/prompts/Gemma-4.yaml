@@ -1,0 +1,12 @@
+prefix: "<|turn>user\n"
+suffix: "<turn|>\n<|turn>model\n"
+stopping_words: ["<turn|>"]
+
+system_prompt: |
+  <|turn>system
+  Below is an instruction that describes a task. Write a response that appropriately completes the request.
+  <turn|>
+  <|turn>user
+  Hello<turn|>
+  <|turn>model
+  Hello<turn|>
