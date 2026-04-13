@@ -115,6 +115,7 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
       llama_utils::parse_reasoning_format(goal->reasoning_format.value);
   inputs.enable_thinking =
       inputs.reasoning_format != COMMON_REASONING_FORMAT_NONE;
+  inputs.force_pure_content = goal->force_pure_content_parser;
 
   return inputs;
 }
@@ -428,6 +429,26 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
 
   ctx.sparams.grammar_lazy = ctx.chat_prompt_instance.grammar_lazy ||
                              goal->sampling_config.grammar_lazy;
+
+  // Set up reasoning budget sampler if requested
+  if (goal->reasoning_budget >= 0 &&
+      !ctx.chat_prompt_instance.thinking_end_tag.empty() && llama) {
+    const llama_vocab *vocab = llama->get_vocab();
+    ctx.sparams.reasoning_budget_tokens = goal->reasoning_budget;
+    if (!ctx.chat_prompt_instance.thinking_start_tag.empty()) {
+      ctx.sparams.reasoning_budget_start =
+          common_tokenize(vocab, ctx.chat_prompt_instance.thinking_start_tag,
+                          /* add_special= */ false, /* parse_special= */ true);
+    }
+    ctx.sparams.reasoning_budget_end =
+        common_tokenize(vocab, ctx.chat_prompt_instance.thinking_end_tag,
+                        /* add_special= */ false, /* parse_special= */ true);
+    ctx.sparams.reasoning_budget_forced =
+        common_tokenize(vocab,
+                        goal->reasoning_budget_message +
+                            ctx.chat_prompt_instance.thinking_end_tag,
+                        /* add_special= */ false, /* parse_special= */ true);
+  }
 
   return ctx;
 }

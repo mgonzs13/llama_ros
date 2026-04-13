@@ -1401,6 +1401,21 @@ void Llama::run_loop() {
           // wipe any previous KV for this seq
           llama_memory_seq_rm(llama_get_memory(this->ctx), slot.id, -1, -1);
 
+          // clear idle slots to free up VRAM when a new task starts
+          if (this->params.clear_idle) {
+            for (auto &other : this->server_slots) {
+              if (!other.is_processing() && other.id != slot.id &&
+                  other.n_past > 0) {
+                LLAMA_LOG_INFO("Clearing idle slot %d (n_past=%d) for new task",
+                               other.id, other.n_past);
+                llama_memory_seq_rm(llama_get_memory(this->ctx), other.id, -1,
+                                    -1);
+                other.n_past = 0;
+                other.prompt_tokens.clear();
+              }
+            }
+          }
+
           // ensure at least one token will be evaluated
           if (slot.n_past == slot.n_prompt_tokens && slot.n_past > 0) {
             slot.n_past--;

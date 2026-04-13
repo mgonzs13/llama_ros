@@ -164,6 +164,7 @@ void llama_utils::declare_llama_params(
                                                {"use_direct_io", false},
                                                {"use_mlock", false},
                                                {"kv_unified", false},
+                                               {"clear_idle", true},
                                            });
 
   // CPU parameters (cpu.*)
@@ -377,6 +378,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("memory.use_direct_io", params.params.use_direct_io);
   node->get_parameter("memory.use_mlock", params.params.use_mlock);
   node->get_parameter("memory.kv_unified", params.params.kv_unified);
+  node->get_parameter("memory.clear_idle", params.params.clear_idle);
 
   // CPU parameters (cpu.*)
   node->get_parameter("cpu.n_threads", params.params.cpuparams.n_threads);

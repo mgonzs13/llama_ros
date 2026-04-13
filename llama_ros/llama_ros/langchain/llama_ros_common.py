@@ -101,6 +101,9 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     backend_sampling: bool = False
 
     enable_thinking: bool = False
+    reasoning_budget: int = -1
+    reasoning_budget_message: str = ""
+    force_pure_content_parser: bool = False
 
     class Config:
         """Configuration for this pydantic object."""
