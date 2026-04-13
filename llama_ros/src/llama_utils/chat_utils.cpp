@@ -294,8 +294,8 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
   ctx.oaicompat_chat_syntax.reasoning_in_content =
       goal->stream && ctx.oaicompat_chat_syntax.reasoning_format ==
                           COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
-  ctx.oaicompat_chat_syntax.thinking_forced_open =
-      ctx.chat_prompt_instance.thinking_forced_open;
+  ctx.oaicompat_chat_syntax.generation_prompt =
+      ctx.chat_prompt_instance.generation_prompt;
   ctx.oaicompat_chat_syntax.parse_tool_calls =
       !goal->tools.empty() &&
       ctx.prompt_format_config.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;
@@ -322,7 +322,10 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
   }
 
   if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
-    ctx.sparams.grammar = ctx.chat_prompt_instance.grammar;
+    if (!ctx.chat_prompt_instance.grammar.empty()) {
+      ctx.sparams.grammar = {COMMON_GRAMMAR_TYPE_TOOL_CALLS,
+                             ctx.chat_prompt_instance.grammar};
+    }
 
     // Workaround for llama.cpp autoparser bug (b8261): when a template uses
     // per-call wrapping tags (e.g. <tool_call>...</tool_call> for each call,
@@ -340,7 +343,7 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
       // We rewrite to:
       //   tool-call ::= "OPEN" space CHOICES space "CLOSE" (space "OPEN" space
       //   CHOICES space "CLOSE")*
-      std::string &grammar = ctx.sparams.grammar;
+      std::string &grammar = ctx.sparams.grammar.grammar;
 
       // Find the tool-call rule
       std::string rule_marker = "tool-call ::= ";

@@ -862,7 +862,9 @@ common_params_sampling llama_utils::parse_sampling_params(
   // grammar params
   sparams.samplers =
       common_sampler_types_from_chars(sampling_config.samplers_sequence);
-  sparams.grammar = sampling_config.grammar;
+  if (!sampling_config.grammar.empty()) {
+    sparams.grammar = {COMMON_GRAMMAR_TYPE_USER, sampling_config.grammar};
+  }
   sparams.grammar_lazy = sampling_config.grammar_lazy;
 
   for (auto grammar_trigger : sampling_config.grammar_triggers) {
@@ -880,11 +882,10 @@ common_params_sampling llama_utils::parse_sampling_params(
 
   sparams.backend_sampling = sampling_config.backend_sampling;
 
-  if (sparams.grammar.size() == 0 &&
-      sampling_config.grammar_schema.size() > 0) {
-
-    sparams.grammar = json_schema_to_grammar(
-        nlohmann::ordered_json::parse(sampling_config.grammar_schema));
+  if (sparams.grammar.empty() && sampling_config.grammar_schema.size() > 0) {
+    sparams.grammar = {COMMON_GRAMMAR_TYPE_OUTPUT_FORMAT,
+                       json_schema_to_grammar(nlohmann::ordered_json::parse(
+                           sampling_config.grammar_schema))};
   }
 
   // check penalty_last_n
