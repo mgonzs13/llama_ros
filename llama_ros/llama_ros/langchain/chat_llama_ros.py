@@ -821,7 +821,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
         if self.enable_thinking:
             chat_request.reasoning_format.value = (
-                ChatReasoningFormat.COMMON_REASONING_FORMAT_DEEPSEEK
+                ChatReasoningFormat.COMMON_REASONING_FORMAT_AUTO
             )
         else:
             chat_request.reasoning_format.value = (

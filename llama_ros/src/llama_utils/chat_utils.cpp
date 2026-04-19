@@ -52,6 +52,9 @@ llama_utils::parse_reasoning_format(const int reasoning_format) {
       llama_msgs::msg::ChatReasoningFormat::COMMON_REASONING_FORMAT_DEEPSEEK) {
     return COMMON_REASONING_FORMAT_DEEPSEEK;
   } else if (reasoning_format == llama_msgs::msg::ChatReasoningFormat::
+                                     COMMON_REASONING_FORMAT_AUTO) {
+    return COMMON_REASONING_FORMAT_AUTO;
+  } else if (reasoning_format == llama_msgs::msg::ChatReasoningFormat::
                                      COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY) {
     return COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
   } else {
