@@ -27,8 +27,8 @@
 #include <thread>
 #include <vector>
 
+#include "build-info.h"
 #include "chat.h"
-#include "common.h"
 #include "llama.h"
 
 #include "llama_msgs/msg/lo_ra.hpp"
@@ -780,7 +780,7 @@ void LlamaNode::send_text_chat_completions(
     response_result.oaicompat_model = this->llama->get_metadata().general.name;
     response_result.oaicompat_cmpl_id = "chatcmplid-0";
     response_result.build_info =
-        "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+        "b" + std::to_string(llama_build_number()) + "-" + llama_commit();
     response_result.content = this->llama->detokenize({completion.token});
     response_result.stop = llama_ros::StopType::NO_STOP;
     response_result.post_sampling_probs = false;

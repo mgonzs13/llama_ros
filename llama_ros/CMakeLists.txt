@@ -60,7 +60,7 @@ add_executable(llama_node
 )
 target_link_libraries(llama_node
   llama_cpp_vendor::llama
-  llama_cpp_vendor::common
+  llama_cpp_vendor::llama-common
   ${CMAKE_THREAD_LIBS_INIT}
   ament_index_cpp::ament_index_cpp
   rclcpp::rclcpp
@@ -86,7 +86,7 @@ target_link_libraries(llava_node
   cv_bridge::cv_bridge
   llama_cpp_vendor::llama
   llama_cpp_vendor::mtmd
-  llama_cpp_vendor::common
+  llama_cpp_vendor::llama-common
   ${CMAKE_THREAD_LIBS_INIT}
   ament_index_cpp::ament_index_cpp
   rclcpp::rclcpp
@@ -146,7 +146,7 @@ if(BUILD_TESTING)
   
   target_link_libraries(${PROJECT_NAME}_tests
     llama_cpp_vendor::llama
-    llama_cpp_vendor::common
+    llama_cpp_vendor::llama-common
     ${CMAKE_THREAD_LIBS_INIT}
     ament_index_cpp::ament_index_cpp
     rclcpp::rclcpp

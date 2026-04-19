@@ -32,7 +32,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "common.h"
+#include "build-info.h"
 #include "llama_utils/chat_utils.hpp"
 #include "sampling.h"
 #include "speculative.h"
@@ -48,7 +48,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
 
   this->llama_init = common_init_from_params(this->params);
 
-  print_build_info();
+  llama_print_build_info();
 
   // load model
   llama_backend_init();
@@ -174,8 +174,8 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   }
 
   // show info
-  LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", LLAMA_BUILD_NUMBER,
-                 LLAMA_COMMIT);
+  LLAMA_LOG_INFO("llama.cpp: build = %d, commit = %s", llama_build_number(),
+                 llama_commit());
   LLAMA_LOG_INFO("%s", common_params_get_system_info(this->params).c_str());
 
   LLAMA_LOG_INFO(
@@ -1801,7 +1801,7 @@ void Llama::send_completion_result(ServerSlot *slot) {
   LLAMA_LOG_INFO("Length probs_output: %lu", task_result->probs_output.size());
 
   task_result->build_info =
-      "b" + std::to_string(LLAMA_BUILD_NUMBER) + "-" + LLAMA_COMMIT;
+      "b" + std::to_string(llama_build_number()) + "-" + llama_commit();
   task_result->oaicompat_model = this->get_metadata().general.name;
   task_result->oaicompat_cmpl_id = llama_utils::gen_chatcmplid();
   task_result->n_decoded = slot->n_decoded;

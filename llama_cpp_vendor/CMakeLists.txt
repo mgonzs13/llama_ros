@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b8772
+  GIT_TAG        b8840
   GIT_SHALLOW    TRUE
 )
 
@@ -58,7 +58,7 @@ endif()
 
 # llama
 set_target_properties(
-  build_info llama common PROPERTIES
+  llama llama-common-base llama-common PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/include;${llama_SOURCE_DIR}/src;${llama_SOURCE_DIR}/common;${llama_SOURCE_DIR}/>"
   CXX_STANDARD 17
 )
@@ -138,8 +138,8 @@ set(INSTALL_TARGETS
   ggml
   ggml-base
   ggml-cpu
-  build_info
-  common
+  llama-common-base
+  llama-common
   llama
   mtmd
   cpp-httplib
