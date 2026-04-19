@@ -1,0 +1,27 @@
+<map id="llama_ros::ServerSlot" name="llama_ros::ServerSlot">
+<area shape="rect" id="Node000001" title="Represents a processing slot in the server." alt="" coords="1082,261,1226,287"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="442,15,584,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="600,25,701,24,820,34,883,46,945,64,1004,88,1060,120,1095,153,1121,192,1140,231,1151,260,1146,262,1135,233,1117,195,1090,156,1056,124,1002,93,943,69,882,51,820,39,700,29,600,30"/>
+<area shape="rect" id="Node000005" href="$structllama__ros_1_1ServerSlot_1_1slot__params.html" title="Parameters for slot configuration." alt="" coords="751,112,896,153"/>
+<area shape="poly" id="edge5_Node000005_Node000002" title=" " alt="" coords="577,60,618,75,751,113,750,118,616,80,575,65"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="212,185,290,211"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="305,207,446,235,617,260,745,269,873,274,1082,273,1082,279,873,279,745,275,616,265,445,241,304,213"/>
+<area shape="poly" id="edge8_Node000005_Node000003" title=" " alt="" coords="304,178,348,167,457,150,567,139,751,131,751,136,568,145,458,156,349,173,306,184"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="433,185,593,211"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="305,195,433,195,433,201,305,201"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,178,129,218"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="144,195,212,195,212,201,144,201"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="911,142,985,160,1023,173,1059,189,1085,205,1108,224,1143,259,1140,263,1105,228,1082,209,1057,194,1021,178,984,165,910,147"/>
+<area shape="poly" id="edge10_Node000001_Node000006" title=" " alt="" coords="608,203,815,222,1058,253,1089,258,1088,263,1058,258,814,228,607,208"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="608,182,709,163,753,151,755,156,710,168,609,187"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="762,311,885,352"/>
+<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="900,330,977,326,1057,313,1095,300,1128,285,1130,290,1097,305,1059,318,978,331,901,336"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="734,376,913,417"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="928,390,993,379,1057,357,1083,342,1106,322,1141,285,1145,289,1110,326,1086,346,1059,362,995,384,929,396"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="450,376,576,417"/>
+<area shape="poly" id="edge12_Node000008_Node000009" title=" " alt="" coords="592,394,733,394,733,399,592,399"/>
+<area shape="rect" id="Node000010" href="$structllama__ros_1_1TokenProb.html" title="Represents the probability of a token." alt="" coords="178,384,324,410"/>
+<area shape="poly" id="edge13_Node000009_Node000010" title=" " alt="" coords="340,394,450,394,450,399,340,399"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="741,441,906,497"/>
+<area shape="poly" id="edge14_Node000001_Node000011" title=" " alt="" coords="921,463,991,448,1025,435,1056,418,1089,387,1115,350,1134,315,1146,286,1151,289,1139,317,1120,353,1093,391,1060,422,1027,440,992,453,922,468"/>
+</map>

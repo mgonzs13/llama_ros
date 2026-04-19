@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['i_5fbatch_0',['i_batch',['../classllama__ros_1_1ServerSlot.html#abf6970eeb060c21e2edee1b794007125',1,'llama_ros::ServerSlot']]],
+  ['id_1',['id',['../classllama__ros_1_1ServerSlot.html#a16a7f2ea40642ff4ec9680e3d166fa0f',1,'llama_ros::ServerSlot::id'],['../structllama__ros_1_1ServerTaskResult.html#a034a888aa04e26308bf88f8c41fd7716',1,'llama_ros::ServerTaskResult::id'],['../structllama__ros_1_1LoRA.html#ad69657b06a8c0a648f826b2617f07c1a',1,'llama_ros::LoRA::id']]],
+  ['id_5fslot_2',['id_slot',['../structllama__ros_1_1ServerTaskResult.html#ab82ba686ecc13a1e760930aa1a5cbf56',1,'llama_ros::ServerTaskResult']]],
+  ['ignore_5feos_3',['ignore_eos',['../classllama__ros_1_1langchain_1_1llama__ros__common_1_1LlamaROSCommon.html#acde963ef8451a744d41534d72f182045',1,'llama_ros::langchain::llama_ros_common::LlamaROSCommon']]],
+  ['image_20demo_4',['Chat Multi-Image Demo',['../index.html#autotoc_md65',1,'']]],
+  ['image_20user_20input_20demo_5',['Chat Multi-Image (User Input) Demo',['../index.html#autotoc_md66',1,'']]],
+  ['increment_5frecovery_5fcount_6',['increment_recovery_count',['../classllama__bt_1_1BtActionNode.html#a49118dcf81f406bde8da4f890d640583',1,'llama_bt::BtActionNode::increment_recovery_count()'],['../classllama__bt_1_1BtActionNode.html#a49118dcf81f406bde8da4f890d640583',1,'llama_bt::BtActionNode::increment_recovery_count()']]],
+  ['index_7',['index',['../classllama__utils_1_1Spinner.html#a12deebc1a09339b8656b4cc2422125b5',1,'llama_utils::Spinner']]],
+  ['inference_20context_8',['Context / Inference (&lt;span class=&quot;tt&quot;&gt;context.*&lt;/span&gt;)',['../index.html#autotoc_md21',1,'']]],
+  ['info_9',['INFO',['../namespacellama__utils.html#a386024dced31ce4ae6a2bb5e0b97fefda2483ebb1506974cdc19a0b49a48d7afd',1,'llama_utils']]],
+  ['init_5fspeculative_10',['init_speculative',['../classllama__ros_1_1Llama.html#a117cb197e49694eac701565e3a40f52b',1,'llama_ros::Llama']]],
+  ['input_20demo_11',['Chat Multi-Image (User Input) Demo',['../index.html#autotoc_md66',1,'']]],
+  ['installation_12',['Installation',['../index.html#autotoc_md3',1,'']]],
+  ['is_5fembedding_13',['is_embedding',['../classllama__ros_1_1Llama.html#a69dd03523245603e633394d0cf06b98f',1,'llama_ros::Llama']]],
+  ['is_5feog_14',['is_eog',['../classllama__ros_1_1Llama.html#acf8009202dae2f24f46d624856e5f1ec',1,'llama_ros::Llama']]],
+  ['is_5ferror_15',['is_error',['../classllama__ros_1_1Result.html#a3e1d7e481de89430585350e9dc3db547',1,'llama_ros::Result']]],
+  ['is_5ffuture_5fgoal_5fhandle_5fcomplete_16',['is_future_goal_handle_complete',['../classllama__bt_1_1BtActionNode.html#a011fae6cd378d2d255db754da9a4ac88',1,'llama_bt::BtActionNode::is_future_goal_handle_complete(std::chrono::milliseconds &amp;elapsed)'],['../classllama__bt_1_1BtActionNode.html#a011fae6cd378d2d255db754da9a4ac88',1,'llama_bt::BtActionNode::is_future_goal_handle_complete(std::chrono::milliseconds &amp;elapsed)']]],
+  ['is_5fok_17',['is_ok',['../classllama__ros_1_1Result.html#ac9ff57ed9801e2a02a641d7445c598dd',1,'llama_ros::Result']]],
+  ['is_5fprocessing_18',['is_processing',['../classllama__ros_1_1ServerSlot.html#a490775801d18c0ba208f4fe57530724c',1,'llama_ros::ServerSlot']]],
+  ['is_5freranking_19',['is_reranking',['../classllama__ros_1_1Llama.html#a9905e319a2c0311b5d700763de7d8d8c',1,'llama_ros::Llama']]],
+  ['is_5fspeculative_20',['is_speculative',['../classllama__ros_1_1Llama.html#a79f50da7f1fd848ea3d7e899e77c4020',1,'llama_ros::Llama']]],
+  ['isgoalcancelled_21',['isGoalCancelled',['../classTestActionServer.html#a40c4ea2714cfc51c1633f315bc2acffb',1,'TestActionServer']]]
+];
