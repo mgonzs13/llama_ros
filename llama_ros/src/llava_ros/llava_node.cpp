@@ -40,6 +40,7 @@ using namespace llava_ros;
 LlavaNode::LlavaNode() : llama_ros::LlamaNode() {}
 
 void LlavaNode::create_llama() {
+  this->shutting_down_.store(false);
   this->llama =
       std::make_unique<Llava>(this->params.params, this->params.system_prompt);
 
