@@ -1042,10 +1042,10 @@ void Llama::init_speculative() {
     return;
   }
 
-  // Check compatibility
-  if (!common_speculative_is_compat(this->ctx)) {
+  // Check compatibility - speculative decoding requires seq_rm support
+  if (common_context_can_seq_rm(this->ctx) == COMMON_CONTEXT_SEQ_RM_TYPE_NO) {
     LLAMA_LOG_WARN("Target context is not compatible with speculative "
-                   "decoding, skipping");
+                   "decoding (no sequence removal support), skipping");
     return;
   }
 
@@ -1402,7 +1402,7 @@ void Llama::run_loop() {
           llama_memory_seq_rm(llama_get_memory(this->ctx), slot.id, -1, -1);
 
           // clear idle slots to free up VRAM when a new task starts
-          if (this->params.clear_idle) {
+          if (this->params.cache_idle_slots) {
             for (auto &other : this->server_slots) {
               if (!other.is_processing() && other.id != slot.id &&
                   other.n_past > 0) {

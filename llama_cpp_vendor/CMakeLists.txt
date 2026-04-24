@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b8840
+  GIT_TAG        b8920
   GIT_SHALLOW    TRUE
 )
 
@@ -95,6 +95,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/youtuvl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/yasa2.cpp
 )
 
 target_include_directories(mtmd
