@@ -1,0 +1,19 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,195,98,220"/>
+<area shape="rect" id="Node000001" href="$classGenerateChatActionTestFixture.html" title=" " alt="" coords="146,5,349,31"/>
+<area shape="poly" id="edge37_Node000000_Node000001" title=" " alt="" coords="58,179,70,147,88,110,113,73,144,41,165,29,168,34,147,46,117,76,93,112,75,149,63,181"/>
+<area shape="rect" id="Node000002" href="$classGenerateResponseActionTestFixture.html" title=" " alt="" coords="150,55,345,96"/>
+<area shape="poly" id="edge38_Node000000_Node000002" title=" " alt="" coords="68,180,101,142,144,105,166,94,168,99,147,110,105,146,72,184"/>
+<area shape="rect" id="Node000003" href="$classLlamaDeploymentTest.html" title="Test suite for LLM deployment and initialization." alt="" coords="172,120,323,146"/>
+<area shape="poly" id="edge39_Node000000_Node000003" title=" " alt="" coords="85,184,145,154,178,144,180,149,147,159,87,189"/>
+<area shape="rect" id="Node000004" href="$classLlamaEmbeddingsTest.html" title="Test suite for embeddings functionality." alt="" coords="170,169,324,195"/>
+<area shape="poly" id="edge40_Node000000_Node000004" title=" " alt="" coords="113,197,169,190,170,195,114,202"/>
+<area shape="rect" id="Node000005" href="$classLlamaGenerationTest.html" title="Test suite for LLM text generation functionality." alt="" coords="174,219,320,244"/>
+<area shape="poly" id="edge41_Node000000_Node000005" title=" " alt="" coords="113,212,174,220,173,225,113,218"/>
+<area shape="rect" id="Node000006" href="$classLlamaLoRATest.html" title="Test suite for LoRA adapter functionality." alt="" coords="189,268,306,294"/>
+<area shape="poly" id="edge42_Node000000_Node000006" title=" " alt="" coords="89,226,147,254,190,267,188,272,145,259,86,231"/>
+<area shape="rect" id="Node000007" href="$classLlamaParamsTest.html" title="Test suite for LLM parameter configuration." alt="" coords="183,317,312,343"/>
+<area shape="poly" id="edge43_Node000000_Node000007" title=" " alt="" coords="72,231,104,269,125,288,147,304,184,318,182,323,144,309,121,292,100,273,68,234"/>
+<area shape="rect" id="Node000008" href="$classLlamaRerankingTest.html" title="Test suite for reranking functionality." alt="" coords="177,367,318,392"/>
+<area shape="poly" id="edge44_Node000000_Node000008" title=" " alt="" coords="65,233,95,295,119,327,147,353,177,368,175,373,144,358,115,330,91,298,60,236"/>
+</map>
