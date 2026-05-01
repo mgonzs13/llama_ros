@@ -1052,24 +1052,24 @@ void Llama::init_speculative() {
   // Load draft model if using draft-based speculative decoding
   if (has_draft) {
     LLAMA_LOG_INFO("Loading draft model for speculative decoding: %s",
-                   spec_params.mparams_dft.path.c_str());
+                   spec_params.draft.mparams.path.c_str());
 
     // Prepare params for draft model loading
     common_params params_dft;
-    params_dft.model.path = spec_params.mparams_dft.path;
-    params_dft.n_gpu_layers = spec_params.n_gpu_layers;
-    if (spec_params.n_ctx > 0) {
-      params_dft.n_ctx = spec_params.n_ctx;
+    params_dft.model.path = spec_params.draft.mparams.path;
+    params_dft.n_gpu_layers = spec_params.draft.n_gpu_layers;
+    if (spec_params.draft.n_ctx > 0) {
+      params_dft.n_ctx = spec_params.draft.n_ctx;
     }
 
     // Use target model's thread settings if not overridden
-    if (spec_params.cpuparams.n_threads <= 0) {
+    if (spec_params.draft.cpuparams.n_threads <= 0) {
       params_dft.cpuparams.n_threads = this->params.cpuparams.n_threads;
       params_dft.cpuparams_batch.n_threads =
           this->params.cpuparams_batch.n_threads;
     } else {
-      params_dft.cpuparams = spec_params.cpuparams;
-      params_dft.cpuparams_batch = spec_params.cpuparams_batch;
+      params_dft.cpuparams = spec_params.draft.cpuparams;
+      params_dft.cpuparams_batch = spec_params.draft.cpuparams_batch;
     }
 
     auto mparams_dft = common_model_params_to_llama(params_dft);
@@ -1083,8 +1083,8 @@ void Llama::init_speculative() {
       return;
     }
 
-    spec_params.model_dft = this->model_dft_;
-    spec_params.cparams_dft = common_context_params_to_llama(params_dft);
+    spec_params.draft.model = this->model_dft_;
+    spec_params.draft.cparams = common_context_params_to_llama(params_dft);
 
     // Infer speculative type from draft model if type is "none"
     if (spec_params.type == COMMON_SPECULATIVE_TYPE_NONE) {
@@ -1109,7 +1109,8 @@ void Llama::init_speculative() {
   LLAMA_LOG_INFO("Speculative decoding initialized (type: %s, n_max: %d, "
                  "n_min: %d, p_min: %.2f)",
                  common_speculative_type_to_str(spec_params.type).c_str(),
-                 spec_params.n_max, spec_params.n_min, spec_params.p_min);
+                 spec_params.draft.n_max, spec_params.draft.n_min,
+                 spec_params.draft.p_min);
 }
 
 bool Llama::speculative_generation_step(ServerSlot *slot) {
@@ -1152,7 +1153,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   common_batch_add(this->batch, id_last, slot->n_past, {slot->id}, true);
 
   // Skip small drafts
-  if ((int)draft.size() < spec_params.n_min) {
+  if ((int)draft.size() < spec_params.draft.n_min) {
     draft.clear();
   }
 

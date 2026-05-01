@@ -8,8 +8,8 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b8920
-  GIT_SHALLOW    TRUE
+  GIT_TAG        14e733e36f5752f39494b6c7e88022e43c05729a
+  GIT_SHALLOW    FALSE
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)

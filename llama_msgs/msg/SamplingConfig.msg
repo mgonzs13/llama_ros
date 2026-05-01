@@ -47,3 +47,9 @@ bool grammar_lazy                                                   # whether to
 GrammarTrigger[] grammar_triggers                                   # triggers for lazy grammar
 int32[] preserved_tokens                                            # tokens to preserve
 bool backend_sampling               false                           # use backend (hardware-accelerated) sampling if available
+
+int32 reasoning_budget              -1                              # token budget for reasoning (-1 = disabled, >= 0 = token budget)
+int32[] reasoning_budget_start                                      # start tag token sequence for reasoning budget (auto-populated from chat template if empty)
+int32[] reasoning_budget_end                                        # end tag token sequence for reasoning budget (auto-populated from chat template if empty)
+int32[] reasoning_budget_forced                                     # forced sequence (message + end tag) for reasoning budget (auto-populated if empty)
+string reasoning_budget_message     ""                              # message injected before end tag when reasoning budget is exhausted

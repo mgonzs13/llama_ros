@@ -253,6 +253,17 @@ void llama_utils::declare_llama_params(
                                                      {"type_v", "f16"},
                                                  });
 
+  node->declare_parameters<int32_t>("cache", {
+                                                 {"n_cache_reuse", 0},
+                                                 {"n_ctx_checkpoints", 32},
+                                                 {"checkpoint_every_nt", 8192},
+                                                 {"cache_ram_mib", 8192},
+                                             });
+
+  node->declare_parameters<bool>("cache", {
+                                              {"cache_prompt", true},
+                                          });
+
   // Fit parameters (fit.*)
   node->declare_parameters<bool>("fit", {
                                             {"enabled", true},
@@ -283,6 +294,7 @@ void llama_utils::declare_llama_params(
 
   node->declare_parameters<double>("speculative", {
                                                       {"p_min", 0.75},
+                                                      {"p_split", 0.1},
                                                   });
 }
 
@@ -432,6 +444,13 @@ LlamaParams llama_utils::get_llama_params(
   // KV cache parameters (cache.*)
   node->get_parameter("cache.type_k", cache_type_k);
   node->get_parameter("cache.type_v", cache_type_v);
+  node->get_parameter("cache.n_cache_reuse", params.params.n_cache_reuse);
+  node->get_parameter("cache.cache_prompt", params.params.cache_prompt);
+  node->get_parameter("cache.n_ctx_checkpoints",
+                      params.params.n_ctx_checkpoints);
+  node->get_parameter("cache.checkpoint_every_nt",
+                      params.params.checkpoint_every_nt);
+  node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
 
   // Fit parameters (fit.*)
   node->get_parameter("fit.enabled", params.params.fit_params);
@@ -441,19 +460,26 @@ LlamaParams llama_utils::get_llama_params(
   std::string speculative_type;
   double speculative_p_min;
   node->get_parameter("speculative.type", speculative_type);
-  node->get_parameter("speculative.n_max", params.params.speculative.n_max);
-  node->get_parameter("speculative.n_min", params.params.speculative.n_min);
+  node->get_parameter("speculative.n_max",
+                      params.params.speculative.draft.n_max);
+  node->get_parameter("speculative.n_min",
+                      params.params.speculative.draft.n_min);
   node->get_parameter("speculative.p_min", speculative_p_min);
-  node->get_parameter("speculative.n_ctx", params.params.speculative.n_ctx);
+  double speculative_p_split;
+  node->get_parameter("speculative.p_split", speculative_p_split);
+  params.params.speculative.draft.p_split =
+      static_cast<float>(speculative_p_split);
+  node->get_parameter("speculative.n_ctx",
+                      params.params.speculative.draft.n_ctx);
   node->get_parameter("speculative.n_gpu_layers",
-                      params.params.speculative.n_gpu_layers);
+                      params.params.speculative.draft.n_gpu_layers);
   node->get_parameter("speculative.model.path",
-                      params.params.speculative.mparams_dft.path);
+                      params.params.speculative.draft.mparams.path);
   node->get_parameter("speculative.model.repo",
-                      params.params.speculative.mparams_dft.hf_repo);
+                      params.params.speculative.draft.mparams.hf_repo);
   node->get_parameter("speculative.model.filename",
-                      params.params.speculative.mparams_dft.hf_file);
-  params.params.speculative.p_min = static_cast<float>(speculative_p_min);
+                      params.params.speculative.draft.mparams.hf_file);
+  params.params.speculative.draft.p_min = static_cast<float>(speculative_p_min);
 
   // seed
   if (seed < 0) {
@@ -482,11 +508,11 @@ LlamaParams llama_utils::get_llama_params(
 
   // Check threads number
   if (params.params.cpuparams.n_threads < 0) {
-    params.params.cpuparams.n_threads = cpu_get_num_math();
+    params.params.cpuparams.n_threads = common_cpu_get_num_math();
   }
 
   if (params.params.cpuparams_batch.n_threads < 0) {
-    params.params.cpuparams_batch.n_threads = cpu_get_num_math();
+    params.params.cpuparams_batch.n_threads = common_cpu_get_num_math();
   }
 
   // Speculative type
@@ -515,10 +541,10 @@ LlamaParams llama_utils::get_llama_params(
   }
 
   // Download draft model if needed
-  if (params.params.speculative.mparams_dft.path.empty()) {
-    params.params.speculative.mparams_dft.path =
-        download_model(params.params.speculative.mparams_dft.hf_repo,
-                       params.params.speculative.mparams_dft.hf_file);
+  if (params.params.speculative.draft.mparams.path.empty()) {
+    params.params.speculative.draft.mparams.path =
+        download_model(params.params.speculative.draft.mparams.hf_repo,
+                       params.params.speculative.draft.mparams.hf_file);
   }
 
   // LoRA adapters
@@ -884,6 +910,19 @@ common_params_sampling llama_utils::parse_sampling_params(
                             sampling_config.preserved_tokens.end());
 
   sparams.backend_sampling = sampling_config.backend_sampling;
+
+  // reasoning budget
+  sparams.reasoning_budget_tokens = sampling_config.reasoning_budget;
+  sparams.reasoning_budget_start =
+      std::vector<llama_token>(sampling_config.reasoning_budget_start.begin(),
+                               sampling_config.reasoning_budget_start.end());
+  sparams.reasoning_budget_end =
+      std::vector<llama_token>(sampling_config.reasoning_budget_end.begin(),
+                               sampling_config.reasoning_budget_end.end());
+  sparams.reasoning_budget_forced =
+      std::vector<llama_token>(sampling_config.reasoning_budget_forced.begin(),
+                               sampling_config.reasoning_budget_forced.end());
+  sparams.reasoning_budget_message = sampling_config.reasoning_budget_message;
 
   if (sparams.grammar.empty() && sampling_config.grammar_schema.size() > 0) {
     sparams.grammar = {COMMON_GRAMMAR_TYPE_OUTPUT_FORMAT,

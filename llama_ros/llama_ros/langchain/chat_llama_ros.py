@@ -829,8 +829,10 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
             )
 
         chat_request.reasoning_budget = self.reasoning_budget
+        chat_request.reasoning_budget_start = self.reasoning_budget_start
+        chat_request.reasoning_budget_end = self.reasoning_budget_end
         chat_request.reasoning_budget_message = self.reasoning_budget_message
-        chat_request.force_pure_content_parser = self.force_pure_content_parser
+        chat_request.reasoning_budget_forced = self.reasoning_budget_forced
 
         payload, image_urls, audio_urls = self._remove_mtmd_url(payload)
 

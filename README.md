@@ -27,6 +27,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
    - [ROS 2 Parameters](#ros-2-parameters)
    - [Speculative Decoding](#speculative-decoding-speculative)
    - [LoRA Adapters](#lora-adapters)
+   - [Messages](#messages)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
 5. [Demos](#demos)
@@ -441,25 +442,30 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Context / Inference (`context.*`)
 
-| Param                    | Type     | Default  | Description                                                                     |
-| ------------------------ | -------- | -------- | ------------------------------------------------------------------------------- |
-| `context.seed`           | `int32`  | `-1`     | RNG seed for sampling (`-1` for default)                                        |
-| `context.n_ctx`          | `int32`  | `0`      | Context size in tokens (`0` for model default)                                  |
-| `context.n_batch`        | `int32`  | `2048`   | Logical batch size for prompt processing                                        |
-| `context.n_ubatch`       | `int32`  | `512`    | Physical batch size                                                             |
-| `context.n_keep`         | `int32`  | `0`      | Number of tokens to keep from the initial prompt on context shift               |
-| `context.n_chunks`       | `int32`  | `-1`     | Max number of chunks to process (`-1` for unlimited)                            |
-| `context.n_predict`      | `int32`  | `-1`     | Max tokens to predict (`-1` for unlimited when using ctx_shift)                 |
-| `context.n_parallel`     | `int32`  | `1`      | Number of parallel sequences to decode                                          |
-| `context.n_sequences`    | `int32`  | `1`      | Number of sequences to decode                                                   |
-| `context.numa`           | `string` | `"none"` | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
-| `context.pooling_type`   | `string` | `""`     | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                        |
-| `context.attention_type` | `string` | `""`     | Attention type: `causal` or `non_causal`                                        |
-| `context.embedding`      | `bool`   | `false`  | Enable embedding mode                                                           |
-| `context.reranking`      | `bool`   | `false`  | Enable reranking mode (sets pooling to `rerank` and enables embedding)          |
-| `context.ctx_shift`      | `bool`   | `false`  | Enable context shifting                                                         |
-| `context.swa_full`       | `bool`   | `false`  | Enable full sliding window attention                                            |
-| `context.cont_batching`  | `bool`   | `true`   | Enable continuous batching                                                      |
+| Param                               | Type     | Default      | Description                                                                                                                                                               |
+| ----------------------------------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context.seed`                      | `int32`  | `-1`         | RNG seed for sampling (`-1` for default)                                                                                                                                  |
+| `context.n_ctx`                     | `int32`  | `0`          | Context size in tokens (`0` for model default)                                                                                                                            |
+| `context.n_batch`                   | `int32`  | `2048`       | Logical batch size for prompt processing                                                                                                                                  |
+| `context.n_ubatch`                  | `int32`  | `512`        | Physical batch size                                                                                                                                                       |
+| `context.n_keep`                    | `int32`  | `0`          | Number of tokens to keep from the initial prompt on context shift                                                                                                         |
+| `context.n_chunks`                  | `int32`  | `-1`         | Max number of chunks to process (`-1` for unlimited)                                                                                                                      |
+| `context.n_predict`                 | `int32`  | `-1`         | Max tokens to predict (`-1` for unlimited when using ctx_shift)                                                                                                           |
+| `context.n_parallel`                | `int32`  | `1`          | Number of parallel sequences to decode                                                                                                                                    |
+| `context.n_sequences`               | `int32`  | `1`          | Number of sequences to decode                                                                                                                                             |
+| `context.numa`                      | `string` | `"none"`     | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count`                                                                                           |
+| `context.pooling_type`              | `string` | `""`         | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                                                                                                                  |
+| `context.attention_type`            | `string` | `""`         | Attention type: `causal` or `non_causal`                                                                                                                                  |
+| `context.embedding`                 | `bool`   | `false`      | Enable embedding mode                                                                                                                                                     |
+| `context.reranking`                 | `bool`   | `false`      | Enable reranking mode (sets pooling to `rerank` and enables embedding)                                                                                                    |
+| `context.ctx_shift`                 | `bool`   | `false`      | Enable context shifting                                                                                                                                                   |
+| `context.swa_full`                  | `bool`   | `false`      | Enable full sliding window attention                                                                                                                                      |
+| `context.cont_batching`             | `bool`   | `true`       | Enable continuous batching                                                                                                                                                |
+| `context.use_jinja`                 | `bool`   | `true`       | Use Jinja2 templating engine for chat templates (required for tool calls and reasoning)                                                                                   |
+| `context.prefill_assistant`         | `bool`   | `true`       | Prefill any trailing assistant message into the response                                                                                                                  |
+| `context.force_pure_content_parser` | `bool`   | `false`      | Bypass Jinja template tool-call/reasoning parsing and force raw content output for all requests. Useful as a fallback when the template parser produces incorrect results |
+| `context.enable_reasoning`          | `int32`  | `-1`         | Server-level reasoning control: `-1` = auto (follow template), `0` = disable thinking, `1` = enable thinking                                                              |
+| `context.reasoning_format`          | `string` | `"deepseek"` | How reasoning content is returned in API responses: `none`, `auto`, `deepseek_legacy`, or `deepseek`                                                                      |
 
 #### GPU / Backend (`gpu.*`)
 
@@ -478,12 +484,13 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Memory (`memory.*`)
 
-| Param                  | Type   | Default | Description                           |
-| ---------------------- | ------ | ------- | ------------------------------------- |
-| `memory.use_mmap`      | `bool` | `true`  | Use memory-mapped files for loading   |
-| `memory.use_direct_io` | `bool` | `false` | Use direct I/O for model loading      |
-| `memory.use_mlock`     | `bool` | `false` | Lock model in RAM to prevent swapping |
-| `memory.kv_unified`    | `bool` | `false` | Use unified KV cache                  |
+| Param                     | Type   | Default | Description                                               |
+| ------------------------- | ------ | ------- | --------------------------------------------------------- |
+| `memory.use_mmap`         | `bool` | `true`  | Use memory-mapped files for loading                       |
+| `memory.use_direct_io`    | `bool` | `false` | Use direct I/O for model loading                          |
+| `memory.use_mlock`        | `bool` | `false` | Lock model in RAM to prevent swapping                     |
+| `memory.kv_unified`       | `bool` | `false` | Use unified KV cache                                      |
+| `memory.cache_idle_slots` | `bool` | `true`  | Save and clear idle KV cache slots when a new task starts |
 
 #### CPU (`cpu.*`)
 
@@ -534,10 +541,15 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### KV Cache (`cache.*`)
 
-| Param          | Type     | Default | Description                                                                                      |
-| -------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
-| `cache.type_k` | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1` |
-| `cache.type_v` | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                           |
+| Param                       | Type     | Default | Description                                                                                      |
+| --------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `cache.type_k`              | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1` |
+| `cache.type_v`              | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                           |
+| `cache.cache_prompt`        | `bool`   | `true`  | Enable prompt caching (reuse previously evaluated KV state)                                      |
+| `cache.cache_ram_mib`       | `int32`  | `8192`  | RAM limit for the prompt cache in MiB (`-1` = no limit, `0` = disable cache)                     |
+| `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)            |
+| `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                  |
+| `cache.checkpoint_every_nt` | `int32`  | `8192`  | Create a checkpoint every N tokens during prompt prefill                                         |
 
 #### Fit Parameters (`fit.*`)
 
@@ -558,6 +570,7 @@ Speculative decoding uses a smaller draft model to predict multiple tokens ahead
 | `speculative.n_max`          | `int32`  | `16`     | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
 | `speculative.n_min`          | `int32`  | `0`      | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
 | `speculative.p_min`          | `double` | `0.75`   | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
+| `speculative.p_split`        | `double` | `0.1`    | Split probability threshold for speculative sampling                                                                                                                                                    |
 | `speculative.n_ctx`          | `int32`  | `0`      | Context size for the draft model (`0` for same as target)                                                                                                                                               |
 | `speculative.n_gpu_layers`   | `int32`  | `-1`     | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
 | `speculative.model.path`     | `string` | `""`     | Local file path to the draft model GGUF file                                                                                                                                                            |
@@ -586,6 +599,78 @@ Speculative decoding uses a smaller draft model to predict multiple tokens ahead
 | `lora.<lora_name>.filename`  | `string`   | `""`    | Filename of the LoRA adapter in the repository      |
 | `lora.<lora_name>.file_path` | `string`   | `""`    | Local file path to the LoRA adapter                 |
 | `lora.<lora_name>.scale`     | `double`   | `1.0`   | LoRA adapter scale factor (clamped to `[0.0, 1.0]`) |
+
+### Messages
+
+#### `SamplingConfig` (`llama_msgs/msg/SamplingConfig`)
+
+The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatCompletions` goals to configure sampling behaviour per request.
+
+| Field                      | Type               | Default                           | Description                                                                                                                                                                                                                    |
+| -------------------------- | ------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `seed`                     | `uint32`           | `4294967295` (LLAMA_DEFAULT_SEED) | RNG seed (`4294967295` = random)                                                                                                                                                                                               |
+| `n_prev`                   | `int32`            | `64`                              | Number of previous tokens to consider for repetition penalties                                                                                                                                                                 |
+| `n_probs`                  | `int32`            | `0`                               | Return top-N token probabilities (`0` = disabled)                                                                                                                                                                              |
+| `min_keep`                 | `int32`            | `0`                               | Minimum number of tokens to keep after sampling (`0` = disabled)                                                                                                                                                               |
+| `ignore_eos`               | `bool`             | `false`                           | Ignore end-of-stream tokens and continue generating                                                                                                                                                                            |
+| `no_perf`                  | `bool`             | `false`                           | Disable performance metrics collection                                                                                                                                                                                         |
+| `timing_per_token`         | `bool`             | `false`                           | Collect per-token timing data                                                                                                                                                                                                  |
+| `logit_bias`               | `LogitBiasArray`   | `[]`                              | Logit biases for specific tokens                                                                                                                                                                                               |
+| `logit_bias_eog`           | `LogitBiasArray`   | `[]`                              | Pre-calculated logit biases for end-of-generation tokens                                                                                                                                                                       |
+| `temp`                     | `float32`          | `0.80`                            | Sampling temperature                                                                                                                                                                                                           |
+| `dynatemp_range`           | `float32`          | `0.0`                             | Dynamic temperature range (`0.0` = disabled)                                                                                                                                                                                   |
+| `dynatemp_exponent`        | `float32`          | `1.0`                             | Dynamic temperature exponent                                                                                                                                                                                                   |
+| `top_k`                    | `int32`            | `40`                              | Top-K sampling (`0` = disabled)                                                                                                                                                                                                |
+| `top_p`                    | `float32`          | `0.95`                            | Top-P (nucleus) sampling (`1.0` = disabled)                                                                                                                                                                                    |
+| `min_p`                    | `float32`          | `0.05`                            | Min-P sampling (`0.0` = disabled)                                                                                                                                                                                              |
+| `top_n_sigma`              | `float32`          | `-1.0`                            | Top-N-sigma sampling (`-1.0` = disabled)                                                                                                                                                                                       |
+| `xtc_probability`          | `float32`          | `0.0`                             | XTC sampling probability (`0.0` = disabled)                                                                                                                                                                                    |
+| `xtc_threshold`            | `float32`          | `0.1`                             | XTC sampling threshold (values > `0.5` disable XTC)                                                                                                                                                                            |
+| `typical_p`                | `float32`          | `1.0`                             | Locally typical sampling (`1.0` = disabled)                                                                                                                                                                                    |
+| `penalty_last_n`           | `int32`            | `64`                              | Number of last tokens to consider for penalties (`0` = disable, `-1` = context size)                                                                                                                                           |
+| `penalty_repeat`           | `float32`          | `1.0`                             | Repetition penalty (`1.0` = disabled)                                                                                                                                                                                          |
+| `penalty_freq`             | `float32`          | `0.0`                             | Frequency penalty (`0.0` = disabled)                                                                                                                                                                                           |
+| `penalty_present`          | `float32`          | `0.0`                             | Presence penalty (`0.0` = disabled)                                                                                                                                                                                            |
+| `dry_multiplier`           | `float32`          | `0.0`                             | DRY repetition penalty multiplier (`0.0` = disabled)                                                                                                                                                                           |
+| `dry_base`                 | `float32`          | `1.75`                            | DRY repetition penalty base                                                                                                                                                                                                    |
+| `dry_allowed_length`       | `int32`            | `2`                               | Tokens extending repetitions beyond this length receive DRY penalty                                                                                                                                                            |
+| `dry_penalty_last_n`       | `int32`            | `-1`                              | Tokens to scan for DRY repetitions (`0` = disable, `-1` = context size)                                                                                                                                                        |
+| `dry_sequence_breakers`    | `string[]`         | `["\n", ":", "\"", "*"]`          | Sequence breakers for DRY                                                                                                                                                                                                      |
+| `adaptive_target`          | `float32`          | `-1.0`                            | Adaptive-P target probability (negative = disabled)                                                                                                                                                                            |
+| `adaptive_decay`           | `float32`          | `0.90`                            | Adaptive-P EMA decay                                                                                                                                                                                                           |
+| `mirostat`                 | `int32`            | `0`                               | Mirostat mode (`0` = disabled, `1` = Mirostat v1, `2` = Mirostat v2)                                                                                                                                                           |
+| `mirostat_eta`             | `float32`          | `0.10`                            | Mirostat learning rate                                                                                                                                                                                                         |
+| `mirostat_tau`             | `float32`          | `5.0`                             | Mirostat target entropy                                                                                                                                                                                                        |
+| `samplers_sequence`        | `string`           | `"edskypmxt"`                     | Sampler pipeline order (chars map to: `e`=penalties, `d`=DRY, `s`=top-N-sigma, `k`=top-K, `y`=typical-P, `p`=top-P, `m`=min-P, `x`=XTC, `t`=temp)                                                                              |
+| `grammar`                  | `string`           | `""`                              | GBNF grammar string to constrain sampling                                                                                                                                                                                      |
+| `grammar_schema`           | `string`           | `""`                              | JSON schema converted to a GBNF grammar                                                                                                                                                                                        |
+| `grammar_lazy`             | `bool`             | `false`                           | Use lazy grammar evaluation (grammar only activates after a trigger)                                                                                                                                                           |
+| `grammar_triggers`         | `GrammarTrigger[]` | `[]`                              | Trigger conditions for lazy grammar activation                                                                                                                                                                                 |
+| `preserved_tokens`         | `int32[]`          | `[]`                              | Token IDs that should never be penalised or modified                                                                                                                                                                           |
+| `backend_sampling`         | `bool`             | `false`                           | Use hardware-accelerated (backend) sampling if available                                                                                                                                                                       |
+| `reasoning_budget`         | `int32`            | `-1`                              | Token budget for reasoning (`-1` = disabled, `≥ 0` = max thinking tokens)                                                                                                                                                      |
+| `reasoning_budget_start`   | `int32[]`          | `[]`                              | Token IDs for the thinking start tag. Auto-populated from the chat template if empty                                                                                                                                           |
+| `reasoning_budget_end`     | `int32[]`          | `[]`                              | Token IDs for the thinking end tag. Auto-populated from the chat template if empty                                                                                                                                             |
+| `reasoning_budget_forced`  | `int32[]`          | `[]`                              | Token sequence forcibly injected when the budget is exhausted (message + end tag). Auto-populated if empty. Distinct from `force_pure_content_parser`: this controls _when_ to stop thinking, not _how_ the template is parsed |
+| `reasoning_budget_message` | `string`           | `""`                              | Text inserted before the thinking end tag when the reasoning budget is exhausted (e.g. `"Wait, I need to conclude."`)                                                                                                          |
+
+#### `GenerateChatCompletions` Goal (`llama_msgs/action/GenerateChatCompletions`)
+
+| Field                       | Type                         | Default | Description                                                                                                 |
+| --------------------------- | ---------------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| `messages`                  | `ChatMessage[]`              | `[]`    | Conversation history as a list of chat messages                                                             |
+| `add_generation_prompt`     | `bool`                       | `false` | Append the generation prompt token sequence after the last message                                          |
+| `use_jinja`                 | `bool`                       | `false` | Use Jinja2 chat template (required for tool calls and reasoning)                                            |
+| `tools`                     | `ChatReqTool[]`              | `[]`    | List of tools the model may call                                                                            |
+| `tool_choice`               | `int32`                      | `0`     | Tool selection mode: `0` = auto, `1` = required (must call a tool), `2` = none                              |
+| `extract_reasoning`         | `bool`                       | `false` | Extract `<think>` reasoning content from the response into `reasoning_content`                              |
+| `sampling_config`           | `SamplingConfig`             | —       | Per-request sampling configuration (see `SamplingConfig` table above)                                       |
+| `reasoning_format`          | `ChatReasoningFormat`        | `3`     | How reasoning content is returned: `0`=none, `1`=auto, `2`=deepseek_legacy, `3`=deepseek                    |
+| `images`                    | `sensor_msgs/Image[]`        | `[]`    | Images for VLM inference                                                                                    |
+| `audios`                    | `std_msgs/UInt8MultiArray[]` | `[]`    | Audio buffers for multimodal inference                                                                      |
+| `parallel_tool_calls`       | `bool`                       | `false` | Allow the model to return multiple tool calls in a single message                                           |
+| `stream`                    | `bool`                       | `false` | Stream partial results as feedback messages                                                                 |
+| `force_pure_content_parser` | `bool`                       | `false` | Per-request override of `context.force_pure_content_parser` — bypasses template tool-call/reasoning parsing |
 
 ### LoRA Adapters
 

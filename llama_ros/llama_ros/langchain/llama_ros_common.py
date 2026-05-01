@@ -102,8 +102,10 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
 
     enable_thinking: bool = False
     reasoning_budget: int = -1
+    reasoning_budget_start: List[int] = []
+    reasoning_budget_end: List[int] = []
     reasoning_budget_message: str = ""
-    force_pure_content_parser: bool = False
+    reasoning_budget_forced: List[int] = []
 
     class Config:
         """Configuration for this pydantic object."""
@@ -239,5 +241,11 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
         sampling_config.grammar_triggers = grammar_trigger_msgs
         sampling_config.preserved_tokens = self.preserved_tokens
         sampling_config.backend_sampling = self.backend_sampling
+
+        sampling_config.reasoning_budget = self.reasoning_budget
+        sampling_config.reasoning_budget_start = self.reasoning_budget_start
+        sampling_config.reasoning_budget_end = self.reasoning_budget_end
+        sampling_config.reasoning_budget_forced = self.reasoning_budget_forced
+        sampling_config.reasoning_budget_message = self.reasoning_budget_message
 
         return sampling_config
