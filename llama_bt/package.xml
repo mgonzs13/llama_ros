@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
     <name>llama_bt</name>
-    <version>6.0.4</version>
+    <version>6.0.5</version>
     <description>A package containing behavior trees plugins for the llama_ros stack.</description>
     <maintainer email="ajtudela@gmail.com">Alberto Tudela</maintainer>
     <license>MIT</license>
