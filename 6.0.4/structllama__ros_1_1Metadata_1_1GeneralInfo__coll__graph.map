@@ -1,0 +1,10 @@
+<map id="llama_ros::Metadata::GeneralInfo" name="llama_ros::Metadata::GeneralInfo">
+<area shape="rect" id="Node000001" title="General information about the model." alt="" coords="5,530,143,571"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="35,95,113,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="73,136,67,192,64,305,67,418,75,529,70,530,62,418,59,305,62,192,68,136"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="165,292,324,318"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="97,131,236,290,232,293,93,135"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="12,5,136,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="77,61,77,95,71,95,71,61"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="230,332,90,531,86,528,226,329"/>
+</map>
