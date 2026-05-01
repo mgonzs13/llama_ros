@@ -100,12 +100,14 @@ class LlamaROSCommon(BaseLanguageModel, ABC):
     preserved_tokens: List[int] = []
     backend_sampling: bool = False
 
-    enable_thinking: bool = False
     reasoning_budget: int = -1
     reasoning_budget_start: List[int] = []
     reasoning_budget_end: List[int] = []
     reasoning_budget_message: str = ""
     reasoning_budget_forced: List[int] = []
+
+    enable_thinking: bool = False
+    force_pure_content_parser: bool = False
 
     class Config:
         """Configuration for this pydantic object."""

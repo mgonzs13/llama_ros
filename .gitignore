@@ -5,5 +5,5 @@ compile_commands.json
 
 .pre-commit-config.yaml
 
-.pixi/
-pixi.lock
+.venv/
+uv.lock
