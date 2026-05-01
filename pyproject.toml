@@ -1,6 +1,6 @@
 [project]
 name = "llama_ros"
-version = "6.0.3"
+version = "6.0.4"
 description = "ROS 2 packages to integrate llama.cpp into ROS 2"
 requires-python = ">=3.10"
 dependencies = [
