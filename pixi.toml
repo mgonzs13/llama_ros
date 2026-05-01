@@ -1,0 +1,18 @@
+[project]
+name = "llama_ros"
+version = "6.0.3"
+description = "ROS 2 packages to integrate llama.cpp into ROS 2"
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64"]
+
+[dependencies]
+python = ">=3.10"
+
+[pypi-dependencies]
+langchain = "==1.2.10"
+langchain-chroma = "==1.1.0"
+langchain-community = "==0.4.1"
+langchain-core = "==1.2.15"
+langchain-openai = "==1.1.10"
+langchain-text-splitters = "==1.1.1"
+pydantic = "==2.12.5"

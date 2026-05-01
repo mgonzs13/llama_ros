@@ -13,9 +13,13 @@ RUN apt-get update && \
     gcc \
     git \
     wget \
+    curl \
     python3 \
-    python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install pixi
+RUN curl -fsSL https://pixi.sh/install.sh | bash
+ENV PATH=/root/.pixi/bin:${PATH}
 
 # Clone BehaviorTree.CPP if ROS_DISTRO is rolling
 RUN if [ "$ROS_DISTRO" = "rolling" ]; then \
@@ -28,12 +32,8 @@ RUN apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN if [ "$(lsb_release -rs)" = "24.04" ] || [ "$(lsb_release -rs)" = "24.10" ]; then \
-    pip3 install -r src/llama_ros/requirements.txt --break-system-packages --ignore-installed; \
-    else \
-    pip3 install -r src/llama_ros/requirements.txt; \
-    fi
+# Install Python dependencies with pixi
+RUN cd src/llama_ros && pixi install
 
 # Install CUDA toolkit (optional)
 ARG USE_CUDA=0
@@ -63,7 +63,8 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
         colcon build --cmake-args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}; \
     fi
 
-# Source the workspace on login
-RUN echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
+# Source the workspace and pixi environment on login
+RUN echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc && \
+    echo 'eval "$(pixi shell-hook --manifest-path /root/ros2_ws/src/llama_ros/pixi.toml)"' >> ~/.bashrc
 
 CMD ["bash"]
