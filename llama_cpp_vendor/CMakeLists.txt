@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        14e733e36f5752f39494b6c7e88022e43c05729a
+  GIT_TAG        b8994
   GIT_SHALLOW    FALSE
 )
 
