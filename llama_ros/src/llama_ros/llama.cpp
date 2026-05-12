@@ -1269,6 +1269,8 @@ void Llama::run_loop() {
                                  n_keep + n_discard, slot.n_past, -n_discard);
 
             slot.n_past -= n_discard;
+            // Sliding window shifted KV positions: drop the cached prefix.
+            slot.invalidate_kv_cache();
           }
 
         } else {
@@ -1293,6 +1295,8 @@ void Llama::run_loop() {
                                  slot.n_past + ib * bd, dd);
 
             slot.n_past -= bd;
+            // Self-Extend reshuffled KV positions: drop the cached prefix.
+            slot.invalidate_kv_cache();
 
             slot.ga_i += ga_w / ga_n;
           }
@@ -1378,9 +1382,6 @@ void Llama::run_loop() {
         // first-time setup for a new prompt
         if (slot.state == SLOT_STATE_STARTED) {
 
-          // always start from zero KV
-          slot.n_past = 0;
-
           slot.n_prompt_tokens = prompt_tokens.size();
           slot.state = SLOT_STATE_PROCESSING_PROMPT;
 
@@ -1399,8 +1400,27 @@ void Llama::run_loop() {
             continue;
           }
 
-          // wipe any previous KV for this seq
-          llama_memory_seq_rm(llama_get_memory(this->ctx), slot.id, -1, -1);
+          // Reuse the KV-cached prefix when allowed; fall back to a full wipe
+          // when the prompt diverges or caching is disabled for this slot.
+          const bool caching_allowed =
+              this->params.cache_prompt && !this->is_speculative();
+          const size_t reused = caching_allowed
+                                    ? slot.find_reusable_prefix(prompt_tokens)
+                                    : 0;
+          auto *mem = llama_get_memory(this->ctx);
+
+          if (reused > 0) {
+            llama_memory_seq_rm(mem, slot.id, static_cast<llama_pos>(reused),
+                                -1);
+            slot.n_past = static_cast<int32_t>(reused);
+            LLAMA_LOG_INFO("Slot %d: reused %zu/%zu tokens from KV cache",
+                           slot.id, reused, prompt_tokens.size());
+          } else {
+            slot.n_past = 0;
+            llama_memory_seq_rm(mem, slot.id, -1, -1);
+            LLAMA_LOG_INFO("Slot %d: KV cache cold start (0/%zu reused)",
+                           slot.id, prompt_tokens.size());
+          }
 
           // clear idle slots to free up VRAM when a new task starts
           if (this->params.cache_idle_slots) {
@@ -1409,10 +1429,10 @@ void Llama::run_loop() {
                   other.n_past > 0) {
                 LLAMA_LOG_INFO("Clearing idle slot %d (n_past=%d) for new task",
                                other.id, other.n_past);
-                llama_memory_seq_rm(llama_get_memory(this->ctx), other.id, -1,
-                                    -1);
+                llama_memory_seq_rm(mem, other.id, -1, -1);
                 other.n_past = 0;
                 other.prompt_tokens.clear();
+                other.invalidate_kv_cache();
               }
             }
           }
@@ -1480,9 +1500,14 @@ void Llama::run_loop() {
           slot.n_decoded = 0;
           slot.i_batch = this->batch.n_tokens - 1;
 
-          LLAMA_LOG_INFO(
-              "prompt done (no caching), n_past = %d, n_tokens = %d\n",
-              slot.n_past, this->batch.n_tokens);
+          // Only completion tasks benefit from prefix reuse; an embedding or
+          // rerank prompt would mismatch the next request's task type.
+          if (slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
+            slot.kv_cached_tokens = slot.prompt_tokens;
+          }
+
+          LLAMA_LOG_INFO("prompt done, n_past = %d, n_tokens = %d\n",
+                         slot.n_past, this->batch.n_tokens);
         }
 
         if (static_cast<uint32_t>(this->batch.n_tokens) >=
@@ -1535,8 +1560,9 @@ void Llama::run_loop() {
           LLAMA_LOG_ERROR("Decoding error: %s (ret=%d, n_batch=%d, i=%d, "
                           "batch_n_tokens=%d)",
                           err.c_str(), ret, n_tokens, i, this->batch.n_tokens);
-          // Log all active slots so we know who triggered this
-          for (const auto &slot : this->server_slots) {
+          // A decode failure leaves the KV state of every active slot
+          // unknown; drop their prefix caches so the next request re-processes.
+          for (auto &slot : this->server_slots) {
             if (slot.is_processing()) {
               LLAMA_LOG_ERROR(
                   "  Active slot id=%d gid=%lu state=%d task_type=%d "
@@ -1545,6 +1571,7 @@ void Llama::run_loop() {
                   slot.n_past, slot.n_ctx, slot.n_prompt_tokens,
                   slot.n_decoded);
             }
+            slot.invalidate_kv_cache();
           }
           this->cancel();
           break; // abort the decode loop
