@@ -203,6 +203,25 @@ public:
   /// @brief Map from position to media chunk for multimodal processing.
   std::unordered_map<llama_pos, mtmd::input_chunk_ptr> map_pos_to_media;
 
+  /// @brief Tokens currently materialized in this slot's KV cache.
+  /// Preserved across reset() to enable prefix reuse between requests.
+  /// Empty when the cache is invalid (cold slot, post-shift, post-error).
+  std::vector<llama_token> kv_cached_tokens;
+
+  /**
+   * @brief Length of the longest prefix of @p incoming that matches what is
+   * currently materialized in this slot's KV. Returns 0 when no reuse is
+   * possible (cache empty, multimodal placeholders present). Reserves one
+   * trailing token for re-evaluation so generation has fresh logits.
+   */
+  size_t find_reusable_prefix(const std::vector<llama_token> &incoming) const;
+
+  /**
+   * @brief Drop the cached-prefix bookkeeping. Next request will fully
+   * re-process its prompt. Use after context shift or decode error.
+   */
+  void invalidate_kv_cache();
+
   /**
    * @brief Resets the slot to its initial state.
    */

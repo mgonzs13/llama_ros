@@ -78,7 +78,32 @@ void ServerSlot::reset() {
 
   this->map_pos_to_media.clear();
   this->prompt_tokens.clear();
+  // kv_cached_tokens is intentionally preserved: it tracks the KV state of
+  // this slot's sequence, which survives request boundaries.
 }
+
+size_t ServerSlot::find_reusable_prefix(
+    const std::vector<llama_token> &incoming) const {
+  if (this->kv_cached_tokens.empty() || !this->map_pos_to_media.empty()) {
+    return 0;
+  }
+  const size_t max_check =
+      std::min(this->kv_cached_tokens.size(), incoming.size());
+  size_t i = 0;
+  while (i < max_check && this->kv_cached_tokens[i] == incoming[i] &&
+         incoming[i] != LLAMA_TOKEN_NULL) {
+    i++;
+  }
+  // Reserve one trailing position so the model re-evaluates a token and the
+  // next sampling step has fresh logits. The caller's seq_rm physically
+  // drops that position from the KV.
+  if (i == incoming.size() && i > 0) {
+    i--;
+  }
+  return i;
+}
+
+void ServerSlot::invalidate_kv_cache() { this->kv_cached_tokens.clear(); }
 
 void ServerSlot::release() {
   LLAMA_LOG_INFO("Trying to release slot %d", this->id);
