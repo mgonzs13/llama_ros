@@ -1404,9 +1404,8 @@ void Llama::run_loop() {
           // when the prompt diverges or caching is disabled for this slot.
           const bool caching_allowed =
               this->params.cache_prompt && !this->is_speculative();
-          const size_t reused = caching_allowed
-                                    ? slot.find_reusable_prefix(prompt_tokens)
-                                    : 0;
+          const size_t reused =
+              caching_allowed ? slot.find_reusable_prefix(prompt_tokens) : 0;
           auto *mem = llama_get_memory(this->ctx);
 
           if (reused > 0) {
