@@ -74,7 +74,7 @@ common_chat_templates_inputs llama_utils::parse_chat_completions_goal(
     common_chat_msg msg;
     msg.role = message.role;
     msg.content = message.content;
-    msg.tool_call_id = message.tool_call_id;    
+    msg.tool_call_id = message.tool_call_id;
     std::vector<common_chat_msg_content_part> content_parts;
 
     for (auto content_part : message.content_parts) {
