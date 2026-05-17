@@ -293,6 +293,23 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
   ctx.sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                    llama->get_n_vocab());
 
+  // When thinking is disabled but the model supports it, Jinja templates
+  // pre-fill an empty <think></think> block in the generation_prompt. The PEG
+  // parser compiled with reasoning_format=NONE has no rule to consume this
+  // block, causing the tags to leak into the content field. Fix by regenerating
+  // the parser config with reasoning_format=AUTO (enable_thinking stays false)
+  // so the parser properly consumes the pre-filled thinking block. The actual
+  // prompt is unchanged because Jinja templates use enable_thinking (not
+  // reasoning_format) to control thinking pre-fill.
+  if (!ctx.prompt_format_config.enable_thinking &&
+      ctx.chat_prompt_instance.supports_thinking) {
+    auto format_config_for_parser = ctx.prompt_format_config;
+    format_config_for_parser.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
+    auto chat_instance_for_parser = llama->get_chat_params(
+        tmpls->get_templates(), format_config_for_parser);
+    ctx.chat_prompt_instance.parser = chat_instance_for_parser.parser;
+  }
+
   ctx.oaicompat_chat_syntax.format = ctx.chat_prompt_instance.format;
   ctx.oaicompat_chat_syntax.reasoning_format =
       llama_utils::parse_reasoning_format(goal->reasoning_format.value);
