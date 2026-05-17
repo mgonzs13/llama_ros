@@ -278,24 +278,70 @@ void llama_utils::declare_llama_params(
                                                            {"type", "none"},
                                                        });
 
-  node->declare_parameters<std::string>("speculative.model",
+  // Draft model parameters (speculative.draft.*)
+  node->declare_parameters<std::string>("speculative.draft.model",
                                         {
                                             {"path", ""},
                                             {"repo", ""},
                                             {"filename", ""},
                                         });
 
-  node->declare_parameters<int32_t>("speculative", {
-                                                       {"n_max", 16},
-                                                       {"n_min", 0},
-                                                       {"n_ctx", 0},
-                                                       {"n_gpu_layers", -1},
-                                                   });
+  node->declare_parameters<int32_t>("speculative.draft",
+                                    {
+                                        {"n_max", 16},
+                                        {"n_min", 0},
+                                        {"n_gpu_layers", -1},
+                                    });
 
-  node->declare_parameters<double>("speculative", {
-                                                      {"p_min", 0.75},
-                                                      {"p_split", 0.1},
-                                                  });
+  node->declare_parameters<double>("speculative.draft", {
+                                                            {"p_min", 0.75},
+                                                            {"p_split", 0.1},
+                                                        });
+
+  node->declare_parameters<std::string>("speculative.draft",
+                                        {
+                                            {"cache_type_k", "f16"},
+                                            {"cache_type_v", "f16"},
+                                        });
+
+  // Speculative ngram-mod parameters
+  node->declare_parameters<int32_t>("speculative.ngram_mod",
+                                    {
+                                        {"n_match", 24},
+                                        {"n_max", 64},
+                                        {"n_min", 48},
+                                    });
+
+  // Speculative ngram-simple parameters
+  node->declare_parameters<int32_t>("speculative.ngram_simple",
+                                    {
+                                        {"size_n", 12},
+                                        {"size_m", 48},
+                                        {"min_hits", 1},
+                                    });
+
+  // Speculative ngram-map-k parameters
+  node->declare_parameters<int32_t>("speculative.ngram_map_k",
+                                    {
+                                        {"size_n", 12},
+                                        {"size_m", 48},
+                                        {"min_hits", 1},
+                                    });
+
+  // Speculative ngram-map-k4v parameters
+  node->declare_parameters<int32_t>("speculative.ngram_map_k4v",
+                                    {
+                                        {"size_n", 12},
+                                        {"size_m", 48},
+                                        {"min_hits", 1},
+                                    });
+
+  // Speculative ngram-cache parameters
+  node->declare_parameters<std::string>("speculative.ngram_cache",
+                                        {
+                                            {"lookup_cache_static", ""},
+                                            {"lookup_cache_dynamic", ""},
+                                        });
 }
 
 LlamaParams llama_utils::get_llama_params(
@@ -460,26 +506,94 @@ LlamaParams llama_utils::get_llama_params(
   std::string speculative_type;
   double speculative_p_min;
   node->get_parameter("speculative.type", speculative_type);
-  node->get_parameter("speculative.n_max",
+  node->get_parameter("speculative.draft.n_max",
                       params.params.speculative.draft.n_max);
-  node->get_parameter("speculative.n_min",
+  node->get_parameter("speculative.draft.n_min",
                       params.params.speculative.draft.n_min);
-  node->get_parameter("speculative.p_min", speculative_p_min);
+  node->get_parameter("speculative.draft.p_min", speculative_p_min);
   double speculative_p_split;
-  node->get_parameter("speculative.p_split", speculative_p_split);
+  node->get_parameter("speculative.draft.p_split", speculative_p_split);
   params.params.speculative.draft.p_split =
       static_cast<float>(speculative_p_split);
-  node->get_parameter("speculative.n_ctx",
-                      params.params.speculative.draft.n_ctx);
-  node->get_parameter("speculative.n_gpu_layers",
+  node->get_parameter("speculative.draft.n_gpu_layers",
                       params.params.speculative.draft.n_gpu_layers);
-  node->get_parameter("speculative.model.path",
+  node->get_parameter("speculative.draft.model.path",
                       params.params.speculative.draft.mparams.path);
-  node->get_parameter("speculative.model.repo",
+  node->get_parameter("speculative.draft.model.repo",
                       params.params.speculative.draft.mparams.hf_repo);
-  node->get_parameter("speculative.model.filename",
+  node->get_parameter("speculative.draft.model.filename",
                       params.params.speculative.draft.mparams.hf_file);
   params.params.speculative.draft.p_min = static_cast<float>(speculative_p_min);
+
+  // Draft model KV cache types
+  std::string speculative_cache_type_k;
+  std::string speculative_cache_type_v;
+  node->get_parameter("speculative.draft.cache_type_k",
+                      speculative_cache_type_k);
+  node->get_parameter("speculative.draft.cache_type_v",
+                      speculative_cache_type_v);
+  params.params.speculative.draft.cache_type_k =
+      kv_cache_type_from_str(speculative_cache_type_k);
+  params.params.speculative.draft.cache_type_v =
+      kv_cache_type_from_str(speculative_cache_type_v);
+
+  // Speculative ngram-mod parameters
+  node->get_parameter("speculative.ngram_mod.n_match",
+                      params.params.speculative.ngram_mod.n_match);
+  node->get_parameter("speculative.ngram_mod.n_max",
+                      params.params.speculative.ngram_mod.n_max);
+  node->get_parameter("speculative.ngram_mod.n_min",
+                      params.params.speculative.ngram_mod.n_min);
+
+  // Speculative ngram-simple parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_simple.size_n", size_n);
+    node->get_parameter("speculative.ngram_simple.size_m", size_m);
+    node->get_parameter("speculative.ngram_simple.min_hits", min_hits);
+    params.params.speculative.ngram_simple.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_simple.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_simple.min_hits =
+        static_cast<uint16_t>(min_hits);
+  }
+
+  // Speculative ngram-map-k parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_map_k.size_n", size_n);
+    node->get_parameter("speculative.ngram_map_k.size_m", size_m);
+    node->get_parameter("speculative.ngram_map_k.min_hits", min_hits);
+    params.params.speculative.ngram_map_k.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_map_k.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_map_k.min_hits =
+        static_cast<uint16_t>(min_hits);
+  }
+
+  // Speculative ngram-map-k4v parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_map_k4v.size_n", size_n);
+    node->get_parameter("speculative.ngram_map_k4v.size_m", size_m);
+    node->get_parameter("speculative.ngram_map_k4v.min_hits", min_hits);
+    params.params.speculative.ngram_map_k4v.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_map_k4v.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_map_k4v.min_hits =
+        static_cast<uint16_t>(min_hits);
+  }
+
+  // Speculative ngram-cache parameters
+  node->get_parameter(
+      "speculative.ngram_cache.lookup_cache_static",
+      params.params.speculative.ngram_cache.lookup_cache_static);
+  node->get_parameter(
+      "speculative.ngram_cache.lookup_cache_dynamic",
+      params.params.speculative.ngram_cache.lookup_cache_dynamic);
 
   // seed
   if (seed < 0) {
@@ -522,10 +636,10 @@ LlamaParams llama_utils::get_llama_params(
       LLAMA_LOG_WARN("Unknown speculative type '%s', disabling speculative "
                      "decoding. Valid types: %s",
                      speculative_type.c_str(),
-                     common_speculative_type_name_str().c_str());
-      params.params.speculative.type = COMMON_SPECULATIVE_TYPE_NONE;
+                     common_speculative_all_types_str());
+      params.params.speculative.types = {COMMON_SPECULATIVE_TYPE_NONE};
     } else {
-      params.params.speculative.type = spec_type;
+      params.params.speculative.types = {spec_type};
     }
   }
 

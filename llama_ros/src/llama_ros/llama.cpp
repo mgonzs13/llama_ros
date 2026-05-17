@@ -214,6 +214,11 @@ Llama::~Llama() {
     this->speculative_ = nullptr;
   }
 
+  if (this->ctx_dft_ != nullptr) {
+    llama_free(this->ctx_dft_);
+    this->ctx_dft_ = nullptr;
+  }
+
   if (this->model_dft_ != nullptr) {
     llama_model_free(this->model_dft_);
     this->model_dft_ = nullptr;
@@ -1016,11 +1021,11 @@ void Llama::init_speculative() {
 
   // Check if speculative decoding is configured
   bool has_draft = spec_params.has_dft();
-  bool has_self_spec = (spec_params.type != COMMON_SPECULATIVE_TYPE_NONE &&
-                        spec_params.type != COMMON_SPECULATIVE_TYPE_DRAFT &&
-                        spec_params.type != COMMON_SPECULATIVE_TYPE_EAGLE3);
+  bool has_any_spec =
+      std::any_of(spec_params.types.begin(), spec_params.types.end(),
+                  [](auto t) { return t != COMMON_SPECULATIVE_TYPE_NONE; });
 
-  if (!has_draft && !has_self_spec) {
+  if (!has_draft && !has_any_spec) {
     LLAMA_LOG_INFO("Speculative decoding not configured, skipping "
                    "initialization");
     return;
@@ -1058,10 +1063,6 @@ void Llama::init_speculative() {
     common_params params_dft;
     params_dft.model.path = spec_params.draft.mparams.path;
     params_dft.n_gpu_layers = spec_params.draft.n_gpu_layers;
-    if (spec_params.draft.n_ctx > 0) {
-      params_dft.n_ctx = spec_params.draft.n_ctx;
-    }
-
     // Use target model's thread settings if not overridden
     if (spec_params.draft.cpuparams.n_threads <= 0) {
       params_dft.cpuparams.n_threads = this->params.cpuparams.n_threads;
@@ -1083,22 +1084,37 @@ void Llama::init_speculative() {
       return;
     }
 
-    spec_params.draft.model = this->model_dft_;
-    spec_params.draft.cparams = common_context_params_to_llama(params_dft);
+    // Create the draft context
+    auto cparams_dft = common_context_params_to_llama(params_dft);
+    this->ctx_dft_ = llama_init_from_model(this->model_dft_, cparams_dft);
+    if (this->ctx_dft_ == nullptr) {
+      LLAMA_LOG_ERROR("Failed to create draft context, speculative decoding "
+                      "will be disabled");
+      llama_model_free(this->model_dft_);
+      this->model_dft_ = nullptr;
+      return;
+    }
+
+    spec_params.draft.ctx_tgt = this->ctx;
+    spec_params.draft.ctx_dft = this->ctx_dft_;
 
     // Infer speculative type from draft model if type is "none"
-    if (spec_params.type == COMMON_SPECULATIVE_TYPE_NONE) {
-      spec_params.type = COMMON_SPECULATIVE_TYPE_DRAFT;
+    if (spec_params.types[0] == COMMON_SPECULATIVE_TYPE_NONE) {
+      spec_params.types = {COMMON_SPECULATIVE_TYPE_DRAFT_SIMPLE};
     }
 
     LLAMA_LOG_INFO("Draft model loaded successfully");
   }
 
   // Initialize speculative decoder
-  this->speculative_ = common_speculative_init(spec_params, this->ctx);
+  this->speculative_ = common_speculative_init(spec_params, 1);
 
   if (this->speculative_ == nullptr) {
     LLAMA_LOG_ERROR("Failed to initialize speculative decoder");
+    if (this->ctx_dft_ != nullptr) {
+      llama_free(this->ctx_dft_);
+      this->ctx_dft_ = nullptr;
+    }
     if (this->model_dft_ != nullptr) {
       llama_model_free(this->model_dft_);
       this->model_dft_ = nullptr;
@@ -1106,11 +1122,10 @@ void Llama::init_speculative() {
     return;
   }
 
-  LLAMA_LOG_INFO("Speculative decoding initialized (type: %s, n_max: %d, "
+  LLAMA_LOG_INFO("Speculative decoding initialized (types: %s, n_max: %d, "
                  "n_min: %d, p_min: %.2f)",
-                 common_speculative_type_to_str(spec_params.type).c_str(),
-                 spec_params.draft.n_max, spec_params.draft.n_min,
-                 spec_params.draft.p_min);
+                 common_speculative_all_types_str(), spec_params.draft.n_max,
+                 spec_params.draft.n_min, spec_params.draft.p_min);
 }
 
 bool Llama::speculative_generation_step(ServerSlot *slot) {
@@ -1145,8 +1160,20 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
                             : slot->generated_tokens.back();
 
   // Generate draft tokens
-  llama_tokens draft = common_speculative_draft(this->speculative_, spec_params,
-                                                prompt_tgt, id_last);
+  llama_tokens draft;
+  {
+    auto &dparams =
+        common_speculative_get_draft_params(this->speculative_, slot->id);
+    dparams = {
+        /* .drafting = */ true,
+        /* .n_max    = */ -1,
+        /* .n_past   = */ slot->n_past,
+        /* .id_last  = */ id_last,
+        /* .prompt   = */ &prompt_tgt,
+        /* .result   = */ &draft,
+    };
+    common_speculative_draft(this->speculative_);
+  }
 
   // Build batch: [id_last, draft0, draft1, ..., draftN-1]
   common_batch_clear(this->batch);
@@ -1182,7 +1209,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   // sampled) ids.size()-1 draft tokens were accepted
 
   const int n_accepted = (int)ids.size() - 1;
-  common_speculative_accept(this->speculative_, n_accepted);
+  common_speculative_accept(this->speculative_, slot->id, n_accepted);
 
   LLAMA_LOG_DEBUG("Speculative: drafted %d, accepted %d/%d", (int)draft.size(),
                   n_accepted, (int)draft.size());
@@ -1630,7 +1657,7 @@ void Llama::run_loop() {
                 prompt_tgt.push_back(token);
               }
             }
-            common_speculative_begin(this->speculative_, prompt_tgt);
+            common_speculative_begin(this->speculative_, slot.id, prompt_tgt);
 
             CompletionOutput result;
             result.token = id;

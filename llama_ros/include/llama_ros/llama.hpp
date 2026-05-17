@@ -759,6 +759,9 @@ protected:
   /// @brief Draft model for speculative decoding (nullptr if disabled).
   llama_model *model_dft_ = nullptr;
 
+  /// @brief Draft context for speculative decoding (nullptr if disabled).
+  llama_context *ctx_dft_ = nullptr;
+
   /**
    * @brief Checks whether speculative decoding is enabled.
    *

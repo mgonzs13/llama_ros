@@ -238,7 +238,7 @@ ros2 llama launch Qwen2.yaml
 <details>
 <summary>Click to expand</summary>
 
-[Speculative decoding](https://arxiv.org/abs/2302.01318) uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the larger target model. This can significantly speed up text generation when using a small draft model from the same model family. Note that speculative decoding requires `context.n_parallel: 1`.
+[Speculative decoding](https://arxiv.org/abs/2302.01318) accelerates text generation by drafting candidate tokens and verifying them in parallel with the main model. llama_ros supports draft-model-based methods (`draft-simple`, `draft-eagle3`, `draft-mtp`) and self-speculative ngram-based methods (`ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, `ngram-cache`) that require no separate model. Note that speculative decoding requires `context.n_parallel: 1`.
 
 ```yaml
 /**:
@@ -258,14 +258,15 @@ ros2 llama launch Qwen2.yaml
     prompt:
       system_prompt_type: Llama-3
     speculative:
-      type: draft
-      n_max: 16
-      n_min: 0
-      p_min: 0.75
-      n_gpu_layers: -1
-      model:
-        repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
-        filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
+      type: draft-simple
+      draft:
+        n_max: 16
+        n_min: 0
+        p_min: 0.75
+        n_gpu_layers: -1
+        model:
+          repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
+          filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
 ```
 
 ```shell
@@ -569,22 +570,79 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Speculative Decoding (`speculative.*`)
 
-Speculative decoding uses a smaller draft model to predict multiple tokens ahead, then verifies them in parallel with the main model. This can significantly speed up text generation, especially when using a large target model with a smaller draft model from the same model family.
+Speculative decoding uses draft tokens to accelerate generation, then verifies them in parallel with the main model. llama_ros supports both draft-model-based and self-speculative (ngram-based) approaches.
 
 **Note:** Speculative decoding requires `context.n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
 
-| Param                        | Type     | Default  | Description                                                                                                                                                                                             |
-| ---------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `speculative.type`           | `string` | `"none"` | Speculative decoding type: `none`, `draft`, `eagle3`, `ngram_simple`, `ngram_map_k`, `ngram_map_k4v`, `ngram_mod`, or `ngram_cache`                                                                     |
-| `speculative.n_max`          | `int32`  | `16`     | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
-| `speculative.n_min`          | `int32`  | `0`      | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
-| `speculative.p_min`          | `double` | `0.75`   | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
-| `speculative.p_split`        | `double` | `0.1`    | Split probability threshold for speculative sampling                                                                                                                                                    |
-| `speculative.n_ctx`          | `int32`  | `0`      | Context size for the draft model (`0` for same as target)                                                                                                                                               |
-| `speculative.n_gpu_layers`   | `int32`  | `-1`     | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
-| `speculative.model.path`     | `string` | `""`     | Local file path to the draft model GGUF file                                                                                                                                                            |
-| `speculative.model.repo`     | `string` | `""`     | HuggingFace repository ID for the draft model                                                                                                                                                           |
-| `speculative.model.filename` | `string` | `""`     | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
+| Param              | Type     | Default  | Description                                                                                                                                                   |
+| ------------------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.type` | `string` | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
+
+##### Draft Model (`speculative.draft.*`)
+
+Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`).
+
+| Param                              | Type     | Default | Description                                                                                                                                                                                             |
+| ---------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.draft.n_max`          | `int32`  | `16`    | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
+| `speculative.draft.n_min`          | `int32`  | `0`     | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
+| `speculative.draft.p_min`          | `double` | `0.75`  | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
+| `speculative.draft.p_split`        | `double` | `0.1`   | Split probability threshold for speculative sampling                                                                                                                                                    |
+| `speculative.draft.n_gpu_layers`   | `int32`  | `-1`    | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
+| `speculative.draft.cache_type_k`   | `string` | `"f16"` | KV cache type for K in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
+| `speculative.draft.cache_type_v`   | `string` | `"f16"` | KV cache type for V in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
+| `speculative.draft.model.path`     | `string` | `""`    | Local file path to the draft model GGUF file                                                                                                                                                            |
+| `speculative.draft.model.repo`     | `string` | `""`    | HuggingFace repository ID for the draft model                                                                                                                                                           |
+| `speculative.draft.model.filename` | `string` | `""`    | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
+
+##### Ngram-mod (`speculative.ngram_mod.*`)
+
+Used with `speculative.type: ngram-mod`. A hash-based self-speculative method that learns n-gram patterns from the prompt without a separate model.
+
+| Param                           | Type    | Default | Description                                           |
+| ------------------------------- | ------- | ------- | ----------------------------------------------------- |
+| `speculative.ngram_mod.n_match` | `int32` | `24`    | N-gram size for lookup (minimum 16 recommended)       |
+| `speculative.ngram_mod.n_max`   | `int32` | `64`    | Maximum number of tokens to draft per step            |
+| `speculative.ngram_mod.n_min`   | `int32` | `48`    | Minimum draft length required to attempt verification |
+
+##### Ngram-simple (`speculative.ngram_simple.*`)
+
+Used with `speculative.type: ngram-simple`. A lightweight self-speculative method based on n-gram lookup with no draft model required.
+
+| Param                               | Type    | Default | Description                                             |
+| ----------------------------------- | ------- | ------- | ------------------------------------------------------- |
+| `speculative.ngram_simple.size_n`   | `int32` | `12`    | N-gram size for lookup                                  |
+| `speculative.ngram_simple.size_m`   | `int32` | `48`    | M-gram size for speculative tokens                      |
+| `speculative.ngram_simple.min_hits` | `int32` | `1`     | Minimum hits at n-gram lookup for m-gram to be proposed |
+
+##### Ngram-map-k (`speculative.ngram_map_k.*`)
+
+Used with `speculative.type: ngram-map-k`. Self-speculative decoding with n-gram keys only.
+
+| Param                              | Type    | Default | Description                                             |
+| ---------------------------------- | ------- | ------- | ------------------------------------------------------- |
+| `speculative.ngram_map_k.size_n`   | `int32` | `12`    | N-gram size for lookup                                  |
+| `speculative.ngram_map_k.size_m`   | `int32` | `48`    | M-gram size for speculative tokens                      |
+| `speculative.ngram_map_k.min_hits` | `int32` | `1`     | Minimum hits at n-gram lookup for m-gram to be proposed |
+
+##### Ngram-map-k4v (`speculative.ngram_map_k4v.*`)
+
+Used with `speculative.type: ngram-map-k4v`. Self-speculative decoding with n-gram keys and 4 m-gram values; higher acceptance rate than `ngram-map-k` at higher cost.
+
+| Param                                | Type    | Default | Description                                             |
+| ------------------------------------ | ------- | ------- | ------------------------------------------------------- |
+| `speculative.ngram_map_k4v.size_n`   | `int32` | `12`    | N-gram size for lookup                                  |
+| `speculative.ngram_map_k4v.size_m`   | `int32` | `48`    | M-gram size for speculative tokens                      |
+| `speculative.ngram_map_k4v.min_hits` | `int32` | `1`     | Minimum hits at n-gram lookup for m-gram to be proposed |
+
+##### Ngram-cache (`speculative.ngram_cache.*`)
+
+Used with `speculative.type: ngram-cache`. Self-speculative decoding with a 3-level n-gram cache; optionally load pre-built static and dynamic caches from disk.
+
+| Param                                          | Type     | Default | Description                                    |
+| ---------------------------------------------- | -------- | ------- | ---------------------------------------------- |
+| `speculative.ngram_cache.lookup_cache_static`  | `string` | `""`    | Path to a pre-built static n-gram lookup cache |
+| `speculative.ngram_cache.lookup_cache_dynamic` | `string` | `""`    | Path to a dynamic n-gram lookup cache file     |
 
 #### Prompt & Chat (`prompt.*`)
 
@@ -1611,8 +1669,16 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 
 ### Speculative Decoding Demo
 
+For a simple draft, you can try:
+
 ```shell
 ros2 launch llama_bringup llama-3-speculative.launch.py
+```
+
+For a MTP draft, you can try:
+
+```shell
+ros2 launch llama_bringup Qwen3.5-MTP.yaml.launch.py
 ```
 
 ```shell

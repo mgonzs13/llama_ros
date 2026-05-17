@@ -26,11 +26,12 @@
 
     # Speculative decoding parameters
     speculative:
-      type: draft
-      n_max: 16
-      n_min: 0
-      p_min: 0.75
-      n_gpu_layers: -1
-      model:
-        repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
-        filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf
+      type: draft-simple
+      draft:
+        n_max: 16
+        n_min: 0
+        p_min: 0.75
+        n_gpu_layers: -1
+        model:
+          repo: lmstudio-community/Llama-3.2-1B-Instruct-GGUF
+          filename: Llama-3.2-1B-Instruct-Q4_K_M.gguf

@@ -1,0 +1,31 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: unsloth/Qwen3.5-9B-MTP-GGUF
+      filename: Qwen3.5-9B-Q4_K_M.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 2048
+      n_predict: 2048
+      n_parallel: 1
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: -1
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML
+
+    # Speculative decoding parameters
+    speculative:
+      type: draft-mtp
+      draft:
+        n_max: 6
