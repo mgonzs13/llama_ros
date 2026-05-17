@@ -1678,7 +1678,7 @@ ros2 launch llama_bringup llama-3-speculative.launch.py
 For a MTP draft, you can try:
 
 ```shell
-ros2 launch llama_bringup Qwen3.5-MTP.yaml.launch.py
+ros2 launch llama_bringup Qwen3.5-MTP.launch.py
 ```
 
 ```shell

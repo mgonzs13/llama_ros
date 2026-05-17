@@ -28,4 +28,4 @@
     speculative:
       type: draft-mtp
       draft:
-        n_max: 6
+        n_max: 3

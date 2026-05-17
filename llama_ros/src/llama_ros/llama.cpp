@@ -1054,29 +1054,28 @@ void Llama::init_speculative() {
     return;
   }
 
-  // Load draft model if using draft-based speculative decoding
-  if (has_draft) {
-    LLAMA_LOG_INFO("Loading draft model for speculative decoding: %s",
-                   spec_params.draft.mparams.path.c_str());
+  const bool is_mtp = std::any_of(
+      spec_params.types.begin(), spec_params.types.end(),
+      [](auto t) { return t == COMMON_SPECULATIVE_TYPE_DRAFT_MTP; });
 
-    // Prepare params for draft model loading
-    common_params params_dft;
-    params_dft.model.path = spec_params.draft.mparams.path;
+  if (has_draft) {
+    // Start from a full copy of target params to inherit n_ctx, flash_attn,
+    // and other settings; then override draft-specific fields.
+    // Mirrors server-context.cpp draft model initialization.
+    auto params_dft = this->params;
+    params_dft.model = spec_params.draft.mparams;
     params_dft.n_gpu_layers = spec_params.draft.n_gpu_layers;
-    // Use target model's thread settings if not overridden
-    if (spec_params.draft.cpuparams.n_threads <= 0) {
-      params_dft.cpuparams.n_threads = this->params.cpuparams.n_threads;
-      params_dft.cpuparams_batch.n_threads =
-          this->params.cpuparams_batch.n_threads;
-    } else {
+    params_dft.cache_type_k = spec_params.draft.cache_type_k;
+    params_dft.cache_type_v = spec_params.draft.cache_type_v;
+    if (spec_params.draft.cpuparams.n_threads > 0) {
       params_dft.cpuparams = spec_params.draft.cpuparams;
       params_dft.cpuparams_batch = spec_params.draft.cpuparams_batch;
     }
 
+    LLAMA_LOG_INFO("Loading draft model: %s", params_dft.model.path.c_str());
     auto mparams_dft = common_model_params_to_llama(params_dft);
     this->model_dft_ =
         llama_model_load_from_file(params_dft.model.path.c_str(), mparams_dft);
-
     if (this->model_dft_ == nullptr) {
       LLAMA_LOG_ERROR("Failed to load draft model '%s', speculative decoding "
                       "will be disabled",
@@ -1084,8 +1083,12 @@ void Llama::init_speculative() {
       return;
     }
 
-    // Create the draft context
     auto cparams_dft = common_context_params_to_llama(params_dft);
+    if (is_mtp) {
+      cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+    }
+
+    cparams_dft.n_rs_seq = 0;
     this->ctx_dft_ = llama_init_from_model(this->model_dft_, cparams_dft);
     if (this->ctx_dft_ == nullptr) {
       LLAMA_LOG_ERROR("Failed to create draft context, speculative decoding "
@@ -1095,15 +1098,29 @@ void Llama::init_speculative() {
       return;
     }
 
-    spec_params.draft.ctx_tgt = this->ctx;
-    spec_params.draft.ctx_dft = this->ctx_dft_;
-
-    // Infer speculative type from draft model if type is "none"
     if (spec_params.types[0] == COMMON_SPECULATIVE_TYPE_NONE) {
       spec_params.types = {COMMON_SPECULATIVE_TYPE_DRAFT_SIMPLE};
     }
 
-    LLAMA_LOG_INFO("Draft model loaded successfully");
+  } else if (is_mtp) {
+    // MTP heads are embedded in the main model GGUF; create a dedicated MTP
+    // context from it (mirrors server-context.cpp).
+    LLAMA_LOG_INFO("Creating MTP context from main model "
+                   "(no separate draft model)");
+    auto cparams_mtp = common_context_params_to_llama(this->params);
+    cparams_mtp.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+    cparams_mtp.n_rs_seq = 0;
+    this->ctx_dft_ = llama_init_from_model(this->model, cparams_mtp);
+    if (this->ctx_dft_ == nullptr) {
+      LLAMA_LOG_ERROR("Failed to create MTP context, speculative decoding "
+                      "will be disabled");
+      return;
+    }
+  }
+
+  if (this->ctx_dft_ != nullptr) {
+    spec_params.draft.ctx_tgt = this->ctx;
+    spec_params.draft.ctx_dft = this->ctx_dft_;
   }
 
   // Initialize speculative decoder
@@ -1189,6 +1206,21 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
                      true);
   }
 
+  // Roll back ctx_dft after draft: draft() advanced ctx_dft's KV cache to
+  // n_past + n_drafted. process() will decode the verify batch starting at
+  // n_past, which M-RoPE rejects unless we first remove those positions.
+  // Mirrors server-context.cpp: common_context_seq_rm(ctx_dft, id,
+  // ckpt.pos_max+1, -1)
+  if (this->ctx_dft_ != nullptr) {
+    llama_memory_seq_rm(llama_get_memory(this->ctx_dft_), slot->id,
+                        slot->n_past, -1);
+  }
+
+  // Set embeddings mode before the verify decode (required by MTP to read
+  // hidden states; mirrors server-context.cpp per-batch llama_set_embeddings).
+  llama_set_embeddings(this->ctx,
+                       common_speculative_need_embd(this->speculative_));
+
   // Decode the batch on the target model
   const int ret = llama_decode(this->ctx, this->batch);
   if (ret != 0) {
@@ -1200,6 +1232,10 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
     slot->has_next_token = false;
     return false;
   }
+
+  // Update hidden states in the speculative pipeline (required for MTP;
+  // no-op for other types).
+  common_speculative_process(this->speculative_, this->batch);
 
   // Verify draft tokens using the target sampler
   const auto ids =
@@ -1241,8 +1277,13 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
     }
   }
 
-  // Clear KV cache for any extra draft tokens that were rejected
+  // Clear KV cache for any extra draft tokens that were rejected on the
+  // target context, and mirror the trim on the MTP draft context.
   llama_memory_seq_rm(llama_get_memory(this->ctx), slot->id, slot->n_past, -1);
+  if (this->ctx_dft_ != nullptr) {
+    llama_memory_seq_rm(llama_get_memory(this->ctx_dft_), slot->id,
+                        slot->n_past, -1);
+  }
 
   if (!should_continue) {
     this->send_completion_result(slot);
@@ -1555,6 +1596,13 @@ void Llama::run_loop() {
 
     int32_t i_next = 0;
 
+    // Set embeddings mode before decode (required by MTP to read hidden
+    // states; mirrors server-context.cpp per-batch llama_set_embeddings).
+    if (this->speculative_ != nullptr) {
+      llama_set_embeddings(this->ctx,
+                           common_speculative_need_embd(this->speculative_));
+    }
+
     LLAMA_LOG_DEBUG("Decoding batch of %d tokens", this->batch.n_tokens);
     for (int32_t i = 0; i < this->batch.n_tokens; i = i_next) {
       const int32_t n_tokens = std::min(n_batch, this->batch.n_tokens - i);
@@ -1611,6 +1659,11 @@ void Llama::run_loop() {
 
       i_next = i + n_tokens;
       n_batch = llama_n_batch(this->ctx);
+
+      // Feed hidden states to speculative decoder (required for MTP).
+      if (this->speculative_ != nullptr) {
+        common_speculative_process(this->speculative_, batch_view);
+      }
 
       // Consume results per-slot for the tokens we just decoded
       for (auto &slot : this->server_slots) {
