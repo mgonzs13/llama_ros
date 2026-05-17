@@ -145,8 +145,9 @@ void CompletionRequestHandler::handle(
     common_params_sampling sparams,
     std::function<void(CompletionOutput, ServerSlot *)> callback,
     std::vector<std::string> stop, bool /*reset*/) {
+
   slot->prompt_tokens.clear();
-  std::string full_prompt = "";
+  std::string full_prompt;
 
   if (this->llama_->params.input_prefix.size() > 0) {
     full_prompt += this->llama_->params.input_prefix;

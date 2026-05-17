@@ -83,7 +83,7 @@ public:
     executor_->add_node(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
-    config_ = new BT::NodeConfiguration();
+    config_ = std::make_unique<BT::NodeConfiguration>();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
@@ -118,10 +118,9 @@ public:
   void TearDown() override {
     tree_.reset();
     executor_.reset();
+    config_.reset();
     rclcpp::shutdown();
 
-    delete config_;
-    config_ = nullptr;
     node_.reset();
     server_.reset();
     factory_.reset();
@@ -133,7 +132,7 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
-  BT::NodeConfiguration *config_;
+  std::unique_ptr<BT::NodeConfiguration> config_;
   std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   std::shared_ptr<BT::Tree> tree_;
   std::thread server_thread_;

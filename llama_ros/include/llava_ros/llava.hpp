@@ -57,7 +57,7 @@ public:
    * @param params Common parameters for the llama.cpp.
    * @param system_prompt The system prompt to initialize the model's context.
    */
-  Llava(const common_params &params, std::string system_prompt = "");
+  Llava(const common_params &params, std::string system_prompt = {});
 
   /**
    * @brief Destroys the Llava instance.

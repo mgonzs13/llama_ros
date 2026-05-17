@@ -86,7 +86,7 @@ public:
    * @param system_prompt The system prompt to be used.
    * @param initial_reset Whether to reset the model initially.
    */
-  Llama(const common_params &params, std::string system_prompt = "",
+  Llama(const common_params &params, std::string system_prompt = {},
         bool initial_reset = true);
 
   /**
