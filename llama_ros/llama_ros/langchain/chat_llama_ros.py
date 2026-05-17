@@ -866,7 +866,7 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
 
             if "tool_call_id" in message:
                 chat_message.tool_call_id = message["tool_call_id"]
-                            
+
             for tool_call in message.get("tool_calls", []):
                 chat_tool_call = ChatToolCall()
                 chat_tool_call.id = tool_call["id"]
