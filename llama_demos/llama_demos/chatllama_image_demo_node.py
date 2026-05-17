@@ -35,7 +35,7 @@ from llama_ros.langchain import ChatLlamaROS
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "Do you know the city of León from Spain? Can you tell me a bit about its history?"
+        prompt = "Who is the character in the middle?"
     else:
         prompt = " ".join(sys.argv[1:])
 
@@ -51,7 +51,8 @@ def main():
             SystemMessage("You are an IA that answer questions."),
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"{prompt}"},
+                    {"type": "text", "text": f"<__media__>{prompt}"},
+                    {"type": "image_url", "image_url": "{image_url}"},
                 ]
             ),
         ]
@@ -60,7 +61,11 @@ def main():
     chain = prompt | chat | StrOutputParser()
 
     initial_time = time.time()
-    for text in chain.stream({}):
+    for text in chain.stream(
+        {
+            "image_url": "https://pics.filmaffinity.com/Dragon_Ball_Bola_de_Dragaon_Serie_de_TV-973171538-large.jpg"
+        }
+    ):
         tokens += 1
         print(text, end="", flush=True)
         if eval_time < 0:

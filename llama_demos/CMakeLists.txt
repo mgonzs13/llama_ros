@@ -16,6 +16,7 @@ set(DEMO_NODES
   llava_demo_node
   mtmd_audio_demo_node
   chatllama_demo_node
+  chatllama_image_demo_node
   chatllama_audio_demo_node
   chatllama_multi_audio_demo_node
   chatllama_multi_image_demo_node

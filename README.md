@@ -1669,20 +1669,22 @@ https://github.com/mgonzs13/llama_ros/assets/25979134/9311761b-d900-4e58-b9f8-11
 
 ### Speculative Decoding Demo
 
-For a simple draft, you can try:
-
 ```shell
 ros2 launch llama_bringup llama-3-speculative.launch.py
 ```
 
-For a MTP draft, you can try:
+```shell
+ros2 run llama_demos llama_demo_node
+```
+
+### MTP Speculative Decoding Demo
 
 ```shell
 ros2 launch llama_bringup Qwen3.5-MTP.launch.py
 ```
 
 ```shell
-ros2 run llama_demos llama_demo_node
+ros2 run llama_demos chatllama_demo_node
 ```
 
 ### Embeddings Generation Demo
@@ -1783,7 +1785,7 @@ ros2 llama launch MiniCPM-2.6.yaml
 </details>
 
 ```shell
-ros2 run llama_demos chatllama_demo_node
+ros2 run llama_demos chatllama_image_demo_node
 ```
 
 [ChatLlamaROS demo](https://github-production-user-asset-6210df.s3.amazonaws.com/55236157/363094669-c6de124a-4e91-4479-99b6-685fecb0ac20.webm?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240830%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240830T081232Z&X-Amz-Expires=300&X-Amz-Signature=f937758f4bcbaec7683e46ddb057fb642dc86a33cc8c736fca3b5ce2bf06ddac&X-Amz-SignedHeaders=host&actor_id=55236157&key_id=0&repo_id=622137360)
