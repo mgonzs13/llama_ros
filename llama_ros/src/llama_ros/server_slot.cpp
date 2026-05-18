@@ -43,7 +43,7 @@ const common_chat_msg &ServerSlot::update_chat_msg(
     // fully consume (e.g. multiple <tool_call> blocks with a single-block
     // parser). Fall back to treating everything as raw content; the Python
     // layer will extract all tool calls via regex.
-    LLAMA_LOG_INFO("PEG parse failed, falling back to raw content: %s",
+    LLAMA_LOG_WARN("PEG parse failed, falling back to raw content: %s",
                    e.what());
     new_msg.role = "assistant";
     new_msg.content = this->generated_text;

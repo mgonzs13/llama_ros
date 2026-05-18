@@ -22,7 +22,7 @@
 
     # Prompt & chat parameters
     prompt:
-      system_prompt_type: ChatML
+      system_prompt_type: Qwen3
 
     # Speculative decoding parameters
     speculative:
