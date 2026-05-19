@@ -1,0 +1,5 @@
+<map id="llama_ros::ServerTaskResultCompletionPartial" name="llama_ros::ServerTaskResultCompletionPartial">
+<area shape="rect" id="Node000001" title="Partial result of a completion task (used during streaming)." alt="" coords="5,79,193,120"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1ServerTaskResult.html" title="Base class for server task results." alt="" coords="5,5,193,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,46,102,79,96,79,96,46"/>
+</map>

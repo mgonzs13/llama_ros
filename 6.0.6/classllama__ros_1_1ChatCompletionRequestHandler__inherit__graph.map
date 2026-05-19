@@ -1,0 +1,5 @@
+<map id="llama_ros::ChatCompletionRequestHandler" name="llama_ros::ChatCompletionRequestHandler">
+<area shape="rect" id="Node000001" title="Handles chat completion requests." alt="" coords="6,79,181,120"/>
+<area shape="rect" id="Node000002" href="$classllama__ros_1_1RequestHandler.html" title="Base interface for request handlers." alt="" coords="5,5,182,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,46,96,79,91,79,91,46"/>
+</map>

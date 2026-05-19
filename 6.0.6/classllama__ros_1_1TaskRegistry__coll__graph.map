@@ -1,0 +1,9 @@
+<map id="llama_ros::TaskRegistry" name="llama_ros::TaskRegistry">
+<area shape="rect" id="Node000001" title="Manages asynchronous task registration and completion." alt="" coords="331,95,490,121"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,181,61"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="197,39,252,47,307,60,349,75,385,92,383,97,347,80,306,65,251,52,196,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="53,95,133,121"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="148,105,331,105,331,110,148,110"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="19,148,167,174"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="182,151,306,134,365,119,367,124,307,139,183,156"/>
+</map>
