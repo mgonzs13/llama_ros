@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b9222
+  GIT_TAG        b9297
   GIT_SHALLOW    FALSE
 )
 
@@ -78,7 +78,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/glm4v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/granite-speech.cpp
-  ${llama_SOURCE_DIR}/tools/mtmd/models/hunyuanocr.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/hunyuanvl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/internvl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimik25.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp

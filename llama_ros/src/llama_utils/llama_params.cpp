@@ -303,6 +303,10 @@ void llama_utils::declare_llama_params(
                                             {"cache_type_k", "f16"},
                                             {"cache_type_v", "f16"},
                                         });
+  node->declare_parameters<bool>("speculative.draft",
+                                 {
+                                     {"backend_sampling", true},
+                                 });
 
   // Speculative ngram-mod parameters
   node->declare_parameters<int32_t>("speculative.ngram_mod",
@@ -524,6 +528,8 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("speculative.draft.model.filename",
                       params.params.speculative.draft.mparams.hf_file);
   params.params.speculative.draft.p_min = static_cast<float>(speculative_p_min);
+  params.params.speculative.draft.backend_sampling =
+      node->get_parameter("speculative.draft.backend_sampling").as_bool();
 
   // Draft model KV cache types
   std::string speculative_cache_type_k;
