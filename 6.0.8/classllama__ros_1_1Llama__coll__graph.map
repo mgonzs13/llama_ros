@@ -1,0 +1,87 @@
+<map id="llama_ros::Llama" name="llama_ros::Llama">
+<area shape="rect" id="Node000001" title="A class representing a llama.cpp." alt="" coords="2562,236,2681,262"/>
+<area shape="rect" id="Node000028" href="$classllama__ros_1_1RequestHandler.html" title="Base interface for request handlers." alt="" coords="2775,236,2952,262"/>
+<area shape="poly" id="edge37_Node000028_Node000001" title=" " alt="" coords="2697,246,2775,246,2775,252,2697,252"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="2255,9,2421,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2437,27,2490,40,2516,51,2540,66,2559,84,2576,106,2600,154,2614,201,2621,235,2616,236,2609,202,2595,156,2571,109,2555,88,2536,70,2514,55,2489,45,2436,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="530,589,673,630"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="688,629,817,655,890,664,963,668,2339,668,2375,664,2407,653,2437,637,2464,615,2489,588,2511,559,2547,492,2575,422,2596,355,2616,262,2621,263,2601,357,2580,424,2552,494,2515,562,2493,592,2468,619,2440,641,2410,658,2376,669,2339,673,963,673,890,670,816,660,687,635"/>
+<area shape="rect" id="Node000008" href="$classllama__ros_1_1ServerSlot.html" title="Represents a processing slot in the server." alt="" coords="1298,460,1443,486"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="688,617,809,624,881,624,958,621,1038,612,1119,598,1198,577,1273,547,1320,516,1355,484,1359,488,1324,520,1276,552,1200,582,1120,603,1039,618,959,626,881,630,808,630,688,622"/>
+<area shape="rect" id="Node000009" href="$structllama__ros_1_1ServerSlot_1_1slot__params.html" title="Parameters for slot configuration." alt="" coords="892,377,1036,418"/>
+<area shape="poly" id="edge11_Node000009_Node000003" title=" " alt="" coords="658,579,751,526,801,492,849,456,860,441,873,427,893,416,895,420,876,431,864,445,853,459,805,497,754,531,661,584"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="226,224,304,250"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="319,226,447,211,523,205,600,203,1544,203,1844,207,2138,218,2562,242,2561,248,2138,224,1844,213,1544,208,600,208,524,210,447,216,320,232"/>
+<area shape="poly" id="edge9_Node000008_Node000004" title=" " alt="" coords="320,237,631,258,841,277,1054,301,1118,306,1170,306,1219,315,1246,325,1276,342,1308,369,1334,401,1366,459,1361,461,1330,404,1304,372,1273,346,1244,330,1217,320,1169,312,1118,311,1054,306,841,282,631,263,319,243"/>
+<area shape="poly" id="edge14_Node000009_Node000004" title=" " alt="" coords="291,260,330,298,378,335,443,374,475,385,516,395,617,409,719,413,813,410,891,404,892,409,814,415,719,418,616,415,515,400,473,390,441,378,375,339,326,302,287,264"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="522,316,681,342"/>
+<area shape="poly" id="edge13_Node000010_Node000004" title=" " alt="" coords="294,258,332,286,377,308,413,318,450,325,522,330,521,335,450,330,412,324,375,313,329,290,291,263"/>
+<area shape="rect" id="Node000024" href="$classllama__utils_1_1ChatFormatter.html" title="Handles chat template formatting and parsing." alt="" coords="515,74,688,99"/>
+<area shape="poly" id="edge33_Node000024_Node000004" title=" " alt="" coords="280,209,319,159,345,134,375,113,400,105,434,98,515,89,515,94,435,103,401,110,378,118,348,138,323,163,284,212"/>
+<area shape="rect" id="Node000036" title=" " alt="" coords="531,128,672,168"/>
+<area shape="poly" id="edge49_Node000036_Node000004" title=" " alt="" coords="306,215,376,188,455,168,530,155,531,160,456,173,377,193,308,220"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,217,129,258"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="144,234,226,234,226,240,144,240"/>
+<area shape="rect" id="Node000006" href="$classllama__utils_1_1Spinner.html" title="A utility class for displaying a spinning animation in the terminal." alt="" coords="2271,186,2404,211"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="2420,208,2538,228,2564,233,2563,238,2538,233,2419,213"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="1668,477,1793,518"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1808,498,1875,499,1944,496,2080,485,2185,473,2289,454,2420,420,2483,404,2508,393,2536,372,2563,345,2585,314,2613,261,2617,264,2589,317,2567,349,2540,377,2510,397,2484,409,2422,425,2290,459,2186,479,2080,490,1944,501,1875,504,1808,503"/>
+<area shape="rect" id="Node000017" href="$classllama__ros_1_1SlotManager.html" title="Manages the allocation and lifecycle of ServerSlot instances." alt="" coords="1970,431,2126,457"/>
+<area shape="poly" id="edge23_Node000017_Node000007" title=" " alt="" coords="1808,493,1875,488,1944,478,2015,455,2016,460,1945,483,1875,494,1809,499"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="1459,476,1668,490,1668,496,1458,482"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="1052,403,1159,418,1275,440,1333,457,1332,462,1274,445,1158,423,1051,409"/>
+<area shape="poly" id="edge16_Node000008_Node000010" title=" " alt="" coords="696,326,840,328,1008,335,1164,351,1228,363,1275,379,1304,396,1328,417,1362,458,1358,462,1324,421,1300,400,1273,384,1226,368,1164,356,1007,341,840,333,696,331"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="646,346,712,368,805,384,892,392,892,397,805,390,711,373,644,351"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="903,521,1026,562"/>
+<area shape="poly" id="edge15_Node000008_Node000011" title=" " alt="" coords="1042,542,1153,538,1214,531,1274,518,1313,503,1347,484,1350,489,1316,507,1275,523,1215,536,1153,543,1042,547"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="875,708,1054,748"/>
+<area shape="poly" id="edge17_Node000008_Node000012" title=" " alt="" coords="1069,720,1120,712,1174,699,1226,678,1273,649,1292,631,1309,610,1336,563,1354,519,1364,486,1369,487,1359,521,1341,566,1314,613,1296,634,1276,653,1228,683,1175,704,1121,717,1070,726"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="538,708,665,748"/>
+<area shape="poly" id="edge18_Node000012_Node000013" title=" " alt="" coords="680,725,874,725,874,730,680,730"/>
+<area shape="rect" id="Node000014" href="$structllama__ros_1_1TokenProb.html" title="Represents the probability of a token." alt="" coords="192,715,338,741"/>
+<area shape="poly" id="edge19_Node000013_Node000014" title=" " alt="" coords="354,725,538,725,538,730,354,730"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="882,441,1047,497"/>
+<area shape="poly" id="edge20_Node000008_Node000015" title=" " alt="" coords="1062,467,1298,470,1298,475,1062,473"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="2264,370,2412,411"/>
+<area shape="poly" id="edge21_Node000001_Node000016" title=" " alt="" coords="2426,373,2482,356,2537,331,2559,315,2579,296,2609,260,2613,264,2583,299,2563,319,2539,336,2484,361,2427,378"/>
+<area shape="poly" id="edge22_Node000016_Node000017" title=" " alt="" coords="2136,425,2263,401,2264,407,2137,430"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="1690,379,1771,405"/>
+<area shape="poly" id="edge24_Node000017_Node000018" title=" " alt="" coords="1767,410,1803,427,1843,440,1907,448,1970,448,1970,454,1907,454,1842,445,1801,432,1765,415"/>
+<area shape="rect" id="Node000020" href="$classllama__ros_1_1TaskRegistry.html" title="Manages asynchronous task registration and completion." alt="" coords="1968,300,2128,326"/>
+<area shape="poly" id="edge28_Node000020_Node000018" title=" " alt="" coords="1787,392,1862,390,1904,384,1943,374,1991,351,2029,324,2032,329,1994,355,1945,379,1905,389,1863,395,1787,398"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="2264,286,2412,327"/>
+<area shape="poly" id="edge25_Node000001_Node000019" title=" " alt="" coords="2427,304,2482,299,2537,288,2570,276,2598,260,2601,265,2572,280,2539,293,2483,305,2428,310"/>
+<area shape="poly" id="edge26_Node000019_Node000020" title=" " alt="" coords="2143,308,2264,306,2264,311,2143,314"/>
+<area shape="rect" id="Node000021" title=" " alt="" coords="1643,243,1818,298"/>
+<area shape="poly" id="edge27_Node000020_Node000021" title=" " alt="" coords="1835,277,1945,291,1983,297,1982,302,1944,296,1834,282"/>
+<area shape="rect" id="Node000022" title=" " alt="" coords="1656,323,1805,349"/>
+<area shape="poly" id="edge29_Node000020_Node000022" title=" " alt="" coords="1820,327,1968,316,1968,321,1820,332"/>
+<area shape="rect" id="Node000023" title=" " alt="" coords="1467,66,1619,107"/>
+<area shape="poly" id="edge30_Node000001_Node000023" title=" " alt="" coords="1634,84,1892,84,2339,84,2398,83,2445,86,2489,99,2540,127,2568,152,2590,182,2618,235,2613,237,2586,185,2564,156,2536,131,2487,104,2444,92,2398,89,2339,89,1892,89,1634,89"/>
+<area shape="poly" id="edge31_Node000023_Node000024" title=" " alt="" coords="703,84,1466,84,1466,89,703,89"/>
+<area shape="rect" id="Node000025" title=" " alt="" coords="178,5,352,61"/>
+<area shape="poly" id="edge32_Node000024_Node000025" title=" " alt="" coords="368,42,492,60,544,70,543,76,491,65,367,47"/>
+<area shape="rect" id="Node000026" title=" " alt="" coords="3440,186,3660,227"/>
+<area shape="poly" id="edge34_Node000001_Node000026" title=" " alt="" coords="3441,181,3424,168,3415,154,3412,139,3410,126,3401,115,3391,114,3379,116,3269,112,3220,112,3159,117,3030,136,2930,158,2706,224,2661,238,2659,233,2705,219,2929,153,3029,131,3158,112,3220,107,3269,107,3379,111,3391,108,3403,111,3415,124,3418,138,3420,152,3428,165,3444,176"/>
+<area shape="rect" id="Node000027" href="$classllama__ros_1_1EmbeddingRequestHandler.html" title="Handles embedding generation requests." alt="" coords="3159,192,3354,232"/>
+<area shape="poly" id="edge35_Node000026_Node000027" title=" " alt="" coords="3370,207,3439,206,3439,211,3370,212"/>
+<area shape="poly" id="edge36_Node000027_Node000028" title=" " alt="" coords="2967,237,3158,218,3159,224,2967,242"/>
+<area shape="rect" id="Node000030" href="$classllama__ros_1_1RerankRequestHandler.html" title="Handles reranking requests." alt="" coords="3171,126,3343,167"/>
+<area shape="poly" id="edge40_Node000030_Node000028" title=" " alt="" coords="2915,228,2975,209,3170,162,3171,167,2976,214,2917,233"/>
+<area shape="rect" id="Node000032" href="$classllama__ros_1_1CompletionRequestHandler.html" title="Handles text completion requests." alt="" coords="3159,322,3355,363"/>
+<area shape="poly" id="edge43_Node000032_Node000028" title=" " alt="" coords="2936,264,3168,319,3167,324,2935,269"/>
+<area shape="rect" id="Node000034" href="$classllama__ros_1_1ChatCompletionRequestHandler.html" title="Handles chat completion requests." alt="" coords="3169,257,3344,298"/>
+<area shape="poly" id="edge46_Node000034_Node000028" title=" " alt="" coords="2967,254,3169,268,3168,274,2967,259"/>
+<area shape="rect" id="Node000029" title=" " alt="" coords="3452,114,3649,155"/>
+<area shape="poly" id="edge38_Node000001_Node000029" title=" " alt="" coords="3473,112,3402,96,3189,88,3056,88,2976,92,2896,108,2835,128,2778,156,2707,198,2644,238,2641,234,2704,194,2775,152,2833,123,2895,103,2975,87,3056,83,3189,83,3402,91,3474,107"/>
+<area shape="poly" id="edge39_Node000029_Node000030" title=" " alt="" coords="3358,140,3451,136,3451,141,3358,145"/>
+<area shape="rect" id="Node000031" title=" " alt="" coords="3440,385,3661,426"/>
+<area shape="poly" id="edge41_Node000001_Node000031" title=" " alt="" coords="3424,417,3327,420,3214,421,3094,416,2975,403,2917,393,2872,381,2774,342,2699,302,2640,265,2643,260,2701,298,2776,337,2874,376,2918,388,2976,398,3094,410,3214,415,3326,415,3424,412"/>
+<area shape="poly" id="edge42_Node000031_Node000032" title=" " alt="" coords="3371,364,3452,382,3451,387,3370,369"/>
+<area shape="rect" id="Node000033" title=" " alt="" coords="3426,293,3674,334"/>
+<area shape="poly" id="edge44_Node000001_Node000033" title=" " alt="" coords="3501,343,3454,364,3402,380,3379,380,3269,382,3220,382,3158,377,3066,364,2975,343,2807,302,2670,265,2671,260,2808,297,2976,338,3067,358,3159,372,3221,376,3269,377,3379,375,3402,375,3452,359,3498,338"/>
+<area shape="poly" id="edge45_Node000033_Node000034" title=" " alt="" coords="3360,287,3426,295,3425,301,3360,292"/>
+<area shape="rect" id="Node000035" href="$structllama__ros_1_1OAICompactParserOptions.html" title="Options for the OAI&#45;compatible response parser." alt="" coords="1078,128,1274,168"/>
+<area shape="poly" id="edge47_Node000001_Node000035" title=" " alt="" coords="1290,145,1542,145,2339,145,2397,146,2442,151,2486,162,2539,184,2579,208,2609,234,2605,238,2575,213,2537,189,2484,167,2441,156,2397,151,2339,150,1542,150,1290,150"/>
+<area shape="poly" id="edge48_Node000035_Node000036" title=" " alt="" coords="687,145,1078,145,1078,150,687,150"/>
+</map>

@@ -1,0 +1,26 @@
+<map id="llama_ros::ServerTaskResultCompletion" name="llama_ros::ServerTaskResultCompletion">
+<area shape="rect" id="Node000001" title="Full result of a completion task." alt="" coords="1644,266,1831,306"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1ServerTaskResult.html" title="Base class for server task results." alt="" coords="1278,66,1465,92"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1481,71,1553,81,1588,93,1621,109,1662,144,1694,186,1717,229,1732,264,1727,266,1712,231,1689,189,1658,147,1619,114,1586,98,1551,87,1480,77"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="178,202,255,228"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="248,191,284,171,328,150,377,134,429,127,1373,127,1424,131,1475,143,1524,159,1571,179,1653,224,1711,263,1708,267,1650,229,1569,184,1523,164,1474,148,1423,137,1373,133,429,133,379,139,330,155,286,175,251,196"/>
+<area shape="rect" id="Node000008" href="$structllama__ros_1_1LogProb.html" title="Represents a log probability for a token." alt="" coords="364,202,497,228"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="271,213,364,213,364,218,271,218"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="521,292,680,318"/>
+<area shape="poly" id="edge12_Node000010_Node000003" title=" " alt="" coords="258,232,280,241,406,273,521,292,520,298,405,278,279,246,256,237"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,195,129,236"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="144,213,178,213,178,218,144,218"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="1313,353,1430,379"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1445,370,1530,370,1575,364,1619,354,1669,332,1709,305,1712,309,1671,337,1621,360,1576,370,1530,375,1445,376"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="1290,236,1453,277"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1469,262,1644,276,1643,281,1468,267"/>
+<area shape="rect" id="Node000007" href="$structllama__ros_1_1SelectedLogProb.html" title="Represents a selected log probability and its associated data." alt="" coords="985,242,1169,268"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="1184,253,1289,254,1289,259,1184,258"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="512,206,521,206,645,202,742,202,839,209,962,226,1026,239,1025,245,961,231,838,215,742,208,645,207,521,211,512,212"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="704,238,827,278"/>
+<area shape="poly" id="edge10_Node000009_Node000008" title=" " alt="" coords="513,228,521,229,704,250,703,255,520,234,512,233"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="843,255,985,253,985,259,843,260"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="695,307,905,313,1373,313,1515,307,1643,295,1644,300,1515,312,1373,318,905,318,695,312"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="1300,403,1442,444"/>
+<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="1458,428,1538,423,1580,414,1619,400,1651,380,1679,355,1721,305,1725,308,1683,359,1654,384,1621,405,1581,419,1539,428,1458,433"/>
+</map>

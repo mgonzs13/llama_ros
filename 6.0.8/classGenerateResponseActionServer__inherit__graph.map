@@ -1,0 +1,10 @@
+<map id="GenerateResponseActionServer" name="GenerateResponseActionServer">
+<area shape="rect" id="Node000001" title=" " alt="" coords="465,46,672,72"/>
+<area shape="rect" id="Node000002" href="$classTestActionServer.html" title=" " alt="" coords="147,5,417,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="433,41,465,44,464,50,432,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,46,99,72"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="114,47,146,43,147,48,115,53"/>
+<area shape="rect" id="Node000004" href="$classTestActionServer.html" title=" " alt="" coords="167,71,396,111"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="115,65,167,72,167,78,114,70"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="412,74,464,68,465,73,413,79"/>
+</map>
