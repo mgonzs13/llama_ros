@@ -256,7 +256,7 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<int32_t>("cache", {
                                                  {"n_cache_reuse", 0},
                                                  {"n_ctx_checkpoints", 32},
-                                                 {"checkpoint_every_nt", 8192},
+                                                 {"checkpoint_min_step", 256},
                                                  {"cache_ram_mib", 8192},
                                              });
 
@@ -498,8 +498,8 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("cache.cache_prompt", params.params.cache_prompt);
   node->get_parameter("cache.n_ctx_checkpoints",
                       params.params.n_ctx_checkpoints);
-  node->get_parameter("cache.checkpoint_every_nt",
-                      params.params.checkpoint_every_nt);
+  node->get_parameter("cache.checkpoint_min_step",
+                      params.params.checkpoint_min_step);
   node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
 
   // Fit parameters (fit.*)

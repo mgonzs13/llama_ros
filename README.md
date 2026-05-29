@@ -559,7 +559,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `cache.cache_ram_mib`       | `int32`  | `8192`  | RAM limit for the prompt cache in MiB (`-1` = no limit, `0` = disable cache)                     |
 | `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)            |
 | `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                  |
-| `cache.checkpoint_every_nt` | `int32`  | `8192`  | Create a checkpoint every N tokens during prompt prefill                                         |
+| `cache.checkpoint_min_step` | `int32`  | `256`   | Minimun spacing between context checkpoints                                                      |
 
 #### Fit Parameters (`fit.*`)
 
