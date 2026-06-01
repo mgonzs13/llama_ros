@@ -1260,6 +1260,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
 
     // Advance n_past for each accepted/sampled token
     slot->n_past += 1;
+    slot->n_kv_cache += 1;
 
     // Build CompletionOutput for this token
     CompletionOutput result;
@@ -1426,6 +1427,7 @@ void Llama::run_loop() {
       common_batch_add(this->batch, slot.sampled, slot.n_past, {slot.id}, true);
 
       slot.n_past += 1;
+      slot.n_kv_cache += 1;
     }
 
     // Process prompts (new inputs)
@@ -1571,6 +1573,7 @@ void Llama::run_loop() {
           // rerank prompt would mismatch the next request's task type.
           if (slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
             slot.kv_cached_tokens = slot.prompt_tokens;
+            slot.n_kv_cache = slot.n_past;
           }
 
           LLAMA_LOG_INFO("prompt done, n_past = %d, n_tokens = %d\n",

@@ -208,6 +208,12 @@ public:
   /// Empty when the cache is invalid (cold slot, post-shift, post-error).
   std::vector<llama_token> kv_cached_tokens;
 
+  /// @brief Total token count in this slot's KV cache (prompt + generated).
+  /// Preserved across reset() so the next request knows whether prefix reuse
+  /// would leave stale positions that break M-RoPE's strictly-increasing
+  /// position invariant.  Reset together with kv_cached_tokens.
+  int32_t n_kv_cache = 0;
+
   /**
    * @brief Length of the longest prefix of @p incoming that matches what is
    * currently materialized in this slot's KV. Returns 0 when no reuse is

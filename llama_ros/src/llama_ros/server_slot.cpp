@@ -78,8 +78,8 @@ void ServerSlot::reset() {
 
   this->map_pos_to_media.clear();
   this->prompt_tokens.clear();
-  // kv_cached_tokens is intentionally preserved: it tracks the KV state of
-  // this slot's sequence, which survives request boundaries.
+  // kv_cached_tokens and n_kv_cache are intentionally preserved: they track
+  // the KV state of this slot's sequence, which survives request boundaries.
 }
 
 size_t ServerSlot::find_reusable_prefix(
@@ -100,10 +100,20 @@ size_t ServerSlot::find_reusable_prefix(
   if (i == incoming.size() && i > 0) {
     i--;
   }
+  // M-RoPE requires strictly increasing positions. If the previous request
+  // generated tokens beyond the reusable prefix, seq_rm would leave stale
+  // positions (X > Y) that break the M-RoPE invariant. Only allow reuse when
+  // the prefix covers the entire cached sequence (no leftover generated tokens).
+  if (static_cast<int32_t>(i) < this->n_kv_cache) {
+    return 0;
+  }
   return i;
 }
 
-void ServerSlot::invalidate_kv_cache() { this->kv_cached_tokens.clear(); }
+void ServerSlot::invalidate_kv_cache() {
+  this->kv_cached_tokens.clear();
+  this->n_kv_cache = 0;
+}
 
 void ServerSlot::release() {
   LLAMA_LOG_INFO("Trying to release slot %d", this->id);
