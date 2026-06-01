@@ -103,7 +103,8 @@ size_t ServerSlot::find_reusable_prefix(
   // M-RoPE requires strictly increasing positions. If the previous request
   // generated tokens beyond the reusable prefix, seq_rm would leave stale
   // positions (X > Y) that break the M-RoPE invariant. Only allow reuse when
-  // the prefix covers the entire cached sequence (no leftover generated tokens).
+  // the prefix covers the entire cached sequence (no leftover generated
+  // tokens).
   if (static_cast<int32_t>(i) < this->n_kv_cache) {
     return 0;
   }
