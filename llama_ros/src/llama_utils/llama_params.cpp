@@ -366,6 +366,19 @@ void llama_utils::declare_llama_params(
                                             {"lookup_cache_static", ""},
                                             {"lookup_cache_dynamic", ""},
                                         });
+
+  // KV override parameters (kv_overrides[*])
+  node->declare_parameter<std::vector<std::string>>(
+      "kv_overrides", std::vector<std::string>({}));
+
+  // Tensor buffer override parameters (tensor_buft_overrides[*])
+  node->declare_parameter<std::vector<std::string>>(
+      "tensor_buft_overrides", std::vector<std::string>({}));
+
+  // Control vector parameters (control_vectors[*])
+  // Format: "path" or "path@strength"
+  node->declare_parameter<std::vector<std::string>>(
+      "control_vectors", std::vector<std::string>({}));
 }
 
 LlamaParams llama_utils::get_llama_params(
@@ -967,6 +980,96 @@ LlamaParams llama_utils::get_llama_params(
       params.params.tensor_split[i] = tensor_split[i];
     } else {
       params.params.tensor_split[i] = 0.0f;
+    }
+  }
+
+  // KV overrides
+  {
+    std::vector<std::string> kv_override_strs;
+    node->get_parameter("kv_overrides", kv_override_strs);
+
+    for (const auto &s : kv_override_strs) {
+      if (!s.empty()) {
+        string_parse_kv_override(s.c_str(), params.params.kv_overrides);
+      }
+    }
+
+    if (!params.params.kv_overrides.empty()) {
+      params.params.kv_overrides.emplace_back();
+      params.params.kv_overrides.back().key[0] = 0;
+    }
+  }
+
+  // Tensor buffer overrides
+  {
+    std::vector<std::string> buft_override_strs;
+    node->get_parameter("tensor_buft_overrides", buft_override_strs);
+
+    if (!buft_override_strs.empty()) {
+      ggml_backend_load_all();
+      std::map<std::string, ggml_backend_buffer_type_t> buft_list;
+
+      for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        auto *dev = ggml_backend_dev_get(i);
+        auto *buft = ggml_backend_dev_buffer_type(dev);
+        if (buft) {
+          buft_list[ggml_backend_buft_name(buft)] = buft;
+        }
+      }
+
+      static std::list<std::string> buft_patterns;
+      for (const auto &s : buft_override_strs) {
+        auto pos = s.find('=');
+        if (pos == std::string::npos) {
+          RCLCPP_ERROR(
+              node->get_logger(),
+              "Invalid tensor buft override '%s', expected pattern=buft_name",
+              s.c_str());
+          continue;
+        }
+
+        std::string tensor_name = s.substr(0, pos);
+        std::string buffer_type = s.substr(pos + 1);
+        auto it = buft_list.find(buffer_type);
+        if (it == buft_list.end()) {
+          RCLCPP_ERROR(node->get_logger(),
+                       "Unknown buffer type '%s' in tensor buft override",
+                       buffer_type.c_str());
+          continue;
+        }
+        buft_patterns.push_back(tensor_name);
+        params.params.tensor_buft_overrides.push_back(
+            {buft_patterns.back().c_str(), it->second});
+      }
+
+      // pad for fit_params
+      const size_t ntbo = llama_max_tensor_buft_overrides();
+      while (params.params.tensor_buft_overrides.size() < ntbo) {
+        params.params.tensor_buft_overrides.push_back({nullptr, nullptr});
+      }
+
+      params.params.tensor_buft_overrides.push_back({nullptr, nullptr});
+    }
+  }
+
+  // Control vectors
+  {
+    std::vector<std::string> cv_strs;
+    node->get_parameter("control_vectors", cv_strs);
+
+    for (const auto &s : cv_strs) {
+      if (s.empty()) {
+        continue;
+      }
+
+      auto at_pos = s.find('@');
+      if (at_pos == std::string::npos) {
+        params.params.control_vectors.push_back({1.0f, s});
+      } else {
+        float strength = std::stof(s.substr(at_pos + 1));
+        params.params.control_vectors.push_back(
+            {strength, s.substr(0, at_pos)});
+      }
     }
   }
 

@@ -496,12 +496,20 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `gpu.no_host`           | `bool`     | `false`        | Disable host buffer usage                                                     |
 | `gpu.no_extra_bufts`    | `bool`     | `false`        | Disable extra buffer types                                                    |
 
+#### Model Overrides
+
+| Param                   | Type       | Default | Description                                                                                                                        |
+| ----------------------- | ---------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `kv_overrides`          | `string[]` | `[]`    | Override GGUF model metadata key-value pairs. Format: `"key=int:123"`, `"key=float:3.14"`, `"key=bool:true"`, or `"key=str:value"` |
+| `tensor_buft_overrides` | `string[]` | `[]`    | Override tensor buffer types by regex pattern. Format: `"pattern=CPU"` (buft name from available backends)                         |
+
 #### Control Vector (`control_vector.*`)
 
-| Param                        | Type    | Default | Description                                |
-| ---------------------------- | ------- | ------- | ------------------------------------------ |
-| `control_vector.layer_start` | `int32` | `-1`    | Start layer for control vector application |
-| `control_vector.layer_end`   | `int32` | `-1`    | End layer for control vector application   |
+| Param                        | Type       | Default | Description                                                                                   |
+| ---------------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------- |
+| `control_vector.layer_start` | `int32`    | `-1`    | Start layer for control vector application                                                    |
+| `control_vector.layer_end`   | `int32`    | `-1`    | End layer for control vector application                                                      |
+| `control_vectors`            | `string[]` | `[]`    | Control vector files with optional strength. Format: `"path/to/cvector.gguf"` or `"path@0.5"` |
 
 #### Multimodal (`multimodal.*`)
 
