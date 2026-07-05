@@ -78,16 +78,22 @@ static std::string fnv_hash(const uint8_t *data, size_t len) {
   return std::to_string(hash);
 }
 
-bool Llava::load_mtmd(std::vector<uint8_t> buf) {
+bool Llava::load_mtmd(std::vector<uint8_t> buf, bool is_placeholder) {
 
   LLAMA_LOG_INFO("Loading mtmd...");
 
-  mtmd::bitmap bmp(
-      mtmd_helper_bitmap_init_from_buf(this->mtmd_ctx, buf.data(), buf.size()));
+  auto wrapper = mtmd_helper_bitmap_init_from_buf(this->mtmd_ctx, buf.data(),
+                                                  buf.size(), is_placeholder);
 
-  if (!bmp.ptr) {
+  if (!wrapper.bitmap) {
     LLAMA_LOG_ERROR("Can't load mtmd");
     return false;
+  }
+
+  mtmd::bitmap bmp(wrapper.bitmap);
+
+  if (wrapper.video_ctx) {
+    this->videos.emplace_back(wrapper.video_ctx);
   }
 
   // calculate bitmap hash (for KV caching)
@@ -98,12 +104,13 @@ bool Llava::load_mtmd(std::vector<uint8_t> buf) {
   return true;
 }
 
-bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
+bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds,
+                       bool is_placeholder) {
 
   LLAMA_LOG_INFO("Loading mtmds...");
 
   for (const auto &mtmd : mtmds) {
-    if (!this->load_mtmd(mtmd)) {
+    if (!this->load_mtmd(mtmd, is_placeholder)) {
       LLAMA_LOG_ERROR("Failed to load mtmd");
       return false;
     }
@@ -115,6 +122,7 @@ bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds) {
 void Llava::clear_mtmds() {
   LLAMA_LOG_ERROR("Clearing mtmds...");
   this->bitmaps.entries.clear();
+  this->videos.clear();
 }
 
 const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,

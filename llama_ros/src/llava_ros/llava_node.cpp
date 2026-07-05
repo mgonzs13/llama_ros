@@ -143,7 +143,9 @@ bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
   }
 
   if (images.size() > 0) {
-    if (!static_cast<Llava *>(this->llama.get())->load_mtmds(images)) {
+    bool is_placeholder = this->llama->is_speculative();
+    if (!static_cast<Llava *>(this->llama.get())
+             ->load_mtmds(images, is_placeholder)) {
       RCLCPP_ERROR(this->get_logger(), "Failed to load images");
       return false;
     }
@@ -167,7 +169,9 @@ bool LlavaNode::load_audios(
   }
 
   if (audios.size() > 0) {
-    if (!static_cast<Llava *>(this->llama.get())->load_mtmds(audios)) {
+    bool is_placeholder = this->llama->is_speculative();
+    if (!static_cast<Llava *>(this->llama.get())
+             ->load_mtmds(audios, is_placeholder)) {
       RCLCPP_ERROR(this->get_logger(), "Failed to load audios");
       return false;
     }

@@ -53,3 +53,4 @@ int32[] reasoning_budget_start                                      # start tag 
 int32[] reasoning_budget_end                                        # end tag token sequence for reasoning budget (auto-populated from chat template if empty)
 int32[] reasoning_budget_forced                                     # forced sequence (message + end tag) for reasoning budget (auto-populated if empty)
 string reasoning_budget_message     ""                              # message injected before end tag when reasoning budget is exhausted
+bool reasoning_control              false                           # create the budget sampler on demand so reasoning can be ended at runtime

@@ -76,19 +76,23 @@ public:
   /**
    * @brief Loads an mtmd into the Llava model.
    *
-   * @param std::vector<uint8_t> buf The mtmd data as a byte buffer.
+   * @param buf The mtmd data as a byte buffer.
+   * @param is_placeholder Whether the bitmap is a placeholder (used in
+   * speculative decoding draft path; false for actual user-provided media).
    * @return True if the mtmd is successfully loaded, false otherwise.
    */
-  bool load_mtmd(std::vector<uint8_t> buf);
+  bool load_mtmd(std::vector<uint8_t> buf, bool is_placeholder = false);
 
   /**
-   * @brief Loads an mtmd into the Llava model.
+   * @brief Loads multiple mtmds into the Llava model.
    *
-   * @param std::vector<std::vector<uint8_t>> mtmd The mtmds data as a vector
-   * of
-   * @return True if the image is successfully loaded, false otherwise.
+   * @param mtmds The mtmds data as a vector of byte buffers.
+   * @param is_placeholder Whether the bitmaps are placeholders (used in
+   * speculative decoding draft path; false for actual user-provided media).
+   * @return True if images are successfully loaded, false otherwise.
    */
-  bool load_mtmds(std::vector<std::vector<uint8_t>> mtmds);
+  bool load_mtmds(std::vector<std::vector<uint8_t>> mtmds,
+                  bool is_placeholder = false);
 
   /**
    * @brief Clears all loaded mtmds from the Llava model.
@@ -191,6 +195,11 @@ protected:
    * This structure holds the bitmap data for images used in the model.
    */
   mtmd::bitmaps bitmaps;
+
+  /**
+   * @brief Video contexts for video processing.
+   */
+  std::vector<mtmd_helper::video_ptr> videos;
 
   // Declare handlers as friends so they can access bitmaps and other protected
   // members

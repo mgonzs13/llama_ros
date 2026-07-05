@@ -464,7 +464,14 @@ public:
   Metadata get_metadata();
 
   /**
-   * @brief Checks if the model is in embedding mode.
+   * @brief Checks whether speculative decoding is enabled.
+   *
+   * @return True if speculative decoding is active, false otherwise.
+   */
+  bool is_speculative() const { return this->speculative_ != nullptr; }
+
+  /**
+   * @brief Checks whether the model is in embedding mode.
    *
    * @return True if the model is in embedding mode, false otherwise.
    */
@@ -761,13 +768,6 @@ protected:
 
   /// @brief Draft context for speculative decoding (nullptr if disabled).
   llama_context *ctx_dft_ = nullptr;
-
-  /**
-   * @brief Checks whether speculative decoding is enabled.
-   *
-   * @return True if speculative decoding is active, false otherwise.
-   */
-  bool is_speculative() const { return this->speculative_ != nullptr; }
 
   /**
    * @brief Initializes the speculative decoding system.

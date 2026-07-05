@@ -427,9 +427,10 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### General
 
-| Param       | Type    | Default | Description         |
-| ----------- | ------- | ------- | ------------------- |
-| `verbosity` | `int32` | `3`     | Log verbosity level |
+| Param       | Type    | Default | Description                                 |
+| ----------- | ------- | ------- | ------------------------------------------- |
+| `verbosity` | `int32` | `3`     | Log verbosity level                         |
+| `no_alloc`  | `bool`  | `false` | Disable memory allocation for output tokens |
 
 #### Model (`model.*`)
 
@@ -464,6 +465,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `context.n_predict`                 | `int32`  | `-1`         | Max tokens to predict (`-1` for unlimited when using ctx_shift)                                                                                                           |
 | `context.n_parallel`                | `int32`  | `1`          | Number of parallel sequences to decode                                                                                                                                    |
 | `context.n_sequences`               | `int32`  | `1`          | Number of sequences to decode                                                                                                                                             |
+| `context.n_outputs_max`             | `int32`  | `0`          | Maximum number of outputs per slot (`0` for unlimited)                                                                                                                    |
 | `context.numa`                      | `string` | `"none"`     | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count`                                                                                           |
 | `context.pooling_type`              | `string` | `""`         | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                                                                                                                  |
 | `context.attention_type`            | `string` | `""`         | Attention type: `causal` or `non_causal`                                                                                                                                  |
@@ -480,18 +482,34 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### GPU / Backend (`gpu.*`)
 
-| Param                 | Type       | Default   | Description                                            |
-| --------------------- | ---------- | --------- | ------------------------------------------------------ |
-| `gpu.n_gpu_layers`    | `int32`    | `-1`      | Number of layers to offload to GPU (`-1` for all)      |
-| `gpu.main_gpu`        | `int32`    | `0`       | Main GPU index                                         |
-| `gpu.split_mode`      | `string`   | `"layer"` | GPU split mode: `none`, `layer`, or `row`              |
-| `gpu.flash_attn_type` | `string`   | `"auto"`  | Flash attention type: `auto`, `enabled`, or `disabled` |
-| `gpu.tensor_split`    | `double[]` | `[0.0]`   | Tensor split proportions across GPUs                   |
-| `gpu.devices`         | `string[]` | `[]`      | GPU device names to use                                |
-| `gpu.no_kv_offload`   | `bool`     | `false`   | Disable KV cache offloading to GPU                     |
-| `gpu.no_op_offload`   | `bool`     | `false`   | Disable operation offloading                           |
-| `gpu.no_host`         | `bool`     | `false`   | Disable host buffer usage                              |
-| `gpu.no_extra_bufts`  | `bool`     | `false`   | Disable extra buffer types                             |
+| Param                   | Type       | Default        | Description                                                                   |
+| ----------------------- | ---------- | -------------- | ----------------------------------------------------------------------------- |
+| `gpu.n_gpu_layers`      | `int32`    | `-1`           | Number of layers to offload to GPU (`-1` for all)                             |
+| `gpu.main_gpu`          | `int32`    | `0`            | Main GPU index                                                                |
+| `gpu.split_mode`        | `string`   | `"layer"`      | GPU split mode: `none`, `layer`, or `row`                                     |
+| `gpu.flash_attn_type`   | `string`   | `"auto"`       | Flash attention type: `auto`, `enabled`, or `disabled`                        |
+| `gpu.tensor_split`      | `double[]` | `[0.0]`        | Tensor split proportions across GPUs                                          |
+| `gpu.devices`           | `string[]` | `[]`           | GPU device names to use                                                       |
+| `gpu.fit_params_target` | `int64[]`  | `[1073741824]` | Per-device memory target in bytes for automatic VRAM fitting (one per device) |
+| `gpu.no_kv_offload`     | `bool`     | `false`        | Disable KV cache offloading to GPU                                            |
+| `gpu.no_op_offload`     | `bool`     | `false`        | Disable operation offloading                                                  |
+| `gpu.no_host`           | `bool`     | `false`        | Disable host buffer usage                                                     |
+| `gpu.no_extra_bufts`    | `bool`     | `false`        | Disable extra buffer types                                                    |
+
+#### Control Vector (`control_vector.*`)
+
+| Param                        | Type    | Default | Description                                |
+| ---------------------------- | ------- | ------- | ------------------------------------------ |
+| `control_vector.layer_start` | `int32` | `-1`    | Start layer for control vector application |
+| `control_vector.layer_end`   | `int32` | `-1`    | End layer for control vector application   |
+
+#### Multimodal (`multimodal.*`)
+
+| Param                              | Type    | Default | Description                                        |
+| ---------------------------------- | ------- | ------- | -------------------------------------------------- |
+| `multimodal.image_min_tokens`      | `int32` | `-1`    | Minimum number of tokens per image (`-1` for auto) |
+| `multimodal.image_max_tokens`      | `int32` | `-1`    | Maximum number of tokens per image (`-1` for auto) |
+| `multimodal.mtmd_batch_max_tokens` | `int32` | `1024`  | Maximum batch tokens for multimodal data           |
 
 #### Memory (`memory.*`)
 
@@ -722,6 +740,7 @@ The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatComp
 | `reasoning_budget_end`     | `int32[]`          | `[]`                              | Token IDs for the thinking end tag. Auto-populated from the chat template if empty                                                                                                                                             |
 | `reasoning_budget_forced`  | `int32[]`          | `[]`                              | Token sequence forcibly injected when the budget is exhausted (message + end tag). Auto-populated if empty. Distinct from `force_pure_content_parser`: this controls _when_ to stop thinking, not _how_ the template is parsed |
 | `reasoning_budget_message` | `string`           | `""`                              | Text inserted before the thinking end tag when the reasoning budget is exhausted (e.g. `"Wait, I need to conclude."`)                                                                                                          |
+| `reasoning_control`        | `bool`             | `false`                           | Create the budget sampler on demand so reasoning can be ended at runtime                                                                                                                                                       |
 
 #### `GenerateChatCompletions` Goal (`llama_msgs/action/GenerateChatCompletions`)
 

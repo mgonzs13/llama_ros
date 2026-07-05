@@ -82,6 +82,7 @@ void llama_utils::declare_llama_params(
 
   // General parameters
   node->declare_parameter<int32_t>("verbosity", 3);
+  node->declare_parameter<bool>("no_alloc", false);
 
   // Model parameters (model.*)
   node->declare_parameters<std::string>("model", {
@@ -118,6 +119,7 @@ void llama_utils::declare_llama_params(
                                                    {"n_predict", -1},
                                                    {"n_parallel", 1},
                                                    {"n_sequences", 1},
+                                                   {"n_outputs_max", 0},
                                                });
 
   node->declare_parameters<std::string>("context", {
@@ -157,6 +159,24 @@ void llama_utils::declare_llama_params(
 
   node->declare_parameter<std::vector<std::string>>(
       "gpu.devices", std::vector<std::string>({}));
+
+  node->declare_parameter<std::vector<int64_t>>(
+      "gpu.fit_params_target",
+      std::vector<int64_t>(llama_max_devices(), 1024 * 1024 * 1024));
+
+  // Control vector parameters (control_vector.*)
+  node->declare_parameters<int32_t>("control_vector", {
+                                                          {"layer_start", -1},
+                                                          {"layer_end", -1},
+                                                      });
+
+  // Multimodal parameters (multimodal.*)
+  node->declare_parameters<int32_t>("multimodal",
+                                    {
+                                        {"image_min_tokens", -1},
+                                        {"image_max_tokens", -1},
+                                        {"mtmd_batch_max_tokens", 1024},
+                                    });
 
   // Memory parameters (memory.*)
   node->declare_parameters<bool>("memory", {
@@ -389,6 +409,7 @@ LlamaParams llama_utils::get_llama_params(
 
   // General
   node->get_parameter("verbosity", params.params.verbosity);
+  node->get_parameter("no_alloc", params.params.no_alloc);
 
   // Model parameters (model.*)
   node->get_parameter("model.path", params.params.model.path);
@@ -422,6 +443,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("context.ctx_shift", params.params.ctx_shift);
   node->get_parameter("context.swa_full", params.params.swa_full);
   node->get_parameter("context.cont_batching", params.params.cont_batching);
+  node->get_parameter("context.n_outputs_max", params.params.n_outputs_max);
 
   // GPU / backend parameters (gpu.*)
   node->get_parameter("gpu.n_gpu_layers", params.params.n_gpu_layers);
@@ -434,6 +456,30 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("gpu.no_extra_bufts", params.params.no_extra_bufts);
   node->get_parameter("gpu.tensor_split", tensor_split);
   node->get_parameter("gpu.devices", devices);
+
+  // fit_params_target: vector<int64_t> -> vector<size_t>
+  {
+    std::vector<int64_t> target_vec;
+    node->get_parameter("gpu.fit_params_target", target_vec);
+    if (!target_vec.empty()) {
+      params.params.fit_params_target.assign(target_vec.begin(),
+                                             target_vec.end());
+    }
+  }
+
+  // Control vector parameters (control_vector.*)
+  node->get_parameter("control_vector.layer_start",
+                      params.params.control_vector_layer_start);
+  node->get_parameter("control_vector.layer_end",
+                      params.params.control_vector_layer_end);
+
+  // Multimodal parameters (multimodal.*)
+  node->get_parameter("multimodal.image_min_tokens",
+                      params.params.image_min_tokens);
+  node->get_parameter("multimodal.image_max_tokens",
+                      params.params.image_max_tokens);
+  node->get_parameter("multimodal.mtmd_batch_max_tokens",
+                      params.params.mtmd_batch_max_tokens);
 
   // Memory parameters (memory.*)
   node->get_parameter("memory.use_mmap", params.params.use_mmap);
@@ -1043,6 +1089,7 @@ common_params_sampling llama_utils::parse_sampling_params(
       std::vector<llama_token>(sampling_config.reasoning_budget_forced.begin(),
                                sampling_config.reasoning_budget_forced.end());
   sparams.reasoning_budget_message = sampling_config.reasoning_budget_message;
+  sparams.reasoning_control = sampling_config.reasoning_control;
 
   if (sparams.grammar.empty() && sampling_config.grammar_schema.size() > 0) {
     sparams.grammar = {COMMON_GRAMMAR_TYPE_OUTPUT_FORMAT,
