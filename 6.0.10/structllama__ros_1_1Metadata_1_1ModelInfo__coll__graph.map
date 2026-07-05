@@ -1,0 +1,12 @@
+<map id="llama_ros::Metadata::ModelInfo" name="llama_ros::Metadata::ModelInfo">
+<area shape="rect" id="Node000001" title="Model architecture information." alt="" coords="186,304,324,344"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="59,136,49,183,50,208,59,231,84,260,116,282,152,298,187,308,185,314,150,303,114,286,81,264,54,234,45,210,43,183,54,135"/>
+<area shape="rect" id="Node000005" href="$structllama__ros_1_1Metadata_1_1RoPEInfo.html" title="RoPE (Rotary Positional Encoding) information of a model." alt="" coords="186,192,324,233"/>
+<area shape="poly" id="edge5_Node000005_Node000002" title=" " alt="" coords="104,126,220,189,218,194,101,131"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+<area shape="rect" id="Node000004" href="$structllama__ros_1_1Metadata_1_1AttentionInfo.html" title="Attention information of the model." alt="" coords="348,192,485,233"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="377,244,285,306,282,301,374,239"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="258,248,258,303,252,303,252,248"/>
+</map>

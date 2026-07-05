@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['map_20k_20speculative_20ngram_5fmap_5fk_0',['Ngram-map-k (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_map_k.*&lt;/span&gt;)',['../index.html#autotoc_md38',1,'']]],
+  ['map_20k4v_20speculative_20ngram_5fmap_5fk4v_1',['Ngram-map-k4v (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_map_k4v.*&lt;/span&gt;)',['../index.html#autotoc_md39',1,'']]],
+  ['memory_2',['Memory (&lt;span class=&quot;tt&quot;&gt;memory.*&lt;/span&gt;)',['../index.html#autotoc_md26',1,'']]],
+  ['memory_20memory_3',['Memory (&lt;span class=&quot;tt&quot;&gt;memory.*&lt;/span&gt;)',['../index.html#autotoc_md26',1,'']]],
+  ['messages_4',['Messages',['../index.html#autotoc_md43',1,'']]],
+  ['metadata_5',['Get Metadata',['../index.html#autotoc_md54',1,'']]],
+  ['mmproj_6',['Multimodal Projector (&lt;span class=&quot;tt&quot;&gt;mmproj.*&lt;/span&gt;)',['../index.html#autotoc_md20',1,'']]],
+  ['mod_20speculative_20ngram_5fmod_7',['Ngram-mod (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_mod.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['model_8',['Model (&lt;span class=&quot;tt&quot;&gt;model.*&lt;/span&gt;)',['../index.html#autotoc_md19',1,'']]],
+  ['model_20model_9',['Model (&lt;span class=&quot;tt&quot;&gt;model.*&lt;/span&gt;)',['../index.html#autotoc_md19',1,'']]],
+  ['model_20overrides_10',['Model Overrides',['../index.html#autotoc_md23',1,'']]],
+  ['model_20shards_11',['llama_ros (YAML Config + model shards)',['../index.html#autotoc_md12',1,'']]],
+  ['model_20speculative_20draft_12',['Draft Model (&lt;span class=&quot;tt&quot;&gt;speculative.draft.*&lt;/span&gt;)',['../index.html#autotoc_md35',1,'']]],
+  ['msg_20samplingconfig_13',['&lt;span class=&quot;tt&quot;&gt;SamplingConfig&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/SamplingConfig&lt;/span&gt;)',['../index.html#autotoc_md44',1,'']]],
+  ['mtmd_20audio_20demo_14',['MTMD Audio Demo',['../index.html#autotoc_md80',1,'']]],
+  ['mtp_20speculative_20decoding_20demo_15',['MTP Speculative Decoding Demo',['../index.html#autotoc_md72',1,'']]],
+  ['multi_20audio_20demo_16',['Chat Multi-Audio Demo',['../index.html#autotoc_md82',1,'']]],
+  ['multi_20image_20demo_17',['Chat Multi-Image Demo',['../index.html#autotoc_md78',1,'']]],
+  ['multi_20image_20user_20input_20demo_18',['Chat Multi-Image (User Input) Demo',['../index.html#autotoc_md79',1,'']]],
+  ['multimodal_19',['Multimodal (&lt;span class=&quot;tt&quot;&gt;multimodal.*&lt;/span&gt;)',['../index.html#autotoc_md25',1,'']]],
+  ['multimodal_20multimodal_20',['Multimodal (&lt;span class=&quot;tt&quot;&gt;multimodal.*&lt;/span&gt;)',['../index.html#autotoc_md25',1,'']]],
+  ['multimodal_20projector_20mmproj_21',['Multimodal Projector (&lt;span class=&quot;tt&quot;&gt;mmproj.*&lt;/span&gt;)',['../index.html#autotoc_md20',1,'']]]
+];
