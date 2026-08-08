@@ -418,27 +418,53 @@ LlamaParams llama_utils::get_llama_params(
 
   std::string system_prompt_file_path;
 
+  std::string speculative_type;
+  double speculative_p_min = 0.0;
+  double speculative_p_split = 0.0;
+  std::string speculative_cache_type_k;
+  std::string speculative_cache_type_v;
+
+  std::string load_mode;
+
   LlamaParams params;
 
+  // ============================================================
   // General
+  // ============================================================
   node->get_parameter("verbosity", params.params.verbosity);
   node->get_parameter("no_alloc", params.params.no_alloc);
 
+  // ============================================================
   // Model parameters (model.*)
+  // ============================================================
   node->get_parameter("model.path", params.params.model.path);
   node->get_parameter("model.repo", params.params.model.hf_repo);
   node->get_parameter("model.filename", params.params.model.hf_file);
   node->get_parameter("model.warmup", params.params.warmup);
   node->get_parameter("model.check_tensors", params.params.check_tensors);
 
+  if (params.params.model.path.empty()) {
+    params.params.model.path = download_model(params.params.model.hf_repo,
+                                              params.params.model.hf_file);
+  }
+
+  // ============================================================
   // Multimodal projector parameters (mmproj.*)
+  // ============================================================
   node->get_parameter("mmproj.path", params.params.mmproj.path);
   node->get_parameter("mmproj.repo", params.params.mmproj.hf_repo);
   node->get_parameter("mmproj.filename", params.params.mmproj.hf_file);
   node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
   node->get_parameter("mmproj.disabled", params.params.no_mmproj);
 
+  if (params.params.mmproj.path.empty()) {
+    params.params.mmproj.path = download_model(params.params.mmproj.hf_repo,
+                                               params.params.mmproj.hf_file);
+  }
+
+  // ============================================================
   // Context / inference parameters (context.*)
+  // ============================================================
   node->get_parameter("context.seed", seed);
   node->get_parameter("context.n_ctx", params.params.n_ctx);
   node->get_parameter("context.n_batch", params.params.n_batch);
@@ -458,7 +484,61 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("context.cont_batching", params.params.cont_batching);
   node->get_parameter("context.n_outputs_max", params.params.n_outputs_max);
 
+  // seed
+  if (seed < 0) {
+    params.params.sampling.seed = LLAMA_DEFAULT_SEED;
+  } else {
+    params.params.sampling.seed = seed;
+  }
+
+  // rerank
+  if (reranking) {
+    pooling_type = "rerank";
+    params.params.embedding = true;
+  }
+
+  // numa
+  if (numa == "none") {
+    params.params.numa = GGML_NUMA_STRATEGY_DISABLED;
+  } else if (numa == "distribute") {
+    params.params.numa = GGML_NUMA_STRATEGY_DISTRIBUTE;
+  } else if (numa == "isolate") {
+    params.params.numa = GGML_NUMA_STRATEGY_ISOLATE;
+  } else if (numa == "numactl") {
+    params.params.numa = GGML_NUMA_STRATEGY_NUMACTL;
+  } else if (numa == "mirror") {
+    params.params.numa = GGML_NUMA_STRATEGY_MIRROR;
+  } else if (numa == "count") {
+    params.params.numa = GGML_NUMA_STRATEGY_COUNT;
+  }
+
+  // pooling
+  if (pooling_type == "none") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_NONE;
+  } else if (pooling_type == "mean") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
+  } else if (pooling_type == "cls") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
+  } else if (pooling_type == "last") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
+  } else if (pooling_type == "rerank") {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
+  } else {
+    params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
+  }
+
+  // attention_type
+  if (attention_type == "causal") {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_CAUSAL;
+  } else if (attention_type == "non_causal") {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_NON_CAUSAL;
+  } else {
+    params.params.attention_type = LLAMA_ATTENTION_TYPE_UNSPECIFIED;
+  }
+
+  // ============================================================
   // GPU / backend parameters (gpu.*)
+  // ============================================================
   node->get_parameter("gpu.n_gpu_layers", params.params.n_gpu_layers);
   node->get_parameter("gpu.main_gpu", params.params.main_gpu);
   node->get_parameter("gpu.split_mode", split_mode);
@@ -480,209 +560,6 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
-  // Control vector parameters (control_vector.*)
-  node->get_parameter("control_vector.layer_start",
-                      params.params.control_vector_layer_start);
-  node->get_parameter("control_vector.layer_end",
-                      params.params.control_vector_layer_end);
-
-  // Multimodal parameters (multimodal.*)
-  node->get_parameter("multimodal.image_min_tokens",
-                      params.params.image_min_tokens);
-  node->get_parameter("multimodal.image_max_tokens",
-                      params.params.image_max_tokens);
-  node->get_parameter("multimodal.mtmd_batch_max_tokens",
-                      params.params.mtmd_batch_max_tokens);
-
-  // Memory parameters (memory.*)
-  std::string load_mode;
-  node->get_parameter("memory.load_mode", load_mode);
-
-  if (load_mode == "none") {
-    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
-  } else if (load_mode == "mmap") {
-    params.params.load_mode = LLAMA_LOAD_MODE_MMAP;
-  } else if (load_mode == "mlock") {
-    params.params.load_mode = LLAMA_LOAD_MODE_MLOCK;
-  } else if (load_mode == "direct_io") {
-    params.params.load_mode = LLAMA_LOAD_MODE_DIRECT_IO;
-  } else {
-    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
-  }
-
-  node->get_parameter("memory.kv_unified", params.params.kv_unified);
-  node->get_parameter("memory.cache_idle_slots",
-                      params.params.cache_idle_slots);
-
-  // CPU parameters (cpu.*)
-  node->get_parameter("cpu.n_threads", params.params.cpuparams.n_threads);
-  node->get_parameter("cpu.mask", cpu_mask);
-  node->get_parameter("cpu.range", cpu_range);
-  node->get_parameter("cpu.priority", priority);
-  node->get_parameter("cpu.strict", params.params.cpuparams.strict_cpu);
-  node->get_parameter("cpu.poll", poll);
-
-  // CPU batch parameters (cpu_batch.*)
-  node->get_parameter("cpu_batch.n_threads",
-                      params.params.cpuparams_batch.n_threads);
-  node->get_parameter("cpu_batch.mask", cpu_mask_batch);
-  node->get_parameter("cpu_batch.range", cpu_range_batch);
-  node->get_parameter("cpu_batch.priority", priority_batch);
-  node->get_parameter("cpu_batch.strict",
-                      params.params.cpuparams_batch.strict_cpu);
-  node->get_parameter("cpu_batch.poll", poll_batch);
-
-  // Prompt & chat parameters (prompt.*)
-  node->get_parameter("prompt.prefix", params.params.input_prefix);
-  node->get_parameter("prompt.suffix", params.params.input_suffix);
-  node->get_parameter("prompt.stopping_words", stopping_words);
-  node->get_parameter("prompt.system_prompt", params.system_prompt);
-  node->get_parameter("prompt.system_prompt_file", system_prompt_file_path);
-  node->get_parameter("prompt.chat_template_file", chat_template_file);
-  node->get_parameter("prompt.system_prompt_type", system_prompt_type);
-
-  // LoRA adapter parameters (lora.*)
-  node->get_parameter("lora.init_without_apply",
-                      params.params.lora_init_without_apply);
-  node->get_parameter("lora.adapters", loras);
-
-  // RoPE parameters (rope.*)
-  node->get_parameter("rope.freq_base", params.params.rope_freq_base);
-  node->get_parameter("rope.freq_scale", params.params.rope_freq_scale);
-  node->get_parameter("rope.scaling_type", rope_scaling_type);
-
-  // YaRN parameters (yarn.*)
-  node->get_parameter("yarn.ext_factor", params.params.yarn_ext_factor);
-  node->get_parameter("yarn.attn_factor", params.params.yarn_attn_factor);
-  node->get_parameter("yarn.beta_fast", params.params.yarn_beta_fast);
-  node->get_parameter("yarn.beta_slow", params.params.yarn_beta_slow);
-  node->get_parameter("yarn.orig_ctx", params.params.yarn_orig_ctx);
-
-  // Group attention parameters (grp_attn.*)
-  node->get_parameter("grp_attn.n", params.params.grp_attn_n);
-  node->get_parameter("grp_attn.w", params.params.grp_attn_w);
-
-  // KV cache parameters (cache.*)
-  node->get_parameter("cache.type_k", cache_type_k);
-  node->get_parameter("cache.type_v", cache_type_v);
-  node->get_parameter("cache.n_cache_reuse", params.params.n_cache_reuse);
-  node->get_parameter("cache.cache_prompt", params.params.cache_prompt);
-  node->get_parameter("cache.n_ctx_checkpoints",
-                      params.params.n_ctx_checkpoints);
-  node->get_parameter("cache.checkpoint_min_step",
-                      params.params.checkpoint_min_step);
-  node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
-
-  // Fit parameters (fit.*)
-  node->get_parameter("fit.enabled", params.params.fit_params);
-  node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
-
-  // Speculative decoding parameters (speculative.*)
-  std::string speculative_type;
-  double speculative_p_min;
-  node->get_parameter("speculative.type", speculative_type);
-  node->get_parameter("speculative.draft.n_max",
-                      params.params.speculative.draft.n_max);
-  node->get_parameter("speculative.draft.n_min",
-                      params.params.speculative.draft.n_min);
-  node->get_parameter("speculative.draft.p_min", speculative_p_min);
-  double speculative_p_split;
-  node->get_parameter("speculative.draft.p_split", speculative_p_split);
-  params.params.speculative.draft.p_split =
-      static_cast<float>(speculative_p_split);
-  node->get_parameter("speculative.draft.n_gpu_layers",
-                      params.params.speculative.draft.n_gpu_layers);
-  node->get_parameter("speculative.draft.model.path",
-                      params.params.speculative.draft.mparams.path);
-  node->get_parameter("speculative.draft.model.repo",
-                      params.params.speculative.draft.mparams.hf_repo);
-  node->get_parameter("speculative.draft.model.filename",
-                      params.params.speculative.draft.mparams.hf_file);
-  params.params.speculative.draft.p_min = static_cast<float>(speculative_p_min);
-  params.params.speculative.draft.backend_sampling =
-      node->get_parameter("speculative.draft.backend_sampling").as_bool();
-
-  // Draft model KV cache types
-  std::string speculative_cache_type_k;
-  std::string speculative_cache_type_v;
-  node->get_parameter("speculative.draft.cache_type_k",
-                      speculative_cache_type_k);
-  node->get_parameter("speculative.draft.cache_type_v",
-                      speculative_cache_type_v);
-  params.params.speculative.draft.cache_type_k =
-      kv_cache_type_from_str(speculative_cache_type_k);
-  params.params.speculative.draft.cache_type_v =
-      kv_cache_type_from_str(speculative_cache_type_v);
-
-  // Speculative ngram-mod parameters
-  node->get_parameter("speculative.ngram_mod.n_match",
-                      params.params.speculative.ngram_mod.n_match);
-  node->get_parameter("speculative.ngram_mod.n_max",
-                      params.params.speculative.ngram_mod.n_max);
-  node->get_parameter("speculative.ngram_mod.n_min",
-                      params.params.speculative.ngram_mod.n_min);
-
-  // Speculative ngram-simple parameters (uint16_t fields, declared as int32_t)
-  {
-    int32_t size_n, size_m, min_hits;
-    node->get_parameter("speculative.ngram_simple.size_n", size_n);
-    node->get_parameter("speculative.ngram_simple.size_m", size_m);
-    node->get_parameter("speculative.ngram_simple.min_hits", min_hits);
-    params.params.speculative.ngram_simple.size_n =
-        static_cast<uint16_t>(size_n);
-    params.params.speculative.ngram_simple.size_m =
-        static_cast<uint16_t>(size_m);
-    params.params.speculative.ngram_simple.min_hits =
-        static_cast<uint16_t>(min_hits);
-  }
-
-  // Speculative ngram-map-k parameters (uint16_t fields, declared as int32_t)
-  {
-    int32_t size_n, size_m, min_hits;
-    node->get_parameter("speculative.ngram_map_k.size_n", size_n);
-    node->get_parameter("speculative.ngram_map_k.size_m", size_m);
-    node->get_parameter("speculative.ngram_map_k.min_hits", min_hits);
-    params.params.speculative.ngram_map_k.size_n =
-        static_cast<uint16_t>(size_n);
-    params.params.speculative.ngram_map_k.size_m =
-        static_cast<uint16_t>(size_m);
-    params.params.speculative.ngram_map_k.min_hits =
-        static_cast<uint16_t>(min_hits);
-  }
-
-  // Speculative ngram-map-k4v parameters (uint16_t fields, declared as int32_t)
-  {
-    int32_t size_n, size_m, min_hits;
-    node->get_parameter("speculative.ngram_map_k4v.size_n", size_n);
-    node->get_parameter("speculative.ngram_map_k4v.size_m", size_m);
-    node->get_parameter("speculative.ngram_map_k4v.min_hits", min_hits);
-    params.params.speculative.ngram_map_k4v.size_n =
-        static_cast<uint16_t>(size_n);
-    params.params.speculative.ngram_map_k4v.size_m =
-        static_cast<uint16_t>(size_m);
-    params.params.speculative.ngram_map_k4v.min_hits =
-        static_cast<uint16_t>(min_hits);
-  }
-
-  // Speculative ngram-cache parameters
-  node->get_parameter(
-      "speculative.ngram_cache.lookup_cache_static",
-      params.params.speculative.ngram_cache.lookup_cache_static);
-  node->get_parameter(
-      "speculative.ngram_cache.lookup_cache_dynamic",
-      params.params.speculative.ngram_cache.lookup_cache_dynamic);
-
-  // seed
-  if (seed < 0) {
-    params.params.sampling.seed = LLAMA_DEFAULT_SEED;
-  } else {
-    params.params.sampling.seed = seed;
-  }
-
-  // Cache type
-  params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
-  params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
-
   // Devices
   for (const std::string &d : devices) {
 
@@ -697,109 +574,140 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
-  // Check threads number
+  // Split mode
+  if (split_mode == "none") {
+    params.params.split_mode = LLAMA_SPLIT_MODE_NONE;
+  } else if (split_mode == "layer") {
+    params.params.split_mode = LLAMA_SPLIT_MODE_LAYER;
+  } else if (split_mode == "row") {
+    params.params.split_mode = LLAMA_SPLIT_MODE_ROW;
+  }
+
+  // flash_attn_type
+  if (flash_attn_type == "auto") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
+  } else if (flash_attn_type == "enabled") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+  } else if (flash_attn_type == "disabled") {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
+  } else {
+    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
+  }
+
+  // split tensors
+  GGML_ASSERT(tensor_split.size() <= llama_max_devices());
+  for (size_t i = 0; i < llama_max_devices(); ++i) {
+    if (i < tensor_split.size()) {
+      params.params.tensor_split[i] = tensor_split[i];
+    } else {
+      params.params.tensor_split[i] = 0.0f;
+    }
+  }
+
+  // ============================================================
+  // Control vector parameters (control_vector.*)
+  // ============================================================
+  node->get_parameter("control_vector.layer_start",
+                      params.params.control_vector_layer_start);
+  node->get_parameter("control_vector.layer_end",
+                      params.params.control_vector_layer_end);
+
+  // ============================================================
+  // Multimodal parameters (multimodal.*)
+  // ============================================================
+  node->get_parameter("multimodal.image_min_tokens",
+                      params.params.image_min_tokens);
+  node->get_parameter("multimodal.image_max_tokens",
+                      params.params.image_max_tokens);
+  node->get_parameter("multimodal.mtmd_batch_max_tokens",
+                      params.params.mtmd_batch_max_tokens);
+
+  // ============================================================
+  // Memory parameters (memory.*)
+  // ============================================================
+  node->get_parameter("memory.load_mode", load_mode);
+  node->get_parameter("memory.kv_unified", params.params.kv_unified);
+  node->get_parameter("memory.cache_idle_slots",
+                      params.params.cache_idle_slots);
+
+  if (load_mode == "none") {
+    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
+  } else if (load_mode == "mmap") {
+    params.params.load_mode = LLAMA_LOAD_MODE_MMAP;
+  } else if (load_mode == "mlock") {
+    params.params.load_mode = LLAMA_LOAD_MODE_MLOCK;
+  } else if (load_mode == "direct_io") {
+    params.params.load_mode = LLAMA_LOAD_MODE_DIRECT_IO;
+  } else {
+    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
+  }
+
+  // ============================================================
+  // CPU parameters (cpu.*)
+  // ============================================================
+  node->get_parameter("cpu.n_threads", params.params.cpuparams.n_threads);
+  node->get_parameter("cpu.mask", cpu_mask);
+  node->get_parameter("cpu.range", cpu_range);
+  node->get_parameter("cpu.priority", priority);
+  node->get_parameter("cpu.strict", params.params.cpuparams.strict_cpu);
+  node->get_parameter("cpu.poll", poll);
+
   if (params.params.cpuparams.n_threads < 0) {
     params.params.cpuparams.n_threads = common_cpu_get_num_math();
   }
+
+  if (!cpu_mask.empty()) {
+    params.params.cpuparams.mask_valid = true;
+    parse_cpu_mask(cpu_mask, params.params.cpuparams.cpumask);
+  }
+
+  if (!cpu_range.empty()) {
+    params.params.cpuparams.mask_valid = true;
+    parse_cpu_mask(cpu_range, params.params.cpuparams.cpumask);
+  }
+
+  params.params.cpuparams.priority = parse_priority(priority);
+  params.params.cpuparams.poll = poll;
+
+  // ============================================================
+  // CPU batch parameters (cpu_batch.*)
+  // ============================================================
+  node->get_parameter("cpu_batch.n_threads",
+                      params.params.cpuparams_batch.n_threads);
+  node->get_parameter("cpu_batch.mask", cpu_mask_batch);
+  node->get_parameter("cpu_batch.range", cpu_range_batch);
+  node->get_parameter("cpu_batch.priority", priority_batch);
+  node->get_parameter("cpu_batch.strict",
+                      params.params.cpuparams_batch.strict_cpu);
+  node->get_parameter("cpu_batch.poll", poll_batch);
 
   if (params.params.cpuparams_batch.n_threads < 0) {
     params.params.cpuparams_batch.n_threads = common_cpu_get_num_math();
   }
 
-  // Speculative type
-  {
-    auto spec_type = common_speculative_type_from_name(speculative_type);
-    if (spec_type == COMMON_SPECULATIVE_TYPE_COUNT) {
-      LLAMA_LOG_WARN("Unknown speculative type '%s', disabling speculative "
-                     "decoding. Valid types: %s",
-                     speculative_type.c_str(),
-                     common_speculative_all_types_str());
-      params.params.speculative.types = {COMMON_SPECULATIVE_TYPE_NONE};
-    } else {
-      params.params.speculative.types = {spec_type};
-    }
+  if (!cpu_mask_batch.empty()) {
+    params.params.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(cpu_mask_batch, params.params.cpuparams_batch.cpumask);
   }
 
-  // Models
-  if (params.params.model.path.empty()) {
-    params.params.model.path = download_model(params.params.model.hf_repo,
-                                              params.params.model.hf_file);
+  if (!cpu_range_batch.empty()) {
+    params.params.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(cpu_range_batch, params.params.cpuparams_batch.cpumask);
   }
 
-  if (params.params.mmproj.path.empty()) {
-    params.params.mmproj.path = download_model(params.params.mmproj.hf_repo,
-                                               params.params.mmproj.hf_file);
-  }
+  params.params.cpuparams_batch.priority = parse_priority(priority_batch);
+  params.params.cpuparams_batch.poll = poll_batch;
 
-  // Download draft model if needed
-  if (params.params.speculative.draft.mparams.path.empty()) {
-    params.params.speculative.draft.mparams.path =
-        download_model(params.params.speculative.draft.mparams.hf_repo,
-                       params.params.speculative.draft.mparams.hf_file);
-  }
-
-  // LoRA adapters
-  for (const std::string &lora_name : loras) {
-
-    if (lora_name.empty()) {
-      continue;
-    }
-
-    std::string lora_prefix = "lora." + lora_name;
-
-    // Declare and get per-lora parameters
-    if (!node->has_parameter(lora_prefix + ".repo")) {
-      node->declare_parameter<std::string>(lora_prefix + ".repo", "");
-    }
-    if (!node->has_parameter(lora_prefix + ".filename")) {
-      node->declare_parameter<std::string>(lora_prefix + ".filename", "");
-    }
-    if (!node->has_parameter(lora_prefix + ".scale")) {
-      node->declare_parameter<double>(lora_prefix + ".scale", 1.0);
-    }
-    if (!node->has_parameter(lora_prefix + ".file_path")) {
-      node->declare_parameter<std::string>(lora_prefix + ".file_path", "");
-    }
-
-    std::string repo, filename, file_path;
-    double scale_d;
-
-    node->get_parameter(lora_prefix + ".repo", repo);
-    node->get_parameter(lora_prefix + ".filename", filename);
-    node->get_parameter(lora_prefix + ".scale", scale_d);
-    node->get_parameter(lora_prefix + ".file_path", file_path);
-
-    float scale = static_cast<float>(scale_d);
-
-    // Resolve lora path: prefer file_path, then download from HF
-    std::string lora_path = file_path;
-    if (lora_path.empty() && !repo.empty() && !filename.empty()) {
-      lora_path = download_model(repo, filename);
-    }
-
-    if (lora_path.empty()) {
-      RCLCPP_ERROR(node->get_logger(),
-                   "LoRA '%s' has no file_path and no valid repo/filename",
-                   lora_name.c_str());
-      continue;
-    }
-
-    // fix scale
-    if (scale < 0.0) {
-      RCLCPP_WARN(node->get_logger(),
-                  "Scale %f cannot be lower than 0.0, setting it to 0.0",
-                  scale);
-      scale = 0.0;
-    } else if (scale > 1.0) {
-      RCLCPP_WARN(node->get_logger(),
-                  "Scale %f cannot be greater than 1.0, setting it to 1.0",
-                  scale);
-      scale = 1.0;
-    }
-
-    // add lora
-    params.params.lora_adapters.push_back({lora_path, scale, "", "", nullptr});
-  }
+  // ============================================================
+  // Prompt & chat parameters (prompt.*)
+  // ============================================================
+  node->get_parameter("prompt.prefix", params.params.input_prefix);
+  node->get_parameter("prompt.suffix", params.params.input_suffix);
+  node->get_parameter("prompt.stopping_words", stopping_words);
+  node->get_parameter("prompt.system_prompt", params.system_prompt);
+  node->get_parameter("prompt.system_prompt_file", system_prompt_file_path);
+  node->get_parameter("prompt.chat_template_file", chat_template_file);
+  node->get_parameter("prompt.system_prompt_type", system_prompt_type);
 
   // Stopping words are the antiprompt
   for (std::string word : stopping_words) {
@@ -878,51 +786,82 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
-  // Split mode
-  if (split_mode == "none") {
-    params.params.split_mode = LLAMA_SPLIT_MODE_NONE;
-  } else if (split_mode == "layer") {
-    params.params.split_mode = LLAMA_SPLIT_MODE_LAYER;
-  } else if (split_mode == "row") {
-    params.params.split_mode = LLAMA_SPLIT_MODE_ROW;
+  // ============================================================
+  // LoRA adapter parameters (lora.*)
+  // ============================================================
+  node->get_parameter("lora.init_without_apply",
+                      params.params.lora_init_without_apply);
+  node->get_parameter("lora.adapters", loras);
+
+  for (const std::string &lora_name : loras) {
+
+    if (lora_name.empty()) {
+      continue;
+    }
+
+    std::string lora_prefix = "lora." + lora_name;
+
+    // Declare and get per-lora parameters
+    if (!node->has_parameter(lora_prefix + ".repo")) {
+      node->declare_parameter<std::string>(lora_prefix + ".repo", "");
+    }
+    if (!node->has_parameter(lora_prefix + ".filename")) {
+      node->declare_parameter<std::string>(lora_prefix + ".filename", "");
+    }
+    if (!node->has_parameter(lora_prefix + ".scale")) {
+      node->declare_parameter<double>(lora_prefix + ".scale", 1.0);
+    }
+    if (!node->has_parameter(lora_prefix + ".file_path")) {
+      node->declare_parameter<std::string>(lora_prefix + ".file_path", "");
+    }
+
+    std::string repo, filename, file_path;
+    double scale_d;
+
+    node->get_parameter(lora_prefix + ".repo", repo);
+    node->get_parameter(lora_prefix + ".filename", filename);
+    node->get_parameter(lora_prefix + ".scale", scale_d);
+    node->get_parameter(lora_prefix + ".file_path", file_path);
+
+    float scale = static_cast<float>(scale_d);
+
+    // Resolve lora path: prefer file_path, then download from HF
+    std::string lora_path = file_path;
+    if (lora_path.empty() && !repo.empty() && !filename.empty()) {
+      lora_path = download_model(repo, filename);
+    }
+
+    if (lora_path.empty()) {
+      RCLCPP_ERROR(node->get_logger(),
+                   "LoRA '%s' has no file_path and no valid repo/filename",
+                   lora_name.c_str());
+      continue;
+    }
+
+    // fix scale
+    if (scale < 0.0) {
+      RCLCPP_WARN(node->get_logger(),
+                  "Scale %f cannot be lower than 0.0, setting it to 0.0",
+                  scale);
+      scale = 0.0;
+    } else if (scale > 1.0) {
+      RCLCPP_WARN(node->get_logger(),
+                  "Scale %f cannot be greater than 1.0, setting it to 1.0",
+                  scale);
+      scale = 1.0;
+    }
+
+    // add lora
+    params.params.lora_adapters.push_back({lora_path, scale, "", "", nullptr});
   }
 
-  // cpu mask
-  if (!cpu_mask.empty()) {
-    params.params.cpuparams.mask_valid = true;
-    parse_cpu_mask(cpu_mask, params.params.cpuparams.cpumask);
-  }
+  // ============================================================
+  // RoPE parameters (rope.*)
+  // ============================================================
+  node->get_parameter("rope.freq_base", params.params.rope_freq_base);
+  node->get_parameter("rope.freq_scale", params.params.rope_freq_scale);
+  node->get_parameter("rope.scaling_type", rope_scaling_type);
 
-  if (!cpu_range.empty()) {
-    params.params.cpuparams.mask_valid = true;
-    parse_cpu_mask(cpu_range, params.params.cpuparams.cpumask);
-  }
-
-  if (!cpu_mask_batch.empty()) {
-    params.params.cpuparams_batch.mask_valid = true;
-    parse_cpu_mask(cpu_mask_batch, params.params.cpuparams_batch.cpumask);
-  }
-
-  if (!cpu_range_batch.empty()) {
-    params.params.cpuparams_batch.mask_valid = true;
-    parse_cpu_mask(cpu_range_batch, params.params.cpuparams_batch.cpumask);
-  }
-
-  // cpu priority
-  params.params.cpuparams.priority = parse_priority(priority);
-  params.params.cpuparams_batch.priority = parse_priority(priority_batch);
-
-  // cpu poll
-  params.params.cpuparams.poll = poll;
-  params.params.cpuparams_batch.poll = poll_batch;
-
-  // rerank
-  if (reranking) {
-    pooling_type = "rerank";
-    params.params.embedding = true;
-  }
-
-  // rope_scaling_type
   if (rope_scaling_type == "none") {
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_NONE;
   } else if (rope_scaling_type == "linear") {
@@ -935,67 +874,161 @@ LlamaParams llama_utils::get_llama_params(
     params.params.rope_scaling_type = LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED;
   }
 
-  // numa
-  if (numa == "none") {
-    params.params.numa = GGML_NUMA_STRATEGY_DISABLED;
-  } else if (numa == "distribute") {
-    params.params.numa = GGML_NUMA_STRATEGY_DISTRIBUTE;
-  } else if (numa == "isolate") {
-    params.params.numa = GGML_NUMA_STRATEGY_ISOLATE;
-  } else if (numa == "numactl") {
-    params.params.numa = GGML_NUMA_STRATEGY_NUMACTL;
-  } else if (numa == "mirror") {
-    params.params.numa = GGML_NUMA_STRATEGY_MIRROR;
-  } else if (numa == "count") {
-    params.params.numa = GGML_NUMA_STRATEGY_COUNT;
+  // ============================================================
+  // YaRN parameters (yarn.*)
+  // ============================================================
+  node->get_parameter("yarn.ext_factor", params.params.yarn_ext_factor);
+  node->get_parameter("yarn.attn_factor", params.params.yarn_attn_factor);
+  node->get_parameter("yarn.beta_fast", params.params.yarn_beta_fast);
+  node->get_parameter("yarn.beta_slow", params.params.yarn_beta_slow);
+  node->get_parameter("yarn.orig_ctx", params.params.yarn_orig_ctx);
+
+  // ============================================================
+  // Group attention parameters (grp_attn.*)
+  // ============================================================
+  node->get_parameter("grp_attn.n", params.params.grp_attn_n);
+  node->get_parameter("grp_attn.w", params.params.grp_attn_w);
+
+  // ============================================================
+  // KV cache parameters (cache.*)
+  // ============================================================
+  node->get_parameter("cache.type_k", cache_type_k);
+  node->get_parameter("cache.type_v", cache_type_v);
+  node->get_parameter("cache.n_cache_reuse", params.params.n_cache_reuse);
+  node->get_parameter("cache.cache_prompt", params.params.cache_prompt);
+  node->get_parameter("cache.n_ctx_checkpoints",
+                      params.params.n_ctx_checkpoints);
+  node->get_parameter("cache.checkpoint_min_step",
+                      params.params.checkpoint_min_step);
+  node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
+
+  params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
+  params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
+
+  // ============================================================
+  // Fit parameters (fit.*)
+  // ============================================================
+  node->get_parameter("fit.enabled", params.params.fit_params);
+  node->get_parameter("fit.min_ctx", params.params.fit_params_min_ctx);
+
+  // ============================================================
+  // Speculative decoding parameters (speculative.*)
+  // ============================================================
+  node->get_parameter("speculative.type", speculative_type);
+  node->get_parameter("speculative.draft.n_max",
+                      params.params.speculative.draft.n_max);
+  node->get_parameter("speculative.draft.n_min",
+                      params.params.speculative.draft.n_min);
+  node->get_parameter("speculative.draft.p_min", speculative_p_min);
+  node->get_parameter("speculative.draft.p_split", speculative_p_split);
+  node->get_parameter("speculative.draft.n_gpu_layers",
+                      params.params.speculative.draft.n_gpu_layers);
+  node->get_parameter("speculative.draft.model.path",
+                      params.params.speculative.draft.mparams.path);
+  node->get_parameter("speculative.draft.model.repo",
+                      params.params.speculative.draft.mparams.hf_repo);
+  node->get_parameter("speculative.draft.model.filename",
+                      params.params.speculative.draft.mparams.hf_file);
+  params.params.speculative.draft.backend_sampling =
+      node->get_parameter("speculative.draft.backend_sampling").as_bool();
+
+  // Draft model KV cache types
+  node->get_parameter("speculative.draft.cache_type_k",
+                      speculative_cache_type_k);
+  node->get_parameter("speculative.draft.cache_type_v",
+                      speculative_cache_type_v);
+
+  // Speculative ngram-mod parameters
+  node->get_parameter("speculative.ngram_mod.n_match",
+                      params.params.speculative.ngram_mod.n_match);
+  node->get_parameter("speculative.ngram_mod.n_max",
+                      params.params.speculative.ngram_mod.n_max);
+  node->get_parameter("speculative.ngram_mod.n_min",
+                      params.params.speculative.ngram_mod.n_min);
+
+  // Speculative ngram-simple parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_simple.size_n", size_n);
+    node->get_parameter("speculative.ngram_simple.size_m", size_m);
+    node->get_parameter("speculative.ngram_simple.min_hits", min_hits);
+    params.params.speculative.ngram_simple.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_simple.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_simple.min_hits =
+        static_cast<uint16_t>(min_hits);
   }
 
-  // flash_attn_type
-  if (flash_attn_type == "auto") {
-    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
-  } else if (flash_attn_type == "enabled") {
-    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
-  } else if (flash_attn_type == "disabled") {
-    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
-  } else {
-    params.params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
+  // Speculative ngram-map-k parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_map_k.size_n", size_n);
+    node->get_parameter("speculative.ngram_map_k.size_m", size_m);
+    node->get_parameter("speculative.ngram_map_k.min_hits", min_hits);
+    params.params.speculative.ngram_map_k.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_map_k.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_map_k.min_hits =
+        static_cast<uint16_t>(min_hits);
   }
 
-  // pooling
-  if (pooling_type == "none") {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_NONE;
-  } else if (pooling_type == "mean") {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
-  } else if (pooling_type == "cls") {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_CLS;
-  } else if (pooling_type == "last") {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_LAST;
-  } else if (pooling_type == "rerank") {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_RANK;
-  } else {
-    params.params.pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
+  // Speculative ngram-map-k4v parameters (uint16_t fields, declared as int32_t)
+  {
+    int32_t size_n, size_m, min_hits;
+    node->get_parameter("speculative.ngram_map_k4v.size_n", size_n);
+    node->get_parameter("speculative.ngram_map_k4v.size_m", size_m);
+    node->get_parameter("speculative.ngram_map_k4v.min_hits", min_hits);
+    params.params.speculative.ngram_map_k4v.size_n =
+        static_cast<uint16_t>(size_n);
+    params.params.speculative.ngram_map_k4v.size_m =
+        static_cast<uint16_t>(size_m);
+    params.params.speculative.ngram_map_k4v.min_hits =
+        static_cast<uint16_t>(min_hits);
   }
 
-  // attention_type
-  if (attention_type == "causal") {
-    params.params.attention_type = LLAMA_ATTENTION_TYPE_CAUSAL;
-  } else if (attention_type == "non_causal") {
-    params.params.attention_type = LLAMA_ATTENTION_TYPE_NON_CAUSAL;
-  } else {
-    params.params.attention_type = LLAMA_ATTENTION_TYPE_UNSPECIFIED;
-  }
+  // Speculative ngram-cache parameters
+  node->get_parameter(
+      "speculative.ngram_cache.lookup_cache_static",
+      params.params.speculative.ngram_cache.lookup_cache_static);
+  node->get_parameter(
+      "speculative.ngram_cache.lookup_cache_dynamic",
+      params.params.speculative.ngram_cache.lookup_cache_dynamic);
 
-  // split tensors
-  GGML_ASSERT(tensor_split.size() <= llama_max_devices());
-  for (size_t i = 0; i < llama_max_devices(); ++i) {
-    if (i < tensor_split.size()) {
-      params.params.tensor_split[i] = tensor_split[i];
+  // Draft processing
+  params.params.speculative.draft.p_split =
+      static_cast<float>(speculative_p_split);
+  params.params.speculative.draft.p_min = static_cast<float>(speculative_p_min);
+  params.params.speculative.draft.cache_type_k =
+      kv_cache_type_from_str(speculative_cache_type_k);
+  params.params.speculative.draft.cache_type_v =
+      kv_cache_type_from_str(speculative_cache_type_v);
+
+  // Speculative type
+  {
+    auto spec_type = common_speculative_type_from_name(speculative_type);
+    if (spec_type == COMMON_SPECULATIVE_TYPE_COUNT) {
+      LLAMA_LOG_WARN("Unknown speculative type '%s', disabling speculative "
+                     "decoding. Valid types: %s",
+                     speculative_type.c_str(),
+                     common_speculative_all_types_str());
+      params.params.speculative.types = {COMMON_SPECULATIVE_TYPE_NONE};
     } else {
-      params.params.tensor_split[i] = 0.0f;
+      params.params.speculative.types = {spec_type};
     }
   }
 
+  // Download draft model if needed
+  if (params.params.speculative.draft.mparams.path.empty()) {
+    params.params.speculative.draft.mparams.path =
+        download_model(params.params.speculative.draft.mparams.hf_repo,
+                       params.params.speculative.draft.mparams.hf_file);
+  }
+
+  // ============================================================
   // KV overrides
+  // ============================================================
   {
     std::vector<std::string> kv_override_strs;
     node->get_parameter("kv_overrides", kv_override_strs);
@@ -1012,7 +1045,9 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
+  // ============================================================
   // Tensor buffer overrides
+  // ============================================================
   {
     std::vector<std::string> buft_override_strs;
     node->get_parameter("tensor_buft_overrides", buft_override_strs);
@@ -1064,7 +1099,9 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
+  // ============================================================
   // Control vectors
+  // ============================================================
   {
     std::vector<std::string> cv_strs;
     node->get_parameter("control_vectors", cv_strs);
