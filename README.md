@@ -521,13 +521,11 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Memory (`memory.*`)
 
-| Param                     | Type   | Default | Description                                               |
-| ------------------------- | ------ | ------- | --------------------------------------------------------- |
-| `memory.use_mmap`         | `bool` | `true`  | Use memory-mapped files for loading                       |
-| `memory.use_direct_io`    | `bool` | `false` | Use direct I/O for model loading                          |
-| `memory.use_mlock`        | `bool` | `false` | Lock model in RAM to prevent swapping                     |
-| `memory.kv_unified`       | `bool` | `false` | Use unified KV cache                                      |
-| `memory.cache_idle_slots` | `bool` | `true`  | Save and clear idle KV cache slots when a new task starts |
+| Param                     | Type     | Default | Description                                               |
+| ------------------------- | -------- | ------- | --------------------------------------------------------- |
+| `memory.load_mode`        | `string` | `true`  | Mode to load the model (none, mmap, mlock, direct_io)     |
+| `memory.kv_unified`       | `bool`   | `false` | Use unified KV cache                                      |
+| `memory.cache_idle_slots` | `bool`   | `true`  | Save and clear idle KV cache slots when a new task starts |
 
 #### CPU (`cpu.*`)
 
@@ -729,7 +727,7 @@ The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatComp
 | `dry_multiplier`           | `float32`          | `0.0`                             | DRY repetition penalty multiplier (`0.0` = disabled)                                                                                                                                                                           |
 | `dry_base`                 | `float32`          | `1.75`                            | DRY repetition penalty base                                                                                                                                                                                                    |
 | `dry_allowed_length`       | `int32`            | `2`                               | Tokens extending repetitions beyond this length receive DRY penalty                                                                                                                                                            |
-| `dry_penalty_last_n`       | `int32`            | `-1`                              | Tokens to scan for DRY repetitions (`0` = disable, `-1` = context size)                                                                                                                                                        |
+| `dry_penalty_last_n`       | `int32`            | `64`                              | Tokens to scan for DRY repetitions (`0` = disable, `-1` = context size)                                                                                                                                                        |
 | `dry_sequence_breakers`    | `string[]`         | `["\n", ":", "\"", "*"]`          | Sequence breakers for DRY                                                                                                                                                                                                      |
 | `adaptive_target`          | `float32`          | `-1.0`                            | Adaptive-P target probability (negative = disabled)                                                                                                                                                                            |
 | `adaptive_decay`           | `float32`          | `0.90`                            | Adaptive-P EMA decay                                                                                                                                                                                                           |

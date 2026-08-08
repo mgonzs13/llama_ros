@@ -179,10 +179,10 @@ void llama_utils::declare_llama_params(
                                     });
 
   // Memory parameters (memory.*)
+  node->declare_parameters<std::string>("memory", {
+                                                      {"load_mode", "mmap"},
+                                                  });
   node->declare_parameters<bool>("memory", {
-                                               {"use_mmap", true},
-                                               {"use_direct_io", false},
-                                               {"use_mlock", false},
                                                {"kv_unified", false},
                                                {"cache_idle_slots", true},
                                            });
@@ -495,9 +495,21 @@ LlamaParams llama_utils::get_llama_params(
                       params.params.mtmd_batch_max_tokens);
 
   // Memory parameters (memory.*)
-  node->get_parameter("memory.use_mmap", params.params.use_mmap);
-  node->get_parameter("memory.use_direct_io", params.params.use_direct_io);
-  node->get_parameter("memory.use_mlock", params.params.use_mlock);
+  std::string load_mode;
+  node->get_parameter("memory.load_mode", load_mode);
+
+  if (load_mode == "none") {
+    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
+  } else if (load_mode == "mmap") {
+    params.params.load_mode = LLAMA_LOAD_MODE_MMAP;
+  } else if (load_mode == "mlock") {
+    params.params.load_mode = LLAMA_LOAD_MODE_MLOCK;
+  } else if (load_mode == "direct_io") {
+    params.params.load_mode = LLAMA_LOAD_MODE_DIRECT_IO;
+  } else {
+    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
+  }
+
   node->get_parameter("memory.kv_unified", params.params.kv_unified);
   node->get_parameter("memory.cache_idle_slots",
                       params.params.cache_idle_slots);
@@ -1185,9 +1197,9 @@ common_params_sampling llama_utils::parse_sampling_params(
   sparams.reasoning_budget_start =
       std::vector<llama_token>(sampling_config.reasoning_budget_start.begin(),
                                sampling_config.reasoning_budget_start.end());
-  sparams.reasoning_budget_end =
+  sparams.reasoning_budget_end = {
       std::vector<llama_token>(sampling_config.reasoning_budget_end.begin(),
-                               sampling_config.reasoning_budget_end.end());
+                               sampling_config.reasoning_budget_end.end())};
   sparams.reasoning_budget_forced =
       std::vector<llama_token>(sampling_config.reasoning_budget_forced.begin(),
                                sampling_config.reasoning_budget_forced.end());

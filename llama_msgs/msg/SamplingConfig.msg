@@ -29,7 +29,7 @@ float32 penalty_present             0.00                            # repeat alp
 float32 dry_multiplier              0.0                             # DRY repetition penalty for tokens extending repetition (0.0 = disabled)
 float32 dry_base                    1.75                            # multiplier * base ^ (length of sequence before token - allowed length) (0.0 = disabled)
 int32 dry_allowed_length            2                               # tokens extending repetitions beyond this receive penalty
-int32 dry_penalty_last_n            -1                              # how many tokens to scan for repetitions (0 = disable penalty, -1 = context size)
+int32 dry_penalty_last_n            64                              # how many tokens to scan for repetitions (0 = disable penalty, -1 = context size)
 string[] dry_sequence_breakers      ["\\n", ":", "\\\"", "*"]       # default sequence breakers for DRY  
 
 float32 adaptive_target             -1.0                            # adaptive-p target probability (valid range 0.0 to 1.0; negative = disabled)
