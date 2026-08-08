@@ -89,14 +89,19 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llama4.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llava.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/mimo-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mimovl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/minicpmv.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/minimax-m3.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/parakeet.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3a.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
