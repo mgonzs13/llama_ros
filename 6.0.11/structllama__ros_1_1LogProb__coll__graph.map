@@ -1,0 +1,7 @@
+<map id="llama_ros::LogProb" name="llama_ros::LogProb">
+<area shape="rect" id="Node000001" title="Represents a log probability for a token." alt="" coords="5,192,138,218"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="33,95,110,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="74,136,74,191,69,191,69,136"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="10,5,133,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="74,61,74,95,69,95,69,61"/>
+</map>
