@@ -318,6 +318,11 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
                           COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
   ctx.oaicompat_chat_syntax.generation_prompt =
       ctx.chat_prompt_instance.generation_prompt;
+  // Tool-call and output-format grammars start with the generation prompt, so
+  // the sampler must be advanced past it. Otherwise the grammar forces the
+  // model to re-emit the generation prompt as content (mirrors llama.cpp's
+  // server, which sets both chat_parser_params and sampling.generation_prompt).
+  ctx.sparams.generation_prompt = ctx.chat_prompt_instance.generation_prompt;
   ctx.oaicompat_chat_syntax.parse_tool_calls =
       !goal->tools.empty() &&
       ctx.prompt_format_config.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;

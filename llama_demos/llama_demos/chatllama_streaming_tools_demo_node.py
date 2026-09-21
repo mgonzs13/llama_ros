@@ -59,14 +59,15 @@ async def main():
     )
 
     initial_time = time.time()
-    eval_time = -1
 
+    # stream the tool-call turn, printing each tool call as it completes
     first = True
+    gathered = None
+    tools_output_tokens = 0
     async for chunk in llm_tools.astream(messages):
         if first:
             gathered = chunk
             first = False
-            eval_time = time.time()
         else:
             gathered = gathered + chunk
 
@@ -79,16 +80,52 @@ async def main():
                 f"Tool received: {gathered.tool_calls[-1]['name']}({gathered.tool_calls[-1]['args']})"
             )
 
-    output_tokens = gathered.usage_metadata["output_tokens"]
+        if chunk.usage_metadata:
+            tools_output_tokens = chunk.usage_metadata["output_tokens"]
+
+    tools_end_time = time.time()
+
+    # execute the tools and append their results to the conversation
+    messages.append(gathered)
+    for tool_call in gathered.tool_calls:
+        selected_tool = {
+            "get_inhabitants": get_inhabitants,
+            "get_curr_temperature": get_curr_temperature,
+        }[tool_call["name"]]
+
+        tool_msg = selected_tool.invoke(tool_call)
+        formatted_output = (
+            f"{tool_call['name']}"
+            f"({', '.join(f'{k}={v}' for k, v in tool_call['args'].items())})"
+            f" = {tool_msg.content}"
+        )
+        print(f"Calling tool: {formatted_output}")
+
+        tool_msg.additional_kwargs = {"args": tool_call["args"]}
+        messages.append(tool_msg)
+
+    # stream the final response generated with the tool results
+    print("\nResponse: ", end="", flush=True)
+    response_output_tokens = 0
+    async for chunk in chat.astream(messages):
+        if chunk.content:
+            print(chunk.content, end="", flush=True)
+
+        if chunk.usage_metadata:
+            response_output_tokens = chunk.usage_metadata["output_tokens"]
+    print("", flush=True)
 
     end_time = time.time()
-    total_eval_time = end_time - eval_time
-    total_time = end_time - initial_time
-    predition_time = total_time - total_eval_time
 
-    print(f"\nTime to eval: {total_eval_time:.2f} s")
-    print(f"Time to predict: {predition_time:.2f} s")
-    print(f"Prediction speed: {output_tokens / predition_time:.2f} t/s")
+    tools_time = tools_end_time - initial_time
+    response_time = end_time - tools_end_time
+
+    print(f"\nTime to generate tools: {tools_time:.2f} s")
+    print(f"Tokens per second (tools): {tools_output_tokens / tools_time:.2f} t/s")
+    print(f"Time to generate last response: {response_time:.2f} s")
+    print(
+        f"Tokens per second (last response): {response_output_tokens / response_time:.2f} t/s"
+    )
 
     rclpy.shutdown()
 
