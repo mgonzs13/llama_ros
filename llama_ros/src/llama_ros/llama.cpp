@@ -48,7 +48,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
 
   this->llama_init = common_init_from_params(this->params);
 
-  llama_print_build_info();
+  llama_print_build_info(llama_version());
 
   // load model
   llama_backend_init();
@@ -114,43 +114,6 @@ Llama::Llama(const common_params &params, std::string system_prompt,
                           false,
                           false,
                           false};
-
-  // init threadpool
-  LLAMA_LOG_INFO("llama threadpool init = n_threads = %d",
-                 this->params.cpuparams.n_threads);
-
-  ggml_threadpool_params tpp_batch =
-      ggml_threadpool_params_from_cpu_params(this->params.cpuparams_batch);
-  ggml_threadpool_params tpp =
-      ggml_threadpool_params_from_cpu_params(this->params.cpuparams);
-
-  set_process_priority(this->params.cpuparams.priority);
-
-  LLAMA_LOG_INFO("loaded threadpool params");
-
-  this->threadpool_batch = NULL;
-  if (!ggml_threadpool_params_match(&tpp, &tpp_batch)) {
-    this->threadpool_batch = ggml_threadpool_new(&tpp_batch);
-    if (!this->threadpool_batch) {
-      LLAMA_LOG_ERROR("Failed to create batch threadpool: n_threads %d",
-                      tpp_batch.n_threads);
-      return;
-    }
-
-    // start the non-batch threadpool in the paused state
-    tpp.paused = true;
-  }
-
-  LLAMA_LOG_INFO("creating threadpool");
-
-  this->threadpool = ggml_threadpool_new(&tpp);
-  if (!this->threadpool) {
-    LLAMA_LOG_ERROR("Failed to create threadpool: n_threads %d", tpp.n_threads);
-    return;
-  }
-
-  LLAMA_LOG_INFO("attaching threadpool");
-  llama_attach_threadpool(this->ctx, this->threadpool, this->threadpool_batch);
 
   // create the sampler
   LLAMA_LOG_INFO("initializing sampler");
@@ -236,12 +199,6 @@ Llama::~Llama() {
     this->sampler = nullptr;
   }
   llama_backend_free();
-
-  ggml_threadpool_free(this->threadpool);
-  this->threadpool = nullptr;
-
-  ggml_threadpool_free(this->threadpool_batch);
-  this->threadpool_batch = nullptr;
 }
 
 /*
@@ -1184,7 +1141,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
     dparams = {
         /* .drafting = */ true,
         /* .n_max    = */ -1,
-        /* .n_past   = */ slot->n_past,
+        /* .pos0     = */ slot->n_past,
         /* .id_last  = */ id_last,
         /* .prompt   = */ &prompt_tgt,
         /* .result   = */ &draft,
@@ -1215,11 +1172,6 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
     llama_memory_seq_rm(llama_get_memory(this->ctx_dft_), slot->id,
                         slot->n_past, -1);
   }
-
-  // Set embeddings mode before the verify decode (required by MTP to read
-  // hidden states; mirrors server-context.cpp per-batch llama_set_embeddings).
-  llama_set_embeddings(this->ctx,
-                       common_speculative_need_embd(this->speculative_));
 
   // Decode the batch on the target model
   const int ret = llama_decode(this->ctx, this->batch);
@@ -1598,13 +1550,6 @@ void Llama::run_loop() {
     }
 
     int32_t i_next = 0;
-
-    // Set embeddings mode before decode (required by MTP to read hidden
-    // states; mirrors server-context.cpp per-batch llama_set_embeddings).
-    if (this->speculative_ != nullptr) {
-      llama_set_embeddings(this->ctx,
-                           common_speculative_need_embd(this->speculative_));
-    }
 
     LLAMA_LOG_DEBUG("Decoding batch of %d tokens", this->batch.n_tokens);
     for (int32_t i = 0; i < this->batch.n_tokens; i = i_next) {

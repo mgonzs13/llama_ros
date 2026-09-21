@@ -443,13 +443,14 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Multimodal Projector (`mmproj.*`)
 
-| Param             | Type     | Default | Description                                              |
-| ----------------- | -------- | ------- | -------------------------------------------------------- |
-| `mmproj.path`     | `string` | `""`    | Local file path to the multimodal projector              |
-| `mmproj.repo`     | `string` | `""`    | HuggingFace repository ID to download the projector from |
-| `mmproj.filename` | `string` | `""`    | Filename of the projector in the HuggingFace repository  |
-| `mmproj.use_gpu`  | `bool`   | `true`  | Use GPU for the multimodal projector                     |
-| `mmproj.disabled` | `bool`   | `false` | Disable loading the multimodal projector                 |
+| Param             | Type     | Default | Description                                                                |
+| ----------------- | -------- | ------- | -------------------------------------------------------------------------- |
+| `mmproj.path`     | `string` | `""`    | Local file path to the multimodal projector                                |
+| `mmproj.repo`     | `string` | `""`    | HuggingFace repository ID to download the projector from                   |
+| `mmproj.filename` | `string` | `""`    | Filename of the projector in the HuggingFace repository                    |
+| `mmproj.use_gpu`  | `bool`   | `true`  | Use GPU for the multimodal projector                                       |
+| `mmproj.device`   | `string` | `""`    | Device for the projector (`none` disables GPU, `""` follows `gpu.devices`) |
+| `mmproj.disabled` | `bool`   | `false` | Disable loading the multimodal projector                                   |
 
 #### Context / Inference (`context.*`)
 
@@ -520,11 +521,12 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Memory (`memory.*`)
 
-| Param                     | Type     | Default | Description                                               |
-| ------------------------- | -------- | ------- | --------------------------------------------------------- |
-| `memory.load_mode`        | `string` | `true`  | Mode to load the model (none, mmap, mlock, direct_io)     |
-| `memory.kv_unified`       | `bool`   | `false` | Use unified KV cache                                      |
-| `memory.cache_idle_slots` | `bool`   | `true`  | Save and clear idle KV cache slots when a new task starts |
+| Param                     | Type     | Default  | Description                                                 |
+| ------------------------- | -------- | -------- | ----------------------------------------------------------- |
+| `memory.load_mode`        | `string` | `"auto"` | Mode to load the model (auto, none, mmap, mlock, direct_io) |
+| `memory.lazy_mode`        | `string` | `"auto"` | On-demand tensor reading (off, auto, on) (requires mmap)    |
+| `memory.kv_unified`       | `bool`   | `false`  | Use unified KV cache                                        |
+| `memory.cache_idle_slots` | `bool`   | `true`   | Save and clear idle KV cache slots when a new task starts   |
 
 #### CPU (`cpu.*`)
 

@@ -8,13 +8,33 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-  GIT_TAG        b10327
+  GIT_TAG        v0.4.1
   GIT_SHALLOW    FALSE
 )
 
 option(LLAMA_BUILD_COMMON "llama: build common utils library" ON)
 
 FetchContent_MakeAvailable(llama)
+
+# llama-common links the upstream header-only vendor targets (nlohmann,
+# sheredom) as PUBLIC. They are build-tree only, so hide them from the install
+# interface to keep ament_export_targets self-contained.
+get_target_property(llama_common_iface_libs llama-common INTERFACE_LINK_LIBRARIES)
+
+if(llama_common_iface_libs)
+  set(llama_common_iface_libs_new "")
+
+  foreach(lib IN LISTS llama_common_iface_libs)
+    if(lib MATCHES "^vendor::")
+      list(APPEND llama_common_iface_libs_new "$<BUILD_INTERFACE:${lib}>")
+    else()
+      list(APPEND llama_common_iface_libs_new "${lib}")
+    endif()
+  endforeach()
+
+  set_target_properties(llama-common PROPERTIES
+    INTERFACE_LINK_LIBRARIES "${llama_common_iface_libs_new}")
+endif()
 
 # ggml
 set_target_properties(
@@ -72,8 +92,10 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-image.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/conformer.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/deepseek4v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/deepseekocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/deepseekocr2.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/dots3note.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/dotsocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/exaone4_5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4a.cpp
@@ -94,6 +116,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/minicpmv.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/minimax-m3.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/muse-glimmer.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/parakeet.cpp
@@ -101,6 +124,9 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3a.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-seanet.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
@@ -120,6 +146,14 @@ target_include_directories(mtmd
     $<INSTALL_INTERFACE:include>   
 )
 
+target_link_libraries(mtmd
+  PRIVATE
+    vendor::hash
+    vendor::miniaudio
+    vendor::stb
+    vendor::sheredom
+)
+
 if(GGML_CUDA)
   add_compile_definitions(GGML_USE_CUDA)
 endif()
@@ -135,7 +169,6 @@ install(
     ${llama_SOURCE_DIR}/ggml/include/
     ${llama_SOURCE_DIR}/tools/mtmd/
     ${llama_SOURCE_DIR}/vendor/nlohmann/
-    ${llama_SOURCE_DIR}/vendor/minja/
   DESTINATION include
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )

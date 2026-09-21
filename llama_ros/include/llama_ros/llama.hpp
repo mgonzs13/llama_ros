@@ -596,21 +596,6 @@ protected:
   llama_batch batch;
 
   /**
-   * @brief Pointer to the thread pool for parallel processing.
-   *
-   * This thread pool is used for managing tasks during model execution.
-   */
-  ggml_threadpool *threadpool;
-
-  /**
-   * @brief Pointer to the thread pool for batch processing.
-   *
-   * This thread pool is used for managing batch operations during model
-   * execution.
-   */
-  ggml_threadpool *threadpool_batch;
-
-  /**
    * @brief The system prompt used for initializing the model's context.
    *
    * This prompt provides context or instructions for the model.

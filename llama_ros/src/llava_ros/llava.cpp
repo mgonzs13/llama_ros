@@ -40,8 +40,14 @@ Llava::Llava(const common_params &params, std::string system_prompt)
   // create mtmd params
   mtmd_context_params mparams = mtmd_context_params_default();
   mparams.use_gpu = this->params.mmproj_use_gpu;
+  mparams.device = this->params.mmproj_device;
   mparams.print_timings = false;
   mparams.n_threads = this->params.cpuparams.n_threads;
+  mparams.image_min_tokens = this->params.image_min_tokens;
+  mparams.image_max_tokens = this->params.image_max_tokens;
+  mparams.batch_max_tokens = this->params.mtmd_batch_max_tokens;
+  mparams.flash_attn_type = this->params.flash_attn_type;
+  mparams.warmup = this->params.warmup;
 
   // load multimodal model
   this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
@@ -82,8 +88,9 @@ bool Llava::load_mtmd(std::vector<uint8_t> buf, bool is_placeholder) {
 
   LLAMA_LOG_INFO("Loading mtmd...");
 
-  auto wrapper = mtmd_helper_bitmap_init_from_buf(this->mtmd_ctx, buf.data(),
-                                                  buf.size(), is_placeholder);
+  auto wrapper = mtmd_helper_bitmap_init_from_buf(
+      this->mtmd_ctx, buf.data(), buf.size(), is_placeholder,
+      mtmd_helper_init_opt_default());
 
   if (!wrapper.bitmap) {
     LLAMA_LOG_ERROR("Can't load mtmd");

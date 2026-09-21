@@ -24,7 +24,6 @@
 #include <iostream>
 
 #include "common.h"
-#include "json.hpp"
 #include "speculative.h"
 
 #include "huggingface_hub.h"
@@ -101,6 +100,7 @@ void llama_utils::declare_llama_params(
                                                       {"path", ""},
                                                       {"repo", ""},
                                                       {"filename", ""},
+                                                      {"device", ""},
                                                   });
 
   node->declare_parameters<bool>("mmproj", {
@@ -180,7 +180,8 @@ void llama_utils::declare_llama_params(
 
   // Memory parameters (memory.*)
   node->declare_parameters<std::string>("memory", {
-                                                      {"load_mode", "mmap"},
+                                                      {"load_mode", "auto"},
+                                                      {"lazy_mode", "auto"},
                                                   });
   node->declare_parameters<bool>("memory", {
                                                {"kv_unified", false},
@@ -425,6 +426,8 @@ LlamaParams llama_utils::get_llama_params(
   std::string speculative_cache_type_v;
 
   std::string load_mode;
+  std::string lazy_mode;
+  std::string mmproj_device;
 
   LlamaParams params;
 
@@ -455,6 +458,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("mmproj.repo", params.params.mmproj.hf_repo);
   node->get_parameter("mmproj.filename", params.params.mmproj.hf_file);
   node->get_parameter("mmproj.use_gpu", params.params.mmproj_use_gpu);
+  node->get_parameter("mmproj.device", mmproj_device);
   node->get_parameter("mmproj.disabled", params.params.no_mmproj);
 
   if (params.params.mmproj.path.empty()) {
@@ -574,6 +578,27 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
+  // mmproj device: "none" disables GPU offload for the projector, otherwise
+  // fall back to the first device from gpu.devices when unset
+  if (!mmproj_device.empty()) {
+    if (mmproj_device == "none") {
+      params.params.mmproj_use_gpu = false;
+      params.params.mmproj_device = nullptr;
+    } else {
+      auto *dev = ggml_backend_dev_by_name(mmproj_device.c_str());
+
+      if (!dev) {
+        LLAMA_LOG_ERROR("Invalid mmproj device: %s", mmproj_device.c_str());
+      } else {
+        params.params.mmproj_use_gpu = true;
+        params.params.mmproj_device = dev;
+      }
+    }
+  } else if (params.params.mmproj_use_gpu && !params.params.devices.empty()) {
+    params.params.mmproj_device = params.params.devices.front();
+    params.params.mmproj_use_gpu = params.params.mmproj_device != nullptr;
+  }
+
   // Split mode
   if (split_mode == "none") {
     params.params.split_mode = LLAMA_SPLIT_MODE_NONE;
@@ -626,11 +651,14 @@ LlamaParams llama_utils::get_llama_params(
   // Memory parameters (memory.*)
   // ============================================================
   node->get_parameter("memory.load_mode", load_mode);
+  node->get_parameter("memory.lazy_mode", lazy_mode);
   node->get_parameter("memory.kv_unified", params.params.kv_unified);
   node->get_parameter("memory.cache_idle_slots",
                       params.params.cache_idle_slots);
 
-  if (load_mode == "none") {
+  if (load_mode == "auto") {
+    params.params.load_mode = LLAMA_LOAD_MODE_AUTO;
+  } else if (load_mode == "none") {
     params.params.load_mode = LLAMA_LOAD_MODE_NONE;
   } else if (load_mode == "mmap") {
     params.params.load_mode = LLAMA_LOAD_MODE_MMAP;
@@ -639,7 +667,15 @@ LlamaParams llama_utils::get_llama_params(
   } else if (load_mode == "direct_io") {
     params.params.load_mode = LLAMA_LOAD_MODE_DIRECT_IO;
   } else {
-    params.params.load_mode = LLAMA_LOAD_MODE_NONE;
+    params.params.load_mode = LLAMA_LOAD_MODE_AUTO;
+  }
+
+  if (lazy_mode == "off") {
+    params.params.lazy_mode = LLAMA_LAZY_MODE_OFF;
+  } else if (lazy_mode == "on") {
+    params.params.lazy_mode = LLAMA_LAZY_MODE_ON;
+  } else {
+    params.params.lazy_mode = LLAMA_LAZY_MODE_AUTO;
   }
 
   // ============================================================
@@ -1245,8 +1281,8 @@ common_params_sampling llama_utils::parse_sampling_params(
 
   if (sparams.grammar.empty() && sampling_config.grammar_schema.size() > 0) {
     sparams.grammar = {COMMON_GRAMMAR_TYPE_OUTPUT_FORMAT,
-                       json_schema_to_grammar(nlohmann::ordered_json::parse(
-                           sampling_config.grammar_schema))};
+                       json_schema_to_grammar(
+                           common_json::parse(sampling_config.grammar_schema))};
   }
 
   // check penalty_last_n
