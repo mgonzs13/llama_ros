@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <algorithm>
 #include <cassert>
 #include <chat.h>
 #include <cmath>
@@ -293,8 +294,12 @@ std::string Llama::get_metadata(const std::string &key, size_t size) {
 
   int32_t res = llama_model_meta_val_str(this->model, key.c_str(),
                                          buffer.data(), buffer.size());
-  if (res >= 0) {
-    metada_str = std::string(buffer.data(), buffer.size());
+  if (res >= 0 && !buffer.empty()) {
+    // llama_model_meta_val_str returns the value length and leaves the rest of
+    // the buffer zero-padded, so only keep the actual value. The result can
+    // exceed the buffer size when the value is truncated.
+    size_t value_size = std::min(static_cast<size_t>(res), buffer.size() - 1);
+    metada_str = std::string(buffer.data(), value_size);
   }
 
   return metada_str;

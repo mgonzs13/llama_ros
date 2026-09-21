@@ -214,6 +214,69 @@ TEST_F(LlamaDeploymentTest, CanRetrieveModelMetadata) {
 }
 
 /**
+ * @brief Test that verifies metadata strings contain no null characters.
+ *
+ * GGUF metadata is read into fixed-size buffers, so the returned strings
+ * must be trimmed to the reported value length. Embedded null characters
+ * make Fast DDS throw a BadParamException when the metadata is serialized
+ * into a ROS message.
+ */
+TEST_F(LlamaDeploymentTest, MetadataStringsContainNoNullCharacters) {
+  // Download model from HuggingFace
+  auto result = huggingface_hub::hf_hub_download_with_shards(
+      "bartowski/google_gemma-3-270m-it-GGUF",
+      "google_gemma-3-270m-it-Q4_K_M.gguf");
+
+  ASSERT_TRUE(result.success) << "Failed to download model";
+  ASSERT_FALSE(result.path.empty()) << "Model path is empty";
+
+  // Set the downloaded model path
+  params->params.model.path = result.path;
+
+  // Create and load the model
+  ASSERT_NO_THROW({
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
+  });
+
+  ASSERT_NE(llama, nullptr);
+
+  llama_ros::Metadata metadata = llama->get_metadata();
+
+  auto expect_no_null = [](const std::string &value, const char *field) {
+    EXPECT_EQ(value.find('\0'), std::string::npos)
+        << field << " contains null characters";
+  };
+
+  expect_no_null(metadata.general.architecture, "general.architecture");
+  expect_no_null(metadata.general.name, "general.name");
+  expect_no_null(metadata.general.author, "general.author");
+  expect_no_null(metadata.general.version, "general.version");
+  expect_no_null(metadata.general.organization, "general.organization");
+  expect_no_null(metadata.general.basename, "general.basename");
+  expect_no_null(metadata.general.finetune, "general.finetune");
+  expect_no_null(metadata.general.description, "general.description");
+  expect_no_null(metadata.general.quantized_by, "general.quantized_by");
+  expect_no_null(metadata.general.size_label, "general.size_label");
+  expect_no_null(metadata.general.license, "general.license");
+  expect_no_null(metadata.general.license_name, "general.license_name");
+  expect_no_null(metadata.general.license_link, "general.license_link");
+  expect_no_null(metadata.general.url, "general.url");
+  expect_no_null(metadata.general.repo_url, "general.repo_url");
+  expect_no_null(metadata.general.doi, "general.doi");
+  expect_no_null(metadata.general.uuid, "general.uuid");
+  expect_no_null(metadata.general.file_type, "general.file_type");
+  expect_no_null(metadata.model.tensor_data_layout, "model.tensor_data_layout");
+  expect_no_null(metadata.model.rope.scaling_type, "model.rope.scaling_type");
+  expect_no_null(metadata.tokenizer.model, "tokenizer.model");
+  expect_no_null(metadata.tokenizer.chat_template, "tokenizer.chat_template");
+
+  // Direct retrieval with a buffer larger than the stored value.
+  expect_no_null(llama->get_metadata("general.name", 128),
+                 "get_metadata(general.name)");
+}
+
+/**
  * @brief Test that verifies context size configuration.
  *
  * This test ensures that the context size can be properly configured
