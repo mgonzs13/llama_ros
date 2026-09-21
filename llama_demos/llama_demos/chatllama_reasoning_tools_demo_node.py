@@ -64,7 +64,9 @@ def main():
     messages.append(all_tools_res)
 
     for tool in all_tools_res.tool_calls:
-        formatted_output = f"{tool['name']}({''.join(tool['args'].values())})"
+        formatted_output = (
+            f"{tool['name']}({', '.join(f'{k}={v}' for k, v in tool['args'].items())})"
+        )
         print(f"Calling tool: {formatted_output}")
 
     if "reasoning_content" in all_tools_res.additional_kwargs:

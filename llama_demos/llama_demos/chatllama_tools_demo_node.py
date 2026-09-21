@@ -71,9 +71,7 @@ def main():
 
         tool_msg = selected_tool.invoke(tool)
 
-        formatted_output = (
-            f"{tool['name']}({''.join(tool['args'].values())}) = {tool_msg.content}"
-        )
+        formatted_output = f"{tool['name']}({', '.join(f'{k}={v}' for k, v in tool['args'].items())}) = {tool_msg.content}"
         print(f"Calling tool: {formatted_output}")
 
         tool_msg.additional_kwargs = {"args": tool["args"]}

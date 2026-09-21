@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 
+import os
 import sys
 import time
 import numpy as np
@@ -72,15 +73,19 @@ def main():
     if len(sys.argv) > 2:
         use_audio = sys.argv[2].lower() in ["true", "1", "yes"]
     if len(sys.argv) > 3:
-        use_audio = sys.argv[3]
+        audio_url = sys.argv[3]
 
     global tokens, eval_time
     tokens = 0
     eval_time = -1
 
     rclpy.init()
-    file_path = download_audio_to_tempfile(audio_url)
-    mp3_array = read_mp3_as_uint8_array(file_path)
+    file_path = download_audio_to_tempfile(audio_url) if use_audio else None
+    try:
+        mp3_array = read_mp3_as_uint8_array(file_path) if use_audio else None
+    finally:
+        if file_path is not None and os.path.exists(file_path):
+            os.unlink(file_path)
     llama_client = LlamaClientNode.get_instance()
 
     goal = GenerateResponse.Goal()

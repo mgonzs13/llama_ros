@@ -34,9 +34,9 @@ from langchain_core.messages import AIMessage
 
 def main():
     if len(sys.argv) < 2:
-        prompt = "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner in English."
+        user_prompt = "Here we have a book, a laptop and a nail. Please tell me how to stack them onto each other in a stable manner in English."
     else:
-        prompt = " ".join(sys.argv[1:])
+        user_prompt = " ".join(sys.argv[1:])
 
     rclpy.init()
     initial_time = -1
@@ -46,7 +46,7 @@ def main():
         [
             HumanMessagePromptTemplate.from_template(
                 template=[
-                    {"type": "text", "text": f"{prompt}"},
+                    {"type": "text", "text": f"{user_prompt}"},
                 ]
             ),
         ]
@@ -57,7 +57,7 @@ def main():
     response: AIMessage = chain.invoke({})
     final_time = time.time()
 
-    print(f"Prompt: {prompt}")
+    print(f"Prompt: {user_prompt}")
     print(f"Response: {response.content.strip()}")
 
     if "reasoning_content" in response.additional_kwargs:
