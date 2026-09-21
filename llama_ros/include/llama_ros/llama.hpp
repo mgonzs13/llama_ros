@@ -23,6 +23,7 @@
 #ifndef LLAMA_ROS__LLAMA_HPP
 #define LLAMA_ROS__LLAMA_HPP
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -608,7 +609,7 @@ protected:
    *
    * If true, ongoing operations will be interrupted.
    */
-  bool canceled;
+  std::atomic<bool> canceled{false};
 
   /**
    * @brief Spinner utility for managing asynchronous operations.
@@ -622,21 +623,21 @@ protected:
    *
    * This value is used to manage the model's context window.
    */
-  int32_t n_past;
+  int32_t n_past = 0;
 
   /**
    * @brief Number of tokens consumed during processing.
    *
    * This value tracks the progress of token consumption.
    */
-  int32_t n_consumed;
+  int32_t n_consumed = 0;
 
   /**
    * @brief Internal counter for managing generation steps.
    *
    * This counter is used for tracking the generation process.
    */
-  int32_t ga_i;
+  int32_t ga_i = 0;
 
   /// @brief The collection of server slots for concurrent request processing.
   std::vector<ServerSlot> server_slots;

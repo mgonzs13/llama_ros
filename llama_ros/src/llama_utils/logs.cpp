@@ -116,7 +116,7 @@ llama_utils::LogFunction llama_utils::log_info = default_log_info;
 llama_utils::LogFunction llama_utils::log_debug = default_log_debug;
 
 // Initialize the log level to INFO
-llama_utils::LogLevel llama_utils::log_level = INFO;
+std::atomic<llama_utils::LogLevel> llama_utils::log_level = INFO;
 
 void llama_utils::set_log_level(LogLevel level) {
   llama_utils::log_level = level;

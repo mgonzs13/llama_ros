@@ -16,6 +16,7 @@
 #ifndef LLAMA_UTILS__LOGS_HPP
 #define LLAMA_UTILS__LOGS_HPP
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -74,7 +75,7 @@ enum LogLevel {
  * verbosity of the logs. Logs at or above this level will be displayed. The
  * default level is set to INFO.
  */
-extern LogLevel log_level;
+extern std::atomic<LogLevel> log_level;
 
 /**
  * @brief Extracts the filename from a given file path.
@@ -106,9 +107,11 @@ inline const char *extract_filename(const char *path) {
  * @param ... Additional arguments for the format string.
  */
 #define LLAMA_LOG_ERROR(text, ...)                                             \
-  if (llama_utils::log_level >= llama_utils::ERROR)                            \
-  llama_utils::log_error(llama_utils::extract_filename(__FILE__),              \
-                         __FUNCTION__, __LINE__, text, ##__VA_ARGS__)
+  do {                                                                         \
+    if (llama_utils::log_level >= llama_utils::ERROR)                          \
+      llama_utils::log_error(llama_utils::extract_filename(__FILE__),          \
+                             __FUNCTION__, __LINE__, text, ##__VA_ARGS__);     \
+  } while (0)
 
 /**
  * @brief Logs a warning message.
@@ -124,9 +127,11 @@ inline const char *extract_filename(const char *path) {
  * @param ... Additional arguments for the format string.
  */
 #define LLAMA_LOG_WARN(text, ...)                                              \
-  if (llama_utils::log_level >= llama_utils::WARN)                             \
-  llama_utils::log_warn(llama_utils::extract_filename(__FILE__), __FUNCTION__, \
-                        __LINE__, text, ##__VA_ARGS__)
+  do {                                                                         \
+    if (llama_utils::log_level >= llama_utils::WARN)                           \
+      llama_utils::log_warn(llama_utils::extract_filename(__FILE__),           \
+                            __FUNCTION__, __LINE__, text, ##__VA_ARGS__);      \
+  } while (0)
 
 /**
  * @brief Logs a info message.
@@ -142,9 +147,11 @@ inline const char *extract_filename(const char *path) {
  * @param ... Additional arguments for the format string.
  */
 #define LLAMA_LOG_INFO(text, ...)                                              \
-  if (llama_utils::log_level >= llama_utils::INFO)                             \
-  llama_utils::log_info(llama_utils::extract_filename(__FILE__), __FUNCTION__, \
-                        __LINE__, text, ##__VA_ARGS__)
+  do {                                                                         \
+    if (llama_utils::log_level >= llama_utils::INFO)                           \
+      llama_utils::log_info(llama_utils::extract_filename(__FILE__),           \
+                            __FUNCTION__, __LINE__, text, ##__VA_ARGS__);      \
+  } while (0)
 
 /**
  * @brief Logs a debug message.
@@ -160,9 +167,11 @@ inline const char *extract_filename(const char *path) {
  * @param ... Additional arguments for the format string.
  */
 #define LLAMA_LOG_DEBUG(text, ...)                                             \
-  if (llama_utils::log_level >= llama_utils::DEBUG)                            \
-  llama_utils::log_debug(llama_utils::extract_filename(__FILE__),              \
-                         __FUNCTION__, __LINE__, text, ##__VA_ARGS__)
+  do {                                                                         \
+    if (llama_utils::log_level >= llama_utils::DEBUG)                          \
+      llama_utils::log_debug(llama_utils::extract_filename(__FILE__),          \
+                             __FUNCTION__, __LINE__, text, ##__VA_ARGS__);     \
+  } while (0)
 
 /**
  * @brief Sets the log level for the logs.

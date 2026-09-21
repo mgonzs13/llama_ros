@@ -126,7 +126,13 @@ inline std::string gen_chatcmplid() { return "chatcmpl-" + random_string(); }
  * @return The logit of the input value.
  */
 inline float logit(float x) {
-  return x == 0.0f ? std::numeric_limits<float>::lowest() : std::log(x);
+  if (x <= 0.0f) {
+    return -std::numeric_limits<float>::infinity();
+  }
+  if (x >= 1.0f) {
+    return std::numeric_limits<float>::infinity();
+  }
+  return std::log(x / (1.0f - x));
 }
 
 /**
