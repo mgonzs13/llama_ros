@@ -351,12 +351,10 @@ TEST_F(LlamaParamsTest, CPUPriorityConfiguration) {
  */
 TEST_F(LlamaParamsTest, ParallelProcessingConfiguration) {
   node->set_parameter(rclcpp::Parameter("context.n_parallel", 4));
-  node->set_parameter(rclcpp::Parameter("context.n_sequences", 2));
   node->set_parameter(rclcpp::Parameter("context.cont_batching", false));
 
   llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
 
   EXPECT_EQ(params.params.n_parallel, 4);
-  EXPECT_EQ(params.params.n_sequences, 2);
   EXPECT_FALSE(params.params.cont_batching);
 }

@@ -37,21 +37,27 @@ using namespace llava_ros;
 Llava::Llava(const common_params &params, std::string system_prompt)
     : llama_ros::Llama(params, system_prompt, false) {
 
-  // create mtmd params
-  mtmd_context_params mparams = mtmd_context_params_default();
-  mparams.use_gpu = this->params.mmproj_use_gpu;
-  mparams.device = this->params.mmproj_device;
-  mparams.print_timings = false;
-  mparams.n_threads = this->params.cpuparams.n_threads;
-  mparams.image_min_tokens = this->params.image_min_tokens;
-  mparams.image_max_tokens = this->params.image_max_tokens;
-  mparams.batch_max_tokens = this->params.mtmd_batch_max_tokens;
-  mparams.flash_attn_type = this->params.flash_attn_type;
-  mparams.warmup = this->params.warmup;
+  if (this->params.no_mmproj) {
+    LLAMA_LOG_WARN("Multimodal projector disabled (mmproj.disabled), running "
+                   "without mtmd support");
+    this->mtmd_ctx = nullptr;
+  } else {
+    // create mtmd params
+    mtmd_context_params mparams = mtmd_context_params_default();
+    mparams.use_gpu = this->params.mmproj_use_gpu;
+    mparams.device = this->params.mmproj_device;
+    mparams.print_timings = false;
+    mparams.n_threads = this->params.cpuparams.n_threads;
+    mparams.image_min_tokens = this->params.image_min_tokens;
+    mparams.image_max_tokens = this->params.image_max_tokens;
+    mparams.batch_max_tokens = this->params.mtmd_batch_max_tokens;
+    mparams.flash_attn_type = this->params.flash_attn_type;
+    mparams.warmup = this->params.warmup;
 
-  // load multimodal model
-  this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
-                                       this->get_model(), mparams);
+    // load multimodal model
+    this->mtmd_ctx = mtmd_init_from_file(this->params.mmproj.path.c_str(),
+                                         this->get_model(), mparams);
+  }
 
   // Initialize Llava-specific handlers
   this->llava_completion_handler_ =
@@ -85,6 +91,11 @@ static std::string fnv_hash(const uint8_t *data, size_t len) {
 }
 
 bool Llava::load_mtmd(std::vector<uint8_t> buf, bool is_placeholder) {
+
+  if (this->mtmd_ctx == nullptr) {
+    LLAMA_LOG_ERROR("Cannot load media: multimodal projector is disabled");
+    return false;
+  }
 
   LLAMA_LOG_INFO("Loading mtmd...");
 
@@ -145,6 +156,12 @@ const mtmd::input_chunk_ptr &find_chunk(llama_pos pos,
 int32_t process_chunk(llama_context *ctx, mtmd_context *mctx, llama_pos n_past,
                       int32_t seq_id, llama_pos &n_pos_out,
                       llama_ros::ServerSlot *slot) {
+  if (mctx == nullptr) {
+    LLAMA_LOG_ERROR(
+        "Cannot process media chunk: multimodal projector is disabled");
+    return -1;
+  }
+
   auto &chunk = find_chunk(n_past, slot);
   const char *name =
       mtmd_input_chunk_get_type(chunk.get()) == MTMD_INPUT_CHUNK_TYPE_IMAGE

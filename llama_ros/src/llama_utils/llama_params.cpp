@@ -118,7 +118,6 @@ void llama_utils::declare_llama_params(
                                                    {"n_chunks", -1},
                                                    {"n_predict", -1},
                                                    {"n_parallel", 1},
-                                                   {"n_sequences", 1},
                                                    {"n_outputs_max", 0},
                                                });
 
@@ -477,7 +476,6 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("context.n_chunks", params.params.n_chunks);
   node->get_parameter("context.n_predict", params.params.n_predict);
   node->get_parameter("context.n_parallel", params.params.n_parallel);
-  node->get_parameter("context.n_sequences", params.params.n_sequences);
   node->get_parameter("context.numa", numa);
   node->get_parameter("context.pooling_type", pooling_type);
   node->get_parameter("context.attention_type", attention_type);

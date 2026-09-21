@@ -215,12 +215,33 @@ public:
   int32_t n_kv_cache = 0;
 
   /**
+   * @brief Length of the exact common token prefix between the incoming prompt
+   * and the cached prompt, without media or position guards.
+   * @param incoming Incoming prompt tokens.
+   * @return Number of matching leading tokens.
+   */
+  size_t common_prefix_len(const std::vector<llama_token> &incoming) const;
+
+  /**
    * @brief Length of the longest prefix of @p incoming that matches what is
    * currently materialized in this slot's KV. Returns 0 when no reuse is
    * possible (cache empty, multimodal placeholders present). Reserves one
    * trailing token for re-evaluation so generation has fresh logits.
    */
   size_t find_reusable_prefix(const std::vector<llama_token> &incoming) const;
+
+  /**
+   * @brief Reuse matching chunks from the cached prompt by shifting their KV
+   * positions, as in llama.cpp's server cache reuse.
+   * Requires shiftable memory and no media in the prompt.
+   * @param mem Context memory holding the slot's sequence.
+   * @param incoming Incoming prompt tokens.
+   * @param n_cache_reuse Minimum matching chunk size in tokens.
+   * @return New sequence length (n_past) after reuse.
+   */
+  size_t reuse_kv_chunks(llama_memory_t mem,
+                         const std::vector<llama_token> &incoming,
+                         int32_t n_cache_reuse);
 
   /**
    * @brief Drop the cached-prefix bookkeeping. Next request will fully

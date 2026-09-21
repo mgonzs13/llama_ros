@@ -22,6 +22,7 @@
 // SOFTWARE.
 
 #include "llava_ros/llava_request_handler.hpp"
+#include "common.h"
 #include "llama_utils/chat_utils.hpp"
 #include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
@@ -54,21 +55,26 @@ void LlavaCompletionRequestHandler::handle(
   }
 
   std::string prompt_str = converted_prompt;
-  mtmd_input_text inp_txt = {
-      prompt_str.c_str(),
-      /* add_special */ true,
-      /* parse_special */ true,
-  };
-  mtmd::input_chunks chunks(mtmd_input_chunks_init());
-  auto bitmaps_c_ptr = this->llava_->bitmaps.c_ptr();
-  int32_t tokenized =
-      mtmd_tokenize(this->llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
-                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
-  if (tokenized != 0) {
-    throw std::runtime_error("Failed to tokenize prompt");
-  }
+  if (this->llava_->mtmd_ctx == nullptr) {
+    slot->prompt_tokens =
+        common_tokenize(this->llava_->get_vocab(), prompt_str, true, true);
+  } else {
+    mtmd_input_text inp_txt = {
+        prompt_str.c_str(),
+        /* add_special */ true,
+        /* parse_special */ true,
+    };
+    mtmd::input_chunks chunks(mtmd_input_chunks_init());
+    auto bitmaps_c_ptr = this->llava_->bitmaps.c_ptr();
+    int32_t tokenized =
+        mtmd_tokenize(this->llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                      bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
+    if (tokenized != 0) {
+      throw std::runtime_error("Failed to tokenize prompt");
+    }
 
-  this->llava_->process_input_chunks(chunks, slot);
+    this->llava_->process_input_chunks(chunks, slot);
+  }
 
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
 
@@ -103,21 +109,26 @@ void LlavaChatCompletionRequestHandler::handle(
   slot->params.sampling = chat_context.sparams;
 
   std::string prompt_str = chat_context.chat_prompt_instance.prompt;
-  mtmd_input_text inp_txt = {
-      prompt_str.c_str(),
-      /* add_special */ true,
-      /* parse_special */ true,
-  };
-  mtmd::input_chunks chunks(mtmd_input_chunks_init());
-  auto bitmaps_c_ptr = this->llava_->bitmaps.c_ptr();
-  int32_t tokenized =
-      mtmd_tokenize(this->llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
-                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
-  if (tokenized != 0) {
-    throw std::runtime_error("Failed to tokenize prompt");
-  }
+  if (this->llava_->mtmd_ctx == nullptr) {
+    slot->prompt_tokens =
+        common_tokenize(this->llava_->get_vocab(), prompt_str, true, true);
+  } else {
+    mtmd_input_text inp_txt = {
+        prompt_str.c_str(),
+        /* add_special */ true,
+        /* parse_special */ true,
+    };
+    mtmd::input_chunks chunks(mtmd_input_chunks_init());
+    auto bitmaps_c_ptr = this->llava_->bitmaps.c_ptr();
+    int32_t tokenized =
+        mtmd_tokenize(this->llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                      bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
+    if (tokenized != 0) {
+      throw std::runtime_error("Failed to tokenize prompt");
+    }
 
-  this->llava_->process_input_chunks(chunks, slot);
+    this->llava_->process_input_chunks(chunks, slot);
+  }
 
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", slot->prompt_tokens.size());
 

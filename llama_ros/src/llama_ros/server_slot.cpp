@@ -82,11 +82,8 @@ void ServerSlot::reset() {
   // the KV state of this slot's sequence, which survives request boundaries.
 }
 
-size_t ServerSlot::find_reusable_prefix(
-    const std::vector<llama_token> &incoming) const {
-  if (this->kv_cached_tokens.empty() || !this->map_pos_to_media.empty()) {
-    return 0;
-  }
+size_t
+ServerSlot::common_prefix_len(const std::vector<llama_token> &incoming) const {
   const size_t max_check =
       std::min(this->kv_cached_tokens.size(), incoming.size());
   size_t i = 0;
@@ -94,6 +91,15 @@ size_t ServerSlot::find_reusable_prefix(
          incoming[i] != LLAMA_TOKEN_NULL) {
     i++;
   }
+  return i;
+}
+
+size_t ServerSlot::find_reusable_prefix(
+    const std::vector<llama_token> &incoming) const {
+  if (this->kv_cached_tokens.empty() || !this->map_pos_to_media.empty()) {
+    return 0;
+  }
+  size_t i = this->common_prefix_len(incoming);
   // Reserve one trailing position so the model re-evaluates a token and the
   // next sampling step has fresh logits. The caller's seq_rm physically
   // drops that position from the KV.
@@ -109,6 +115,45 @@ size_t ServerSlot::find_reusable_prefix(
     return 0;
   }
   return i;
+}
+
+size_t ServerSlot::reuse_kv_chunks(llama_memory_t mem,
+                                   const std::vector<llama_token> &incoming,
+                                   int32_t n_cache_reuse) {
+  size_t head_c = this->common_prefix_len(incoming); // cache
+  size_t head_p = head_c;                            // current prompt
+
+  while (head_c < this->kv_cached_tokens.size() && head_p < incoming.size()) {
+    size_t n_match = 0;
+    while (head_c + n_match < this->kv_cached_tokens.size() &&
+           head_p + n_match < incoming.size() &&
+           this->kv_cached_tokens[head_c + n_match] ==
+               incoming[head_p + n_match] &&
+           incoming[head_p + n_match] != LLAMA_TOKEN_NULL) {
+      n_match++;
+    }
+
+    if (n_match >= static_cast<size_t>(n_cache_reuse)) {
+      const int64_t kv_shift =
+          static_cast<int64_t>(head_p) - static_cast<int64_t>(head_c);
+
+      llama_memory_seq_rm(mem, this->id, static_cast<llama_pos>(head_p),
+                          static_cast<llama_pos>(head_c));
+      llama_memory_seq_add(mem, this->id, static_cast<llama_pos>(head_c),
+                           static_cast<llama_pos>(head_c + n_match), kv_shift);
+
+      for (size_t i = 0; i < n_match; i++) {
+        this->kv_cached_tokens[head_p + i] = this->kv_cached_tokens[head_c + i];
+      }
+
+      head_c += n_match;
+      head_p += n_match;
+    } else {
+      head_c += 1;
+    }
+  }
+
+  return head_p;
 }
 
 void ServerSlot::invalidate_kv_cache() {

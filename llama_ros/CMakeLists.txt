@@ -133,6 +133,7 @@ if(BUILD_TESTING)
     test/test_llama_lora.cpp
     test/test_llama_embeddings.cpp
     test/test_llama_rerank.cpp
+    test/test_kv_cache_reuse.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
     TIMEOUT 600

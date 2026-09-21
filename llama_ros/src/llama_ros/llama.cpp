@@ -1426,9 +1426,18 @@ void Llama::run_loop() {
           // when the prompt diverges or caching is disabled for this slot.
           const bool caching_allowed =
               this->params.cache_prompt && !this->is_speculative();
-          const size_t reused =
-              caching_allowed ? slot.find_reusable_prefix(prompt_tokens) : 0;
           auto *mem = llama_get_memory(this->ctx);
+
+          size_t reused = 0;
+          if (caching_allowed) {
+            const bool can_chunk_reuse = this->params.n_cache_reuse > 0 &&
+                                         slot.map_pos_to_media.empty() &&
+                                         llama_memory_can_shift(mem);
+            reused = can_chunk_reuse
+                         ? slot.reuse_kv_chunks(mem, prompt_tokens,
+                                                this->params.n_cache_reuse)
+                         : slot.find_reusable_prefix(prompt_tokens);
+          }
 
           if (reused > 0) {
             llama_memory_seq_rm(mem, slot.id, static_cast<llama_pos>(reused),
