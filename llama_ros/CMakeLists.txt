@@ -38,6 +38,7 @@ endif()
 # Common source files
 set(LLAMA_CORE_SOURCES
   src/llama_ros/llama.cpp
+  src/llama_ros/prompt_cache.cpp
   src/llama_ros/server_slot.cpp
   src/llama_ros/slot_manager.cpp
   src/llama_ros/task_registry.cpp
@@ -134,6 +135,7 @@ if(BUILD_TESTING)
     test/test_llama_embeddings.cpp
     test/test_llama_rerank.cpp
     test/test_kv_cache_reuse.cpp
+    test/test_prompt_cache.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
     TIMEOUT 600

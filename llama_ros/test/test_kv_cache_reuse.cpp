@@ -71,6 +71,57 @@ TEST(ServerSlotPrefixTest, FindReusablePrefixFullCoverage) {
   EXPECT_EQ(slot.find_reusable_prefix({1, 2, 3}), 2u);
 }
 
+TEST(ServerSlotCheckpointTest, FindsNewestUsableCheckpoint) {
+  ServerSlot slot;
+
+  common_prompt_checkpoint c1;
+  c1.update_pos(10, 0, 10);
+  c1.data_tgt.resize(1);
+  common_prompt_checkpoint c2;
+  c2.update_pos(20, 0, 20);
+  c2.data_tgt.resize(1);
+  slot.add_checkpoint(c1, 32);
+  slot.add_checkpoint(c2, 32);
+
+  EXPECT_EQ(slot.find_checkpoint(5), nullptr);
+  ASSERT_NE(slot.find_checkpoint(15), nullptr);
+  EXPECT_EQ(slot.find_checkpoint(15)->n_tokens, 10);
+  EXPECT_EQ(slot.find_checkpoint(25)->n_tokens, 20);
+
+  common_prompt_checkpoint c3; // empty state -> ignored
+  c3.update_pos(30, 0, 30);
+  slot.add_checkpoint(c3, 32);
+  EXPECT_EQ(slot.find_checkpoint(35)->n_tokens, 20);
+}
+
+TEST(ServerSlotCheckpointTest, EvictsAtCap) {
+  ServerSlot slot;
+
+  for (int i = 1; i <= 3; i++) {
+    common_prompt_checkpoint c;
+    c.update_pos(static_cast<int64_t>(i) * 10, 0,
+                 static_cast<llama_pos>(i) * 10);
+    c.data_tgt.resize(1);
+    slot.add_checkpoint(c, 2);
+  }
+
+  EXPECT_EQ(slot.checkpoints.size(), 2u);
+  EXPECT_EQ(slot.checkpoints.front().n_tokens, 20);
+}
+
+TEST(ServerSlotCheckpointTest, InvalidateKeepsTokensButBlocksReuse) {
+  ServerSlot slot;
+  slot.kv_cached_tokens = {1, 2, 3};
+  slot.n_kv_cache = 3;
+
+  EXPECT_EQ(slot.find_reusable_prefix({1, 2, 3, 4}), 3u);
+
+  slot.invalidate_kv_cache();
+  EXPECT_FALSE(slot.kv_positions_valid);
+  EXPECT_EQ(slot.kv_cached_tokens.size(), 3u);
+  EXPECT_EQ(slot.find_reusable_prefix({1, 2, 3, 4}), 0u);
+}
+
 TEST(ServerSlotChunkReuseTest, ReusesMatchingChunkWithShift) {
   auto result = huggingface_hub::hf_hub_download_with_shards(
       "bartowski/SmolLM2-135M-Instruct-GGUF",

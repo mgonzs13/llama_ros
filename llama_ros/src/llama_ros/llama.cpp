@@ -42,6 +42,51 @@
 
 using namespace llama_ros;
 
+namespace {
+
+/**
+ * @brief Snapshot a sequence state into @p data. Returns false when the state
+ * cannot be read consistently (e.g. the sequence was cleared concurrently),
+ * instead of aborting like common_prompt_checkpoint::update_tgt().
+ */
+bool save_seq_state(std::vector<uint8_t> &data, llama_context *ctx,
+                    llama_seq_id seq_id, llama_state_seq_flags flags) {
+  if (ctx == nullptr) {
+    return true;
+  }
+
+  const size_t size = llama_state_seq_get_size_ext(ctx, seq_id, flags);
+  if (size == 0) {
+    return false;
+  }
+
+  data.resize(size);
+  const size_t n =
+      llama_state_seq_get_data_ext(ctx, data.data(), size, seq_id, flags);
+  if (n != size) {
+    data.clear();
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief Restore a sequence state previously captured with save_seq_state().
+ */
+bool load_seq_state(const std::vector<uint8_t> &data, llama_context *ctx,
+                    llama_seq_id seq_id, llama_state_seq_flags flags) {
+  if (ctx == nullptr || data.empty()) {
+    return true;
+  }
+
+  const size_t n = llama_state_seq_set_data_ext(ctx, data.data(), data.size(),
+                                                seq_id, flags);
+  return n == data.size();
+}
+
+} // namespace
+
 Llama::Llama(const common_params &params, std::string system_prompt,
              bool initial_reset)
     : params(params), system_prompt(system_prompt) {
@@ -61,6 +106,22 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
     throw std::runtime_error("Unable to load model");
+  }
+
+  // Context checkpoints are only useful when partial seq_rm is unsupported or
+  // the model uses SWA (mirrors llama.cpp server-context.cpp). Note that
+  // common_context_can_seq_rm() clears the context memory, so query it once.
+  if (this->params.n_ctx_checkpoints > 0) {
+    const auto seq_rm_type = common_context_can_seq_rm(this->ctx);
+    this->checkpoints_enabled_ =
+        seq_rm_type != COMMON_CONTEXT_SEQ_RM_TYPE_PART ||
+        llama_model_n_swa(this->model) > 0;
+  }
+
+  // Host-RAM prompt cache (0 disables, < 0 means unlimited)
+  if (this->params.cache_ram_mib != 0) {
+    this->prompt_cache_ = std::make_unique<PromptCache>(
+        this->params.cache_ram_mib, this->params.n_ctx);
   }
 
   // Slots
@@ -770,6 +831,196 @@ void Llama::release_slot(ServerSlot *slot) {
   this->slot_manager_->release_slot(slot);
 }
 
+void Llama::maybe_create_checkpoint(ServerSlot &slot) {
+  if (!this->checkpoints_enabled_ ||
+      slot.task_type != SERVER_TASK_TYPE_COMPLETION || slot.n_past <= 0) {
+    return;
+  }
+
+  const int64_t last_tokens =
+      slot.checkpoints.empty() ? -1 : slot.checkpoints.back().n_tokens;
+  if (last_tokens >= 0 &&
+      slot.n_past - last_tokens < this->params.checkpoint_min_step) {
+    return;
+  }
+
+  auto *mem = llama_get_memory(this->ctx);
+  const llama_pos pos_max = llama_memory_seq_pos_max(mem, slot.id);
+  if (pos_max < 0) {
+    return;
+  }
+
+  common_prompt_checkpoint ckpt;
+  ckpt.update_pos(slot.n_past, llama_memory_seq_pos_min(mem, slot.id), pos_max);
+  if (!save_seq_state(ckpt.data_tgt, this->ctx, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)) {
+    LLAMA_LOG_WARN("Slot %d: failed to snapshot checkpoint state", slot.id);
+    return;
+  }
+
+  if (!save_seq_state(ckpt.data_dft, this->ctx_dft_, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)) {
+    LLAMA_LOG_WARN("Slot %d: failed to snapshot draft checkpoint state",
+                   slot.id);
+    return;
+  }
+
+  if (this->speculative_ != nullptr) {
+    common_speculative_get_state(this->speculative_, slot.id, ckpt.data_spec);
+  }
+
+  LLAMA_LOG_DEBUG("Slot %d: created context checkpoint at %d tokens (%.3f MiB)",
+                  slot.id, slot.n_past, (float)ckpt.size() / 1024.0f / 1024.0f);
+
+  slot.add_checkpoint(std::move(ckpt), this->params.n_ctx_checkpoints);
+}
+
+bool Llama::try_restore_checkpoint(
+    ServerSlot &slot, const std::vector<llama_token> &prompt_tokens,
+    size_t &reused) {
+  if (!this->checkpoints_enabled_ || slot.kv_positions_valid ||
+      slot.checkpoints.empty() || slot.kv_cached_tokens.empty()) {
+    return false;
+  }
+
+  const size_t common = slot.common_prefix_len(prompt_tokens);
+  const common_prompt_checkpoint *ckpt =
+      slot.find_checkpoint(static_cast<int64_t>(common));
+  if (ckpt == nullptr) {
+    return false;
+  }
+
+  auto *mem = llama_get_memory(this->ctx);
+  llama_memory_seq_rm(mem, slot.id, -1, -1);
+
+  if (!load_seq_state(ckpt->data_tgt, this->ctx, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY) ||
+      !load_seq_state(ckpt->data_dft, this->ctx_dft_, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)) {
+    LLAMA_LOG_WARN("Slot %d: failed to restore context checkpoint", slot.id);
+    return false;
+  }
+
+  if (this->speculative_ != nullptr) {
+    common_speculative_set_state(this->speculative_, slot.id, ckpt->data_spec);
+  }
+
+  reused = std::min(static_cast<size_t>(ckpt->n_tokens), common);
+  if (reused == prompt_tokens.size() && reused > 0) {
+    reused--;
+  }
+
+  slot.n_past = static_cast<int32_t>(reused);
+  slot.n_kv_cache = static_cast<int32_t>(reused);
+  slot.kv_positions_valid = true;
+
+  LLAMA_LOG_INFO("Slot %d: restored context checkpoint (%d tokens, %zu "
+                 "reusable)",
+                 slot.id, (int)ckpt->n_tokens, reused);
+
+  return reused > 0;
+}
+
+bool Llama::try_load_prompt_cache(ServerSlot &slot,
+                                  const std::vector<llama_token> &prompt_tokens,
+                                  size_t &reused) {
+  if (this->prompt_cache_ == nullptr || !this->prompt_cache_->enabled() ||
+      !slot.map_pos_to_media.empty()) {
+    return false;
+  }
+
+  const PromptCacheEntry *best = this->prompt_cache_->find_best(prompt_tokens);
+  if (best == nullptr) {
+    return false;
+  }
+
+  auto *mem = llama_get_memory(this->ctx);
+  llama_memory_seq_rm(mem, slot.id, -1, -1);
+
+  if (!load_seq_state(best->state.data_tgt, this->ctx, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_NONE) ||
+      !load_seq_state(best->state.data_dft, this->ctx_dft_, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_NONE)) {
+    LLAMA_LOG_WARN("Slot %d: failed to restore prompt cache state", slot.id);
+    this->prompt_cache_->erase(best);
+    return false;
+  }
+
+  if (this->speculative_ != nullptr) {
+    common_speculative_set_state(this->speculative_, slot.id,
+                                 best->state.data_spec);
+  }
+
+  reused = common_prefix_len(best->tokens, prompt_tokens);
+  if (reused == prompt_tokens.size() && reused > 0) {
+    reused--;
+  }
+
+  slot.kv_cached_tokens = best->tokens;
+  slot.n_kv_cache = static_cast<int32_t>(best->tokens.size());
+  slot.n_past = static_cast<int32_t>(reused);
+  slot.kv_positions_valid = true;
+
+  LLAMA_LOG_INFO("Slot %d: restored %zu/%zu tokens from prompt cache", slot.id,
+                 reused, prompt_tokens.size());
+
+  this->prompt_cache_->erase(best);
+  return reused > 0;
+}
+
+void Llama::save_prompt_to_cache(ServerSlot &slot) {
+  if (this->prompt_cache_ == nullptr || !this->prompt_cache_->enabled() ||
+      slot.task_type != SERVER_TASK_TYPE_COMPLETION ||
+      !slot.map_pos_to_media.empty() || !slot.kv_positions_valid ||
+      slot.n_kv_cache <= 0 || slot.kv_cached_tokens.empty()) {
+    return;
+  }
+
+  std::vector<llama_token> tokens = slot.kv_cached_tokens;
+  tokens.insert(tokens.end(), slot.generated_tokens.begin(),
+                slot.generated_tokens.end());
+
+  PromptCacheEntry *entry = this->prompt_cache_->alloc(tokens);
+  if (entry == nullptr) {
+    return;
+  }
+
+  auto *mem = llama_get_memory(this->ctx);
+  if (llama_memory_seq_pos_max(mem, slot.id) < 0) {
+    LLAMA_LOG_DEBUG("Slot %d: nothing to save, KV is empty", slot.id);
+    this->prompt_cache_->erase(entry);
+    return;
+  }
+
+  if (!save_seq_state(entry->state.data_tgt, this->ctx, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_NONE)) {
+    LLAMA_LOG_WARN("Slot %d: failed to snapshot state, skipping prompt cache",
+                   slot.id);
+    this->prompt_cache_->erase(entry);
+    return;
+  }
+
+  if (!save_seq_state(entry->state.data_dft, this->ctx_dft_, slot.id,
+                      LLAMA_STATE_SEQ_FLAGS_NONE)) {
+    LLAMA_LOG_WARN("Slot %d: failed to snapshot draft state, skipping prompt "
+                   "cache",
+                   slot.id);
+    this->prompt_cache_->erase(entry);
+    return;
+  }
+
+  if (this->speculative_ != nullptr) {
+    common_speculative_get_state(this->speculative_, slot.id,
+                                 entry->state.data_spec);
+  }
+
+  this->prompt_cache_->update();
+
+  LLAMA_LOG_INFO("Slot %d: saved %zu tokens to prompt cache (%.3f MiB)",
+                 slot.id, tokens.size(),
+                 (float)entry->size_bytes() / 1024.0f / 1024.0f);
+}
+
 ServerSlot *Llama::get_available_slot() {
   return this->slot_manager_->get_available_slot();
 }
@@ -1272,6 +1523,9 @@ void Llama::run_loop() {
           continue;
         }
 
+        // keep a pre-shift snapshot so the prefix stays recoverable
+        this->maybe_create_checkpoint(slot);
+
         // Classic sliding window
         if (this->params.grp_attn_n <= 1) {
           if (slot.n_past + 1 > slot.n_ctx) {
@@ -1439,6 +1693,13 @@ void Llama::run_loop() {
                          : slot.find_reusable_prefix(prompt_tokens);
           }
 
+          if (reused == 0 && caching_allowed) {
+            this->try_restore_checkpoint(slot, prompt_tokens, reused);
+            if (reused == 0) {
+              this->try_load_prompt_cache(slot, prompt_tokens, reused);
+            }
+          }
+
           if (reused > 0) {
             llama_memory_seq_rm(mem, slot.id, static_cast<llama_pos>(reused),
                                 -1);
@@ -1448,6 +1709,8 @@ void Llama::run_loop() {
           } else {
             slot.n_past = 0;
             llama_memory_seq_rm(mem, slot.id, -1, -1);
+            slot.kv_positions_valid = true;
+            slot.checkpoints.clear();
             LLAMA_LOG_INFO("Slot %d: KV cache cold start (0/%zu reused)",
                            slot.id, prompt_tokens.size());
           }
@@ -1459,6 +1722,7 @@ void Llama::run_loop() {
                   other.n_past > 0) {
                 LLAMA_LOG_INFO("Clearing idle slot %d (n_past=%d) for new task",
                                other.id, other.n_past);
+                this->save_prompt_to_cache(other);
                 llama_memory_seq_rm(mem, other.id, -1, -1);
                 other.n_past = 0;
                 other.prompt_tokens.clear();
@@ -1627,6 +1891,9 @@ void Llama::run_loop() {
         if (slot.i_batch < (int)i || slot.i_batch >= (int)(i + n_tokens)) {
           continue;
         }
+
+        // snapshot unrollbackable state (SWA/recurrent) while it is valid
+        this->maybe_create_checkpoint(slot);
 
         // If we just finished prompt eval for this slot, branch by task type
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
@@ -1872,6 +2139,9 @@ void Llama::send_completion_result(ServerSlot *slot) {
   task_result->n_prompt_tokens = slot->n_prompt_tokens;
   task_result->oaicompat_msg =
       slot->update_chat_msg(task_result->oaicompat_msg_diffs);
+
+  // save the sequence state before the caller can reset/clear the context
+  this->save_prompt_to_cache(*slot);
 
   const auto id = task_result->id;
   this->fulfill_pending(id, std::move(task_result));

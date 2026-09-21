@@ -41,6 +41,7 @@
 #include "speculative.h"
 
 #include "llama_ros/metadata.hpp"
+#include "llama_ros/prompt_cache.hpp"
 #include "llama_ros/request_handler.hpp"
 #include "llama_ros/result.hpp"
 #include "llama_ros/server_slot.hpp"
@@ -660,6 +661,38 @@ protected:
 
   /// @brief Handler for chat completion requests.
   std::unique_ptr<ChatCompletionRequestHandler> chat_completion_handler_;
+
+  /// @brief Host-RAM prompt/sequence cache, bounded by cache_ram_mib.
+  std::unique_ptr<PromptCache> prompt_cache_;
+
+  /// @brief Whether context checkpoints are useful for this model/context.
+  bool checkpoints_enabled_ = false;
+
+  /**
+   * @brief Creates a checkpoint for the slot when spacing and model allow it.
+   */
+  void maybe_create_checkpoint(ServerSlot &slot);
+
+  /**
+   * @brief Restores the newest usable checkpoint after a context shift.
+   * @return true when a checkpoint was restored and @p reused was updated.
+   */
+  bool try_restore_checkpoint(ServerSlot &slot,
+                              const std::vector<llama_token> &prompt_tokens,
+                              size_t &reused);
+
+  /**
+   * @brief Restores a matching prompt state from the host-RAM cache.
+   * @return true when a state was restored and @p reused was updated.
+   */
+  bool try_load_prompt_cache(ServerSlot &slot,
+                             const std::vector<llama_token> &prompt_tokens,
+                             size_t &reused);
+
+  /**
+   * @brief Saves the slot's sequence state into the host-RAM cache.
+   */
+  void save_prompt_to_cache(ServerSlot &slot);
 
   /**
    * @brief Releases a slot back to the pool.

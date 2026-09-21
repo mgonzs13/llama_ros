@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <list>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
@@ -214,6 +215,13 @@ public:
   /// position invariant.  Reset together with kv_cached_tokens.
   int32_t n_kv_cache = 0;
 
+  /// @brief Whether the KV positions are still valid. Set to false after a
+  /// context shift, while kv_cached_tokens is kept for checkpoint matching.
+  bool kv_positions_valid = true;
+
+  /// @brief Context checkpoints (partial states), newest last.
+  std::list<common_prompt_checkpoint> checkpoints;
+
   /**
    * @brief Length of the exact common token prefix between the incoming prompt
    * and the cached prompt, without media or position guards.
@@ -244,8 +252,21 @@ public:
                          int32_t n_cache_reuse);
 
   /**
-   * @brief Drop the cached-prefix bookkeeping. Next request will fully
-   * re-process its prompt. Use after context shift or decode error.
+   * @brief Find the newest non-empty checkpoint covering at most @p max_tokens.
+   * @return Checkpoint pointer or nullptr when none is usable.
+   */
+  const common_prompt_checkpoint *find_checkpoint(int64_t max_tokens) const;
+
+  /**
+   * @brief Append a checkpoint, evicting the oldest when at @p max_checkpoints.
+   */
+  void add_checkpoint(common_prompt_checkpoint ckpt, int32_t max_checkpoints);
+
+  /**
+   * @brief Mark the cached-prefix bookkeeping invalid. Next request will fully
+   * re-process its prompt unless a checkpoint can be restored. Use after
+   * context shift or decode error. kv_cached_tokens is preserved so checkpoint
+   * matching still works.
    */
   void invalidate_kv_cache();
 

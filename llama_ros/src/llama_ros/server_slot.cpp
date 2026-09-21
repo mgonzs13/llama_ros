@@ -96,7 +96,8 @@ ServerSlot::common_prefix_len(const std::vector<llama_token> &incoming) const {
 
 size_t ServerSlot::find_reusable_prefix(
     const std::vector<llama_token> &incoming) const {
-  if (this->kv_cached_tokens.empty() || !this->map_pos_to_media.empty()) {
+  if (this->kv_cached_tokens.empty() || !this->kv_positions_valid ||
+      !this->map_pos_to_media.empty()) {
     return 0;
   }
   size_t i = this->common_prefix_len(incoming);
@@ -156,9 +157,33 @@ size_t ServerSlot::reuse_kv_chunks(llama_memory_t mem,
   return head_p;
 }
 
+const common_prompt_checkpoint *
+ServerSlot::find_checkpoint(int64_t max_tokens) const {
+  for (auto it = this->checkpoints.rbegin(); it != this->checkpoints.rend();
+       ++it) {
+    if (!it->empty() && it->n_tokens <= max_tokens) {
+      return &*it;
+    }
+  }
+  return nullptr;
+}
+
+void ServerSlot::add_checkpoint(common_prompt_checkpoint ckpt,
+                                int32_t max_checkpoints) {
+  if (max_checkpoints <= 0) {
+    return;
+  }
+
+  while (static_cast<int32_t>(this->checkpoints.size()) >= max_checkpoints) {
+    this->checkpoints.pop_front();
+  }
+
+  this->checkpoints.push_back(std::move(ckpt));
+}
+
 void ServerSlot::invalidate_kv_cache() {
-  this->kv_cached_tokens.clear();
   this->n_kv_cache = 0;
+  this->kv_positions_valid = false;
 }
 
 void ServerSlot::release() {
