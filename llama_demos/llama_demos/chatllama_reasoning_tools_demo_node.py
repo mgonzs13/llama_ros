@@ -59,15 +59,26 @@ def main():
 
     initial_time = time.time()
     all_tools_res: AIMessage = llm_tools.invoke(messages)
-    final_time = time.time()
+    tools_time = time.time()
 
+    # execute the tools and append their results to the conversation
     messages.append(all_tools_res)
 
     for tool in all_tools_res.tool_calls:
+        selected_tool = {
+            "get_inhabitants": get_inhabitants,
+            "get_curr_temperature": get_curr_temperature,
+        }[tool["name"]]
+
+        tool_msg = selected_tool.invoke(tool)
         formatted_output = (
             f"{tool['name']}({', '.join(f'{k}={v}' for k, v in tool['args'].items())})"
+            f" = {tool_msg.content}"
         )
         print(f"Calling tool: {formatted_output}")
+
+        tool_msg.additional_kwargs = {"args": tool["args"]}
+        messages.append(tool_msg)
 
     if "reasoning_content" in all_tools_res.additional_kwargs:
         print(
@@ -76,9 +87,27 @@ def main():
     else:
         print("No reasoning content. Are you sure you are using a reasoning model?")
 
-    print(f"Time elapsed: {final_time - initial_time:.2f} seconds")
+    # generate the final response using the tool results
+    res: AIMessage = chat.invoke(messages)
+    final_time = time.time()
+
+    print(f"\nResponse: {res.content.strip()}")
+
+    if "reasoning_content" in res.additional_kwargs:
+        print(
+            f"Reasoning length: {len(res.additional_kwargs['reasoning_content'])} characters"
+        )
+
+    tools_elapsed = tools_time - initial_time
+    response_elapsed = final_time - tools_time
+
+    print(f"Time to generate tools: {tools_elapsed:.2f} seconds")
     print(
-        f"Tokens per second: {all_tools_res.usage_metadata['output_tokens'] / (final_time - initial_time):.2f} t/s"
+        f"Tokens per second (tools): {all_tools_res.usage_metadata['output_tokens'] / tools_elapsed:.2f} t/s"
+    )
+    print(f"Time to generate last response: {response_elapsed:.2f} seconds")
+    print(
+        f"Tokens per second (last response): {res.usage_metadata['output_tokens'] / response_elapsed:.2f} t/s"
     )
 
     rclpy.shutdown()
