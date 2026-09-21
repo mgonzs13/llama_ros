@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -36,6 +38,14 @@ public:
         std::bind(&TestActionServer::handle_goal, this, _1, _2),
         std::bind(&TestActionServer::handle_cancel, this, _1),
         std::bind(&TestActionServer::handle_accepted, this, _1));
+  }
+
+  ~TestActionServer() override {
+    for (auto &thread : threads_) {
+      if (thread.joinable()) {
+        thread.join();
+      }
+    }
   }
 
   std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const {
@@ -75,13 +85,14 @@ protected:
     using namespace std::placeholders; // NOLINT
     // this needs to return quickly to avoid blocking the executor, so spin up a
     // new thread
-    std::thread{std::bind(&TestActionServer::execute, this, _1), goal_handle}
-        .detach();
+    threads_.emplace_back(std::bind(&TestActionServer::execute, this, _1),
+                          goal_handle);
   }
 
 private:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   std::shared_ptr<const typename ActionT::Goal> current_goal_;
+  std::vector<std::thread> threads_;
   bool return_success_ = true;
   bool goal_cancelled_ = false;
 };

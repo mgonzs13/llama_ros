@@ -95,7 +95,7 @@ def prompt_llm(
 ) -> None:
 
     rclpy.init()
-    llama_client = LlamaClientNode()
+    llama_client = LlamaClientNode.get_instance()
     goal = GenerateResponse.Goal()
     goal.prompt = prompt
     goal.reset = reset

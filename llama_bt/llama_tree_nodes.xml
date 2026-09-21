@@ -7,5 +7,13 @@
             <input_port name="reset">Whether to reset the context</input_port>
             <output_port name="response">Final response</output_port>
         </Action>
+        <Action ID="GenerateChatCompletions">
+            <input_port name="messages">Chat messages</input_port>
+            <input_port name="tools">Chat request tools</input_port>
+            <input_port name="tool_choice">Tool choice</input_port>
+            <input_port name="server_name">Action server name</input_port>
+            <input_port name="server_timeout">Action server timeout</input_port>
+            <output_port name="choice_message">Chat choice message</output_port>
+        </Action>
     </TreeNodesModel>
 </root>

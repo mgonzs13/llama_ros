@@ -117,6 +117,10 @@ install(TARGETS ${plugin_libs}
   RUNTIME DESTINATION bin
 )
 
+install(EXPORT ${PROJECT_NAME}
+  DESTINATION share/${PROJECT_NAME}/cmake
+)
+
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
@@ -154,5 +158,5 @@ ament_export_dependencies(
   llama_msgs
   llama_ros
 )
-ament_export_targets()
+ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()

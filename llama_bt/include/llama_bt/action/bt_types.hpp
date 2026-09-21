@@ -125,7 +125,6 @@ template <>
 inline std::vector<llama_msgs::msg::ChatMessage>
 convertFromString<std::vector<llama_msgs::msg::ChatMessage>>(
     BT::StringView str) {
-  fprintf(stderr, "Parsing chat message: %s\n", str.data());
   std::vector<llama_msgs::msg::ChatMessage> output;
   if (!str.empty()) {
     std::string json_str(str.data(), str.size());
