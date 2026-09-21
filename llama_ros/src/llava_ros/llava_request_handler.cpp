@@ -61,6 +61,7 @@ void LlavaCompletionRequestHandler::handle(
   } else {
     mtmd_input_text inp_txt = {
         prompt_str.c_str(),
+        prompt_str.size(),
         /* add_special */ true,
         /* parse_special */ true,
     };
@@ -115,6 +116,7 @@ void LlavaChatCompletionRequestHandler::handle(
   } else {
     mtmd_input_text inp_txt = {
         prompt_str.c_str(),
+        prompt_str.size(),
         /* add_special */ true,
         /* parse_special */ true,
     };
