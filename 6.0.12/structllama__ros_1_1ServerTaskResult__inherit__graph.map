@@ -1,0 +1,11 @@
+<map id="llama_ros::ServerTaskResult" name="llama_ros::ServerTaskResult">
+<area shape="rect" id="Node000001" title="Base class for server task results." alt="" coords="5,112,193,137"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1ServerTaskResultCompletion.html" title="Full result of a completion task." alt="" coords="241,5,428,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="140,102,240,57,272,44,274,49,242,61,142,107"/>
+<area shape="rect" id="Node000003" href="$structllama__ros_1_1ServerTaskResultCompletionPartial.html" title="Partial result of a completion task (used during streaming)." alt="" coords="241,71,428,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="208,106,240,102,241,107,209,112"/>
+<area shape="rect" id="Node000004" href="$structllama__ros_1_1ServerTaskResultEmbedding.html" title="Result of an embedding generation task." alt="" coords="241,136,428,177"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="209,137,241,141,240,146,208,142"/>
+<area shape="rect" id="Node000005" href="$structllama__ros_1_1ServerTaskResultRerank.html" title="Result of a reranking task." alt="" coords="241,201,428,242"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="143,142,242,186,274,198,272,203,240,191,140,147"/>
+</map>

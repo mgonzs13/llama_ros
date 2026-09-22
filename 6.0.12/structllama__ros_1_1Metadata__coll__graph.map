@@ -1,0 +1,23 @@
+<map id="llama_ros::Metadata" name="llama_ros::Metadata">
+<area shape="rect" id="Node000001" title="A structure representing the metadata of a model." alt="" coords="973,396,1111,422"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1Metadata_1_1GeneralInfo.html" title="General information about the model." alt="" coords="738,282,875,322"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="868,327,1013,393,1010,398,866,332"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="178,331,255,356"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="230,316,250,289,278,266,319,247,356,236,390,230,422,229,491,233,577,234,646,226,677,226,715,234,755,254,786,279,783,283,752,259,713,239,676,231,647,231,577,239,491,239,422,234,390,235,357,241,321,252,281,271,254,293,234,319"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="393,273,553,299"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="258,321,279,314,336,301,393,291,393,297,337,306,280,319,260,326"/>
+<area shape="rect" id="Node000006" href="$structllama__ros_1_1Metadata_1_1ModelInfo.html" title="Model architecture information." alt="" coords="738,388,875,429"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="244,365,308,417,350,442,394,461,442,472,491,476,541,475,590,469,681,450,753,427,754,432,682,455,591,475,542,480,491,482,441,477,393,466,347,447,305,422,240,369"/>
+<area shape="rect" id="Node000008" href="$structllama__ros_1_1Metadata_1_1RoPEInfo.html" title="RoPE (Rotary Positional Encoding) information of a model." alt="" coords="404,323,542,364"/>
+<area shape="poly" id="edge10_Node000008_Node000003" title=" " alt="" coords="271,341,404,341,404,346,271,346"/>
+<area shape="rect" id="Node000009" href="$structllama__ros_1_1Metadata_1_1TokenizerInfo.html" title="Tokenizer information." alt="" coords="577,508,714,549"/>
+<area shape="poly" id="edge12_Node000009_Node000003" title=" " alt="" coords="220,372,223,411,231,457,250,501,264,521,281,537,317,557,356,569,397,575,439,576,520,565,588,547,589,552,521,570,439,581,396,581,354,575,314,562,278,541,260,524,245,504,226,458,217,412,215,372"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,323,129,364"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="144,341,178,341,178,346,144,346"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="568,297,577,298,660,301,738,301,738,307,660,307,577,303,568,302"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="891,406,973,406,973,411,891,411"/>
+<area shape="rect" id="Node000007" href="$structllama__ros_1_1Metadata_1_1AttentionInfo.html" title="Attention information of the model." alt="" coords="404,388,542,429"/>
+<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="557,406,738,406,738,411,557,411"/>
+<area shape="poly" id="edge9_Node000006_Node000008" title=" " alt="" coords="557,353,715,382,738,388,737,393,713,387,556,358"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="728,504,875,461,1001,420,1003,425,876,466,730,509"/>
+</map>
