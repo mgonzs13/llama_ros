@@ -10,6 +10,7 @@ dependencies = [
     "langchain-core==1.3.3",
     "langchain-openai==1.1.14",
     "langchain-text-splitters==1.1.2",
+    "langgraph-prebuilt==1.0.8",
     "pydantic==2.12.5",
     "opencv-python==4.8.1.78",
 ]
