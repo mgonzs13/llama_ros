@@ -870,7 +870,12 @@ class ChatLlamaROS(BaseChatModel, LlamaROSCommon):
                 chat_tool_call = ChatToolCall()
                 chat_tool_call.id = tool_call["id"]
                 chat_tool_call.name = tool_call["function"]["name"]
-                chat_tool_call.arguments = json.dumps(tool_call["function"]["arguments"])
+                arguments = tool_call["function"]["arguments"]
+                # arguments is already a JSON string in the OpenAI-style payload;
+                # only serialize if a caller passed a dict.
+                chat_tool_call.arguments = (
+                    arguments if isinstance(arguments, str) else json.dumps(arguments)
+                )
                 chat_message.tool_calls.append(chat_tool_call)
 
             if type(message["content"]) == str:
