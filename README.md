@@ -41,21 +41,15 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you can compile llama_ros with `--cmake-args -DGGML_CUDA=ON` to enable CUDA support.
 
-First, install [uv](https://docs.astral.sh/uv) if you haven't already:
-
-```shell
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
 Then clone the repository and install the Python dependencies:
 
 ```shell
 cd ~/ros2_ws/src
 git clone https://github.com/mgonzs13/llama_ros.git
-cd llama_ros && uv sync
+cd llama_ros
+pip3 install --break-system-packages -r requirements.txt
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
-source ~/ros2_ws/src/llama_ros/.venv/bin/activate
 colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 ```
 
