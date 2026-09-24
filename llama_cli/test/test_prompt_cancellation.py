@@ -78,8 +78,8 @@ class PromptTests(unittest.TestCase):
         )
         self.modules = {name: MagicMock() for name in names}
         self.modules["rclpy.node"].Node = object
-        self.modules["action_msgs.msg"].GoalStatus = SimpleNamespace(
-            STATUS_UNKNOWN=0, STATUS_SUCCEEDED=4
+        self.modules["action_msgs.msg"].GoalStatus = type(
+            "GoalStatus", (), {"STATUS_UNKNOWN": 0, "STATUS_SUCCEEDED": 4}
         )
         self.modules["llama_msgs.action"].GenerateResponse = SimpleNamespace(
             Goal=Goal, Result=object
