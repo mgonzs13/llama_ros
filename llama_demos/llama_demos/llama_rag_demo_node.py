@@ -37,7 +37,7 @@ from langchain_classic.retrievers.contextual_compression import (
     ContextualCompressionRetriever,
 )
 
-from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
+from llama_ros_langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 
 
 def main():

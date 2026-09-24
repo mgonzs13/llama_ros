@@ -15,11 +15,8 @@ RUN apt-get update && \
     wget \
     curl \
     python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
-
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH=/root/.local/bin:${PATH}
 
 # Clone BehaviorTree.CPP if ROS_DISTRO is rolling
 RUN if [ "$ROS_DISTRO" = "rolling" ]; then \
@@ -32,8 +29,8 @@ RUN apt-get update && \
     rosdep install --from-paths src --ignore-src -r -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies with uv
-RUN cd src/llama_ros && uv sync
+# Install Python dependencies with pip
+RUN cd src/llama_ros && pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
 # Install CUDA toolkit (optional)
 ARG USE_CUDA=0
@@ -63,8 +60,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
         colcon build --cmake-args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}; \
     fi
 
-# Source the workspace and activate the uv environment on login
-RUN echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc && \
-    echo "source /root/ros2_ws/src/llama_ros/.venv/bin/activate" >> ~/.bashrc
+# Source the workspace on login
+RUN echo "source /root/ros2_ws/install/setup.bash" >> ~/.bashrc
 
 CMD ["bash"]

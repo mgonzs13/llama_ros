@@ -30,7 +30,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import AIMessage
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 
 # Pydantic

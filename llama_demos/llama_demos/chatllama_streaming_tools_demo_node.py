@@ -29,7 +29,7 @@ import rclpy
 from random import randint
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 import asyncio
 
 

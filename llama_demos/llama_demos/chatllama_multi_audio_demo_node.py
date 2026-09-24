@@ -29,7 +29,7 @@ import rclpy
 from langchain_core.messages import SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 
 def main():

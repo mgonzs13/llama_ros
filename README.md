@@ -41,21 +41,15 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
 
 To run llama_ros with CUDA, first, you must install the [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Then, you can compile llama_ros with `--cmake-args -DGGML_CUDA=ON` to enable CUDA support.
 
-First, install [uv](https://docs.astral.sh/uv) if you haven't already:
-
-```shell
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
 Then clone the repository and install the Python dependencies:
 
 ```shell
 cd ~/ros2_ws/src
 git clone https://github.com/mgonzs13/llama_ros.git
-cd llama_ros && uv sync
+cd llama_ros
+pip3 install --break-system-packages -r requirements.txt
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
-source ~/ros2_ws/src/llama_ros/.venv/bin/activate
 colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 ```
 
@@ -1094,7 +1088,7 @@ class ExampleNode(Node):
 
 ### LangChain
 
-There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/). Thus, prompt engineering techniques could be applied. Here you have an example to use it.
+There is a [llama_ros_langchain](llama_ros_langchain/llama_ros_langchain/) package, a llama_ros integration for LangChain. Thus, prompt engineering techniques could be applied. Here you have an example to use it.
 
 #### llama_ros (Chain)
 
@@ -1103,7 +1097,7 @@ There is a [llama_ros integration for LangChain](llama_ros/llama_ros/langchain/)
 
 ```python
 import rclpy
-from llama_ros.langchain import LlamaROS
+from llama_ros_langchain import LlamaROS
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -1139,7 +1133,7 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from llama_ros.langchain import LlamaROS
+from llama_ros_langchain import LlamaROS
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -1175,7 +1169,7 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from llama_ros.langchain import LlamaROS
+from llama_ros_langchain import LlamaROS
 
 rclpy.init()
 
@@ -1203,7 +1197,7 @@ rclpy.shutdown()
 ```python
 import rclpy
 from langchain_chroma import Chroma
-from llama_ros.langchain import LlamaROSEmbeddings
+from llama_ros_langchain import LlamaROSEmbeddings
 
 
 rclpy.init()
@@ -1236,8 +1230,8 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from llama_ros.langchain import LlamaROSReranker
-from llama_ros.langchain import LlamaROSEmbeddings
+from llama_ros_langchain import LlamaROSReranker
+from llama_ros_langchain import LlamaROSEmbeddings
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import TextLoader
@@ -1299,7 +1293,7 @@ from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplat
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.retrievers import ContextualCompressionRetriever
 
-from llama_ros.langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
+from llama_ros_langchain import ChatLlamaROS, LlamaROSEmbeddings, LlamaROSReranker
 
 
 rclpy.init()
@@ -1369,7 +1363,7 @@ rclpy.shutdown()
 
 ```python
 import rclpy
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -1418,7 +1412,7 @@ import rclpy
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 
 def main():
@@ -1484,7 +1478,7 @@ import rclpy
 from typing import Optional
 
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 from pydantic import BaseModel, Field
 
 rclpy.init()
@@ -1539,7 +1533,7 @@ import rclpy
 
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 rclpy.init()
 
@@ -1604,7 +1598,7 @@ from random import randint
 import rclpy
 
 from langchain_core.messages import HumanMessage
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 rclpy.init()
 
@@ -1640,7 +1634,7 @@ import rclpy
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 
 rclpy.init()
 
