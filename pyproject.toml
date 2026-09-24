@@ -15,7 +15,7 @@ dependencies = [
 
 [tool.uv]
 package = false
-override-dependencies = ["onnxruntime<1.21", "numpy<2"]
+override-dependencies = ["numpy<2"]
 
 [tool.uv.workspace]
 members = ["llama_ros_langchain"]
