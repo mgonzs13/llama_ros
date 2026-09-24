@@ -288,6 +288,10 @@ public:
    * response.
    * @param stop (Optional) A list of stop words or phrases to terminate the
    * response generation.
+   * @param reset Whether to reset request context.
+   * @param precompute Evaluate only, with zero sampled/output tokens. Requires
+   * one cached text slot, reset=false, and a non-SWA, non-recurrent,
+   * non-hybrid, non-speculative model.
    * @return A Result containing the generated response and metadata, or an
    * error.
    */
@@ -295,7 +299,8 @@ public:
   generate_response(int slot_id, const std::string &input_prompt,
                     common_params_sampling sparams,
                     ServerSlot::GenerateResponseCallback callback = nullptr,
-                    std::vector<std::string> stop = {}, bool reset = true);
+                    std::vector<std::string> stop = {}, bool reset = true,
+                    bool precompute = false);
 
   /**
    * @brief Generates a chat completion response.
@@ -471,6 +476,9 @@ public:
    * @return True if speculative decoding is active, false otherwise.
    */
   bool is_speculative() const { return this->speculative_ != nullptr; }
+
+  /// @brief Whether evaluate-only requests can safely retain this context.
+  bool supports_precompute() const;
 
   /**
    * @brief Checks whether the model is in embedding mode.
@@ -668,6 +676,9 @@ protected:
 
   /// @brief Whether context checkpoints are useful for this model/context.
   bool checkpoints_enabled_ = false;
+
+  /// @brief Cached capability; probing seq_rm itself clears the context memory.
+  bool partial_seq_removal_ = false;
 
   /**
    * @brief Creates a checkpoint for the slot when spacing and model allow it.

@@ -2,6 +2,7 @@ string prompt                       # prompt
 sensor_msgs/Image[] images          # images for VLMs
 std_msgs/UInt8MultiArray[] audios   # audios for mtmd
 string[] stop []                    # stop list
+bool precompute false               # evaluate prompt and retain KV without sampling output
 bool reset false                    # whether to reset the context
 SamplingConfig sampling_config      # sampling config
 ---

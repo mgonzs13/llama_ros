@@ -2269,3 +2269,45 @@ ros2 llama launch SmolLM2-slots.yaml
 ```shell
 ros2 run llama_demos llama_slots_demo_node
 ```
+
+### Evaluate a prompt without generating text
+
+Set `GenerateResponse.Goal.precompute` to `true` to evaluate a text prompt and
+retain its computed KV state without sampling output tokens. A successful action
+returns empty text and an empty token list. The default is `false`, preserving
+normal generation. Evaluation uses the configured model CPU and batch settings;
+there are no separate per-request resource budgets.
+
+Preparation currently requires one slot, prompt caching enabled, a text-only
+request with `reset=false`, and a non-recurrent, non-hybrid model without sliding-window attention
+or speculative decoding. Unsupported or busy preparation requests are rejected.
+Later requests can reuse compatible cached tokens through the existing cache
+machinery. Always send the complete current prompt, not just its new suffix.
+
+Use the existing ROS action cancellation protocol to interrupt a request. The
+caller must wait for its terminal result before relying on the slot being free.
+Request priority belongs to the caller: submitting another request does not
+implicitly cancel an active preparation.
+
+For supported single-slot text contexts, CPU evaluation can stop cooperatively
+inside `llama_decode`; completed microbatches are retained and unfinished work
+is discarded. This does not interrupt an individual running operation. Other
+configurations cancel at processing boundaries. Cache reuse after cancellation
+is conditional on the model, retained state and the next prompt; cancellation
+does not promise a fixed latency on every backend.
+
+The CLI uses the same action client:
+
+```shell
+ros2 llama prompt "<complete prompt>" --precompute
+```
+
+`--action-name` selects the endpoint (default `/llama/generate_response`).
+SIGINT/SIGTERM request cancellation. Subprocess callers can pass an inherited
+pipe read descriptor with `--cancel-fd N`; closing its write end cancels that
+request, including while goal acceptance is pending. The CLI waits up to five
+seconds for cancellation to finish. Successful preparation prints no text and
+exits zero; cancellation, rejection and errors exit nonzero.
+
+This adds a field to the ROS action wire definition. Rebuild `llama_msgs` and
+all clients and dependents together before using it.
