@@ -29,7 +29,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 
 from action_msgs.msg import GoalStatus
 from llama_msgs.srv import Tokenize
-from llama_ros.langchain import LlamaROSCommon
+from llama_ros_langchain import LlamaROSCommon
 
 
 class LlamaROS(LLM, LlamaROSCommon):

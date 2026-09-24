@@ -8,13 +8,17 @@ dependencies = [
     "langchain-chroma==1.1.0",
     "langchain-community==0.4.2",
     "langchain-core==1.6.4",
-    "langchain-openai==1.6.3",
     "langchain-text-splitters==1.1.2",
     "langgraph-prebuilt==1.1.0",
-    "pydantic==2.13.5",
-    "opencv-python==4.11.0.86",
+    "llama_ros_langchain",
 ]
 
 [tool.uv]
 package = false
 override-dependencies = ["onnxruntime<1.21", "numpy<2"]
+
+[tool.uv.workspace]
+members = ["llama_ros_langchain"]
+
+[tool.uv.sources]
+llama_ros_langchain = { workspace = true }

@@ -91,7 +91,7 @@ from langchain_openai.chat_models.base import (
     _convert_delta_to_message_chunk,
 )
 
-from llama_ros.langchain import LlamaROSCommon
+from llama_ros_langchain import LlamaROSCommon
 from llama_msgs.msg import (
     ChatMessage as RChatMessage,
     ChatContent,

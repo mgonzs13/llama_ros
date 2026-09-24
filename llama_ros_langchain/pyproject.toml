@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llama_ros_langchain"
+version = "6.0.12"
+description = "LangChain integration for llama_ros"
+dependencies = [
+    "langchain-core==1.6.4",
+    "langchain-openai==1.6.3",
+    "openai==2.54.0",
+    "pydantic==2.13.5",
+    "numpy==1.26.4",
+    "opencv-python==4.11.0.86",
+    "requests==2.34.2",
+]

@@ -28,7 +28,7 @@ import sys
 import time
 import rclpy
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from llama_ros.langchain import ChatLlamaROS
+from llama_ros_langchain import ChatLlamaROS
 from langchain_core.messages import AIMessage
 
 

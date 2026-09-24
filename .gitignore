@@ -7,3 +7,5 @@ compile_commands.json
 
 .venv/
 uv.lock
+*.egg-info/
+.pytest_cache/
