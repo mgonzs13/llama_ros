@@ -8,6 +8,7 @@
   <license>MIT</license>
   <depend>ros2cli</depend>
   <depend>llama_ros</depend>
+  <exec_depend>action_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>

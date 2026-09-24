@@ -122,7 +122,10 @@ public:
   size_t n_sent_text = 0;
 
   /// @brief Whether to stream the response.
-  bool stream;
+  bool stream = false;
+
+  /// @brief Evaluate the prompt without sampling or publishing output tokens.
+  bool precompute = false;
 
   /// @brief The callback for streaming generated tokens.
   GenerateResponseCallback stream_callback = nullptr;

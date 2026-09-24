@@ -46,6 +46,39 @@ using namespace llama_ros;
 namespace {
 
 /**
+ * @brief Install a CPU abort callback only during one decode call.
+ *
+ * Llama owns this context and normally has no callback. Synchronize before
+ * removing the callback so no backend retains a pointer to its stack data.
+ */
+class ScopedDecodeAbort {
+public:
+  ScopedDecodeAbort(llama_context *ctx, std::function<bool()> callback)
+      : ctx_(ctx), callback_(std::move(callback)) {
+    if (callback_) {
+      llama_set_abort_callback(
+          ctx_,
+          [](void *data) {
+            return (*static_cast<std::function<bool()> *>(data))();
+          },
+          &callback_);
+    }
+  }
+  ~ScopedDecodeAbort() {
+    if (callback_) {
+      llama_synchronize(ctx_);
+      llama_set_abort_callback(ctx_, nullptr, nullptr);
+    }
+  }
+  ScopedDecodeAbort(const ScopedDecodeAbort &) = delete;
+  ScopedDecodeAbort &operator=(const ScopedDecodeAbort &) = delete;
+
+private:
+  llama_context *ctx_;
+  std::function<bool()> callback_;
+};
+
+/**
  * @brief Snapshot a sequence state into @p data. Returns false when the state
  * cannot be read consistently (e.g. the sequence was cleared concurrently),
  * instead of aborting like common_prompt_checkpoint::update_tgt().
@@ -112,8 +145,9 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   // Context checkpoints are only useful when partial seq_rm is unsupported or
   // the model uses SWA (mirrors llama.cpp server-context.cpp). Note that
   // common_context_can_seq_rm() clears the context memory, so query it once.
+  const auto seq_rm_type = common_context_can_seq_rm(this->ctx);
+  this->partial_seq_removal_ = seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_PART;
   if (this->params.n_ctx_checkpoints > 0) {
-    const auto seq_rm_type = common_context_can_seq_rm(this->ctx);
     this->checkpoints_enabled_ =
         seq_rm_type != COMMON_CONTEXT_SEQ_RM_TYPE_PART ||
         llama_model_n_swa(this->model) > 0;
@@ -136,6 +170,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
     slot.ctx = this->llama_init->context();
     slot.n_ctx = n_ctx_slot;
     slot.n_predict = this->params.n_predict;
+    slot.params.n_predict = this->params.n_predict;
     slot.params.sampling = this->params.sampling;
     slot.params.n_keep = this->params.n_keep;
     slot.sampler = nullptr;
@@ -272,9 +307,19 @@ Llama::~Llama() {
 void Llama::reset() {
   for (ServerSlot &slot : this->server_slots) {
     slot.reset();
+    slot.kv_cached_tokens.clear();
+    slot.n_kv_cache = 0;
+    slot.kv_positions_valid = true;
+    slot.checkpoints.clear();
   }
 
   llama_memory_clear(this->get_memory(), true);
+  if (this->ctx_dft_) {
+    llama_memory_clear(llama_get_memory(this->ctx_dft_), true);
+  }
+  if (this->prompt_cache_) {
+    this->prompt_cache_->clear();
+  }
 
   this->canceled = false;
   this->n_past = 0;
@@ -505,11 +550,16 @@ void Llama::cancel() {
   this->task_registry_->fail_all_pending();
 }
 
+bool Llama::supports_precompute() const {
+  return this->params.n_parallel == 1 && this->params.cache_prompt &&
+         !this->params.embedding && this->params.mmproj.path.empty() &&
+         !this->is_speculative() && !llama_model_is_recurrent(this->model) &&
+         !llama_model_is_hybrid(this->model) && this->partial_seq_removal_ &&
+         llama_model_n_swa(this->model) == 0;
+}
+
 void Llama::cancel_goal(uint64_t goal_id) {
-  auto slot = this->slot_manager_->get_slot_by_gid(goal_id);
-  if (slot != nullptr) {
-    slot->stop = CANCEL;
-  }
+  this->task_registry_->request_cancel(goal_id);
 }
 
 /*
@@ -703,13 +753,21 @@ Result<ServerTaskResultCompletion>
 Llama::generate_response(int slot_gid, const std::string &input_prompt,
                          common_params_sampling sparams,
                          ServerSlot::GenerateResponseCallback callback,
-                         std::vector<std::string> stop, bool reset) {
+                         std::vector<std::string> stop, bool reset,
+                         bool precompute) {
   auto slot = this->slot_manager_->get_slot_by_gid(slot_gid);
   if (!slot) {
     return Result<ServerTaskResultCompletion>::error(
         "Slot not found for given ID");
   }
 
+  if (precompute && (reset || !this->supports_precompute())) {
+    this->release_slot(slot);
+    return Result<ServerTaskResultCompletion>::error(
+        "Precompute requires one text slot, prompt caching, reset=false and a "
+        "non-recurrent, non-hybrid, non-speculative model");
+  }
+  slot->precompute = precompute;
   auto fut = this->task_registry_->register_pending(slot_gid);
 
   this->handle_completion_req(input_prompt, slot, sparams, callback, stop,
@@ -833,6 +891,7 @@ common_chat_params Llama::get_chat_params(common_chat_templates *tmpls,
 }
 
 void Llama::release_slot(ServerSlot *slot) {
+  this->task_registry_->clear_cancel(slot->goal_id);
   this->slot_manager_->release_slot(slot);
 }
 
@@ -985,6 +1044,8 @@ void Llama::save_prompt_to_cache(ServerSlot &slot) {
   tokens.insert(tokens.end(), slot.generated_tokens.begin(),
                 slot.generated_tokens.end());
 
+  tokens.resize(std::min(tokens.size(), static_cast<size_t>(slot.n_kv_cache)));
+
   PromptCacheEntry *entry = this->prompt_cache_->alloc(tokens);
   if (entry == nullptr) {
     return;
@@ -1043,6 +1104,11 @@ ServerSlot *Llama::get_slot_by_gid(uint64_t gid) {
 }
 
 bool Llama::process_token(ServerSlot *slot, CompletionOutput *result) {
+  if (this->task_registry_->is_cancel_requested(slot->goal_id)) {
+    slot->stop = CANCEL;
+    slot->has_next_token = false;
+    return false;
+  }
   const std::string token_str = result->text_to_send;
   slot->sampled = result->token;
 
@@ -1504,6 +1570,18 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
 
 void Llama::run_loop() {
   while (!this->canceled) {
+    // Only the inference thread changes slot state. RESERVED slots are still
+    // being populated; their cancellation remains pending until publication.
+    for (auto &slot : this->server_slots) {
+      if (slot.state != SLOT_STATE_IDLE && slot.state != SLOT_STATE_RESERVED &&
+          this->task_registry_->is_cancel_requested(slot.goal_id)) {
+        slot.stop = CANCEL;
+        LLAMA_LOG_INFO("Canceled slot %d, committed KV=%d", slot.id,
+                       slot.n_kv_cache);
+        this->send_completion_result(&slot);
+        this->release_slot(&slot);
+      }
+    }
 
     // Check if any slots are being processed
     bool any_processing = false;
@@ -1638,7 +1716,6 @@ void Llama::run_loop() {
       common_batch_add(this->batch, slot.sampled, slot.n_past, {slot.id}, true);
 
       slot.n_past += 1;
-      slot.n_kv_cache += 1;
     }
 
     // Process prompts (new inputs)
@@ -1689,13 +1766,27 @@ void Llama::run_loop() {
 
           size_t reused = 0;
           if (caching_allowed) {
-            const bool can_chunk_reuse = this->params.n_cache_reuse > 0 &&
-                                         slot.map_pos_to_media.empty() &&
-                                         llama_memory_can_shift(mem);
+            const bool can_chunk_reuse =
+                this->params.n_cache_reuse > 0 && slot.kv_positions_valid &&
+                slot.map_pos_to_media.empty() && llama_memory_can_shift(mem);
             reused = can_chunk_reuse
                          ? slot.reuse_kv_chunks(mem, prompt_tokens,
                                                 this->params.n_cache_reuse)
                          : slot.find_reusable_prefix(prompt_tokens);
+          }
+
+          if (reused == 0 && caching_allowed && slot.kv_positions_valid &&
+              slot.map_pos_to_media.empty() &&
+              this->params.mmproj.path.empty() &&
+              !llama_model_is_recurrent(this->model) &&
+              !llama_model_is_hybrid(this->model) &&
+              this->partial_seq_removal_ &&
+              llama_model_n_swa(this->model) == 0) {
+            reused = std::min(slot.common_prefix_len(prompt_tokens),
+                              static_cast<size_t>(slot.n_kv_cache));
+            if (reused == prompt_tokens.size() && reused > 0) {
+              --reused; // obtain fresh logits for a subsequent completion
+            }
           }
 
           if (reused == 0 && caching_allowed) {
@@ -1741,6 +1832,9 @@ void Llama::run_loop() {
             slot.n_past--;
           }
 
+          slot.n_kv_cache = slot.n_past;
+          slot.kv_cached_tokens.assign(prompt_tokens.begin(),
+                                       prompt_tokens.begin() + slot.n_past);
           slot.n_prompt_tokens_processed = 0;
         }
 
@@ -1801,10 +1895,7 @@ void Llama::run_loop() {
 
           // Only completion tasks benefit from prefix reuse; an embedding or
           // rerank prompt would mismatch the next request's task type.
-          if (slot.task_type == SERVER_TASK_TYPE_COMPLETION) {
-            slot.kv_cached_tokens = slot.prompt_tokens;
-            slot.n_kv_cache = slot.n_past;
-          }
+          // Cache metadata is committed only after successful decode below.
 
           LLAMA_LOG_INFO("prompt done, n_past = %d, n_tokens = %d\n",
                          slot.n_past, this->batch.n_tokens);
@@ -1843,7 +1934,71 @@ void Llama::run_loop() {
           this->batch.logits + i,
       };
 
-      const int ret = llama_decode(this->ctx, batch_view);
+      // A shared batch must never be aborted for just one of its goals.
+      // Other configurations retain cooperative cancellation at decode/step
+      // boundaries; the CPU callback is used only with rollback-safe text KV.
+      ServerSlot *abort_slot = nullptr;
+      if (this->supports_precompute() && this->params.n_gpu_layers == 0 &&
+          this->server_slots[0].map_pos_to_media.empty() &&
+          this->server_slots[0].kv_positions_valid) {
+        abort_slot = &this->server_slots[0];
+      }
+      std::function<bool()> abort_callback;
+      if (abort_slot != nullptr) {
+        const uint64_t gid = abort_slot->goal_id;
+        abort_callback = [this, gid] {
+          return this->task_registry_->is_cancel_requested(gid);
+        };
+      }
+      int ret;
+      {
+        ScopedDecodeAbort abort_guard(this->ctx, std::move(abort_callback));
+        ret = llama_decode(this->ctx, batch_view);
+      }
+      if (ret == 2) {
+        // v0.4.1 removes the failed ubatch and all following positions.
+        // Earlier completed ubatches remain materialized in text attention KV.
+        if (abort_slot != nullptr) {
+          auto &slot = *abort_slot;
+          const int committed = std::max(
+              0,
+              static_cast<int>(
+                  llama_memory_seq_pos_max(this->get_memory(), slot.id) + 1));
+          if (committed > slot.n_past ||
+              (committed > 0 &&
+               llama_memory_seq_pos_min(this->get_memory(), slot.id) != 0)) {
+            slot.invalidate_kv_cache();
+            this->fail_pending(slot.goal_id,
+                               "Aborted decode returned noncontiguous KV");
+            this->release_slot(&slot);
+            break;
+          }
+          slot.n_prompt_tokens_processed = std::max(
+              0, slot.n_prompt_tokens_processed - (slot.n_past - committed));
+          slot.n_past = committed;
+          slot.n_kv_cache = committed;
+          slot.kv_cached_tokens.assign(
+              slot.prompt_tokens.begin(),
+              slot.prompt_tokens.begin() +
+                  std::min(committed, slot.n_prompt_tokens));
+          slot.checkpoints.clear();
+          slot.stop = CANCEL;
+          LLAMA_LOG_INFO("Canceled slot %d during decode: cached=%d/%d",
+                         slot.id, committed, slot.n_prompt_tokens);
+          this->send_completion_result(&slot);
+          this->release_slot(&slot);
+        } else {
+          // A foreign/backend abort is not KV pressure and must not retry.
+          for (auto &slot : this->server_slots) {
+            if (slot.is_processing() && slot.state != SLOT_STATE_RESERVED) {
+              slot.invalidate_kv_cache();
+              this->fail_pending(slot.goal_id, "Unexpected decode abort");
+              this->release_slot(&slot);
+            }
+          }
+        }
+        break;
+      }
 
       if (ret != 0) {
         // Map common error cases to readable messages
@@ -1883,6 +2038,26 @@ void Llama::run_loop() {
         continue; // retry current window with smaller n_batch
       }
 
+      for (int32_t t = 0; t < n_tokens; ++t) {
+        for (int32_t s = 0; s < batch_view.n_seq_id[t]; ++s) {
+          auto &slot = this->server_slots[batch_view.seq_id[t][s]];
+          slot.n_kv_cache = std::max(slot.n_kv_cache, batch_view.pos[t] + 1);
+        }
+      }
+      for (auto &slot : this->server_slots) {
+        if (slot.task_type == SERVER_TASK_TYPE_COMPLETION &&
+            (slot.state == SLOT_STATE_PROCESSING_PROMPT ||
+             slot.state == SLOT_STATE_DONE_PROMPT)) {
+          slot.kv_cached_tokens.assign(
+              slot.prompt_tokens.begin(),
+              slot.prompt_tokens.begin() +
+                  std::min(slot.n_kv_cache, slot.n_prompt_tokens));
+        }
+        if (slot.precompute && slot.is_processing()) {
+          LLAMA_LOG_INFO("Precompute progress: cached=%d/%d", slot.n_kv_cache,
+                         slot.n_prompt_tokens);
+        }
+      }
       i_next = i + n_tokens;
       n_batch = llama_n_batch(this->ctx);
 
@@ -1893,7 +2068,16 @@ void Llama::run_loop() {
 
       // Consume results per-slot for the tokens we just decoded
       for (auto &slot : this->server_slots) {
-        if (slot.i_batch < (int)i || slot.i_batch >= (int)(i + n_tokens)) {
+        if (slot.state == SLOT_STATE_IDLE ||
+            slot.state == SLOT_STATE_RESERVED || slot.i_batch < (int)i ||
+            slot.i_batch >= (int)(i + n_tokens)) {
+          continue;
+        }
+
+        if (this->task_registry_->is_cancel_requested(slot.goal_id)) {
+          slot.stop = CANCEL;
+          this->send_completion_result(&slot);
+          this->release_slot(&slot);
           continue;
         }
 
@@ -1913,6 +2097,15 @@ void Llama::run_loop() {
             this->send_rerank_result(&slot, batch_view);
             this->release_slot(&slot);
             slot.i_batch = -1;
+            continue;
+          }
+
+          if (slot.precompute) {
+            LLAMA_LOG_INFO("Precompute complete: cached=%d/%d", slot.n_kv_cache,
+                           slot.n_prompt_tokens);
+            slot.stop = FULL_STOP;
+            this->send_completion_result(&slot);
+            this->release_slot(&slot);
             continue;
           }
 

@@ -76,6 +76,9 @@ public:
 
   void erase(const PromptCacheEntry *entry);
 
+  /// @brief Discard all saved sequence states after an explicit context reset.
+  void clear() { this->entries_.clear(); }
+
   /**
    * @brief Evict oldest entries until both limits are respected.
    */

@@ -523,11 +523,19 @@ rclcpp_action::GoalResponse
 LlamaNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
                        std::shared_ptr<const GenerateResponse::Goal> goal) {
   (void)uuid;
-  (void)goal;
+  if (this->goal_empty(goal) ||
+      (goal->precompute &&
+       (goal->reset || !goal->images.empty() || !goal->audios.empty() ||
+        !this->llama->supports_precompute()))) {
+    RCLCPP_WARN(this->get_logger(),
+                "Unsupported or empty generate_response goal");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
 
   RCLCPP_INFO(this->get_logger(), "Received goal to generate response");
 
-  ServerSlot *slot = this->llama->wait_for_available_slot();
+  ServerSlot *slot = goal->precompute ? this->llama->get_available_slot()
+                                      : this->llama->wait_for_available_slot();
   if (slot == nullptr) {
     RCLCPP_ERROR(this->get_logger(), "No slot available");
     return rclcpp_action::GoalResponse::REJECT;
@@ -594,7 +602,7 @@ void LlamaNode::execute(
                                    ServerSlot *) {
         this->send_text(completion, goal_handle, slot_id);
       },
-      context.stop, context.reset);
+      context.stop, context.reset, goal->precompute);
 
   // Handle result
   if (result.is_error()) {
@@ -616,7 +624,15 @@ void LlamaNode::execute(
   switch (result.value().stop) {
   case StopType::CANCEL:
     RCLCPP_WARN(this->get_logger(), "generate_response: goal cancelled");
-    goal_handle->canceled(response);
+    // The cancel callback runs before rclcpp_action transitions the goal to
+    // CANCELING. A CPU abort can finish sooner than that transition.
+    while (rclcpp::ok() && goal_handle->is_active() &&
+           !goal_handle->is_canceling()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (goal_handle->is_canceling()) {
+      goal_handle->canceled(response);
+    }
     break;
   case StopType::ABORT:
     RCLCPP_ERROR(this->get_logger(),
@@ -750,7 +766,13 @@ void LlamaNode::execute_chat_completions(
   switch (result_data.value().stop) {
   case StopType::CANCEL:
     RCLCPP_WARN(this->get_logger(), "execute_chat_completions: goal cancelled");
-    goal_handle->canceled(parsed_result);
+    while (rclcpp::ok() && goal_handle->is_active() &&
+           !goal_handle->is_canceling()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (goal_handle->is_canceling()) {
+      goal_handle->canceled(parsed_result);
+    }
     break;
   case StopType::ABORT:
     RCLCPP_ERROR(this->get_logger(),
