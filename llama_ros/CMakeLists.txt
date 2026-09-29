@@ -131,6 +131,7 @@ if(BUILD_TESTING)
     test/test_llama_params.cpp
     test/test_llama_deployment.cpp
     test/test_llama_generation.cpp
+    test/test_precompute_cancel.cpp
     test/test_llama_lora.cpp
     test/test_llama_embeddings.cpp
     test/test_llama_rerank.cpp

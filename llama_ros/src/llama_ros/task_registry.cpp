@@ -102,3 +102,18 @@ void TaskRegistry::fail_all_pending() {
   }
   this->pending_.clear();
 }
+
+void TaskRegistry::request_cancel(uint64_t goal_id) {
+  std::lock_guard<std::mutex> lock(this->cancel_mutex_);
+  this->canceled_goals_.insert(goal_id);
+}
+
+bool TaskRegistry::is_cancel_requested(uint64_t goal_id) {
+  std::lock_guard<std::mutex> lock(this->cancel_mutex_);
+  return this->canceled_goals_.count(goal_id) != 0;
+}
+
+void TaskRegistry::clear_cancel(uint64_t goal_id) {
+  std::lock_guard<std::mutex> lock(this->cancel_mutex_);
+  this->canceled_goals_.erase(goal_id);
+}

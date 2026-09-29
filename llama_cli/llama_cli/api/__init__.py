@@ -26,8 +26,15 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 import os
+import select
+import signal
+import sys
+import time
+from threading import Event
 import yaml
 import rclpy
+from rclpy.signals import SignalHandlerOptions
+from action_msgs.msg import GoalStatus
 from argparse import ArgumentTypeError
 from llama_msgs.action import GenerateResponse
 from llama_ros.llama_client_node import LlamaClientNode
@@ -91,29 +98,113 @@ def launch_llm(file_path: str) -> None:
 
 
 def prompt_llm(
-    prompt: str, reset: bool = False, temp: float = 0.8, image_url: str = ""
-) -> None:
+    prompt: str,
+    reset: bool = False,
+    temp: float = 0.8,
+    image_url: str = "",
+    *,
+    precompute: bool = False,
+    action_name: str = "/llama/generate_response",
+    cancel_fd: int = None,
+) -> int:
+    """Run a response goal and cancel on a signal or cancellation-pipe EOF."""
+    canceled = Event()
+    previous_handlers = {}
+    llama_client = None
+    initialized = False
+    request = None
+    deadline = None
+    streamed = []
 
-    rclpy.init()
-    llama_client = LlamaClientNode.get_instance()
-    goal = GenerateResponse.Goal()
-    goal.prompt = prompt
-    goal.reset = reset
-    goal.sampling_config.temp = temp
+    def cancel_signal(signum, frame):
+        canceled.set()
 
-    if image_url:
-        req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
-        response = urllib.request.urlopen(req)
-        arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
-        img = cv2.imdecode(arr, -1)
+    def cancellation_requested():
+        if cancel_fd is not None and select.select([cancel_fd], [], [], 0)[0]:
+            if not os.read(cancel_fd, 4096):
+                canceled.set()
+        return canceled.is_set()
 
-        cv_bridge = CvBridge()
-        goal.images.append(cv_bridge.cv2_to_imgmsg(img))
+    def feedback(message):
+        if not precompute and not canceled.is_set():
+            text = message.feedback.partial_response.text
+            streamed.append(text)
+            print(text, flush=True, end="")
 
-    last_t = ""
-    for ele in llama_client.generate_response(goal, stream=True):
-        last_t = ele.text
-        print(ele.text, flush=True, end="")
-    if not last_t.endswith("\n"):
-        print()
-    rclpy.shutdown()
+    try:
+        # Protect partial signal setup as well as the ROS request lifecycle.
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            previous_handlers[signum] = signal.signal(signum, cancel_signal)
+        rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+        initialized = True
+        if cancellation_requested():
+            return 1
+        llama_client = LlamaClientNode(action_name=action_name)
+        goal = GenerateResponse.Goal()
+        goal.prompt = prompt
+        goal.reset = reset
+        goal.precompute = precompute
+        goal.sampling_config.temp = temp
+
+        if image_url:
+            req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as response:
+                arr = np.asarray(bytearray(response.read()), dtype=np.uint8)
+            img = cv2.imdecode(arr, -1)
+            goal.images.append(CvBridge().cv2_to_imgmsg(img))
+
+        while not cancellation_requested():
+            if not rclpy.ok():
+                return 1
+            if llama_client.wait_for_response_server(timeout_sec=0.1):
+                break
+        if cancellation_requested():
+            return 1
+        request = llama_client.generate_response_async(goal, feedback_cb=feedback)
+        while True:
+            if cancellation_requested() or request.error is not None:
+                if deadline is None:
+                    deadline = time.monotonic() + 5.0
+                    request.cancel()
+                if time.monotonic() >= deadline:
+                    print("Timed out waiting for action cancellation", file=sys.stderr)
+                    return 1
+            if request.done.is_set():
+                break
+            if not rclpy.ok():
+                return 1
+            request.done.wait(0.05)
+
+        if canceled.is_set():
+            return 1
+        if request.error is not None:
+            print(str(request.error), file=sys.stderr)
+            return 1
+        if request.status != GoalStatus.STATUS_SUCCEEDED:
+            print(f"Action failed with status {request.status}", file=sys.stderr)
+            return 1
+        if not precompute:
+            text = "".join(streamed)
+            final_text = request.result.response.text
+            if final_text.startswith(text):
+                print(final_text[len(text) :], flush=True, end="")
+                text = final_text
+            if not text.endswith("\n"):
+                print()
+        return 0
+    except Exception as exc:
+        if request is not None and not request.done.is_set():
+            request.cancel()
+        print(f"Prompt failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        try:
+            if llama_client is not None:
+                llama_client.close()
+        finally:
+            try:
+                if initialized:
+                    rclpy.shutdown()
+            finally:
+                for signum, handler in previous_handlers.items():
+                    signal.signal(signum, handler)

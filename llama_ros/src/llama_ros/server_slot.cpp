@@ -65,6 +65,11 @@ const common_chat_msg &ServerSlot::update_chat_msg(
 }
 
 void ServerSlot::reset() {
+  this->precompute = false;
+  this->i_batch = -1;
+  this->n_decoded = 0;
+  this->n_prompt_tokens = 0;
+  this->generated_tokens.clear();
   this->generated_text.clear();
   this->stop = StopType::NO_STOP;
   this->stopping_word.clear();

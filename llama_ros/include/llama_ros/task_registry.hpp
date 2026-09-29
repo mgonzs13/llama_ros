@@ -32,6 +32,7 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace llama_ros {
 
@@ -111,7 +112,18 @@ public:
    */
   void fail_all_pending();
 
+  /// @brief Record cancellation even before the worker registers its future.
+  void request_cancel(uint64_t goal_id);
+
+  /// @brief Thread-safe cancellation query, also usable from CPU decode.
+  bool is_cancel_requested(uint64_t goal_id);
+
+  /// @brief Forget cancellation when the slot has finished the request.
+  void clear_cancel(uint64_t goal_id);
+
 private:
+  std::mutex cancel_mutex_;
+  std::unordered_set<uint64_t> canceled_goals_;
   std::unordered_map<uint64_t, std::promise<ServerTaskResultPtr>> pending_;
   std::mutex pending_mutex_;
 

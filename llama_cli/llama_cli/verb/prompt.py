@@ -28,7 +28,7 @@ from llama_cli.api import prompt_llm, positive_float
 class PromptVerb(VerbExtension):
 
     def add_arguments(self, parser, cli_name):
-        arg = parser.add_argument("prompt", help="prompt text for the LLM")
+        parser.add_argument("prompt", help="prompt text for the LLM")
         parser.add_argument(
             "-r",
             "--reset",
@@ -46,8 +46,29 @@ class PromptVerb(VerbExtension):
         parser.add_argument(
             "--image-url", type=str, default="", help="Image URL to sent to the VLM"
         )
+        parser.add_argument(
+            "--precompute", action="store_true", help="Evaluate without generating text"
+        )
+        parser.add_argument(
+            "--action-name",
+            default="/llama/generate_response",
+            help="Response action name",
+        )
+        parser.add_argument(
+            "--cancel-fd",
+            type=int,
+            default=None,
+            metavar="N",
+            help="Cancel when file descriptor N reaches EOF",
+        )
 
     def main(self, *, args):
-        prompt_llm(
-            args.prompt, reset=args.reset, temp=args.temp, image_url=args.image_url
+        return prompt_llm(
+            args.prompt,
+            reset=args.reset,
+            temp=args.temp,
+            image_url=args.image_url,
+            precompute=args.precompute,
+            action_name=args.action_name,
+            cancel_fd=args.cancel_fd,
         )

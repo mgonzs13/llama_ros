@@ -23,7 +23,7 @@
 
 import uuid
 from typing import Callable, Tuple, List, Union, Generator
-from threading import Thread, RLock, Condition
+from threading import Thread, RLock, Condition, Event
 
 from rclpy.node import Node
 from rclpy.client import Client
@@ -41,6 +41,58 @@ from llama_msgs.srv import RerankDocuments
 from llama_msgs.action import GenerateResponse
 from llama_msgs.action import GenerateChatCompletions
 from llama_msgs.msg import PartialResponse
+
+
+class ResponseRequest:
+    """Track one response, including cancellation before acceptance."""
+
+    def __init__(self):
+        self.done = Event()
+        self.result = None
+        self.status = GoalStatus.STATUS_UNKNOWN
+        self.error = None
+        self._lock = RLock()
+        self._handle = None
+        self._cancel_requested = False
+        self._cancel_sent = False
+
+    def cancel(self):
+        """Remember cancellation until the server supplies this request's handle."""
+        with self._lock:
+            self._cancel_requested = True
+            if (
+                self._handle is not None
+                and not self._cancel_sent
+                and not self.done.is_set()
+            ):
+                self._cancel_sent = True
+                self._handle.cancel_goal_async()
+
+    def _accepted(self, future):
+        with self._lock:
+            try:
+                self._handle = future.result()
+                if not self._handle.accepted:
+                    self.error = RuntimeError("Goal was rejected by the action server")
+                    self.done.set()
+                    return
+                self._handle.get_result_async().add_done_callback(self._completed)
+                if self._cancel_requested:
+                    self.cancel()
+            except Exception as exc:
+                self.error = exc
+                self.done.set()
+
+    def _completed(self, future):
+        with self._lock:
+            try:
+                response = future.result()
+                self.result = response.result
+                self.status = response.status
+            except Exception as exc:
+                self.error = exc
+            finally:
+                self.done.set()
 
 
 class LlamaClientNode(Node):
@@ -75,7 +127,9 @@ class LlamaClientNode(Node):
 
             return LlamaClientNode._instance
 
-    def __init__(self, namespace: str = "llama") -> None:
+    def __init__(
+        self, namespace: str = "llama", action_name: str = "generate_response"
+    ) -> None:
 
         if not LlamaClientNode._instance is None:
             raise Exception("This class is a Singleton")
@@ -109,7 +163,7 @@ class LlamaClientNode(Node):
         self._action_client = ActionClient(
             self,
             GenerateResponse,
-            "generate_response",
+            action_name,
             callback_group=self._callback_group,
         )
 
@@ -125,6 +179,38 @@ class LlamaClientNode(Node):
         self._executor.add_node(self)
         self._spin_thread = Thread(target=self._executor.spin)
         self._spin_thread.start()
+
+    def wait_for_response_server(self, timeout_sec: float = 0.1) -> bool:
+        """Wait briefly for the response action without blocking cancellation."""
+        return self._action_client.wait_for_server(timeout_sec=timeout_sec)
+
+    def generate_response_async(
+        self, goal: GenerateResponse.Goal, feedback_cb: Callable = None
+    ) -> ResponseRequest:
+        """Submit independently tracked work after checking server readiness."""
+        request = ResponseRequest()
+
+        def feedback(message):
+            try:
+                feedback_cb(message)
+            except Exception as exc:
+                request.error = exc
+                request.cancel()
+
+        future = self._action_client.send_goal_async(
+            goal, feedback_callback=feedback if feedback_cb is not None else None
+        )
+        future.add_done_callback(request._accepted)
+        return request
+
+    def close(self) -> None:
+        """Stop the executor and release this client's ROS resources."""
+        self._executor.shutdown(timeout_sec=1.0, wait_for_threads=False)
+        self._spin_thread.join(timeout=1.0)
+        self.destroy_node()
+        with self._lock:
+            if LlamaClientNode._instance is self:
+                LlamaClientNode._instance = None
 
     def get_metadata(self, req: GetMetadata.Request) -> GetMetadata:
         self._get_metadata_srv_client.wait_for_service()
