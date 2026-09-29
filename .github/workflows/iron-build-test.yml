@@ -17,7 +17,7 @@ jobs:
       - name: Build and Test
         uses: ros-tooling/action-ros-ci@v0.4
         with:
-          package-name: llama_ros llama_bt
+          package-name: llama_ros llama_bt llama_cli
           target-ros2-distro: iron
           skip-tests: false
           coverage-result: false

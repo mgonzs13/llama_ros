@@ -56,7 +56,7 @@ colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
 To run the tests:
 
 ```shell
-colcon test --executor sequential --packages-select llama_ros llama_bt
+colcon test --executor sequential --packages-select llama_ros llama_bt llama_cli
 colcon test-result --verbose
 ```
 
