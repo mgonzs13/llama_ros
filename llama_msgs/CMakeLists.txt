@@ -43,6 +43,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/UpdateLoRAs.srv"
   "srv/RerankDocuments.srv"
   "srv/GetMetadata.srv"
+  "srv/EvaluateDecision.srv"
   DEPENDENCIES sensor_msgs
 )
 

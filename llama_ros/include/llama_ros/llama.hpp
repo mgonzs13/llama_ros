@@ -195,6 +195,14 @@ public:
   generate_embeddings(const std::string &text);
 
   /**
+   * @brief Evaluates a question with a decision model.
+   *
+   * @param question The question to evaluate.
+   * @return A Result containing the answer, or an error message.
+   */
+  Result<DecisionAnswer> evaluate_decision(const DecisionQuestion &question);
+
+  /**
    * @brief Handles a reranking request for a query-document pair.
    *
    * Prepares the given slot for computing the relevance score between
@@ -497,6 +505,13 @@ public:
   }
 
   /**
+   * @brief Checks whether the model is a Laya decision model.
+   *
+   * @return True if the model is a Laya decision model, false otherwise.
+   */
+  bool is_decision() const { return this->decision_enabled_; }
+
+  /**
    * @brief Checks if the model adds a beginning-of-sequence (BOS) token.
    *
    * @return True if the BOS token is added, false otherwise.
@@ -567,6 +582,15 @@ public:
   ServerSlot *get_slot_by_gid(uint64_t gid);
 
 protected:
+  /// @brief An option of a decision question.
+  struct DecisionOption {
+    /// @brief The option key given to the model.
+    std::string key;
+
+    /// @brief The option description (empty means none).
+    std::string description;
+  };
+
   /**
    * @brief Initialization result for the model.
    *
@@ -603,7 +627,7 @@ protected:
   common_sampler *sampler;
 
   /// @brief The batch used for batched token decoding.
-  llama_batch batch;
+  common_batch batch;
 
   /**
    * @brief The system prompt used for initializing the model's context.
@@ -662,6 +686,9 @@ protected:
   /// @brief Handler for embedding generation requests.
   std::unique_ptr<EmbeddingRequestHandler> embedding_handler_;
 
+  /// @brief Handler for decision evaluation requests.
+  std::unique_ptr<DecisionRequestHandler> decision_handler_;
+
   /// @brief Handler for document reranking requests.
   std::unique_ptr<RerankRequestHandler> rerank_handler_;
 
@@ -673,6 +700,94 @@ protected:
 
   /// @brief Host-RAM prompt/sequence cache, bounded by cache_ram_mib.
   std::unique_ptr<PromptCache> prompt_cache_;
+
+  /// @brief The "systemone" chat template of a decision model.
+  std::shared_ptr<const common_chat_template> decision_template_;
+
+  /// @brief Decision temperatures by "<type>" or "<type>.<n_options bucket>".
+  std::map<std::string, float> decision_temperatures_;
+
+  /// @brief The mask token marking each option in a Laya prompt.
+  llama_token decision_token_marker_ = LLAMA_TOKEN_NULL;
+
+  /// @brief The separator token of a Laya prompt.
+  llama_token decision_token_sep_ = LLAMA_TOKEN_NULL;
+
+  /// @brief Text of the mask token, stripped from user inputs.
+  std::string decision_text_marker_;
+
+  /// @brief Maximum number of tokens for the question and its options.
+  size_t decision_max_head_tokens_ = 0;
+
+  /// @brief Whether the loaded model is a Laya decision model.
+  bool decision_enabled_ = false;
+
+  /**
+   * @brief Initializes decision-model support when the model is Laya.
+   */
+  void init_decision();
+
+  /**
+   * @brief Renders the "systemone" prompt of a decision question.
+   *
+   * @param question The question to render.
+   * @param options The options of the question.
+   * @return The rendered prompt.
+   */
+  std::string
+  render_decision_prompt(const DecisionQuestion &question,
+                         const std::vector<DecisionOption> &options) const;
+
+  /**
+   * @brief Truncates a Laya prompt to max_head_tokens.
+   *
+   * @param tokens The tokenized prompt, modified in place.
+   * @param n_options The number of options in the prompt.
+   * @return True when the prompt layout is valid, false otherwise.
+   */
+  bool fill_task_laya(std::vector<llama_token> &tokens, size_t n_options) const;
+
+  /**
+   * @brief Computes the answer of a decision question from raw scores.
+   *
+   * @param type The question type.
+   * @param options The options of the question.
+   * @param scores One raw score per option.
+   * @return The computed answer.
+   */
+  DecisionAnswer
+  format_decision_answer(DecisionQuestionType type,
+                         const std::vector<DecisionOption> &options,
+                         const std::vector<float> &scores) const;
+
+  /**
+   * @brief Returns the temperature to apply to a decision question.
+   *
+   * @param type The question type.
+   * @param n_options The number of options of the question.
+   * @return The temperature.
+   */
+  float get_decision_temperature(DecisionQuestionType type,
+                                 size_t n_options) const;
+
+  /**
+   * @brief Sends the scores of a completed decision slot.
+   *
+   * @param slot The slot that produced the scores.
+   * @param off The offset of the decoded window in the batch.
+   * @param n_tokens The number of tokens in the decoded window.
+   */
+  void send_decision_result(ServerSlot *slot, int32_t off, int32_t n_tokens);
+
+  /**
+   * @brief Handles a decision evaluation request.
+   *
+   * @param tokens The tokenized decision prompt.
+   * @param column The question type column read from the embeddings output.
+   * @param slot The server slot to use for processing.
+   */
+  void handle_decision_req(const std::vector<llama_token> &tokens,
+                           int32_t column, ServerSlot *slot);
 
   /// @brief Whether context checkpoints are useful for this model/context.
   bool checkpoints_enabled_ = false;
@@ -747,9 +862,10 @@ protected:
    * pending task associated with the slot.
    *
    * @param slot The slot that produced the embeddings.
-   * @param batch The batch containing the decoded output.
+   * @param off The offset of the decoded window in the batch.
+   * @param n_tokens The number of tokens in the decoded window.
    */
-  void send_embedding_result(ServerSlot *slot, const llama_batch &batch);
+  void send_embedding_result(ServerSlot *slot, int32_t off, int32_t n_tokens);
 
   /**
    * @brief Sends the rerank result for a completed slot.
@@ -758,9 +874,10 @@ protected:
    * the pending task associated with the slot.
    *
    * @param slot The slot that produced the rerank score.
-   * @param batch The batch containing the decoded output.
+   * @param off The offset of the decoded window in the batch.
+   * @param n_tokens The number of tokens in the decoded window.
    */
-  void send_rerank_result(ServerSlot *slot, const llama_batch &batch);
+  void send_rerank_result(ServerSlot *slot, int32_t off, int32_t n_tokens);
 
   /**
    * @brief Sends the completion result for a finished generation slot.

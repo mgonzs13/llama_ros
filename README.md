@@ -1732,6 +1732,16 @@ ros2 run llama_demos llama_rerank_demo_node
 
 https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 
+### Decision Demo (Laya)
+
+```shell
+ros2 launch llama_bringup laya.launch.py
+```
+
+```shell
+ros2 run llama_demos laya_demo_node
+```
+
 ### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell

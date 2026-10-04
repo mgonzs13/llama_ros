@@ -142,8 +142,18 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
+  // decision service
+  if (this->llama->is_decision()) {
+    this->evaluate_decision_service_ =
+        this->create_service<llama_msgs::srv::EvaluateDecision>(
+            "evaluate_decision",
+            std::bind(&LlamaNode::evaluate_decision_service_callback, this, _1,
+                      _2));
+  }
+
   // embeddings service
-  if (this->llama->is_embedding() && !this->llama->is_reranking()) {
+  if (this->llama->is_embedding() && !this->llama->is_reranking() &&
+      !this->llama->is_decision()) {
     this->generate_embeddings_service_ =
         this->create_service<llama_msgs::srv::GenerateEmbeddings>(
             "generate_embeddings",
@@ -161,7 +171,8 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   }
 
   // completion services and action
-  if (!this->llama->is_embedding() && !this->llama->is_reranking()) {
+  if (!this->llama->is_embedding() && !this->llama->is_reranking() &&
+      !this->llama->is_decision()) {
     // get metadata service
     this->get_metadata_service_ =
         this->create_service<llama_msgs::srv::GetMetadata>(
@@ -212,13 +223,19 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   RCLCPP_INFO(this->get_logger(), "[%s] Deactivating...", this->get_name());
 
+  const bool is_decision = this->llama && this->llama->is_decision();
   const bool is_embedding = this->llama && this->llama->is_embedding() &&
-                            !this->llama->is_reranking();
+                            !this->llama->is_reranking() && !is_decision;
   const bool is_reranking = this->llama && this->llama->is_reranking();
-  const bool is_completion = this->llama && !this->llama->is_embedding() &&
-                             !this->llama->is_reranking();
+  const bool is_completion =
+      this->llama && !is_embedding && !is_reranking && !is_decision;
 
   this->destroy_llama();
+
+  if (is_decision) {
+    this->evaluate_decision_service_.reset();
+    this->evaluate_decision_service_ = nullptr;
+  }
 
   if (is_embedding) {
     this->generate_embeddings_service_.reset();
@@ -439,6 +456,52 @@ void LlamaNode::generate_embeddings_service_callback(
   response->n_tokens = embeddings.n_tokens;
 
   RCLCPP_INFO(this->get_logger(), "Embeddings generated");
+}
+
+/*
+*****************************
+*         DECISIONS         *
+*****************************
+*/
+void LlamaNode::evaluate_decision_service_callback(
+    const std::shared_ptr<llama_msgs::srv::EvaluateDecision::Request> request,
+    std::shared_ptr<llama_msgs::srv::EvaluateDecision::Response> response) {
+  RCLCPP_INFO(this->get_logger(), "Evaluating decision");
+
+  if (request->type > llama_msgs::srv::EvaluateDecision::Request::NOUL) {
+    response->success = false;
+    response->error = "Invalid question type";
+    return;
+  }
+
+  llama_ros::DecisionQuestion question;
+  question.type = static_cast<llama_ros::DecisionQuestionType>(request->type);
+  question.instructions = request->instructions;
+  question.state = request->state;
+  question.keys = request->keys;
+  question.descriptions = request->descriptions;
+
+  auto result = this->llama->evaluate_decision(question);
+  if (result.is_error()) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to evaluate decision: %s",
+                 result.error().c_str());
+    response->success = false;
+    response->error = result.error();
+    return;
+  }
+
+  const auto answer = result.value();
+  response->success = true;
+  response->error = "";
+  response->type = static_cast<uint8_t>(answer.type);
+  response->choice = answer.choice;
+  response->score = answer.score;
+  response->noul = answer.noul;
+  response->confidence = answer.confidence;
+  response->keys = answer.keys;
+  response->probabilities = answer.probabilities;
+
+  RCLCPP_INFO(this->get_logger(), "Decision evaluated");
 }
 
 /*

@@ -134,6 +134,7 @@ if(BUILD_TESTING)
     test/test_precompute_cancel.cpp
     test/test_llama_lora.cpp
     test/test_llama_embeddings.cpp
+    test/test_llama_decision.cpp
     test/test_llama_rerank.cpp
     test/test_kv_cache_reuse.cpp
     test/test_prompt_cache.cpp

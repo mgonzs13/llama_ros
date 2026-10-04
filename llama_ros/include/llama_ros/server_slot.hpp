@@ -64,9 +64,6 @@ public:
   /// @brief The unique identifier for the goal associated with the slot.
   uint64_t goal_id;
 
-  /// @brief The batch associated with the slot.
-  llama_batch batch;
-
   /// @brief The context associated with the slot.
   llama_context *ctx;
 
@@ -78,6 +75,12 @@ public:
 
   /// @brief The task type associated with the slot.
   ServerTaskType task_type = SERVER_TASK_TYPE_COMPLETION;
+
+  /// @brief The question type column read from the embeddings output.
+  int32_t decision_column = 0;
+
+  /// @brief Whether the KV-cached prefix may be reused for this task.
+  bool cache_prompt = true;
 
   /// @brief The token sampled in the slot.
   llama_token sampled;

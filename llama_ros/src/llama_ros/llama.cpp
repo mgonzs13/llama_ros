@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <llama.h>
 #include <map>
 #include <memory>
@@ -119,6 +120,49 @@ bool load_seq_state(const std::vector<uint8_t> &data, llama_context *ctx,
   return n == data.size();
 }
 
+/**
+ * @brief The name of a decision question type used by the systemone template.
+ */
+const char *decision_question_type_name(DecisionQuestionType type) {
+  switch (type) {
+  case DECISION_QUESTION_CHOICE:
+    return "choice";
+  case DECISION_QUESTION_SCORE:
+    return "score";
+  case DECISION_QUESTION_NOUL:
+    return "noul";
+  }
+  return "";
+}
+
+/**
+ * @brief Replace text in all strings of a JSON value.
+ */
+common_json decision_replace_text(const common_json &val,
+                                  const std::string &search,
+                                  const std::string &replace) {
+  if (val.is_string()) {
+    std::string str = val.get<std::string>();
+    string_replace_all(str, search, replace);
+    return str;
+  }
+  if (val.is_array()) {
+    common_json out = common_json::array();
+    for (const auto &item : val) {
+      out.push_back(decision_replace_text(item, search, replace));
+    }
+    return out;
+  }
+  if (val.is_object()) {
+    common_json out = common_json::object();
+    for (const auto &[key, item] : val.items()) {
+      out[key] = decision_replace_text(item, search, replace);
+    }
+    return out;
+  }
+  return val;
+}
+
 } // namespace
 
 Llama::Llama(const common_params &params, std::string system_prompt,
@@ -181,9 +225,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
 
   LLAMA_LOG_INFO("Initializing batch context");
 
-  const int32_t n_batch = llama_n_batch(this->ctx);
-  this->batch =
-      llama_batch_init(std::max(n_batch, this->params.n_parallel), 0, 1);
+  this->batch = common_batch(this->ctx);
 
   LLAMA_LOG_INFO("Model loaded successfully");
 
@@ -193,6 +235,7 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   LLAMA_LOG_INFO("Initialized Slot Manager and Task Registry");
 
   this->embedding_handler_ = std::make_unique<EmbeddingRequestHandler>(this);
+  this->decision_handler_ = std::make_unique<DecisionRequestHandler>(this);
   this->rerank_handler_ = std::make_unique<RerankRequestHandler>(this);
   this->completion_handler_ = std::make_unique<CompletionRequestHandler>(this);
   this->chat_completion_handler_ =
@@ -258,7 +301,11 @@ Llama::Llama(const common_params &params, std::string system_prompt,
       this->get_n_ctx_train(), this->params.grp_attn_n,
       this->params.grp_attn_w);
 
-  llama_set_embeddings(this->ctx, this->is_embedding() || this->is_reranking());
+  this->init_decision();
+
+  llama_set_embeddings(this->ctx, this->is_embedding() ||
+                                      this->is_reranking() ||
+                                      this->is_decision());
 
   // Initialize speculative decoding if configured
   this->init_speculative();
@@ -685,6 +732,447 @@ Llama::rank_documents(const std::string &query,
          const llama_ros::ServerTaskResultRerank &b) { return a.id < b.id; });
 
   return Result<std::vector<ServerTaskResultRerank>>::ok(std::move(results));
+}
+
+/*
+*******************************
+*          DECISIONS          *
+*******************************
+*/
+void Llama::init_decision() {
+  const common_decision_type decision_type =
+      common_get_decision_type(this->model);
+
+  if (decision_type != COMMON_DECISION_TYPE_LAYA) {
+    if (decision_type != COMMON_DECISION_TYPE_NONE) {
+      LLAMA_LOG_WARN(
+          "Unsupported decision model type, decision service disabled");
+    }
+    return;
+  }
+
+  const char *tmpl_src = llama_model_chat_template(this->model, "systemone");
+  if (tmpl_src == nullptr) {
+    throw std::runtime_error("Decision model has no \"systemone\" template");
+  }
+  this->decision_template_ =
+      std::make_shared<const common_chat_template>(tmpl_src, "", "");
+
+  const llama_vocab *vocab = this->get_vocab();
+  this->decision_token_marker_ = llama_vocab_mask(vocab);
+  this->decision_token_sep_ = llama_vocab_sep(vocab);
+
+  if (this->decision_token_marker_ == LLAMA_TOKEN_NULL ||
+      this->decision_token_sep_ == LLAMA_TOKEN_NULL) {
+    throw std::runtime_error("Decision model has no mask or sep token");
+  }
+
+  this->decision_text_marker_ =
+      common_token_to_piece(vocab, this->decision_token_marker_, true);
+
+  char buf[256];
+  if (llama_model_meta_val_str(this->model, "general.architecture", buf,
+                               sizeof(buf)) < 0) {
+    throw std::runtime_error("Decision model has no architecture metadata");
+  }
+  const std::string prefix = std::string(buf) + ".decision.";
+
+  char val[256];
+  if (llama_model_meta_val_str(this->model,
+                               (prefix + "max_head_tokens").c_str(), val,
+                               sizeof(val)) < 0) {
+    throw std::runtime_error("Decision model has no max_head_tokens");
+  }
+  this->decision_max_head_tokens_ = std::strtoul(val, nullptr, 10);
+  if (this->decision_max_head_tokens_ == 0) {
+    throw std::runtime_error("Decision model has no valid max_head_tokens");
+  }
+
+  const std::string prefix_temp = prefix + "temperature.";
+  for (int32_t i = 0; i < llama_model_meta_count(this->model); i++) {
+    char key[256];
+    char temp_val[64];
+    if (llama_model_meta_key_by_index(this->model, i, key, sizeof(key)) < 0 ||
+        !string_starts_with(key, prefix_temp)) {
+      continue;
+    }
+    if (llama_model_meta_val_str_by_index(this->model, i, temp_val,
+                                          sizeof(temp_val)) < 0) {
+      continue;
+    }
+    const float temp = std::strtof(temp_val, nullptr);
+    if (temp <= 0.0f) {
+      throw std::runtime_error(string_format(
+          "invalid decision temperature: %s = %s", key, temp_val));
+    }
+    this->decision_temperatures_[key + prefix_temp.size()] = temp;
+  }
+
+  this->decision_enabled_ = true;
+  LLAMA_LOG_INFO("Decision model type: laya");
+}
+
+std::string Llama::render_decision_prompt(
+    const DecisionQuestion &question,
+    const std::vector<DecisionOption> &options) const {
+  common_json options_json = common_json::array();
+
+  for (const auto &option : options) {
+    common_json option_json = common_json::object();
+    option_json["key"] = option.key;
+    option_json["description"] = option.description.empty()
+                                     ? common_json()
+                                     : common_json(option.description);
+    options_json.push_back(option_json);
+  }
+
+  common_json inp = common_json::object();
+  inp["id"] = std::string("question");
+  inp["type"] = std::string(decision_question_type_name(question.type));
+  inp["instructions"] = question.instructions;
+  inp["state"] = question.state;
+  inp["options"] = options_json;
+  inp["images"] = common_json::array();
+
+  // user content must never inject the option marker
+  if (!this->decision_text_marker_.empty()) {
+    inp = decision_replace_text(inp, this->decision_text_marker_, " ");
+  }
+
+  jinja::context ctx(this->decision_template_->source());
+  jinja::global_from_json(ctx, inp, false);
+  jinja::runtime runtime(ctx);
+  const jinja::value results = runtime.execute(this->decision_template_->prog);
+  return jinja::runtime::gather_string_parts(results)->as_string().str();
+}
+
+bool Llama::fill_task_laya(std::vector<llama_token> &tokens,
+                           size_t n_options) const {
+  constexpr size_t max_option_tokens = 48;
+
+  std::vector<size_t> markers;
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    if (tokens[i] == this->decision_token_marker_) {
+      markers.push_back(i);
+    }
+  }
+
+  if (markers.size() != n_options || markers[0] < 2 ||
+      tokens[markers[0] - 1] != this->decision_token_sep_ ||
+      tokens.back() != this->decision_token_sep_) {
+    return false;
+  }
+
+  const size_t head_end = markers[0] - 1;
+  const size_t opts_end = std::find(tokens.begin() + markers.back(),
+                                    tokens.end(), this->decision_token_sep_) -
+                          tokens.begin();
+  if (opts_end + 1 >= tokens.size()) {
+    return false;
+  }
+
+  std::vector<std::vector<llama_token>> options;
+  size_t n_options_tokens = 0;
+  auto set_max = [&](size_t n_max) {
+    n_options_tokens = 0;
+    for (auto &option : options) {
+      option.resize(std::min(option.size(), n_max));
+      n_options_tokens += option.size();
+    }
+  };
+
+  for (size_t i = 0; i < n_options; ++i) {
+    const size_t end = i + 1 < n_options ? markers[i + 1] : opts_end;
+    options.emplace_back(tokens.begin() + markers[i], tokens.begin() + end);
+  }
+
+  set_max(max_option_tokens + 1);
+  if (n_options_tokens + 16 > this->decision_max_head_tokens_) {
+    set_max(std::max((size_t)4,
+                     (this->decision_max_head_tokens_ -
+                      std::min(this->decision_max_head_tokens_, (size_t)16)) /
+                         n_options));
+  }
+  const size_t n_question_max =
+      std::max((size_t)8,
+               this->decision_max_head_tokens_ -
+                   std::min(this->decision_max_head_tokens_, n_options_tokens));
+
+  std::vector<llama_token> out;
+  out.push_back(tokens[0]);
+  out.insert(out.end(), tokens.begin() + 1,
+             tokens.begin() + std::min(head_end, 1 + n_question_max));
+  out.push_back(this->decision_token_sep_);
+  for (const auto &option : options) {
+    out.insert(out.end(), option.begin(), option.end());
+  }
+  out.insert(out.end(), tokens.begin() + opts_end, tokens.end());
+  tokens = std::move(out);
+
+  return true;
+}
+
+float Llama::get_decision_temperature(DecisionQuestionType type,
+                                      size_t n_options) const {
+  const std::string type_name = decision_question_type_name(type);
+  const std::string bucket = n_options <= 2    ? "2"
+                             : n_options <= 5  ? "3_5"
+                             : n_options <= 10 ? "6_10"
+                                               : "11";
+
+  for (const auto &name : {type_name + "." + bucket, type_name}) {
+    const auto it = this->decision_temperatures_.find(name);
+    if (it != this->decision_temperatures_.end()) {
+      return it->second;
+    }
+  }
+
+  return 1.0f;
+}
+
+DecisionAnswer
+Llama::format_decision_answer(DecisionQuestionType type,
+                              const std::vector<DecisionOption> &options,
+                              const std::vector<float> &scores) const {
+  const size_t n = options.size();
+
+  if (scores.size() != n) {
+    throw std::runtime_error(
+        "decision result does not match the number of options");
+  }
+  if (std::any_of(scores.begin(), scores.end(),
+                  [](float value) { return std::isnan(value); })) {
+    throw std::runtime_error("the model could not evaluate the decision");
+  }
+
+  const float temperature = this->get_decision_temperature(type, n);
+
+  // softmax over the option scores
+  const float score_max = *std::max_element(scores.begin(), scores.end());
+  std::vector<double> probs(n, 0.0);
+  double sum = 0.0;
+  for (size_t i = 0; i < n; ++i) {
+    probs[i] = std::exp((double)(scores[i] - score_max) / temperature);
+    sum += probs[i];
+  }
+  for (size_t i = 0; i < n; ++i) {
+    probs[i] /= sum;
+  }
+
+  DecisionAnswer answer;
+  answer.type = type;
+  for (size_t i = 0; i < n; ++i) {
+    answer.keys.push_back(options[i].key);
+    answer.probabilities.push_back((float)probs[i]);
+  }
+
+  if (type == DECISION_QUESTION_NOUL) {
+    for (size_t i = 0; i < n; ++i) {
+      if (options[i].key == "true") {
+        answer.noul = (float)probs[i];
+      }
+    }
+    return answer;
+  }
+
+  if (type == DECISION_QUESTION_CHOICE) {
+    const size_t best =
+        std::max_element(probs.begin(), probs.end()) - probs.begin();
+    answer.choice = options[best].key;
+
+    if (n >= 2) {
+      const double uniform = 1.0 / n;
+      const double p_max = *std::max_element(probs.begin(), probs.end());
+      answer.confidence =
+          (float)std::max(0.0, (p_max - uniform) / (1.0 - uniform));
+    } else {
+      answer.confidence = 1.0f;
+    }
+    return answer;
+  }
+
+  double expected = 0.0;
+  for (size_t i = 0; i < n; ++i) {
+    expected += i * probs[i];
+  }
+  answer.score = (float)expected;
+
+  if (n >= 2) {
+    const size_t mode =
+        std::max_element(probs.begin(), probs.end()) - probs.begin();
+    double dist = 0.0;
+    double dist_uniform = 0.0;
+    for (size_t i = 0; i < n; ++i) {
+      dist += probs[i] * std::fabs((double)i - (double)mode);
+      dist_uniform += std::fabs((double)i - (n - 1) / 2.0) / n;
+    }
+    answer.confidence = (float)std::max(0.0, 1.0 - dist / dist_uniform);
+  } else {
+    answer.confidence = 1.0f;
+  }
+
+  return answer;
+}
+
+Result<DecisionAnswer>
+Llama::evaluate_decision(const DecisionQuestion &question) {
+  if (!this->is_decision()) {
+    return Result<DecisionAnswer>::error(
+        "Llama must be created with a decision model to evaluate questions");
+  }
+
+  std::vector<DecisionOption> options;
+
+  switch (question.type) {
+  case DECISION_QUESTION_CHOICE: {
+    if (question.keys.empty()) {
+      return Result<DecisionAnswer>::error(
+          "choice questions need at least one option key");
+    }
+    if (!question.descriptions.empty() &&
+        question.descriptions.size() != question.keys.size()) {
+      return Result<DecisionAnswer>::error(
+          "keys and descriptions must have the same size");
+    }
+    for (size_t i = 0; i < question.keys.size(); ++i) {
+      if (question.keys[i].empty()) {
+        return Result<DecisionAnswer>::error("option keys must not be empty");
+      }
+      options.push_back({question.keys[i], question.descriptions.empty()
+                                               ? ""
+                                               : question.descriptions[i]});
+    }
+    break;
+  }
+  case DECISION_QUESTION_SCORE: {
+    if (question.descriptions.size() < 2 || question.descriptions.size() > 10) {
+      return Result<DecisionAnswer>::error(
+          "score questions need between 2 and 10 levels");
+    }
+    for (size_t i = 0; i < question.descriptions.size(); ++i) {
+      options.push_back({std::to_string(i), question.descriptions[i]});
+    }
+    break;
+  }
+  case DECISION_QUESTION_NOUL: {
+    if (!question.descriptions.empty() && question.descriptions.size() != 2) {
+      return Result<DecisionAnswer>::error(
+          "noul questions take at most two descriptions (false, true)");
+    }
+    options.push_back({"false", question.descriptions.size() > 0
+                                    ? question.descriptions[0]
+                                    : ""});
+    options.push_back({"true", question.descriptions.size() > 1
+                                   ? question.descriptions[1]
+                                   : ""});
+    break;
+  }
+  default:
+    return Result<DecisionAnswer>::error("unknown decision question type");
+  }
+
+  if (options.size() > 255) {
+    return Result<DecisionAnswer>::error(
+        "too many options, this model supports at most 255");
+  }
+
+  std::string prompt;
+  try {
+    prompt = this->render_decision_prompt(question, options);
+  } catch (const std::exception &e) {
+    return Result<DecisionAnswer>::error(
+        std::string("Failed to render the decision prompt: ") + e.what());
+  }
+
+  std::vector<llama_token> tokens =
+      common_tokenize(this->get_vocab(), prompt, false, true);
+
+  if (!this->fill_task_laya(tokens, options.size())) {
+    return Result<DecisionAnswer>::error(
+        "Unexpected layout of the decision prompt");
+  }
+
+  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
+    return Result<DecisionAnswer>::error(
+        "The question, its options and the state must fit in one batch; "
+        "increase context.n_batch");
+  }
+
+  auto slot = this->slot_manager_->wait_for_available_slot();
+  if (!slot) {
+    return Result<DecisionAnswer>::error(
+        "No slot available for decision evaluation");
+  }
+
+  const uint64_t gid = llama_utils::generate_random_uint64();
+  slot->goal_id = gid;
+  auto fut = this->task_registry_->register_pending(gid);
+
+  const int32_t column = static_cast<int32_t>(question.type);
+  this->handle_decision_req(tokens, column, slot);
+
+  try {
+    auto result = fut.get();
+
+    if (auto *out = dynamic_cast<ServerTaskResultDecision *>(result.get())) {
+      return Result<DecisionAnswer>::ok(
+          this->format_decision_answer(question.type, options, out->scores));
+    }
+    return Result<DecisionAnswer>::error("Invalid result type returned");
+  } catch (const std::exception &e) {
+    return Result<DecisionAnswer>::error(
+        std::string("Exception during decision evaluation: ") + e.what());
+  }
+}
+
+void Llama::send_decision_result(ServerSlot *slot, int32_t off,
+                                 int32_t n_tokens) {
+  auto result = std::make_unique<ServerTaskResultDecision>();
+  result->id_slot = slot->id;
+  result->id = slot->goal_id;
+  result->n_tokens = n_tokens;
+
+  const int32_t n_embd_out = llama_model_n_embd_out(this->model);
+
+  size_t n_expected = 0;
+  for (const auto token : slot->prompt_tokens) {
+    if (token == this->decision_token_marker_) {
+      n_expected++;
+    }
+  }
+
+  for (int32_t i = 0; i < n_tokens; ++i) {
+    const auto &batch_token = this->batch.tokens[off + i];
+    if (!batch_token.output || batch_token.seq_id != slot->id ||
+        batch_token.id != this->decision_token_marker_) {
+      continue;
+    }
+
+    if (slot->decision_column < 0 || slot->decision_column >= n_embd_out) {
+      this->fail_pending(slot->goal_id, "Invalid decision question type");
+      return;
+    }
+
+    const float *embd = llama_get_embeddings_ith(this->ctx, i);
+    if (embd == nullptr) {
+      this->fail_pending(slot->goal_id,
+                         "Failed to get decision embeddings, the question and "
+                         "its options must fit in one batch");
+      return;
+    }
+
+    result->scores.push_back(embd[slot->decision_column]);
+  }
+
+  if (result->scores.size() != n_expected) {
+    this->fail_pending(slot->goal_id,
+                       "Failed to read all decision option scores, the "
+                       "question and its options must fit in one batch");
+    return;
+  }
+
+  const auto id = result->id;
+  this->fulfill_pending(id, std::move(result));
 }
 
 /*
@@ -1472,8 +1960,8 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   }
 
   // Build batch: [id_last, draft0, draft1, ..., draftN-1]
-  common_batch_clear(this->batch);
-  common_batch_add(this->batch, id_last, slot->n_past, {slot->id}, true);
+  this->batch.clear();
+  this->batch.add(id_last, slot->n_past, slot->id, true);
 
   // Skip small drafts
   if ((int)draft.size() < spec_params.draft.n_min) {
@@ -1481,8 +1969,7 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   }
 
   for (size_t i = 0; i < draft.size(); ++i) {
-    common_batch_add(this->batch, draft[i], slot->n_past + 1 + i, {slot->id},
-                     true);
+    this->batch.add(draft[i], slot->n_past + 1 + i, slot->id, true);
   }
 
   // Roll back ctx_dft after draft: draft() advanced ctx_dft's KV cache to
@@ -1496,7 +1983,8 @@ bool Llama::speculative_generation_step(ServerSlot *slot) {
   }
 
   // Decode the batch on the target model
-  const int ret = llama_decode(this->ctx, this->batch);
+  const int ret =
+      llama_process(this->ctx, LLAMA_PROCESS_TYPE_DECODE, this->batch.get());
   if (ret != 0) {
     LLAMA_LOG_ERROR("Speculative decode failed with error %d (slot id=%d "
                     "gid=%lu n_past=%d n_ctx=%d n_decoded=%d)",
@@ -1695,7 +2183,7 @@ void Llama::run_loop() {
     }
 
     // start populating the batch for this iteration
-    common_batch_clear(this->batch);
+    this->batch.clear();
 
     for (auto &slot : this->server_slots) {
       if (slot.state != SLOT_STATE_GENERATING) {
@@ -1712,15 +2200,15 @@ void Llama::run_loop() {
         slot_batched = &slot;
       }
 
-      slot.i_batch = this->batch.n_tokens;
-      common_batch_add(this->batch, slot.sampled, slot.n_past, {slot.id}, true);
+      slot.i_batch = this->batch.size();
+      this->batch.add(slot.sampled, slot.n_past, slot.id, true);
 
       slot.n_past += 1;
     }
 
     // Process prompts (new inputs)
     int32_t n_batch = llama_n_batch(this->ctx);
-    if (this->params.cont_batching || this->batch.n_tokens == 0) {
+    if (this->params.cont_batching || this->batch.size() == 0) {
       for (auto &slot : this->server_slots) {
         // ensure batch-compatibility across slots
         if (slot.is_processing()) {
@@ -1760,8 +2248,9 @@ void Llama::run_loop() {
 
           // Reuse the KV-cached prefix when allowed; fall back to a full wipe
           // when the prompt diverges or caching is disabled for this slot.
-          const bool caching_allowed =
-              this->params.cache_prompt && !this->is_speculative();
+          const bool caching_allowed = this->params.cache_prompt &&
+                                       slot.cache_prompt &&
+                                       !this->is_speculative();
           auto *mem = llama_get_memory(this->ctx);
 
           size_t reused = 0;
@@ -1839,7 +2328,7 @@ void Llama::run_loop() {
         }
 
         // skip if batch is already full
-        if (static_cast<uint32_t>(this->batch.n_tokens) >=
+        if (static_cast<uint32_t>(this->batch.size()) >=
             llama_n_batch(this->ctx)) {
           continue;
         }
@@ -1852,7 +2341,7 @@ void Llama::run_loop() {
 
         // enqueue prompt tokens up to the available batch capacity
         while (slot.n_past < slot.n_prompt_tokens) {
-          if (static_cast<uint32_t>(this->batch.n_tokens) >=
+          if (static_cast<uint32_t>(this->batch.size()) >=
               llama_n_batch(this->ctx)) {
             break; // batch is full, continue in the next iteration
           }
@@ -1861,10 +2350,10 @@ void Llama::run_loop() {
           if (cur_tok == LLAMA_TOKEN_NULL) {
             break; // end of text chunk
           }
-          const bool need_embd = this->is_embedding() || this->is_reranking();
+          const bool need_embd = this->is_embedding() || this->is_reranking() ||
+                                 this->is_decision();
 
-          common_batch_add(this->batch, cur_tok, slot.n_past, {slot.id},
-                           need_embd);
+          this->batch.add(cur_tok, slot.n_past, slot.id, need_embd);
 
           slot.n_prompt_tokens_processed++;
           slot.n_past++;
@@ -1888,20 +2377,20 @@ void Llama::run_loop() {
           }
 
           // request logits for the last prompt token
-          this->batch.logits[this->batch.n_tokens - 1] = true;
+          this->batch.set_output(this->batch.size() - 1, true);
 
           slot.n_decoded = 0;
-          slot.i_batch = this->batch.n_tokens - 1;
+          slot.i_batch = this->batch.size() - 1;
 
           // Only completion tasks benefit from prefix reuse; an embedding or
           // rerank prompt would mismatch the next request's task type.
           // Cache metadata is committed only after successful decode below.
 
           LLAMA_LOG_INFO("prompt done, n_past = %d, n_tokens = %d\n",
-                         slot.n_past, this->batch.n_tokens);
+                         slot.n_past, this->batch.size());
         }
 
-        if (static_cast<uint32_t>(this->batch.n_tokens) >=
+        if (static_cast<uint32_t>(this->batch.size()) >=
             llama_n_batch(this->ctx)) {
           LLAMA_LOG_DEBUG("Batch full, remaining prompt tokens will be "
                           "processed in the next iteration");
@@ -1912,7 +2401,7 @@ void Llama::run_loop() {
 
     // Check if there are no tokens to decode (expected when slots are
     // SLOT_STATE_RESERVED — waiting for prompt population by the worker thread)
-    if (this->batch.n_tokens == 0) {
+    if (this->batch.size() == 0) {
       LLAMA_LOG_DEBUG("No tokens to decode in this iteration (slot may be "
                       "reserved, waiting for prompt)");
       continue;
@@ -1920,19 +2409,11 @@ void Llama::run_loop() {
 
     int32_t i_next = 0;
 
-    LLAMA_LOG_DEBUG("Decoding batch of %d tokens", this->batch.n_tokens);
-    for (int32_t i = 0; i < this->batch.n_tokens; i = i_next) {
-      const int32_t n_tokens = std::min(n_batch, this->batch.n_tokens - i);
+    LLAMA_LOG_DEBUG("Decoding batch of %d tokens", this->batch.size());
+    for (int32_t i = 0; i < this->batch.size(); i = i_next) {
+      const int32_t n_tokens = std::min(n_batch, this->batch.size() - i);
 
-      llama_batch batch_view = {
-          n_tokens,
-          this->batch.token + i,
-          nullptr,
-          this->batch.pos + i,
-          this->batch.n_seq_id + i,
-          this->batch.seq_id + i,
-          this->batch.logits + i,
-      };
+      llama_batch_ext *batch_view = this->batch.get_sub_batch(i, n_tokens);
 
       // A shared batch must never be aborted for just one of its goals.
       // Other configurations retain cooperative cancellation at decode/step
@@ -1953,7 +2434,7 @@ void Llama::run_loop() {
       int ret;
       {
         ScopedDecodeAbort abort_guard(this->ctx, std::move(abort_callback));
-        ret = llama_decode(this->ctx, batch_view);
+        ret = llama_process(this->ctx, LLAMA_PROCESS_TYPE_DECODE, batch_view);
       }
       if (ret == 2) {
         // v0.4.1 removes the failed ubatch and all following positions.
@@ -2014,7 +2495,7 @@ void Llama::run_loop() {
         if (!err.empty()) {
           LLAMA_LOG_ERROR("Decoding error: %s (ret=%d, n_batch=%d, i=%d, "
                           "batch_n_tokens=%d)",
-                          err.c_str(), ret, n_tokens, i, this->batch.n_tokens);
+                          err.c_str(), ret, n_tokens, i, this->batch.size());
           // A decode failure leaves the KV state of every active slot
           // unknown; drop their prefix caches so the next request re-processes.
           for (auto &slot : this->server_slots) {
@@ -2039,9 +2520,14 @@ void Llama::run_loop() {
       }
 
       for (int32_t t = 0; t < n_tokens; ++t) {
-        for (int32_t s = 0; s < batch_view.n_seq_id[t]; ++s) {
-          auto &slot = this->server_slots[batch_view.seq_id[t][s]];
-          slot.n_kv_cache = std::max(slot.n_kv_cache, batch_view.pos[t] + 1);
+        const auto &batch_token = this->batch.tokens[i + t];
+        auto update_kv_cache = [&](llama_seq_id seq_id) {
+          auto &slot = this->server_slots[seq_id];
+          slot.n_kv_cache = std::max(slot.n_kv_cache, batch_token.pos[0] + 1);
+        };
+        update_kv_cache(batch_token.seq_id);
+        for (const auto seq_id : batch_token.seq_ids_extra) {
+          update_kv_cache(seq_id);
         }
       }
       for (auto &slot : this->server_slots) {
@@ -2063,7 +2549,16 @@ void Llama::run_loop() {
 
       // Feed hidden states to speculative decoder (required for MTP).
       if (this->speculative_ != nullptr) {
-        common_speculative_process(this->speculative_, batch_view);
+        common_batch speculative_batch(this->ctx);
+        for (int32_t t = 0; t < n_tokens; ++t) {
+          const auto &batch_token = this->batch.tokens[i + t];
+          speculative_batch.add(batch_token.id, batch_token.pos[0],
+                                batch_token.seq_id, batch_token.output);
+          for (const auto seq_id : batch_token.seq_ids_extra) {
+            speculative_batch.add_seq(speculative_batch.size() - 1, seq_id);
+          }
+        }
+        common_speculative_process(this->speculative_, speculative_batch);
       }
 
       // Consume results per-slot for the tokens we just decoded
@@ -2087,14 +2582,21 @@ void Llama::run_loop() {
         // If we just finished prompt eval for this slot, branch by task type
         if (slot.state == SLOT_STATE_DONE_PROMPT) {
           if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING) {
-            this->send_embedding_result(&slot, batch_view);
+            this->send_embedding_result(&slot, i, n_tokens);
             this->release_slot(&slot);
             slot.i_batch = -1;
             continue;
           }
 
           if (slot.task_type == SERVER_TASK_TYPE_RERANK) {
-            this->send_rerank_result(&slot, batch_view);
+            this->send_rerank_result(&slot, i, n_tokens);
+            this->release_slot(&slot);
+            slot.i_batch = -1;
+            continue;
+          }
+
+          if (slot.task_type == SERVER_TASK_TYPE_DECISION) {
+            this->send_decision_result(&slot, i, n_tokens);
             this->release_slot(&slot);
             slot.i_batch = -1;
             continue;
@@ -2219,6 +2721,11 @@ void Llama::handle_rerank_req(const std::string &query,
   this->rerank_handler_->handle(query, document, slot);
 }
 
+void Llama::handle_decision_req(const std::vector<llama_token> &tokens,
+                                int32_t column, ServerSlot *slot) {
+  this->decision_handler_->handle(tokens, column, slot);
+}
+
 void Llama::handle_completion_req(const std::string &input_prompt,
                                   ServerSlot *slot,
                                   common_params_sampling sparams,
@@ -2239,17 +2746,19 @@ void Llama::handle_chat_completion_req(
 *   RESULT HANDLERS         *
 *****************************
 */
-void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
+void Llama::send_embedding_result(ServerSlot *slot, int32_t off,
+                                  int32_t n_tokens) {
   auto result = std::make_unique<ServerTaskResultEmbedding>();
   result->id_slot = slot->id;
   result->id = slot->goal_id;
-  result->n_tokens = batch.n_tokens;
+  result->n_tokens = n_tokens;
   const int n_embd = llama_model_n_embd(this->model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
 
-  for (int i = 0; i < batch.n_tokens; ++i) {
-    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
+  for (int32_t i = 0; i < n_tokens; ++i) {
+    const auto &batch_token = this->batch.tokens[off + i];
+    if (!batch_token.output || batch_token.seq_id != slot->id) {
       continue;
     }
 
@@ -2257,12 +2766,12 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
     if (llama_pooling_type(this->ctx) == LLAMA_POOLING_TYPE_NONE) {
       embd = llama_get_embeddings_ith(this->ctx, i);
     } else {
-      embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
+      embd = llama_get_embeddings_seq(this->ctx, batch_token.seq_id);
     }
 
     if (embd == nullptr) {
       LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
-                      batch.token[i], batch.seq_id[i][0]);
+                      batch_token.id, batch_token.seq_id);
 
       result->embeddings.push_back(std::vector<float>(n_embd, 0.0f));
       continue;
@@ -2283,23 +2792,25 @@ void Llama::send_embedding_result(ServerSlot *slot, const llama_batch &batch) {
   this->fulfill_pending(id, std::move(result));
 }
 
-void Llama::send_rerank_result(ServerSlot *slot, const llama_batch &batch) {
+void Llama::send_rerank_result(ServerSlot *slot, int32_t off,
+                               int32_t n_tokens) {
   auto result = std::make_unique<ServerTaskResultRerank>();
   result->id_slot = slot->id;
   result->id = slot->goal_id;
-  for (int i = 0; i < batch.n_tokens; ++i) {
-    if (!batch.logits[i] || batch.seq_id[i][0] != slot->id) {
+  for (int32_t i = 0; i < n_tokens; ++i) {
+    const auto &batch_token = this->batch.tokens[off + i];
+    if (!batch_token.output || batch_token.seq_id != slot->id) {
       continue;
     }
 
-    const float *embd = llama_get_embeddings_seq(this->ctx, batch.seq_id[i][0]);
+    const float *embd = llama_get_embeddings_seq(this->ctx, batch_token.seq_id);
     if (embd == NULL) {
       embd = llama_get_embeddings_ith(this->ctx, i);
     }
 
     if (embd == NULL) {
       LLAMA_LOG_ERROR("failed to get embeddings, token = %d, seq_id = %d\n",
-                      batch.token[i], batch.seq_id[i][0]);
+                      batch_token.id, batch_token.seq_id);
 
       result->score = -1e6;
       continue;

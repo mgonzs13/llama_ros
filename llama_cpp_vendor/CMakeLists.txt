@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        v0.5.0
+  GIT_TAG        b11385
   GIT_SHALLOW    FALSE
 )
 
@@ -88,6 +88,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-image.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
@@ -129,6 +130,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/ling3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp

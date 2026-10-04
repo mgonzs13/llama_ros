@@ -36,6 +36,7 @@
 #include "llama_msgs/action/generate_chat_completions.hpp"
 #include "llama_msgs/action/generate_response.hpp"
 #include "llama_msgs/srv/detokenize.hpp"
+#include "llama_msgs/srv/evaluate_decision.hpp"
 #include "llama_msgs/srv/generate_embeddings.hpp"
 #include "llama_msgs/srv/get_metadata.hpp"
 #include "llama_msgs/srv/list_lo_r_as.hpp"
@@ -323,6 +324,15 @@ private:
       generate_embeddings_service_;
 
   /**
+   * @brief Service for evaluating decision questions.
+   *
+   * This service allows clients to evaluate typed questions with a decision
+   * model.
+   */
+  rclcpp::Service<llama_msgs::srv::EvaluateDecision>::SharedPtr
+      evaluate_decision_service_;
+
+  /**
    * @brief Service for reranking documents.
    *
    * This service allows clients to rerank a set of documents based on a query.
@@ -425,6 +435,18 @@ private:
       const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request>
           request,
       std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response);
+
+  /**
+   * @brief Callback for the EvaluateDecision service.
+   *
+   * This service evaluates a typed question with a decision model.
+   *
+   * @param request The request object containing the question.
+   * @param response The response object to populate with the answer.
+   */
+  void evaluate_decision_service_callback(
+      const std::shared_ptr<llama_msgs::srv::EvaluateDecision::Request> request,
+      std::shared_ptr<llama_msgs::srv::EvaluateDecision::Response> response);
 
   /**
    * @brief Callback for the RerankDocuments service.

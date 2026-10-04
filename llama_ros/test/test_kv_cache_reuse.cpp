@@ -145,13 +145,11 @@ TEST(ServerSlotChunkReuseTest, ReusesMatchingChunkWithShift) {
 
   const std::vector<llama_token> cached = {10, 20, 30, 40, 50, 60, 70, 80};
 
-  llama_batch batch = llama_batch_init((int32_t)cached.size(), 0, 1);
+  common_batch batch(ctx);
   for (size_t i = 0; i < cached.size(); i++) {
-    common_batch_add(batch, cached[i], (llama_pos)i, {0},
-                     i + 1 == cached.size());
+    batch.add(cached[i], (llama_pos)i, 0, i + 1 == cached.size());
   }
-  ASSERT_EQ(llama_decode(ctx, batch), 0);
-  llama_batch_free(batch);
+  ASSERT_EQ(llama_process(ctx, LLAMA_PROCESS_TYPE_DECODE, batch.get()), 0);
 
   ServerSlot slot;
   slot.id = 0;

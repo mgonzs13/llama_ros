@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: ggml-org/Laya-GGUF
+      filename: Laya-Q8_0.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 2048
+      n_predict: 2048
+      embedding: true
+      pooling_type: none
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: -1
+
+    # CPU parameters
+    cpu:
+      n_threads: -1

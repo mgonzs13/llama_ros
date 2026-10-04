@@ -114,6 +114,24 @@ private:
 };
 
 /**
+ * @brief Handles decision evaluation requests.
+ */
+class DecisionRequestHandler : public RequestHandler {
+public:
+  explicit DecisionRequestHandler(Llama *llama) : RequestHandler(llama) {}
+
+  /**
+   * @brief Prepares a slot for decision evaluation.
+   *
+   * @param tokens The tokenized decision prompt.
+   * @param column The question type column read from the embeddings output.
+   * @param slot The slot to prepare.
+   */
+  void handle(const std::vector<llama_token> &tokens, int32_t column,
+              ServerSlot *slot);
+};
+
+/**
  * @brief Handles text completion requests.
  */
 class CompletionRequestHandler : public RequestHandler {

@@ -154,7 +154,63 @@ enum ServerTaskType {
   SERVER_TASK_TYPE_COMPLETION, ///< Text completion task.
   SERVER_TASK_TYPE_EMBEDDING,  ///< Embedding generation task.
   SERVER_TASK_TYPE_RERANK,     ///< Document reranking task.
+  SERVER_TASK_TYPE_DECISION,   ///< Decision evaluation task.
   SERVER_TASK_TYPE_CANCEL,     ///< Task cancellation.
+};
+
+/**
+ * @brief Represents the type of a decision question.
+ */
+enum DecisionQuestionType {
+  DECISION_QUESTION_CHOICE = 0, ///< Pick one option.
+  DECISION_QUESTION_SCORE = 1,  ///< Rate along ordered levels.
+  DECISION_QUESTION_NOUL = 2,   ///< Probability that a statement holds.
+};
+
+/**
+ * @brief Represents a question for a decision model.
+ */
+struct DecisionQuestion {
+  /// @brief The question type.
+  DecisionQuestionType type;
+
+  /// @brief The question instructions.
+  std::string instructions;
+
+  /// @brief The state the question is about.
+  std::string state;
+
+  /// @brief The option keys (choice only, ignored otherwise).
+  std::vector<std::string> keys;
+
+  /// @brief The option descriptions (aligned with keys or levels).
+  std::vector<std::string> descriptions;
+};
+
+/**
+ * @brief Represents an answer from a decision model.
+ */
+struct DecisionAnswer {
+  /// @brief The question type.
+  DecisionQuestionType type;
+
+  /// @brief The key of the best option (choice).
+  std::string choice;
+
+  /// @brief The expected level (score).
+  float score = 0.0f;
+
+  /// @brief The probability that the statement holds (noul).
+  float noul = 0.0f;
+
+  /// @brief The confidence of the answer.
+  float confidence = 0.0f;
+
+  /// @brief The keys of the ordered probabilities.
+  std::vector<std::string> keys;
+
+  /// @brief The probability of each option.
+  std::vector<float> probabilities;
 };
 
 /**

@@ -72,6 +72,17 @@ struct ServerTaskResultRerank : ServerTaskResult {
 };
 
 /**
+ * @brief Result of a decision evaluation task.
+ */
+struct ServerTaskResultDecision : ServerTaskResult {
+  /// @brief One raw score per option.
+  std::vector<float> scores;
+
+  /// @brief The number of tokens evaluated.
+  int32_t n_tokens;
+};
+
+/**
  * @brief Partial result of a completion task (used during streaming).
  */
 struct ServerTaskResultCompletionPartial : ServerTaskResult {
