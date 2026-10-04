@@ -12,7 +12,7 @@ set(DEMO_NODES
   llama_demo_node
   llama_embeddings_demo_node
   llama_rerank_demo_node
-  laya_demo_node
+  decision_demo_node
   llama_rag_demo_node
   llava_demo_node
   mtmd_audio_demo_node

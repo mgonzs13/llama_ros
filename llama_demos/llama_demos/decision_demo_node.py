@@ -29,15 +29,12 @@ import rclpy
 from llama_ros.llama_client_node import LlamaClientNode
 from llama_msgs.srv import EvaluateDecision
 
-# Laya is trained on typed/structured states with qualitative labels, so the
-# state is given as JSON and the key facts are also spelled out in the
-# instructions.
 SCENARIOS = [
     {
         "name": "low battery, full dustbin",
         "hint": "The battery is low and the dustbin is full.",
         "state": {
-            "battery": "low (12%)",
+            "battery": "low (5%)",
             "dustbin": "full",
             "dock_distance_m": 4,
             "task": "cleaning the living room",

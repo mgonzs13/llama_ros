@@ -2,8 +2,8 @@
   ros__parameters:
     # Model parameters
     model:
-      repo: ggml-org/Laya-GGUF
-      filename: Laya-Q8_0.gguf
+      repo: ggml-org/Julia-1-GGUF
+      filename: Julia-1-BF16.gguf
 
     # Context / inference parameters
     context:

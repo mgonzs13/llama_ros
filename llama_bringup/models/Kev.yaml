@@ -2,8 +2,8 @@
   ros__parameters:
     # Model parameters
     model:
-      repo: ggml-org/Laya-GGUF
-      filename: Laya-Q8_0.gguf
+      repo: ggml-org/Kev-4B-GGUF
+      filename: Kev-4B-Q4_K_M.gguf
 
     # Context / inference parameters
     context:
