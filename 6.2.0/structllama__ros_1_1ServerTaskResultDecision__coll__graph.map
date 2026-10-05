@@ -1,0 +1,7 @@
+<map id="llama_ros::ServerTaskResultDecision" name="llama_ros::ServerTaskResultDecision">
+<area shape="rect" id="Node000001" title="Result of a decision evaluation task." alt="" coords="96,102,283,143"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1ServerTaskResult.html" title="Base class for server task results." alt="" coords="5,5,193,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,41,174,100,170,103,118,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="217,5,344,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="262,44,209,103,205,100,258,41"/>
+</map>

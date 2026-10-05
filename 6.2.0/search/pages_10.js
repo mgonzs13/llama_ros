@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['samplingconfig_0',['&lt;span class=&quot;tt&quot;&gt;SamplingConfig&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/SamplingConfig&lt;/span&gt;)',['../index.html#autotoc_md45',1,'']]],
+  ['samplingconfig_20llama_5fmsgs_20msg_20samplingconfig_1',['&lt;span class=&quot;tt&quot;&gt;SamplingConfig&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/SamplingConfig&lt;/span&gt;)',['../index.html#autotoc_md45',1,'']]],
+  ['samplinginfo_2',['&lt;span class=&quot;tt&quot;&gt;SamplingInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/SamplingInfo&lt;/span&gt;)',['../index.html#autotoc_md62',1,'']]],
+  ['samplinginfo_20llama_5fmsgs_20msg_20samplinginfo_3',['&lt;span class=&quot;tt&quot;&gt;SamplingInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/SamplingInfo&lt;/span&gt;)',['../index.html#autotoc_md62',1,'']]],
+  ['shards_4',['llama_ros (YAML Config + model shards)',['../index.html#autotoc_md12',1,'']]],
+  ['simple_20speculative_20ngram_5fsimple_5',['Ngram-simple (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_simple.*&lt;/span&gt;)',['../index.html#autotoc_md38',1,'']]],
+  ['slots_20demo_6',['Parallel Slots Demo',['../index.html#autotoc_md127',1,'']]],
+  ['speculative_7',['Speculative Decoding (&lt;span class=&quot;tt&quot;&gt;speculative.*&lt;/span&gt;)',['../index.html#autotoc_md34',1,'']]],
+  ['speculative_20decoding_8',['llama_ros (Speculative Decoding)',['../index.html#autotoc_md13',1,'']]],
+  ['speculative_20decoding_20demo_9',['Speculative Decoding Demo',['../index.html#autotoc_md107',1,'MTP Speculative Decoding Demo'],['../index.html#autotoc_md106',1,'Speculative Decoding Demo']]],
+  ['speculative_20decoding_20speculative_10',['Speculative Decoding (&lt;span class=&quot;tt&quot;&gt;speculative.*&lt;/span&gt;)',['../index.html#autotoc_md34',1,'']]],
+  ['speculative_20draft_11',['Draft Model (&lt;span class=&quot;tt&quot;&gt;speculative.draft.*&lt;/span&gt;)',['../index.html#autotoc_md35',1,'']]],
+  ['speculative_20draft_20cpu_20and_20speculative_20draft_20cpu_5fbatch_12',['Draft CPU (&lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu.*&lt;/span&gt; and &lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu_batch.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['speculative_20draft_20cpu_5fbatch_13',['Draft CPU (&lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu.*&lt;/span&gt; and &lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu_batch.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['speculative_20ngram_5fcache_14',['Ngram-cache (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_cache.*&lt;/span&gt;)',['../index.html#autotoc_md41',1,'']]],
+  ['speculative_20ngram_5fmap_5fk_15',['Ngram-map-k (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_map_k.*&lt;/span&gt;)',['../index.html#autotoc_md39',1,'']]],
+  ['speculative_20ngram_5fmap_5fk4v_16',['Ngram-map-k4v (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_map_k4v.*&lt;/span&gt;)',['../index.html#autotoc_md40',1,'']]],
+  ['speculative_20ngram_5fmod_17',['Ngram-mod (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_mod.*&lt;/span&gt;)',['../index.html#autotoc_md37',1,'']]],
+  ['speculative_20ngram_5fsimple_18',['Ngram-simple (&lt;span class=&quot;tt&quot;&gt;speculative.ngram_simple.*&lt;/span&gt;)',['../index.html#autotoc_md38',1,'']]],
+  ['stream_19',['Stream',['../index.html#autotoc_md93',1,'llama_ros (Stream)'],['../index.html#autotoc_md112',1,'RAG Demo (LLM + chat template + RAG + Reranking + Stream)']]],
+  ['streaming_20tools_20demo_20',['Streaming Tools Demo',['../index.html#autotoc_md122',1,'']]],
+  ['structured_20output_21',['chat_llama_ros (Structured output)',['../index.html#autotoc_md100',1,'']]],
+  ['structured_20output_20demo_22',['Chat Structured Output Demo',['../index.html#autotoc_md120',1,'']]]
+];

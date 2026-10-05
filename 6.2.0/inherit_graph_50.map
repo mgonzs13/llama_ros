@@ -1,0 +1,37 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,343,98,368"/>
+<area shape="rect" id="Node000001" href="$classGenerateChatActionTestFixture.html" title=" " alt="" coords="146,5,349,31"/>
+<area shape="poly" id="edge30_Node000000_Node000001" title=" " alt="" coords="50,327,53,268,66,191,78,151,95,111,116,74,144,42,161,29,164,34,147,45,121,77,99,113,83,152,72,192,59,269,55,328"/>
+<area shape="rect" id="Node000002" href="$classGenerateResponseActionTestFixture.html" title=" " alt="" coords="150,55,345,96"/>
+<area shape="poly" id="edge31_Node000000_Node000002" title=" " alt="" coords="53,327,61,279,77,220,103,159,122,131,144,106,159,94,162,98,147,109,126,134,108,161,82,222,66,280,58,328"/>
+<area shape="rect" id="Node000003" href="$classLlamaDecisionTest.html" title="Test suite for decision (Laya) functionality." alt="" coords="181,120,314,146"/>
+<area shape="poly" id="edge32_Node000000_Node000003" title=" " alt="" coords="55,327,65,288,83,241,108,195,125,173,144,155,161,144,180,137,181,142,163,149,147,159,129,177,113,197,87,244,70,289,60,328"/>
+<area shape="rect" id="Node000004" href="$classLlamaDeploymentTest.html" title="Test suite for LLM deployment and initialization." alt="" coords="172,169,323,195"/>
+<area shape="poly" id="edge33_Node000000_Node000004" title=" " alt="" coords="60,327,91,265,114,232,144,204,170,191,173,195,147,208,118,235,95,267,65,329"/>
+<area shape="rect" id="Node000005" href="$classLlamaEmbeddingsTest.html" title="Test suite for embeddings functionality." alt="" coords="170,219,324,244"/>
+<area shape="poly" id="edge34_Node000000_Node000005" title=" " alt="" coords="68,328,100,289,121,270,144,253,169,242,171,247,147,258,124,274,104,293,72,332"/>
+<area shape="rect" id="Node000006" href="$classLlamaEnvDecisionTest.html" title="Test suite for decision types without tiny GGUF models." alt="" coords="170,268,325,294"/>
+<area shape="poly" id="edge35_Node000000_Node000006" title=" " alt="" coords="85,332,145,302,178,292,180,297,147,307,87,337"/>
+<area shape="rect" id="Node000007" href="$classLlamaGenerationTest.html" title="Test suite for LLM text generation functionality." alt="" coords="174,317,320,343"/>
+<area shape="poly" id="edge36_Node000000_Node000007" title=" " alt="" coords="113,345,173,337,174,342,113,350"/>
+<area shape="rect" id="Node000008" href="$classLlamaLoRATest.html" title="Test suite for LoRA adapter functionality." alt="" coords="189,367,306,392"/>
+<area shape="poly" id="edge37_Node000000_Node000008" title=" " alt="" coords="114,360,189,370,188,375,113,366"/>
+<area shape="rect" id="Node000009" href="$classLlamaOpenJevTest.html" title="Test suite for the label&#45;logit decision path (OpenJEV)." alt="" coords="180,416,315,442"/>
+<area shape="poly" id="edge38_Node000000_Node000009" title=" " alt="" coords="89,374,147,402,180,413,179,418,145,407,86,379"/>
+<area shape="rect" id="Node000010" href="$classLlamaParamsTest.html" title="Test suite for LLM parameter configuration." alt="" coords="183,465,312,491"/>
+<area shape="poly" id="edge39_Node000000_Node000010" title=" " alt="" coords="72,379,104,417,125,436,147,452,184,466,182,471,144,457,121,440,100,421,68,382"/>
+<area shape="rect" id="Node000011" href="$classLlamaRerankingTest.html" title="Test suite for reranking functionality." alt="" coords="177,515,318,540"/>
+<area shape="poly" id="edge40_Node000000_Node000011" title=" " alt="" coords="65,381,95,443,119,475,147,501,177,516,175,521,144,506,115,478,91,446,60,384"/>
+<area shape="rect" id="Node000012" href="$classLlavaClefDecisionTest.html" title=" " alt="" coords="171,564,324,590"/>
+<area shape="poly" id="edge41_Node000000_Node000012" title=" " alt="" coords="61,383,71,422,88,467,113,513,147,551,172,564,169,569,144,555,109,516,83,469,66,423,56,385"/>
+<area shape="rect" id="Node000013" href="$classLlavaDecisionTest.html" title=" " alt="" coords="183,613,312,639"/>
+<area shape="poly" id="edge42_Node000000_Node000013" title=" " alt="" coords="58,383,65,431,80,490,107,550,125,577,147,600,164,611,183,618,181,623,162,616,144,604,121,580,102,552,75,491,60,432,52,384"/>
+<area shape="rect" id="Node000014" href="$classPrecomputeCancelTest.html" title="Real CPU inference tests with cancellation at known graph work." alt="" coords="169,663,326,688"/>
+<area shape="poly" id="edge43_Node000000_Node000014" title=" " alt="" coords="56,383,60,440,73,512,85,549,101,586,122,620,147,649,170,663,167,668,144,654,117,623,96,588,80,551,68,513,55,440,50,384"/>
+<area shape="rect" id="Node000015" href="$classInvalidatedCacheTest.html" title="Invalidated token metadata cannot be reused as materialized KV." alt="" coords="397,613,544,639"/>
+<area shape="poly" id="edge44_Node000014_Node000015" title=" " alt="" coords="323,656,409,637,410,642,324,661"/>
+<area shape="rect" id="Node000016" href="$classMultiSlotCancelTest.html" title="Shared decode batches must not be aborted for one canceled goal." alt="" coords="402,663,540,688"/>
+<area shape="poly" id="edge45_Node000014_Node000016" title=" " alt="" coords="342,673,401,673,401,678,342,678"/>
+<area shape="rect" id="Node000017" href="$classResetCacheTest.html" title="Explicit context resets must also discard host&#45;RAM snapshots." alt="" coords="412,712,530,738"/>
+<area shape="poly" id="edge46_Node000014_Node000017" title=" " alt="" coords="325,690,412,709,410,714,323,695"/>
+</map>

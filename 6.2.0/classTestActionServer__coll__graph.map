@@ -1,0 +1,11 @@
+<map id="TestActionServer&lt; ActionT &gt;" name="TestActionServer&lt; ActionT &gt;">
+<area shape="rect" id="Node000001" title=" " alt="" coords="502,63,691,88"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="235,5,328,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="345,23,479,45,544,59,542,65,477,50,344,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="196,55,368,96"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="384,73,501,73,501,78,384,78"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="200,120,364,146"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="379,118,477,101,544,86,545,92,479,106,380,123"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,120,87,146"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="102,130,200,130,200,136,102,136"/>
+</map>

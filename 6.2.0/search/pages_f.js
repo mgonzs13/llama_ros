@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['r1_0',['Chat Reasoning Demo (DeepSeek-R1)',['../index.html#autotoc_md123',1,'']]],
+  ['rag_1',['llama_ros_embeddings (RAG)',['../index.html#autotoc_md95',1,'']]],
+  ['rag_20demo_20llm_20chat_20template_20rag_20reranking_20stream_2',['RAG Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md112',1,'']]],
+  ['rag_20reranker_3',['llama_ros (LLM + RAG + Reranker)',['../index.html#autotoc_md97',1,'']]],
+  ['rag_20reranking_20stream_4',['RAG Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md112',1,'']]],
+  ['reasoning_5',['chat_llama_ros (Reasoning)',['../index.html#autotoc_md102',1,'']]],
+  ['reasoning_20demo_20deepseek_20r1_6',['Chat Reasoning Demo (DeepSeek-R1)',['../index.html#autotoc_md123',1,'']]],
+  ['reasoning_20tools_20demo_7',['Reasoning + Tools Demo',['../index.html#autotoc_md124',1,'']]],
+  ['related_20projects_8',['Related Projects',['../index.html#autotoc_md2',1,'']]],
+  ['rerank_20documents_9',['Rerank Documents',['../index.html#autotoc_md90',1,'']]],
+  ['reranker_10',['Reranker',['../index.html#autotoc_md97',1,'llama_ros (LLM + RAG + Reranker)'],['../index.html#autotoc_md96',1,'llama_ros (Reranker)']]],
+  ['reranking_20demo_11',['Reranking Demo',['../index.html#autotoc_md109',1,'']]],
+  ['reranking_20stream_12',['RAG Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md112',1,'']]],
+  ['response_13',['Response',['../index.html#autotoc_md66',1,'&lt;span class=&quot;tt&quot;&gt;Response&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/Response&lt;/span&gt;)'],['../index.html#autotoc_md86',1,'Generate Response']]],
+  ['response_20llama_5fmsgs_20msg_20response_14',['&lt;span class=&quot;tt&quot;&gt;Response&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/Response&lt;/span&gt;)',['../index.html#autotoc_md66',1,'']]],
+  ['response_20llava_15',['Generate Response (llava)',['../index.html#autotoc_md87',1,'']]],
+  ['result_20llama_5fmsgs_20action_20generatechatcompletions_16',['&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)',['../index.html#autotoc_md72',1,'']]],
+  ['result_20llama_5fmsgs_20action_20generateresponse_17',['&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)',['../index.html#autotoc_md78',1,'']]],
+  ['rope_18',['RoPE (&lt;span class=&quot;tt&quot;&gt;rope.*&lt;/span&gt;)',['../index.html#autotoc_md29',1,'']]],
+  ['rope_20rope_19',['RoPE (&lt;span class=&quot;tt&quot;&gt;rope.*&lt;/span&gt;)',['../index.html#autotoc_md29',1,'']]],
+  ['ropeinfo_20',['&lt;span class=&quot;tt&quot;&gt;RoPEInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/RoPEInfo&lt;/span&gt;)',['../index.html#autotoc_md59',1,'']]],
+  ['ropeinfo_20llama_5fmsgs_20msg_20ropeinfo_21',['&lt;span class=&quot;tt&quot;&gt;RoPEInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/RoPEInfo&lt;/span&gt;)',['../index.html#autotoc_md59',1,'']]],
+  ['ros_202_20clients_22',['ROS 2 Clients',['../index.html#autotoc_md82',1,'']]],
+  ['ros_202_20parameters_23',['ROS 2 Parameters',['../index.html#autotoc_md17',1,'']]]
+];

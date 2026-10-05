@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['general_0',['General',['../index.html#autotoc_md18',1,'']]],
+  ['generalinfo_1',['&lt;span class=&quot;tt&quot;&gt;GeneralInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/GeneralInfo&lt;/span&gt;)',['../index.html#autotoc_md56',1,'']]],
+  ['generalinfo_20llama_5fmsgs_20msg_20generalinfo_2',['&lt;span class=&quot;tt&quot;&gt;GeneralInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/GeneralInfo&lt;/span&gt;)',['../index.html#autotoc_md56',1,'']]],
+  ['generate_20chat_20completions_3',['Generate Chat Completions',['../index.html#autotoc_md88',1,'']]],
+  ['generate_20response_4',['Generate Response',['../index.html#autotoc_md86',1,'']]],
+  ['generate_20response_20llava_5',['Generate Response (llava)',['../index.html#autotoc_md87',1,'']]],
+  ['generatechatcompletions_6',['GenerateChatCompletions',['../index.html#autotoc_md74',1,'&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Feedback (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)'],['../index.html#autotoc_md71',1,'&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)'],['../index.html#autotoc_md72',1,'&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)']]],
+  ['generatechatcompletions_20feedback_20llama_5fmsgs_20action_20generatechatcompletions_7',['&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Feedback (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)',['../index.html#autotoc_md74',1,'']]],
+  ['generatechatcompletions_20goal_20llama_5fmsgs_20action_20generatechatcompletions_8',['&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)',['../index.html#autotoc_md71',1,'']]],
+  ['generatechatcompletions_20result_20llama_5fmsgs_20action_20generatechatcompletions_9',['&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)',['../index.html#autotoc_md72',1,'']]],
+  ['generateresponse_10',['GenerateResponse',['../index.html#autotoc_md79',1,'&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Feedback (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)'],['../index.html#autotoc_md77',1,'&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)'],['../index.html#autotoc_md78',1,'&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)']]],
+  ['generateresponse_20feedback_20llama_5fmsgs_20action_20generateresponse_11',['&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Feedback (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)',['../index.html#autotoc_md79',1,'']]],
+  ['generateresponse_20goal_20llama_5fmsgs_20action_20generateresponse_12',['&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)',['../index.html#autotoc_md77',1,'']]],
+  ['generateresponse_20result_20llama_5fmsgs_20action_20generateresponse_13',['&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Result (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)',['../index.html#autotoc_md78',1,'']]],
+  ['generating_20text_14',['Evaluate a prompt without generating text',['../index.html#autotoc_md128',1,'']]],
+  ['generation_20demo_15',['Embeddings Generation Demo',['../index.html#autotoc_md108',1,'']]],
+  ['get_20metadata_16',['Get Metadata',['../index.html#autotoc_md89',1,'']]],
+  ['goal_20llama_5fmsgs_20action_20generatechatcompletions_17',['&lt;span class=&quot;tt&quot;&gt;GenerateChatCompletions&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateChatCompletions&lt;/span&gt;)',['../index.html#autotoc_md71',1,'']]],
+  ['goal_20llama_5fmsgs_20action_20generateresponse_18',['&lt;span class=&quot;tt&quot;&gt;GenerateResponse&lt;/span&gt; Goal (&lt;span class=&quot;tt&quot;&gt;llama_msgs/action/GenerateResponse&lt;/span&gt;)',['../index.html#autotoc_md77',1,'']]],
+  ['gpu_19',['GPU / Backend (&lt;span class=&quot;tt&quot;&gt;gpu.*&lt;/span&gt;)',['../index.html#autotoc_md22',1,'']]],
+  ['gpu_20backend_20gpu_20',['GPU / Backend (&lt;span class=&quot;tt&quot;&gt;gpu.*&lt;/span&gt;)',['../index.html#autotoc_md22',1,'']]],
+  ['grammartrigger_21',['&lt;span class=&quot;tt&quot;&gt;GrammarTrigger&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/GrammarTrigger&lt;/span&gt;)',['../index.html#autotoc_md48',1,'']]],
+  ['grammartrigger_20llama_5fmsgs_20msg_20grammartrigger_22',['&lt;span class=&quot;tt&quot;&gt;GrammarTrigger&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/GrammarTrigger&lt;/span&gt;)',['../index.html#autotoc_md48',1,'']]],
+  ['group_20attention_20grp_5fattn_23',['Group Attention (&lt;span class=&quot;tt&quot;&gt;grp_attn.*&lt;/span&gt;)',['../index.html#autotoc_md31',1,'']]],
+  ['grp_5fattn_24',['Group Attention (&lt;span class=&quot;tt&quot;&gt;grp_attn.*&lt;/span&gt;)',['../index.html#autotoc_md31',1,'']]]
+];
