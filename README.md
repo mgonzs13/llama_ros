@@ -1053,6 +1053,18 @@ class ExampleNode(Node):
         metadata = self.srv_client.call(req).metadata
 ```
 
+The response contains the classic `general`, `model` and `tokenizer` blocks
+with untruncated values, extended with the model's `tags`, `languages`,
+`datasets` and `base_models`, the tokenizer `add_eos_token`,
+`mask_token_id` and named `chat_templates`, plus two new blocks: `sampling`
+(the model's recommended sampling defaults) and `decision` (`enabled`,
+`type`, `max_head_tokens`, `temperature_names`/`temperatures`,
+`systemone_template`). The `decision` block tells whether the node exposes
+`evaluate_decisions` and which upstream type the model declares, e.g. `laya`,
+`kev` or `openjev`; for a plain chat model without decision metadata it is
+disabled and empty. The `get_metadata` service is available for every model
+type (completion, embedding, reranking and decision).
+
 </details>
 
 #### Rerank Documents

@@ -23,3 +23,8 @@ string doi                      # Digital Object Identifier (DOI)
 string uuid                     # Universally unique identifier
 
 string file_type                # An enumerated value describing the type of the majority of the tensors in the file
+
+string[] tags                    # Tags associated with the model
+string[] languages               # Languages supported by the model
+string[] datasets                # Datasets used to train the model
+BaseModelInfo[] base_models      # Base models this model derives from

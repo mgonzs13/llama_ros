@@ -44,6 +44,7 @@ set(LLAMA_CORE_SOURCES
   src/llama_ros/slot_manager.cpp
   src/llama_ros/task_registry.cpp
   src/llama_ros/request_handler.cpp
+  src/llama_ros/metadata_utils.cpp
 )
 
 set(LLAMA_UTILS_SOURCES
@@ -140,6 +141,7 @@ if(BUILD_TESTING)
     test/test_llama_rerank.cpp
     test/test_kv_cache_reuse.cpp
     test/test_prompt_cache.cpp
+    test/test_metadata_utils.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
     TIMEOUT 600

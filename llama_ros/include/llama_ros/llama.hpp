@@ -436,6 +436,17 @@ public:
                            const std::string &key, size_t size);
 
   /**
+   * @brief Retrieves a metadata value untruncated.
+   *
+   * Array values are returned in llama.cpp's stringified form, e.g.
+   * ["a", "b"] or [1, 2, 3].
+   *
+   * @param key The metadata key.
+   * @return The full value, or "" when the key is absent.
+   */
+  std::string get_metadata_full(const std::string &key);
+
+  /**
    * @brief Retrieves metadata as an integer based on a key.
    *
    * @param key The key for the metadata to retrieve.
@@ -620,6 +631,14 @@ protected:
    * This represents the loaded model used for inference and other operations.
    */
   llama_model *model;
+
+  /**
+   * @brief Raw GGUF metadata of the model file, opened at construction.
+   *
+   * llama_model_meta_* only exposes scalar metadata, so array values are
+   * read from the GGUF file itself. Null when unavailable.
+   */
+  gguf_context *gguf_metadata_ = nullptr;
 
   /**
    * @brief List of LoRA (Low-Rank Adaptation) adapters.

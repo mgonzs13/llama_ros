@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -271,6 +272,23 @@ TEST_F(LlamaDeploymentTest, MetadataStringsContainNoNullCharacters) {
   expect_no_null(metadata.tokenizer.model, "tokenizer.model");
   expect_no_null(metadata.tokenizer.chat_template, "tokenizer.chat_template");
 
+  for (const auto &tag : metadata.general.tags) {
+    expect_no_null(tag, "general.tags");
+  }
+  for (const auto &language : metadata.general.languages) {
+    expect_no_null(language, "general.languages");
+  }
+  for (const auto &dataset : metadata.general.datasets) {
+    expect_no_null(dataset, "general.datasets");
+  }
+  for (const auto &base : metadata.general.base_models) {
+    expect_no_null(base.name, "general.base_models.name");
+    expect_no_null(base.repo_url, "general.base_models.repo_url");
+  }
+  for (const auto &name : metadata.decision.temperature_names) {
+    expect_no_null(name, "decision.temperature_names");
+  }
+
   // Direct retrieval with a buffer larger than the stored value.
   expect_no_null(llama->get_metadata("general.name", 128),
                  "get_metadata(general.name)");
@@ -329,4 +347,51 @@ TEST_F(LlamaDeploymentTest, ProperCleanupOnDestruction) {
 
   // Verify it's been cleaned up
   EXPECT_EQ(llama, nullptr);
+}
+
+TEST_F(LlamaDeploymentTest, RetrievesExtendedMetadata) {
+  auto result = huggingface_hub::hf_hub_download_with_shards(
+      "bartowski/google_gemma-3-270m-it-GGUF",
+      "google_gemma-3-270m-it-Q4_K_M.gguf");
+
+  ASSERT_TRUE(result.success) << "Failed to download model";
+  ASSERT_FALSE(result.path.empty()) << "Model path is empty";
+
+  params->params.model.path = result.path;
+
+  ASSERT_NO_THROW({
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
+  });
+  ASSERT_NE(llama, nullptr);
+
+  llama_ros::Metadata metadata = llama->get_metadata();
+
+  EXPECT_FALSE(metadata.general.tags.empty());
+  EXPECT_NE(std::find(metadata.general.tags.begin(),
+                      metadata.general.tags.end(), "gemma3"),
+            metadata.general.tags.end());
+
+  ASSERT_FALSE(metadata.general.base_models.empty());
+  EXPECT_FALSE(metadata.general.base_models[0].name.empty());
+  EXPECT_FALSE(metadata.general.base_models[0].repo_url.empty());
+
+  EXPECT_FALSE(metadata.tokenizer.add_eos_token);
+  EXPECT_EQ(metadata.tokenizer.mask_token_id, 0u);
+  EXPECT_TRUE(metadata.tokenizer.chat_templates.empty());
+
+  EXPECT_FALSE(metadata.decision.enabled);
+  EXPECT_TRUE(metadata.decision.type.empty());
+  EXPECT_EQ(metadata.decision.max_head_tokens, 0u);
+  EXPECT_TRUE(metadata.decision.temperature_names.empty());
+  EXPECT_TRUE(metadata.decision.systemone_template.empty());
+
+  EXPECT_EQ(metadata.sampling.top_k, 0);
+
+  // the chat template is returned untruncated
+  const int32_t full_length = llama_model_meta_val_str(
+      llama->get_model(), "tokenizer.chat_template", nullptr, 0);
+  ASSERT_GT(full_length, 0);
+  EXPECT_EQ(metadata.tokenizer.chat_template.size(),
+            static_cast<size_t>(full_length));
 }

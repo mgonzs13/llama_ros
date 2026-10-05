@@ -228,6 +228,22 @@ TEST_F(LlamaDecisionTest, AnswersMultipleQuestions) {
   EXPECT_EQ(results[1].value().type, llama_ros::DECISION_QUESTION_NOUL);
 }
 
+TEST_F(LlamaDecisionTest, MetadataHandlesArrayValues) {
+  // modern-bert stores feed_forward_length as a per-layer array; the old
+  // std::stoi-based parsing threw on it
+  llama_ros::Metadata metadata;
+  EXPECT_NO_THROW(metadata = llama->get_metadata());
+
+  EXPECT_TRUE(metadata.decision.enabled);
+  EXPECT_EQ(metadata.decision.type, "laya");
+  EXPECT_EQ(metadata.decision.max_head_tokens, 192u);
+
+  const char *systemone =
+      llama_model_chat_template(llama->get_model(), "systemone");
+  ASSERT_NE(systemone, nullptr);
+  EXPECT_EQ(metadata.decision.systemone_template, std::string(systemone));
+}
+
 /**
  * @brief Test suite for the label-logit decision path (OpenJEV).
  */
@@ -323,6 +339,39 @@ TEST_F(LlamaOpenJevTest, AnswersChoiceQuestion) {
   const size_t best_index =
       static_cast<size_t>(best - answer.probabilities.begin());
   EXPECT_EQ(answer.choice, answer.keys[best_index]);
+}
+
+TEST_F(LlamaOpenJevTest, ReportsDecisionMetadata) {
+  llama_ros::Metadata metadata = llama->get_metadata();
+
+  EXPECT_TRUE(metadata.decision.enabled);
+  EXPECT_EQ(metadata.decision.type, "openjev");
+  ASSERT_FALSE(metadata.decision.temperature_names.empty());
+  EXPECT_EQ(metadata.decision.temperature_names.size(),
+            metadata.decision.temperatures.size());
+  EXPECT_FALSE(metadata.decision.systemone_template.empty());
+
+  EXPECT_EQ(metadata.tokenizer.chat_templates,
+            (std::vector<std::string>{"systemone"}));
+
+  // the tiny OpenJEV chat template is over the old 4096 cap
+  EXPECT_GT(metadata.tokenizer.chat_template.size(), 4096u);
+
+  const char *systemone =
+      llama_model_chat_template(llama->get_model(), "systemone");
+  ASSERT_NE(systemone, nullptr);
+  EXPECT_EQ(metadata.decision.systemone_template, std::string(systemone));
+  EXPECT_EQ(metadata.decision.systemone_template.find('\0'), std::string::npos);
+  for (const auto &name : metadata.decision.temperature_names) {
+    EXPECT_EQ(name.find('\0'), std::string::npos);
+  }
+  for (const auto &name : metadata.tokenizer.chat_templates) {
+    EXPECT_EQ(name.find('\0'), std::string::npos);
+  }
+
+  EXPECT_EQ(metadata.sampling.top_k, 20);
+  EXPECT_NEAR(metadata.sampling.top_p, 0.95f, 1e-4f);
+  EXPECT_NEAR(metadata.sampling.temp, 1.0f, 1e-4f);
 }
 
 /**

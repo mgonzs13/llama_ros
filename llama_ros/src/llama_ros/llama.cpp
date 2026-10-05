@@ -40,6 +40,7 @@
 #include "speculative.h"
 
 #include "llama_ros/llama.hpp"
+#include "llama_ros/metadata_utils.hpp"
 #include "llama_utils/logs.hpp"
 
 using namespace llama_ros;
@@ -120,6 +121,101 @@ bool load_seq_state(const std::vector<uint8_t> &data, llama_context *ctx,
   return n == data.size();
 }
 
+/**
+ * @brief Escapes a string the way llama.cpp does when stringifying arrays.
+ */
+std::string gguf_escape_string(const std::string &value) {
+  std::string escaped;
+  escaped.reserve(value.size());
+
+  for (const char c : value) {
+    if (c == '\\' || c == '"') {
+      escaped.push_back('\\');
+    }
+    escaped.push_back(c);
+  }
+
+  return escaped;
+}
+
+/**
+ * @brief Stringifies a scalar GGUF value, mirroring llama.cpp's formatting.
+ */
+std::string gguf_scalar_to_string(gguf_type type, const void *data,
+                                  size_t index) {
+  switch (type) {
+  case GGUF_TYPE_UINT8:
+    return std::to_string(static_cast<const uint8_t *>(data)[index]);
+  case GGUF_TYPE_INT8:
+    return std::to_string(static_cast<const int8_t *>(data)[index]);
+  case GGUF_TYPE_UINT16:
+    return std::to_string(static_cast<const uint16_t *>(data)[index]);
+  case GGUF_TYPE_INT16:
+    return std::to_string(static_cast<const int16_t *>(data)[index]);
+  case GGUF_TYPE_UINT32:
+    return std::to_string(static_cast<const uint32_t *>(data)[index]);
+  case GGUF_TYPE_INT32:
+    return std::to_string(static_cast<const int32_t *>(data)[index]);
+  case GGUF_TYPE_UINT64:
+    return std::to_string(static_cast<const uint64_t *>(data)[index]);
+  case GGUF_TYPE_INT64:
+    return std::to_string(static_cast<const int64_t *>(data)[index]);
+  case GGUF_TYPE_FLOAT32:
+    return std::to_string(static_cast<const float *>(data)[index]);
+  case GGUF_TYPE_FLOAT64:
+    return std::to_string(static_cast<const double *>(data)[index]);
+  case GGUF_TYPE_BOOL:
+    return static_cast<const int8_t *>(data)[index] != 0 ? "true" : "false";
+  default:
+    return "";
+  }
+}
+
+/**
+ * @brief Stringifies a flat GGUF array like llama.cpp's gguf_kv_to_str().
+ */
+std::string gguf_array_to_string(const gguf_context *ctx, int64_t key_id) {
+  const gguf_type arr_type = gguf_get_arr_type(ctx, key_id);
+  const size_t count = gguf_get_arr_n(ctx, key_id);
+  const void *data =
+      arr_type == GGUF_TYPE_STRING ? nullptr : gguf_get_arr_data(ctx, key_id);
+
+  std::string out = "[";
+  for (size_t i = 0; i < count; ++i) {
+    if (i > 0) {
+      out += ", ";
+    }
+
+    if (arr_type == GGUF_TYPE_STRING) {
+      out += '"' + gguf_escape_string(gguf_get_arr_str(ctx, key_id, i)) + '"';
+    } else if (arr_type == GGUF_TYPE_ARRAY) {
+      out += "???";
+    } else {
+      out += gguf_scalar_to_string(arr_type, data, i);
+    }
+  }
+  out += "]";
+  return out;
+}
+
+/**
+ * @brief Stringifies a scalar GGUF metadata value.
+ */
+std::string gguf_value_to_string(const gguf_context *ctx, int64_t key_id) {
+  const gguf_type type = gguf_get_kv_type(ctx, key_id);
+
+  if (type == GGUF_TYPE_STRING) {
+    const char *value = gguf_get_val_str(ctx, key_id);
+    return value == nullptr ? "" : value;
+  }
+
+  if (type == GGUF_TYPE_ARRAY) {
+    return gguf_array_to_string(ctx, key_id);
+  }
+
+  return gguf_scalar_to_string(type, gguf_get_val_data(ctx, key_id), 0);
+}
+
 } // namespace
 
 Llama::Llama(const common_params &params, std::string system_prompt,
@@ -137,6 +233,19 @@ Llama::Llama(const common_params &params, std::string system_prompt,
   this->model = this->llama_init->model();
   this->ctx = this->llama_init->context();
   this->lora_adapters = this->params.lora_adapters;
+
+  // raw GGUF metadata for values the model API does not expose (arrays)
+  if (!this->params.model.path.empty()) {
+    gguf_init_params gguf_params = {};
+    gguf_params.no_alloc = true;
+    this->gguf_metadata_ =
+        gguf_init_from_file(this->params.model.path.c_str(), gguf_params);
+
+    if (this->gguf_metadata_ == nullptr) {
+      LLAMA_LOG_WARN("Failed to read raw GGUF metadata from %s",
+                     this->params.model.path.c_str());
+    }
+  }
 
   if (this->model == NULL) {
     LLAMA_LOG_ERROR("Unable to load model");
@@ -300,6 +409,12 @@ Llama::~Llama() {
     common_sampler_free(this->sampler);
     this->sampler = nullptr;
   }
+
+  if (this->gguf_metadata_ != nullptr) {
+    gguf_free(this->gguf_metadata_);
+    this->gguf_metadata_ = nullptr;
+  }
+
   llama_backend_free();
 }
 
@@ -363,26 +478,48 @@ std::string Llama::get_metadata(const std::string &model_name,
   return value;
 }
 
+std::string Llama::get_metadata_full(const std::string &key) {
+  const int32_t length =
+      llama_model_meta_val_str(this->model, key.c_str(), nullptr, 0);
+
+  if (length >= 0) {
+    std::vector<char> buffer(static_cast<size_t>(length) + 1, 0);
+    llama_model_meta_val_str(this->model, key.c_str(), buffer.data(),
+                             buffer.size());
+    return std::string(buffer.data(), static_cast<size_t>(length));
+  }
+
+  // llama_model_meta_* skips GGUF arrays, so fall back to the raw metadata.
+  if (this->gguf_metadata_ == nullptr) {
+    return "";
+  }
+
+  const int64_t key_id = gguf_find_key(this->gguf_metadata_, key.c_str());
+  if (key_id < 0) {
+    return "";
+  }
+
+  return gguf_value_to_string(this->gguf_metadata_, key_id);
+}
+
 int Llama::get_int_metadata(const std::string &key, size_t size) {
-  std::string value = this->get_metadata(key, size);
-  return !value.empty() ? std::stoi(value) : 0;
+  return llama_ros::parse_metadata_int(this->get_metadata(key, size));
 }
 
 int Llama::get_int_metadata(const std::string &model_name,
                             const std::string &key, size_t size) {
-  std::string value = this->get_metadata(model_name, key, size);
-  return !value.empty() ? std::stoi(value) : 0;
+  return llama_ros::parse_metadata_int(
+      this->get_metadata(model_name, key, size));
 }
 
 float Llama::get_float_metadata(const std::string &key, size_t size) {
-  std::string value = this->get_metadata(key, size);
-  return !value.empty() ? std::stof(value) : 0.0;
+  return llama_ros::parse_metadata_float(this->get_metadata(key, size));
 }
 
 float Llama::get_float_metadata(const std::string &model_name,
                                 const std::string &key, size_t size) {
-  std::string value = this->get_metadata(model_name, key, size);
-  return !value.empty() ? std::stof(value) : 0.0;
+  return llama_ros::parse_metadata_float(
+      this->get_metadata(model_name, key, size));
 }
 
 Metadata Llama::get_metadata() {
@@ -412,38 +549,64 @@ Metadata Llama::get_metadata() {
 
   // required general metadata
   metadata.general.architecture =
-      this->get_metadata("general.architecture", 32);
+      this->get_metadata_full("general.architecture");
   metadata.general.quantization_version =
       this->get_int_metadata("general.quantization_version", 4);
   metadata.general.alignment = this->get_int_metadata("general.alignment", 4);
 
   // general metadata
-  metadata.general.name = this->get_metadata("general.name", 32);
-  metadata.general.author = this->get_metadata("general.author", 32);
-  metadata.general.version = this->get_metadata("general.version", 32);
+  metadata.general.name = this->get_metadata_full("general.name");
+  metadata.general.author = this->get_metadata_full("general.author");
+  metadata.general.version = this->get_metadata_full("general.version");
   metadata.general.organization =
-      this->get_metadata("general.organization", 32);
+      this->get_metadata_full("general.organization");
 
-  metadata.general.basename = this->get_metadata("general.basename", 32);
-  metadata.general.finetune = this->get_metadata("general.finetune", 32);
-  metadata.general.description = this->get_metadata("general.description", 512);
-  metadata.general.quantized_by = this->get_metadata("quantized_by", 32);
-  metadata.general.size_label = this->get_metadata("general.size_label", 32);
+  metadata.general.basename = this->get_metadata_full("general.basename");
+  metadata.general.finetune = this->get_metadata_full("general.finetune");
+  metadata.general.description = this->get_metadata_full("general.description");
+  metadata.general.quantized_by =
+      this->get_metadata_full("general.quantized_by");
+  metadata.general.size_label = this->get_metadata_full("general.size_label");
 
-  metadata.general.license = this->get_metadata("general.license", 32);
+  metadata.general.license = this->get_metadata_full("general.license");
   metadata.general.license_name =
-      this->get_metadata("general.license.name", 32);
+      this->get_metadata_full("general.license.name");
   metadata.general.license_link =
-      this->get_metadata("general.license.link", 32);
+      this->get_metadata_full("general.license.link");
 
-  metadata.general.url = this->get_metadata("general.url", 128);
-  metadata.general.repo_url = this->get_metadata("general.repo_url", 128);
-  metadata.general.doi = this->get_metadata("general.doi", 64);
-  metadata.general.uuid = this->get_metadata("general.uuid", 64);
+  metadata.general.url = this->get_metadata_full("general.url");
+  metadata.general.repo_url = this->get_metadata_full("general.repo_url");
+  metadata.general.doi = this->get_metadata_full("general.doi");
+  metadata.general.uuid = this->get_metadata_full("general.uuid");
 
   std::string file_type = this->get_metadata("general.file_type", 32);
   if (gguf_types.find(file_type) != gguf_types.end()) {
     metadata.general.file_type = gguf_types.at(file_type);
+  }
+
+  metadata.general.tags =
+      llama_ros::parse_metadata_array(this->get_metadata_full("general.tags"));
+  metadata.general.languages = llama_ros::parse_metadata_array(
+      this->get_metadata_full("general.languages"));
+  metadata.general.datasets = llama_ros::parse_metadata_array(
+      this->get_metadata_full("general.datasets"));
+
+  // cap the count so a corrupt GGUF cannot trigger an unbounded loop
+  const int base_model_count =
+      std::min(this->get_int_metadata("general.base_model.count", 16), 64);
+
+  for (int i = 0; i < base_model_count; ++i) {
+    Metadata::GeneralInfo::BaseModelInfo base;
+    const std::string prefix = "general.base_model." + std::to_string(i) + ".";
+    base.name = this->get_metadata_full(prefix + "name");
+    if (base.name.empty()) {
+      break;
+    }
+    base.author = this->get_metadata_full(prefix + "author");
+    base.version = this->get_metadata_full(prefix + "version");
+    base.organization = this->get_metadata_full(prefix + "organization");
+    base.repo_url = this->get_metadata_full(prefix + "repo_url");
+    metadata.general.base_models.push_back(std::move(base));
   }
 
   // llm metadata
@@ -459,8 +622,8 @@ Metadata Llama::get_metadata() {
   metadata.model.use_parallel_residual =
       this->get_metadata(metadata.general.architecture,
                          ".use_parallel_residual", 16) == "true";
-  metadata.model.tensor_data_layout = this->get_metadata(
-      metadata.general.architecture, ".tensor_data_layout", 16);
+  metadata.model.tensor_data_layout = this->get_metadata_full(
+      metadata.general.architecture + ".tensor_data_layout");
 
   metadata.model.expert_count = this->get_int_metadata(
       metadata.general.architecture, ".expert_count", 16);
@@ -494,8 +657,8 @@ Metadata Llama::get_metadata() {
   metadata.model.rope.freq_base = this->get_float_metadata(
       metadata.general.architecture, ".rope.freq_base", 16);
 
-  metadata.model.rope.scaling_type = this->get_metadata(
-      metadata.general.architecture, ".rope.scaling.type", 16);
+  metadata.model.rope.scaling_type = this->get_metadata_full(
+      metadata.general.architecture + ".rope.scaling.type");
   metadata.model.rope.scaling_factor = this->get_float_metadata(
       metadata.general.architecture, ".rope.scaling.factor", 16);
   metadata.model.rope.scaling_original_context_length =
@@ -506,7 +669,7 @@ Metadata Llama::get_metadata() {
                          ".rope.scaling.finetuned", 8) == "true";
 
   // tokenizer metadata
-  metadata.tokenizer.model = this->get_metadata("tokenizer.ggml.model", 32);
+  metadata.tokenizer.model = this->get_metadata_full("tokenizer.ggml.model");
 
   metadata.tokenizer.bos_token_id =
       this->get_int_metadata("tokenizer.ggml.bos_token_id", 16);
@@ -521,8 +684,82 @@ Metadata Llama::get_metadata() {
 
   metadata.tokenizer.add_bos_token =
       this->get_metadata("tokenizer.ggml.add_bos_token", 8) == "true";
+  metadata.tokenizer.add_eos_token =
+      this->get_metadata("tokenizer.ggml.add_eos_token", 8) == "true";
+  const int mask_token_id =
+      this->get_int_metadata("tokenizer.ggml.mask_token_id", 16);
+  metadata.tokenizer.mask_token_id =
+      mask_token_id >= 0 ? static_cast<uint32_t>(mask_token_id) : 0;
+
+  // named templates are stored as tokenizer.chat_template.<name>
+  const std::string prefix_template = "tokenizer.chat_template.";
+  for (int32_t i = 0; i < llama_model_meta_count(this->model); i++) {
+    char key[256];
+    if (llama_model_meta_key_by_index(this->model, i, key, sizeof(key)) < 0 ||
+        !string_starts_with(key, prefix_template)) {
+      continue;
+    }
+    metadata.tokenizer.chat_templates.push_back(key + prefix_template.size());
+  }
+
   metadata.tokenizer.chat_template =
-      this->get_metadata("tokenizer.chat_template", 4096);
+      this->get_metadata_full("tokenizer.chat_template");
+
+  metadata.sampling.sequence = llama_ros::split_semicolon(
+      this->get_metadata_full("general.sampling.sequence"));
+  metadata.sampling.top_k =
+      this->get_int_metadata("general.sampling.top_k", 16);
+  metadata.sampling.top_p =
+      this->get_float_metadata("general.sampling.top_p", 16);
+  metadata.sampling.min_p =
+      this->get_float_metadata("general.sampling.min_p", 16);
+  metadata.sampling.xtc_probability =
+      this->get_float_metadata("general.sampling.xtc_probability", 16);
+  metadata.sampling.xtc_threshold =
+      this->get_float_metadata("general.sampling.xtc_threshold", 16);
+  metadata.sampling.temp =
+      this->get_float_metadata("general.sampling.temp", 16);
+  metadata.sampling.penalty_last_n =
+      this->get_int_metadata("general.sampling.penalty_last_n", 16);
+  metadata.sampling.penalty_repeat =
+      this->get_float_metadata("general.sampling.penalty_repeat", 16);
+  metadata.sampling.mirostat =
+      this->get_int_metadata("general.sampling.mirostat", 16);
+  metadata.sampling.mirostat_tau =
+      this->get_float_metadata("general.sampling.mirostat_tau", 16);
+  metadata.sampling.mirostat_eta =
+      this->get_float_metadata("general.sampling.mirostat_eta", 16);
+
+  const std::string arch = metadata.general.architecture;
+  metadata.decision.enabled = this->is_decision();
+  metadata.decision.type =
+      metadata.decision.enabled
+          ? this->get_metadata_full(arch + ".decision.type")
+          : "";
+  metadata.decision.max_head_tokens =
+      metadata.decision.enabled ? static_cast<uint32_t>(this->get_int_metadata(
+                                      arch + ".decision.max_head_tokens", 16))
+                                : 0u;
+
+  if (metadata.decision.enabled) {
+    const std::string prefix_temp = arch + ".decision.temperature.";
+
+    for (int32_t i = 0; i < llama_model_meta_count(this->model); i++) {
+      char key[256];
+      if (llama_model_meta_key_by_index(this->model, i, key, sizeof(key)) < 0 ||
+          !string_starts_with(key, prefix_temp)) {
+        continue;
+      }
+      metadata.decision.temperature_names.push_back(key + prefix_temp.size());
+      metadata.decision.temperatures.push_back(
+          llama_ros::parse_metadata_float(this->get_metadata_full(key), 1.0f));
+    }
+  }
+
+  const char *systemone = llama_model_chat_template(this->model, "systemone");
+  metadata.decision.systemone_template =
+      metadata.decision.enabled && systemone != nullptr ? std::string(systemone)
+                                                        : "";
 
   return metadata;
 }

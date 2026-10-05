@@ -142,6 +142,12 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // create llama
   this->create_llama();
 
+  // get metadata service (available for every model type)
+  this->get_metadata_service_ =
+      this->create_service<llama_msgs::srv::GetMetadata>(
+          "get_metadata",
+          std::bind(&LlamaNode::get_metadata_service_callback, this, _1, _2));
+
   // decision service
   if (this->llama->is_decision()) {
     this->evaluate_decisions_service_ =
@@ -173,12 +179,6 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
   // completion services and action
   if (!this->llama->is_embedding() && !this->llama->is_reranking() &&
       !this->llama->is_decision()) {
-    // get metadata service
-    this->get_metadata_service_ =
-        this->create_service<llama_msgs::srv::GetMetadata>(
-            "get_metadata",
-            std::bind(&LlamaNode::get_metadata_service_callback, this, _1, _2));
-
     this->tokenize_service_ = this->create_service<llama_msgs::srv::Tokenize>(
         "tokenize",
         std::bind(&LlamaNode::tokenize_service_callback, this, _1, _2));
@@ -232,6 +232,9 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
 
   this->destroy_llama();
 
+  this->get_metadata_service_.reset();
+  this->get_metadata_service_ = nullptr;
+
   if (is_decision) {
     this->evaluate_decisions_service_.reset();
     this->evaluate_decisions_service_ = nullptr;
@@ -248,9 +251,6 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
   }
 
   if (is_completion) {
-    this->get_metadata_service_.reset();
-    this->get_metadata_service_ = nullptr;
-
     this->tokenize_service_.reset();
     this->tokenize_service_ = nullptr;
 
@@ -340,6 +340,21 @@ void LlamaNode::get_metadata_service_callback(
 
   metadata_msg.general.file_type = metadata.general.file_type;
 
+  metadata_msg.general.tags = metadata.general.tags;
+  metadata_msg.general.languages = metadata.general.languages;
+  metadata_msg.general.datasets = metadata.general.datasets;
+
+  metadata_msg.general.base_models.resize(metadata.general.base_models.size());
+  for (size_t i = 0; i < metadata.general.base_models.size(); ++i) {
+    const auto &src = metadata.general.base_models[i];
+    auto &dst = metadata_msg.general.base_models[i];
+    dst.name = src.name;
+    dst.author = src.author;
+    dst.version = src.version;
+    dst.organization = src.organization;
+    dst.repo_url = src.repo_url;
+  }
+
   // model
   metadata_msg.model.context_length = metadata.model.context_length;
   metadata_msg.model.embedding_length = metadata.model.embedding_length;
@@ -394,6 +409,33 @@ void LlamaNode::get_metadata_service_callback(
 
   metadata_msg.tokenizer.add_bos_token = metadata.tokenizer.add_bos_token;
   metadata_msg.tokenizer.chat_template = metadata.tokenizer.chat_template;
+
+  metadata_msg.tokenizer.add_eos_token = metadata.tokenizer.add_eos_token;
+  metadata_msg.tokenizer.mask_token_id = metadata.tokenizer.mask_token_id;
+  metadata_msg.tokenizer.chat_templates = metadata.tokenizer.chat_templates;
+
+  // sampling
+  metadata_msg.sampling.sequence = metadata.sampling.sequence;
+  metadata_msg.sampling.top_k = metadata.sampling.top_k;
+  metadata_msg.sampling.top_p = metadata.sampling.top_p;
+  metadata_msg.sampling.min_p = metadata.sampling.min_p;
+  metadata_msg.sampling.xtc_probability = metadata.sampling.xtc_probability;
+  metadata_msg.sampling.xtc_threshold = metadata.sampling.xtc_threshold;
+  metadata_msg.sampling.temp = metadata.sampling.temp;
+  metadata_msg.sampling.penalty_last_n = metadata.sampling.penalty_last_n;
+  metadata_msg.sampling.penalty_repeat = metadata.sampling.penalty_repeat;
+  metadata_msg.sampling.mirostat = metadata.sampling.mirostat;
+  metadata_msg.sampling.mirostat_tau = metadata.sampling.mirostat_tau;
+  metadata_msg.sampling.mirostat_eta = metadata.sampling.mirostat_eta;
+
+  // decision
+  metadata_msg.decision.enabled = metadata.decision.enabled;
+  metadata_msg.decision.type = metadata.decision.type;
+  metadata_msg.decision.max_head_tokens = metadata.decision.max_head_tokens;
+  metadata_msg.decision.temperature_names = metadata.decision.temperature_names;
+  metadata_msg.decision.temperatures = metadata.decision.temperatures;
+  metadata_msg.decision.systemone_template =
+      metadata.decision.systemone_template;
 
   response->metadata = metadata_msg;
 }

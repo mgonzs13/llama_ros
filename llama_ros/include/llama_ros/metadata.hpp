@@ -106,6 +106,29 @@ struct Metadata {
 
     /// @brief The file type of the model.
     std::string file_type;
+
+    /**
+     * @brief A base model this model derives from.
+     */
+    struct BaseModelInfo {
+      /// @brief The base model name.
+      std::string name;
+
+      /// @brief The base model author.
+      std::string author;
+
+      /// @brief The base model version.
+      std::string version;
+
+      /// @brief The base model organization.
+      std::string organization;
+
+      /// @brief The base model repository URL.
+      std::string repo_url;
+    };
+
+    /// @brief The base models this model derives from.
+    std::vector<BaseModelInfo> base_models;
   };
 
   /**
@@ -222,6 +245,81 @@ struct Metadata {
 
     /// @brief The chat template used for tokenization.
     std::string chat_template;
+
+    /// @brief Whether an EOS token is added.
+    bool add_eos_token = false;
+
+    /// @brief The mask token id (0 if absent).
+    uint32_t mask_token_id = 0;
+
+    /// @brief The names of the named chat templates.
+    std::vector<std::string> chat_templates;
+  };
+
+  /**
+   * @brief Sampling defaults stored in the model.
+   */
+  struct SamplingInfo {
+    /// @brief The recommended sampler sequence.
+    std::vector<std::string> sequence;
+
+    /// @brief The top-k value (0 = disabled).
+    int32_t top_k = 0;
+
+    /// @brief The top-p value (0.0 = not declared).
+    float top_p = 0.0f;
+
+    /// @brief The min-p value (0.0 = disabled).
+    float min_p = 0.0f;
+
+    /// @brief The XTC probability (0.0 = disabled).
+    float xtc_probability = 0.0f;
+
+    /// @brief The XTC threshold.
+    float xtc_threshold = 0.0f;
+
+    /// @brief The temperature.
+    float temp = 0.0f;
+
+    /// @brief The repetition penalty window.
+    int32_t penalty_last_n = 0;
+
+    /// @brief The repetition penalty.
+    float penalty_repeat = 0.0f;
+
+    /// @brief The mirostat mode (0 = disabled, 1 = v1, 2 = v2).
+    int32_t mirostat = 0;
+
+    /// @brief The mirostat tau value.
+    float mirostat_tau = 0.0f;
+
+    /// @brief The mirostat eta value.
+    float mirostat_eta = 0.0f;
+  };
+
+  /**
+   * @brief Decision-model information.
+   */
+  struct DecisionInfo {
+    /// @brief Whether llama_ros exposes the decision service.
+    bool enabled = false;
+
+    /// @brief The upstream decision type, "" when not a decision model.
+    /// @note Matches the upstream enum's name for supported types;
+    ///       enabled is equivalent to a non-empty type for a loaded node.
+    std::string type;
+
+    /// @brief The decision maximum head tokens (0 if absent).
+    uint32_t max_head_tokens = 0;
+
+    /// @brief The decision temperature names.
+    std::vector<std::string> temperature_names;
+
+    /// @brief The decision temperatures.
+    std::vector<float> temperatures;
+
+    /// @brief The systemone chat template ("" if absent).
+    std::string systemone_template;
   };
 
   /// @brief General information about the model.
@@ -232,6 +330,12 @@ struct Metadata {
 
   /// @brief Information about the tokenizer used by the model.
   TokenizerInfo tokenizer;
+
+  /// @brief Sampling defaults stored in the model.
+  SamplingInfo sampling;
+
+  /// @brief Decision-model information.
+  DecisionInfo decision;
 };
 
 } // namespace llama_ros
