@@ -156,6 +156,42 @@ bool LlavaNode::load_images(std::vector<sensor_msgs::msg::Image> images_msg) {
   return true;
 }
 
+size_t LlavaNode::load_decision_images(
+    const std::vector<sensor_msgs::msg::Image> &images_msg) {
+  if (!this->llama->decision_supports_images()) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "This decision model does not support images");
+    return 0;
+  }
+
+  static_cast<Llava *>(this->llama.get())->clear_mtmds();
+
+  std::vector<std::vector<uchar>> images;
+
+  for (const auto &image_msg : images_msg) {
+    if (image_msg.data.size() > 0) {
+      RCLCPP_INFO(this->get_logger(), "Loading decision image...");
+      cv_bridge::CvImagePtr cv_ptr =
+          cv_bridge::toCvCopy(image_msg, image_msg.encoding);
+      std::vector<uchar> buf;
+      cv::imencode(".jpg", cv_ptr->image, buf);
+      images.push_back(buf);
+    }
+  }
+
+  if (images.empty()) {
+    RCLCPP_ERROR(this->get_logger(), "No decision images to load");
+    return 0;
+  }
+
+  if (!static_cast<Llava *>(this->llama.get())
+           ->load_mtmds(images, /*is_placeholder=*/false)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to load decision images");
+    return 0;
+  }
+  return images.size();
+}
+
 bool LlavaNode::load_audios(
     std::vector<std_msgs::msg::UInt8MultiArray> audios_msgs) {
 

@@ -1,0 +1,5 @@
+string state                 # one state shared by all questions (JSON or text)
+sensor_msgs/Image[] images   # optional; OpenJEV only
+DecisionQuestion[] questions # must be non-empty
+---
+DecisionAnswer[] answers     # aligned 1:1 with questions

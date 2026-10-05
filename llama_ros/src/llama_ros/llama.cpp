@@ -120,49 +120,6 @@ bool load_seq_state(const std::vector<uint8_t> &data, llama_context *ctx,
   return n == data.size();
 }
 
-/**
- * @brief The name of a decision question type used by the systemone template.
- */
-const char *decision_question_type_name(DecisionQuestionType type) {
-  switch (type) {
-  case DECISION_QUESTION_CHOICE:
-    return "choice";
-  case DECISION_QUESTION_SCORE:
-    return "score";
-  case DECISION_QUESTION_NOUL:
-    return "noul";
-  }
-  return "";
-}
-
-/**
- * @brief Replace text in all strings of a JSON value.
- */
-common_json decision_replace_text(const common_json &val,
-                                  const std::string &search,
-                                  const std::string &replace) {
-  if (val.is_string()) {
-    std::string str = val.get<std::string>();
-    string_replace_all(str, search, replace);
-    return str;
-  }
-  if (val.is_array()) {
-    common_json out = common_json::array();
-    for (const auto &item : val) {
-      out.push_back(decision_replace_text(item, search, replace));
-    }
-    return out;
-  }
-  if (val.is_object()) {
-    common_json out = common_json::object();
-    for (const auto &[key, item] : val.items()) {
-      out[key] = decision_replace_text(item, search, replace);
-    }
-    return out;
-  }
-  return val;
-}
-
 } // namespace
 
 Llama::Llama(const common_params &params, std::string system_prompt,
@@ -303,9 +260,10 @@ Llama::Llama(const common_params &params, std::string system_prompt,
 
   this->init_decision();
 
-  llama_set_embeddings(this->ctx, this->is_embedding() ||
-                                      this->is_reranking() ||
-                                      this->is_decision());
+  llama_set_embeddings(
+      this->ctx,
+      this->is_embedding() || this->is_reranking() ||
+          (this->is_decision() && this->decision_model_->needs_embeddings()));
 
   // Initialize speculative decoding if configured
   this->init_speculative();
@@ -740,389 +698,315 @@ Llama::rank_documents(const std::string &query,
 *******************************
 */
 void Llama::init_decision() {
-  const common_decision_type decision_type =
-      common_get_decision_type(this->model);
-
-  if (decision_type != COMMON_DECISION_TYPE_LAYA) {
-    if (decision_type != COMMON_DECISION_TYPE_NONE) {
-      LLAMA_LOG_WARN(
-          "Unsupported decision model type, decision service disabled");
-    }
+  this->decision_model_ = std::make_unique<DecisionModel>();
+  this->decision_model_->init_from_model(this->model);
+  if (!this->decision_model_->enabled()) {
+    this->decision_model_.reset();
     return;
   }
-
-  const char *tmpl_src = llama_model_chat_template(this->model, "systemone");
-  if (tmpl_src == nullptr) {
-    throw std::runtime_error("Decision model has no \"systemone\" template");
-  }
-  this->decision_template_ =
-      std::make_shared<const common_chat_template>(tmpl_src, "", "");
-
-  const llama_vocab *vocab = this->get_vocab();
-  this->decision_token_marker_ = llama_vocab_mask(vocab);
-  this->decision_token_sep_ = llama_vocab_sep(vocab);
-
-  if (this->decision_token_marker_ == LLAMA_TOKEN_NULL ||
-      this->decision_token_sep_ == LLAMA_TOKEN_NULL) {
-    throw std::runtime_error("Decision model has no mask or sep token");
-  }
-
-  this->decision_text_marker_ =
-      common_token_to_piece(vocab, this->decision_token_marker_, true);
-
-  char buf[256];
-  if (llama_model_meta_val_str(this->model, "general.architecture", buf,
-                               sizeof(buf)) < 0) {
-    throw std::runtime_error("Decision model has no architecture metadata");
-  }
-  const std::string prefix = std::string(buf) + ".decision.";
-
-  char val[256];
-  if (llama_model_meta_val_str(this->model,
-                               (prefix + "max_head_tokens").c_str(), val,
-                               sizeof(val)) < 0) {
-    throw std::runtime_error("Decision model has no max_head_tokens");
-  }
-  this->decision_max_head_tokens_ = std::strtoul(val, nullptr, 10);
-  if (this->decision_max_head_tokens_ == 0) {
-    throw std::runtime_error("Decision model has no valid max_head_tokens");
-  }
-
-  const std::string prefix_temp = prefix + "temperature.";
-  for (int32_t i = 0; i < llama_model_meta_count(this->model); i++) {
-    char key[256];
-    char temp_val[64];
-    if (llama_model_meta_key_by_index(this->model, i, key, sizeof(key)) < 0 ||
-        !string_starts_with(key, prefix_temp)) {
-      continue;
-    }
-    if (llama_model_meta_val_str_by_index(this->model, i, temp_val,
-                                          sizeof(temp_val)) < 0) {
-      continue;
-    }
-    const float temp = std::strtof(temp_val, nullptr);
-    if (temp <= 0.0f) {
-      throw std::runtime_error(string_format(
-          "invalid decision temperature: %s = %s", key, temp_val));
-    }
-    this->decision_temperatures_[key + prefix_temp.size()] = temp;
-  }
-
-  this->decision_enabled_ = true;
-  LLAMA_LOG_INFO("Decision model type: laya");
+  LLAMA_LOG_INFO("Decision model enabled (type %d)",
+                 (int)this->decision_model_->type());
 }
 
-std::string Llama::render_decision_prompt(
-    const DecisionQuestion &question,
-    const std::vector<DecisionOption> &options) const {
-  common_json options_json = common_json::array();
-
-  for (const auto &option : options) {
-    common_json option_json = common_json::object();
-    option_json["key"] = option.key;
-    option_json["description"] = option.description.empty()
-                                     ? common_json()
-                                     : common_json(option.description);
-    options_json.push_back(option_json);
+common_json Llama::parse_decision_state(const std::string &state) {
+  try {
+    return common_json::parse(state);
+  } catch (const std::exception &) {
+    return common_json(state);
   }
-
-  common_json inp = common_json::object();
-  inp["id"] = std::string("question");
-  inp["type"] = std::string(decision_question_type_name(question.type));
-  inp["instructions"] = question.instructions;
-  inp["state"] = question.state;
-  inp["options"] = options_json;
-  inp["images"] = common_json::array();
-
-  // user content must never inject the option marker
-  if (!this->decision_text_marker_.empty()) {
-    inp = decision_replace_text(inp, this->decision_text_marker_, " ");
-  }
-
-  jinja::context ctx(this->decision_template_->source());
-  jinja::global_from_json(ctx, inp, false);
-  jinja::runtime runtime(ctx);
-  const jinja::value results = runtime.execute(this->decision_template_->prog);
-  return jinja::runtime::gather_string_parts(results)->as_string().str();
 }
 
-bool Llama::fill_task_laya(std::vector<llama_token> &tokens,
-                           size_t n_options) const {
-  constexpr size_t max_option_tokens = 48;
-
-  std::vector<size_t> markers;
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    if (tokens[i] == this->decision_token_marker_) {
-      markers.push_back(i);
-    }
-  }
-
-  if (markers.size() != n_options || markers[0] < 2 ||
-      tokens[markers[0] - 1] != this->decision_token_sep_ ||
-      tokens.back() != this->decision_token_sep_) {
-    return false;
-  }
-
-  const size_t head_end = markers[0] - 1;
-  const size_t opts_end = std::find(tokens.begin() + markers.back(),
-                                    tokens.end(), this->decision_token_sep_) -
-                          tokens.begin();
-  if (opts_end + 1 >= tokens.size()) {
-    return false;
-  }
-
-  std::vector<std::vector<llama_token>> options;
-  size_t n_options_tokens = 0;
-  auto set_max = [&](size_t n_max) {
-    n_options_tokens = 0;
-    for (auto &option : options) {
-      option.resize(std::min(option.size(), n_max));
-      n_options_tokens += option.size();
-    }
-  };
-
-  for (size_t i = 0; i < n_options; ++i) {
-    const size_t end = i + 1 < n_options ? markers[i + 1] : opts_end;
-    options.emplace_back(tokens.begin() + markers[i], tokens.begin() + end);
-  }
-
-  set_max(max_option_tokens + 1);
-  if (n_options_tokens + 16 > this->decision_max_head_tokens_) {
-    set_max(std::max((size_t)4,
-                     (this->decision_max_head_tokens_ -
-                      std::min(this->decision_max_head_tokens_, (size_t)16)) /
-                         n_options));
-  }
-  const size_t n_question_max =
-      std::max((size_t)8,
-               this->decision_max_head_tokens_ -
-                   std::min(this->decision_max_head_tokens_, n_options_tokens));
-
-  std::vector<llama_token> out;
-  out.push_back(tokens[0]);
-  out.insert(out.end(), tokens.begin() + 1,
-             tokens.begin() + std::min(head_end, 1 + n_question_max));
-  out.push_back(this->decision_token_sep_);
-  for (const auto &option : options) {
-    out.insert(out.end(), option.begin(), option.end());
-  }
-  out.insert(out.end(), tokens.begin() + opts_end, tokens.end());
-  tokens = std::move(out);
-
-  return true;
-}
-
-float Llama::get_decision_temperature(DecisionQuestionType type,
-                                      size_t n_options) const {
-  const std::string type_name = decision_question_type_name(type);
-  const std::string bucket = n_options <= 2    ? "2"
-                             : n_options <= 5  ? "3_5"
-                             : n_options <= 10 ? "6_10"
-                                               : "11";
-
-  for (const auto &name : {type_name + "." + bucket, type_name}) {
-    const auto it = this->decision_temperatures_.find(name);
-    if (it != this->decision_temperatures_.end()) {
-      return it->second;
-    }
-  }
-
-  return 1.0f;
-}
-
-DecisionAnswer
-Llama::format_decision_answer(DecisionQuestionType type,
-                              const std::vector<DecisionOption> &options,
-                              const std::vector<float> &scores) const {
-  const size_t n = options.size();
-
-  if (scores.size() != n) {
-    throw std::runtime_error(
-        "decision result does not match the number of options");
-  }
-  if (std::any_of(scores.begin(), scores.end(),
-                  [](float value) { return std::isnan(value); })) {
-    throw std::runtime_error("the model could not evaluate the decision");
-  }
-
-  const float temperature = this->get_decision_temperature(type, n);
-
-  // softmax over the option scores
-  const float score_max = *std::max_element(scores.begin(), scores.end());
-  std::vector<double> probs(n, 0.0);
-  double sum = 0.0;
-  for (size_t i = 0; i < n; ++i) {
-    probs[i] = std::exp((double)(scores[i] - score_max) / temperature);
-    sum += probs[i];
-  }
-  for (size_t i = 0; i < n; ++i) {
-    probs[i] /= sum;
-  }
-
-  DecisionAnswer answer;
-  answer.type = type;
-  for (size_t i = 0; i < n; ++i) {
-    answer.keys.push_back(options[i].key);
-    answer.probabilities.push_back((float)probs[i]);
-  }
-
-  if (type == DECISION_QUESTION_NOUL) {
-    for (size_t i = 0; i < n; ++i) {
-      if (options[i].key == "true") {
-        answer.noul = (float)probs[i];
-      }
-    }
-    return answer;
-  }
-
-  if (type == DECISION_QUESTION_CHOICE) {
-    const size_t best =
-        std::max_element(probs.begin(), probs.end()) - probs.begin();
-    answer.choice = options[best].key;
-
-    if (n >= 2) {
-      const double uniform = 1.0 / n;
-      const double p_max = *std::max_element(probs.begin(), probs.end());
-      answer.confidence =
-          (float)std::max(0.0, (p_max - uniform) / (1.0 - uniform));
-    } else {
-      answer.confidence = 1.0f;
-    }
-    return answer;
-  }
-
-  double expected = 0.0;
-  for (size_t i = 0; i < n; ++i) {
-    expected += i * probs[i];
-  }
-  answer.score = (float)expected;
-
-  if (n >= 2) {
-    const size_t mode =
-        std::max_element(probs.begin(), probs.end()) - probs.begin();
-    double dist = 0.0;
-    double dist_uniform = 0.0;
-    for (size_t i = 0; i < n; ++i) {
-      dist += probs[i] * std::fabs((double)i - (double)mode);
-      dist_uniform += std::fabs((double)i - (n - 1) / 2.0) / n;
-    }
-    answer.confidence = (float)std::max(0.0, 1.0 - dist / dist_uniform);
-  } else {
-    answer.confidence = 1.0f;
-  }
-
-  return answer;
-}
-
-Result<DecisionAnswer>
-Llama::evaluate_decision(const DecisionQuestion &question) {
-  if (!this->is_decision()) {
-    return Result<DecisionAnswer>::error(
-        "Llama must be created with a decision model to evaluate questions");
-  }
-
-  std::vector<DecisionOption> options;
-
+std::string Llama::validate_decision_question(const DecisionQuestion &question,
+                                              size_t n_options_max) {
   switch (question.type) {
   case DECISION_QUESTION_CHOICE: {
     if (question.keys.empty()) {
-      return Result<DecisionAnswer>::error(
-          "choice questions need at least one option key");
+      return "choice questions need at least one option key";
     }
     if (!question.descriptions.empty() &&
         question.descriptions.size() != question.keys.size()) {
-      return Result<DecisionAnswer>::error(
-          "keys and descriptions must have the same size");
+      return "keys and descriptions must have the same size";
     }
-    for (size_t i = 0; i < question.keys.size(); ++i) {
-      if (question.keys[i].empty()) {
-        return Result<DecisionAnswer>::error("option keys must not be empty");
+    for (const auto &key : question.keys) {
+      if (key.empty()) {
+        return "option keys must not be empty";
       }
-      options.push_back({question.keys[i], question.descriptions.empty()
-                                               ? ""
-                                               : question.descriptions[i]});
     }
-    break;
+    if (question.keys.size() > n_options_max) {
+      return string_format(
+          "too many options (%zu), this model supports at most %zu",
+          question.keys.size(), n_options_max);
+    }
+    return "";
   }
   case DECISION_QUESTION_SCORE: {
     if (question.descriptions.size() < 2 || question.descriptions.size() > 10) {
-      return Result<DecisionAnswer>::error(
-          "score questions need between 2 and 10 levels");
+      return "score questions need between 2 and 10 levels";
     }
-    for (size_t i = 0; i < question.descriptions.size(); ++i) {
-      options.push_back({std::to_string(i), question.descriptions[i]});
+    if (question.descriptions.size() > n_options_max) {
+      return string_format(
+          "too many options (%zu), this model supports at most %zu",
+          question.descriptions.size(), n_options_max);
     }
-    break;
+    return "";
   }
   case DECISION_QUESTION_NOUL: {
     if (!question.descriptions.empty() && question.descriptions.size() != 2) {
-      return Result<DecisionAnswer>::error(
-          "noul questions take at most two descriptions (false, true)");
+      return "noul questions take at most two descriptions (false, true)";
     }
-    options.push_back({"false", question.descriptions.size() > 0
-                                    ? question.descriptions[0]
-                                    : ""});
-    options.push_back({"true", question.descriptions.size() > 1
-                                   ? question.descriptions[1]
-                                   : ""});
-    break;
+    if (n_options_max < 2) {
+      return string_format(
+          "too many options (2), this model supports at most %zu",
+          n_options_max);
+    }
+    return "";
   }
-  default:
-    return Result<DecisionAnswer>::error("unknown decision question type");
+  }
+  return "unknown decision question type";
+}
+
+std::vector<Result<DecisionAnswer>>
+Llama::evaluate_decisions(const std::string &state,
+                          const std::vector<DecisionQuestion> &questions,
+                          size_t n_images) {
+  std::vector<Result<DecisionAnswer>> results;
+  results.reserve(questions.size());
+
+  const std::string no_model =
+      "Llama must be created with a decision model to evaluate questions";
+  if (!this->is_decision()) {
+    for (size_t i = 0; i < questions.size(); ++i) {
+      results.push_back(Result<DecisionAnswer>::error(no_model));
+    }
+    return results;
   }
 
-  if (options.size() > 255) {
-    return Result<DecisionAnswer>::error(
-        "too many options, this model supports at most 255");
+  std::vector<DecisionQuestion> qs = questions;
+  for (size_t i = 0; i < qs.size(); ++i) {
+    if (qs[i].id.empty()) {
+      qs[i].id = std::to_string(i);
+    }
+  }
+
+  const common_json state_json = parse_decision_state(state);
+
+  if (this->decision_model_->is_joint()) {
+    return this->evaluate_decisions_joint(state_json, qs, n_images);
+  }
+
+  for (const auto &question : qs) {
+    try {
+      results.push_back(
+          this->evaluate_decision(state_json, qs, question, n_images));
+    } catch (const std::exception &e) {
+      results.push_back(Result<DecisionAnswer>::error(e.what()));
+    }
+  }
+  return results;
+}
+
+Result<DecisionAnswer>
+Llama::evaluate_decision(const common_json &state,
+                         const std::vector<DecisionQuestion> &questions,
+                         const DecisionQuestion &question, size_t n_images) {
+  const std::string validation = validate_decision_question(
+      question, this->decision_model_->n_options_max());
+  if (!validation.empty()) {
+    return Result<DecisionAnswer>::error(validation);
+  }
+
+  const auto options = this->decision_model_->options_from_question(question);
+  const size_t n_variants =
+      this->decision_model_->n_variants(question, options);
+
+  std::vector<std::vector<float>> scores;
+  scores.reserve(n_variants);
+
+  for (size_t variant = 0; variant < n_variants; ++variant) {
+    std::string prompt;
+    try {
+      prompt = this->decision_model_->render(state, questions, question,
+                                             options, variant, n_images);
+    } catch (const std::exception &e) {
+      return Result<DecisionAnswer>::error(
+          std::string("Failed to render the decision prompt: ") + e.what());
+    }
+
+    auto slot = this->slot_manager_->wait_for_available_slot();
+    if (!slot) {
+      return Result<DecisionAnswer>::error(
+          "No slot available for decision evaluation");
+    }
+
+    const uint64_t gid = llama_utils::generate_random_uint64();
+    slot->goal_id = gid;
+    auto fut = this->task_registry_->register_pending(gid);
+
+    try {
+      this->prepare_decision_slot(prompt, question, options, n_images, slot);
+    } catch (const std::exception &e) {
+      this->fail_pending(gid, e.what());
+      this->release_slot(slot);
+      return Result<DecisionAnswer>::error(e.what());
+    }
+
+    try {
+      auto result = fut.get();
+      if (auto *out = dynamic_cast<ServerTaskResultDecision *>(result.get())) {
+        scores.push_back(out->scores);
+      } else {
+        return Result<DecisionAnswer>::error("Invalid result type returned");
+      }
+    } catch (const std::exception &e) {
+      return Result<DecisionAnswer>::error(
+          std::string("Exception during decision evaluation: ") + e.what());
+    }
+  }
+
+  try {
+    return Result<DecisionAnswer>::ok(
+        this->decision_model_->format_answer(question, options, scores));
+  } catch (const std::exception &e) {
+    return Result<DecisionAnswer>::error(e.what());
+  }
+}
+
+std::vector<Result<DecisionAnswer>>
+Llama::evaluate_decisions_joint(const common_json &state,
+                                const std::vector<DecisionQuestion> &questions,
+                                size_t n_images) {
+  std::vector<Result<DecisionAnswer>> results;
+  results.reserve(questions.size());
+
+  const auto fail_all = [&results, &questions](const std::string &error) {
+    results.clear();
+    for (size_t i = 0; i < questions.size(); ++i) {
+      results.push_back(Result<DecisionAnswer>::error(error));
+    }
+  };
+
+  if (n_images > 0) {
+    fail_all("images are not supported by this decision model");
+    return results;
+  }
+
+  for (const auto &question : questions) {
+    const std::string validation = validate_decision_question(
+        question, this->decision_model_->n_options_max());
+    if (!validation.empty()) {
+      fail_all(validation);
+      return results;
+    }
   }
 
   std::string prompt;
   try {
-    prompt = this->render_decision_prompt(question, options);
+    prompt = this->decision_model_->render_joint(state, questions);
   } catch (const std::exception &e) {
-    return Result<DecisionAnswer>::error(
-        std::string("Failed to render the decision prompt: ") + e.what());
-  }
-
-  std::vector<llama_token> tokens =
-      common_tokenize(this->get_vocab(), prompt, false, true);
-
-  if (!this->fill_task_laya(tokens, options.size())) {
-    return Result<DecisionAnswer>::error(
-        "Unexpected layout of the decision prompt");
-  }
-
-  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
-    return Result<DecisionAnswer>::error(
-        "The question, its options and the state must fit in one batch; "
-        "increase context.n_batch");
+    fail_all(std::string("Failed to render the decision prompt: ") + e.what());
+    return results;
   }
 
   auto slot = this->slot_manager_->wait_for_available_slot();
   if (!slot) {
-    return Result<DecisionAnswer>::error(
-        "No slot available for decision evaluation");
+    fail_all("No slot available for decision evaluation");
+    return results;
   }
 
   const uint64_t gid = llama_utils::generate_random_uint64();
   slot->goal_id = gid;
   auto fut = this->task_registry_->register_pending(gid);
 
-  const int32_t column = static_cast<int32_t>(question.type);
-  this->handle_decision_req(tokens, column, slot);
+  try {
+    this->prepare_joint_decision_slot(prompt, questions, slot);
+  } catch (const std::exception &e) {
+    this->fail_pending(gid, e.what());
+    this->release_slot(slot);
+    fail_all(e.what());
+    return results;
+  }
 
+  std::vector<float> scores;
   try {
     auto result = fut.get();
-
     if (auto *out = dynamic_cast<ServerTaskResultDecision *>(result.get())) {
-      return Result<DecisionAnswer>::ok(
-          this->format_decision_answer(question.type, options, out->scores));
+      scores = out->scores;
+    } else {
+      fail_all("Invalid result type returned");
+      return results;
     }
-    return Result<DecisionAnswer>::error("Invalid result type returned");
   } catch (const std::exception &e) {
-    return Result<DecisionAnswer>::error(
-        std::string("Exception during decision evaluation: ") + e.what());
+    fail_all(std::string("Exception during decision evaluation: ") + e.what());
+    return results;
   }
+
+  size_t offset = 0;
+  for (const auto &question : questions) {
+    const auto options = this->decision_model_->options_from_question(question);
+    const size_t n = this->decision_model_->n_outputs(question, options);
+    if (offset + n > scores.size()) {
+      results.push_back(Result<DecisionAnswer>::error(
+          "decision result does not match the number of options"));
+      offset += n;
+      continue;
+    }
+    const std::vector<float> question_scores(scores.begin() + offset,
+                                             scores.begin() + offset + n);
+    offset += n;
+    try {
+      results.push_back(
+          Result<DecisionAnswer>::ok(this->decision_model_->format_answer(
+              question, options, {question_scores})));
+    } catch (const std::exception &e) {
+      results.push_back(Result<DecisionAnswer>::error(e.what()));
+    }
+  }
+
+  return results;
+}
+
+void Llama::prepare_decision_slot(const std::string &prompt,
+                                  const DecisionQuestion &question,
+                                  const std::vector<DecisionOption> &options,
+                                  size_t n_images, ServerSlot *slot) {
+  if (n_images > 0) {
+    throw std::runtime_error("images are not supported by this node");
+  }
+
+  std::vector<llama_token> tokens =
+      common_tokenize(this->get_vocab(), prompt, false, true);
+  DecisionTaskMeta meta;
+  this->decision_model_->fill_task(tokens, question, options, meta);
+
+  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
+    throw std::runtime_error(
+        "The question, its options and the state must fit in one batch; "
+        "increase context.n_batch");
+  }
+
+  this->decision_handler_->handle(tokens, meta, slot);
+}
+
+void Llama::prepare_joint_decision_slot(
+    const std::string &prompt, const std::vector<DecisionQuestion> &questions,
+    ServerSlot *slot) {
+  std::vector<llama_token> tokens;
+  DecisionTaskMeta meta;
+  this->decision_model_->fill_task_joint(this->get_vocab(), questions, prompt,
+                                         tokens, meta);
+
+  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
+    throw std::runtime_error(
+        "The question, its options and the state must fit in one batch; "
+        "increase context.n_batch");
+  }
+
+  this->decision_handler_->handle(tokens, meta, slot);
+}
+
+void Llama::handle_prefilled_decision_req(const DecisionTaskMeta &meta,
+                                          ServerSlot *slot) {
+  this->decision_handler_->handle_prefilled(meta, slot);
 }
 
 void Llama::send_decision_result(ServerSlot *slot, int32_t off,
@@ -1132,11 +1016,77 @@ void Llama::send_decision_result(ServerSlot *slot, int32_t off,
   result->id = slot->goal_id;
   result->n_tokens = n_tokens;
 
+  const auto &meta = slot->decision;
+
+  // label types: logits of one token per option, at the last prompt token
+  if (!meta.labels.empty()) {
+    const float *logits = llama_get_logits_ith(this->ctx, slot->i_batch - off);
+    if (logits == nullptr) {
+      this->fail_pending(slot->goal_id, "Failed to get decision logits");
+      return;
+    }
+    for (const llama_token label : meta.labels) {
+      result->scores.push_back(logits[label]);
+    }
+    const auto id = result->id;
+    this->fulfill_pending(id, std::move(result));
+    return;
+  }
+
+  // joint head (clef): the scores are the first rows of the embeddings
+  if (!meta.order.empty()) {
+    int32_t count = 0;
+    for (int32_t i = 0; i < n_tokens && count < meta.n_scores; ++i) {
+      const auto &batch_token = this->batch.tokens[off + i];
+      if (!batch_token.output || batch_token.seq_id != slot->id) {
+        continue;
+      }
+      const float *embd = llama_get_embeddings_ith(this->ctx, i);
+      if (embd == nullptr) {
+        this->fail_pending(slot->goal_id,
+                           "Failed to get decision embeddings, the question "
+                           "and its options must fit in one batch");
+        return;
+      }
+      result->scores.push_back(embd[0]);
+      count++;
+    }
+    if (count != meta.n_scores) {
+      this->fail_pending(slot->goal_id,
+                         "Failed to read all decision scores, the question "
+                         "and its options must fit in one batch");
+      return;
+    }
+    const auto id = result->id;
+    this->fulfill_pending(id, std::move(result));
+    return;
+  }
+
+  // marker types: laya reads embeddings[column], kev dot-products the pointer
+  // with each marker
   const int32_t n_embd_out = llama_model_n_embd_out(this->model);
+  const int32_t n_pointer = n_embd_out / 2;
+  const float *embd_q = nullptr;
+
+  if (meta.pointer >= 0) {
+    for (int32_t i = n_tokens - 1; i >= 0; --i) {
+      const auto &batch_token = this->batch.tokens[off + i];
+      if (batch_token.output && batch_token.seq_id == slot->id) {
+        embd_q = llama_get_embeddings_ith(this->ctx, i);
+        break;
+      }
+    }
+    if (embd_q == nullptr) {
+      this->fail_pending(slot->goal_id,
+                         "Failed to get decision embeddings, the question "
+                         "and its options must fit in one batch");
+      return;
+    }
+  }
 
   size_t n_expected = 0;
   for (const auto token : slot->prompt_tokens) {
-    if (token == this->decision_token_marker_) {
+    if (token == this->decision_model_->get_token_marker()) {
       n_expected++;
     }
   }
@@ -1144,24 +1094,32 @@ void Llama::send_decision_result(ServerSlot *slot, int32_t off,
   for (int32_t i = 0; i < n_tokens; ++i) {
     const auto &batch_token = this->batch.tokens[off + i];
     if (!batch_token.output || batch_token.seq_id != slot->id ||
-        batch_token.id != this->decision_token_marker_) {
+        batch_token.id != this->decision_model_->get_token_marker()) {
       continue;
-    }
-
-    if (slot->decision_column < 0 || slot->decision_column >= n_embd_out) {
-      this->fail_pending(slot->goal_id, "Invalid decision question type");
-      return;
     }
 
     const float *embd = llama_get_embeddings_ith(this->ctx, i);
     if (embd == nullptr) {
       this->fail_pending(slot->goal_id,
-                         "Failed to get decision embeddings, the question and "
-                         "its options must fit in one batch");
+                         "Failed to get decision embeddings, the question "
+                         "and its options must fit in one batch");
       return;
     }
 
-    result->scores.push_back(embd[slot->decision_column]);
+    if (meta.pointer < 0) {
+      if (meta.column < 0 || meta.column >= n_embd_out) {
+        this->fail_pending(slot->goal_id, "Invalid decision question type");
+        return;
+      }
+      result->scores.push_back(embd[meta.column]);
+      continue;
+    }
+
+    float dot = 0.0f;
+    for (int32_t j = 0; j < n_pointer; j++) {
+      dot += embd_q[j] * embd[n_pointer + j];
+    }
+    result->scores.push_back(dot / sqrtf((float)n_pointer));
   }
 
   if (result->scores.size() != n_expected) {
@@ -2351,9 +2309,16 @@ void Llama::run_loop() {
             break; // end of text chunk
           }
           const bool need_embd = this->is_embedding() || this->is_reranking() ||
-                                 this->is_decision();
+                                 (this->is_decision() &&
+                                  this->decision_model_->needs_embeddings());
 
           this->batch.add(cur_tok, slot.n_past, slot.id, need_embd);
+
+          if (!slot.decision.order.empty() && slot.n_past >= 0 &&
+              (size_t)slot.n_past < slot.decision.order.size()) {
+            this->batch.tokens.back().decision_order =
+                slot.decision.order[slot.n_past];
+          }
 
           slot.n_prompt_tokens_processed++;
           slot.n_past++;
@@ -2719,11 +2684,6 @@ void Llama::handle_embeddings_req(const std::string &input_prompt,
 void Llama::handle_rerank_req(const std::string &query,
                               const std::string &document, ServerSlot *slot) {
   this->rerank_handler_->handle(query, document, slot);
-}
-
-void Llama::handle_decision_req(const std::vector<llama_token> &tokens,
-                                int32_t column, ServerSlot *slot) {
-  this->decision_handler_->handle(tokens, column, slot);
 }
 
 void Llama::handle_completion_req(const std::string &input_prompt,

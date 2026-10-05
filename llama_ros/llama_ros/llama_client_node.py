@@ -38,7 +38,7 @@ from llama_msgs.srv import Tokenize
 from llama_msgs.srv import Detokenize
 from llama_msgs.srv import GenerateEmbeddings
 from llama_msgs.srv import RerankDocuments
-from llama_msgs.srv import EvaluateDecision
+from llama_msgs.srv import EvaluateDecisions
 from llama_msgs.action import GenerateResponse
 from llama_msgs.action import GenerateChatCompletions
 from llama_msgs.msg import PartialResponse
@@ -162,8 +162,8 @@ class LlamaClientNode(Node):
         )
 
         self._decision_srv_client = self.create_client(
-            EvaluateDecision,
-            "evaluate_decision",
+            EvaluateDecisions,
+            "evaluate_decisions",
             callback_group=self._callback_group,
         )
 
@@ -241,9 +241,9 @@ class LlamaClientNode(Node):
         self._rerank_srv_client.wait_for_service()
         return self._rerank_srv_client.call(req)
 
-    def evaluate_decision(
-        self, req: EvaluateDecision.Request
-    ) -> EvaluateDecision.Response:
+    def evaluate_decisions(
+        self, req: EvaluateDecisions.Request
+    ) -> EvaluateDecisions.Response:
         self._decision_srv_client.wait_for_service()
         return self._decision_srv_client.call(req)
 

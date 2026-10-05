@@ -144,10 +144,10 @@ LlamaNode::on_activate(const rclcpp_lifecycle::State &) {
 
   // decision service
   if (this->llama->is_decision()) {
-    this->evaluate_decision_service_ =
-        this->create_service<llama_msgs::srv::EvaluateDecision>(
-            "evaluate_decision",
-            std::bind(&LlamaNode::evaluate_decision_service_callback, this, _1,
+    this->evaluate_decisions_service_ =
+        this->create_service<llama_msgs::srv::EvaluateDecisions>(
+            "evaluate_decisions",
+            std::bind(&LlamaNode::evaluate_decisions_service_callback, this, _1,
                       _2));
   }
 
@@ -233,8 +233,8 @@ LlamaNode::on_deactivate(const rclcpp_lifecycle::State &) {
   this->destroy_llama();
 
   if (is_decision) {
-    this->evaluate_decision_service_.reset();
-    this->evaluate_decision_service_ = nullptr;
+    this->evaluate_decisions_service_.reset();
+    this->evaluate_decisions_service_ = nullptr;
   }
 
   if (is_embedding) {
@@ -463,45 +463,90 @@ void LlamaNode::generate_embeddings_service_callback(
 *         DECISIONS         *
 *****************************
 */
-void LlamaNode::evaluate_decision_service_callback(
-    const std::shared_ptr<llama_msgs::srv::EvaluateDecision::Request> request,
-    std::shared_ptr<llama_msgs::srv::EvaluateDecision::Response> response) {
-  RCLCPP_INFO(this->get_logger(), "Evaluating decision");
+size_t LlamaNode::load_decision_images(
+    const std::vector<sensor_msgs::msg::Image> &images) {
+  (void)images;
+  RCLCPP_ERROR(this->get_logger(),
+               "This node does not support decision images");
+  return 0;
+}
 
-  if (request->type > llama_msgs::srv::EvaluateDecision::Request::NOUL) {
-    response->success = false;
-    response->error = "Invalid question type";
+void LlamaNode::evaluate_decisions_service_callback(
+    const std::shared_ptr<llama_msgs::srv::EvaluateDecisions::Request> request,
+    std::shared_ptr<llama_msgs::srv::EvaluateDecisions::Response> response) {
+  RCLCPP_INFO(this->get_logger(), "Evaluating %zu decisions",
+              request->questions.size());
+
+  response->answers.clear();
+
+  if (request->questions.empty()) {
+    RCLCPP_WARN(this->get_logger(), "No questions to evaluate");
     return;
   }
 
-  llama_ros::DecisionQuestion question;
-  question.type = static_cast<llama_ros::DecisionQuestionType>(request->type);
-  question.instructions = request->instructions;
-  question.state = request->state;
-  question.keys = request->keys;
-  question.descriptions = request->descriptions;
-
-  auto result = this->llama->evaluate_decision(question);
-  if (result.is_error()) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to evaluate decision: %s",
-                 result.error().c_str());
-    response->success = false;
-    response->error = result.error();
-    return;
+  std::vector<llama_ros::DecisionQuestion> questions;
+  questions.reserve(request->questions.size());
+  for (size_t i = 0; i < request->questions.size(); ++i) {
+    const auto &q = request->questions[i];
+    llama_ros::DecisionQuestion question;
+    question.id = std::to_string(i);
+    question.type = static_cast<llama_ros::DecisionQuestionType>(q.type);
+    question.instructions = q.instructions;
+    question.keys = q.keys;
+    question.descriptions = q.descriptions;
+    questions.push_back(std::move(question));
   }
 
-  const auto answer = result.value();
-  response->success = true;
-  response->error = "";
-  response->type = static_cast<uint8_t>(answer.type);
-  response->choice = answer.choice;
-  response->score = answer.score;
-  response->noul = answer.noul;
-  response->confidence = answer.confidence;
-  response->keys = answer.keys;
-  response->probabilities = answer.probabilities;
+  constexpr size_t DECISION_MAX_IMAGES = 8;
+  std::vector<llama_ros::Result<llama_ros::DecisionAnswer>> results;
+  if (request->images.size() > DECISION_MAX_IMAGES) {
+    for (size_t i = 0; i < questions.size(); ++i) {
+      results.push_back(llama_ros::Result<llama_ros::DecisionAnswer>::error(
+          "too many images, the maximum is 8"));
+    }
+  } else {
+    const size_t n_images = request->images.empty()
+                                ? 0
+                                : this->load_decision_images(request->images);
+    if (!request->images.empty() && n_images == 0) {
+      for (size_t i = 0; i < questions.size(); ++i) {
+        results.push_back(llama_ros::Result<llama_ros::DecisionAnswer>::error(
+            "images are not supported by this decision model or node, or no "
+            "usable image data was provided"));
+      }
+    } else {
+      results =
+          this->llama->evaluate_decisions(request->state, questions, n_images);
+    }
+  }
 
-  RCLCPP_INFO(this->get_logger(), "Decision evaluated");
+  response->answers.resize(questions.size());
+  for (size_t i = 0; i < results.size() && i < response->answers.size(); ++i) {
+    auto &answer = response->answers[i];
+    answer.type = request->questions[i].type;
+
+    if (results[i].is_ok()) {
+      const auto &value = results[i].value();
+      answer.success = true;
+      answer.choice = value.choice;
+      answer.score = value.score;
+      answer.noul = value.noul;
+      answer.confidence = value.confidence;
+      answer.keys = value.keys;
+      answer.probabilities = value.probabilities;
+    } else {
+      answer.success = false;
+      answer.error = results[i].error();
+    }
+  }
+
+  for (size_t i = results.size(); i < response->answers.size(); ++i) {
+    response->answers[i].success = false;
+    response->answers[i].error = "internal error: missing decision answer";
+    response->answers[i].type = request->questions[i].type;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Decisions evaluated");
 }
 
 /*

@@ -41,6 +41,7 @@
 #include "sampling.h"
 #include "speculative.h"
 
+#include "llama_ros/decision_model.hpp"
 #include "llama_ros/metadata.hpp"
 #include "llama_ros/prompt_cache.hpp"
 #include "llama_ros/request_handler.hpp"
@@ -195,12 +196,17 @@ public:
   generate_embeddings(const std::string &text);
 
   /**
-   * @brief Evaluates a question with a decision model.
+   * @brief Evaluates a batch of questions with a decision model.
    *
-   * @param question The question to evaluate.
-   * @return A Result containing the answer, or an error message.
+   * @param state The state shared by all questions (JSON or plain text).
+   * @param questions The questions to evaluate.
+   * @param n_images The number of images already loaded in the model.
+   * @return One Result per question, in order.
    */
-  Result<DecisionAnswer> evaluate_decision(const DecisionQuestion &question);
+  std::vector<Result<DecisionAnswer>>
+  evaluate_decisions(const std::string &state,
+                     const std::vector<DecisionQuestion> &questions,
+                     size_t n_images = 0);
 
   /**
    * @brief Handles a reranking request for a query-document pair.
@@ -505,11 +511,23 @@ public:
   }
 
   /**
-   * @brief Checks whether the model is a Laya decision model.
+   * @brief Checks whether the model is a decision model.
    *
-   * @return True if the model is a Laya decision model, false otherwise.
+   * @return True if the model is a decision model, false otherwise.
    */
-  bool is_decision() const { return this->decision_enabled_; }
+  bool is_decision() const {
+    return this->decision_model_ != nullptr && this->decision_model_->enabled();
+  }
+
+  /**
+   * @brief Checks whether the loaded decision model accepts images.
+   *
+   * @return True if the decision model accepts images, false otherwise.
+   */
+  bool decision_supports_images() const {
+    return this->decision_model_ != nullptr &&
+           this->decision_model_->supports_images();
+  }
 
   /**
    * @brief Checks if the model adds a beginning-of-sequence (BOS) token.
@@ -582,15 +600,6 @@ public:
   ServerSlot *get_slot_by_gid(uint64_t gid);
 
 protected:
-  /// @brief An option of a decision question.
-  struct DecisionOption {
-    /// @brief The option key given to the model.
-    std::string key;
-
-    /// @brief The option description (empty means none).
-    std::string description;
-  };
-
   /**
    * @brief Initialization result for the model.
    *
@@ -701,74 +710,66 @@ protected:
   /// @brief Host-RAM prompt/sequence cache, bounded by cache_ram_mib.
   std::unique_ptr<PromptCache> prompt_cache_;
 
-  /// @brief The "systemone" chat template of a decision model.
-  std::shared_ptr<const common_chat_template> decision_template_;
-
-  /// @brief Decision temperatures by "<type>" or "<type>.<n_options bucket>".
-  std::map<std::string, float> decision_temperatures_;
-
-  /// @brief The mask token marking each option in a Laya prompt.
-  llama_token decision_token_marker_ = LLAMA_TOKEN_NULL;
-
-  /// @brief The separator token of a Laya prompt.
-  llama_token decision_token_sep_ = LLAMA_TOKEN_NULL;
-
-  /// @brief Text of the mask token, stripped from user inputs.
-  std::string decision_text_marker_;
-
-  /// @brief Maximum number of tokens for the question and its options.
-  size_t decision_max_head_tokens_ = 0;
-
-  /// @brief Whether the loaded model is a Laya decision model.
-  bool decision_enabled_ = false;
+  /// @brief The decision model logic (nullptr when not a decision model).
+  std::unique_ptr<DecisionModel> decision_model_;
 
   /**
-   * @brief Initializes decision-model support when the model is Laya.
+   * @brief Initializes decision-model support when the model is a decision
+   * model.
    */
   void init_decision();
 
   /**
-   * @brief Renders the "systemone" prompt of a decision question.
-   *
-   * @param question The question to render.
-   * @param options The options of the question.
-   * @return The rendered prompt.
+   * @brief Evaluates one question (one or more prompt variants).
    */
-  std::string
-  render_decision_prompt(const DecisionQuestion &question,
-                         const std::vector<DecisionOption> &options) const;
+  Result<DecisionAnswer>
+  evaluate_decision(const common_json &state,
+                    const std::vector<DecisionQuestion> &questions,
+                    const DecisionQuestion &question, size_t n_images);
 
   /**
-   * @brief Truncates a Laya prompt to max_head_tokens.
-   *
-   * @param tokens The tokenized prompt, modified in place.
-   * @param n_options The number of options in the prompt.
-   * @return True when the prompt layout is valid, false otherwise.
+   * @brief Evaluates all questions in one joint prompt (Clef).
    */
-  bool fill_task_laya(std::vector<llama_token> &tokens, size_t n_options) const;
+  std::vector<Result<DecisionAnswer>>
+  evaluate_decisions_joint(const common_json &state,
+                           const std::vector<DecisionQuestion> &questions,
+                           size_t n_images);
 
   /**
-   * @brief Computes the answer of a decision question from raw scores.
-   *
-   * @param type The question type.
-   * @param options The options of the question.
-   * @param scores One raw score per option.
-   * @return The computed answer.
+   * @brief Validates one question, returns an error string ("" if valid).
    */
-  DecisionAnswer
-  format_decision_answer(DecisionQuestionType type,
-                         const std::vector<DecisionOption> &options,
-                         const std::vector<float> &scores) const;
+  static std::string
+  validate_decision_question(const DecisionQuestion &question,
+                             size_t n_options_max);
 
   /**
-   * @brief Returns the temperature to apply to a decision question.
+   * @brief Tokenizes and fills a slot for one decision prompt.
    *
-   * @param type The question type.
-   * @param n_options The number of options of the question.
-   * @return The temperature.
+   * Virtual: Llava overrides it for multimodal prompts.
    */
-  float get_decision_temperature(DecisionQuestionType type,
-                                 size_t n_options) const;
+  virtual void prepare_decision_slot(const std::string &prompt,
+                                     const DecisionQuestion &question,
+                                     const std::vector<DecisionOption> &options,
+                                     size_t n_images, ServerSlot *slot);
+
+  /**
+   * @brief Tokenizes and fills a slot for a joint decision prompt.
+   */
+  void
+  prepare_joint_decision_slot(const std::string &prompt,
+                              const std::vector<DecisionQuestion> &questions,
+                              ServerSlot *slot);
+
+  /**
+   * @brief Parses a state string as JSON, falling back to plain text.
+   */
+  static common_json parse_decision_state(const std::string &state);
+
+  /**
+   * @brief Prepares a slot from an already tokenized prompt (multimodal).
+   */
+  void handle_prefilled_decision_req(const DecisionTaskMeta &meta,
+                                     ServerSlot *slot);
 
   /**
    * @brief Sends the scores of a completed decision slot.
@@ -778,16 +779,6 @@ protected:
    * @param n_tokens The number of tokens in the decoded window.
    */
   void send_decision_result(ServerSlot *slot, int32_t off, int32_t n_tokens);
-
-  /**
-   * @brief Handles a decision evaluation request.
-   *
-   * @param tokens The tokenized decision prompt.
-   * @param column The question type column read from the embeddings output.
-   * @param slot The server slot to use for processing.
-   */
-  void handle_decision_req(const std::vector<llama_token> &tokens,
-                           int32_t column, ServerSlot *slot);
 
   /// @brief Whether context checkpoints are useful for this model/context.
   bool checkpoints_enabled_ = false;

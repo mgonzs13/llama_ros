@@ -141,7 +141,8 @@ void RerankRequestHandler::handle(const std::string &query,
 
 // DecisionRequestHandler implementation
 void DecisionRequestHandler::handle(const std::vector<llama_token> &tokens,
-                                    int32_t column, ServerSlot *slot) {
+                                    const DecisionTaskMeta &meta,
+                                    ServerSlot *slot) {
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
@@ -149,7 +150,22 @@ void DecisionRequestHandler::handle(const std::vector<llama_token> &tokens,
   slot->sampler = common_sampler_init(this->llama_->get_model(),
                                       this->llama_->params.sampling);
   slot->prompt_tokens = tokens;
-  slot->decision_column = column;
+  slot->decision = meta;
+  slot->cache_prompt = false;
+  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+  slot->task_type = SERVER_TASK_TYPE_DECISION;
+  slot->state = SLOT_STATE_STARTED;
+}
+
+void DecisionRequestHandler::handle_prefilled(const DecisionTaskMeta &meta,
+                                              ServerSlot *slot) {
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
+  }
+
+  slot->sampler = common_sampler_init(this->llama_->get_model(),
+                                      this->llama_->params.sampling);
+  slot->decision = meta;
   slot->cache_prompt = false;
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = SERVER_TASK_TYPE_DECISION;

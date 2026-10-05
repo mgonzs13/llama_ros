@@ -100,6 +100,15 @@ public:
   void clear_mtmds();
 
   /**
+   * @brief Tokenizes a decision prompt with mtmd when it has images.
+   */
+  void
+  prepare_decision_slot(const std::string &prompt,
+                        const llama_ros::DecisionQuestion &question,
+                        const std::vector<llama_ros::DecisionOption> &options,
+                        size_t n_images, llama_ros::ServerSlot *slot) override;
+
+  /**
    * @brief Handles a text completion request with multimodal support.
    *
    * Overrides the base Llama implementation to incorporate loaded

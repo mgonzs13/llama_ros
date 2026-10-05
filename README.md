@@ -1734,6 +1734,39 @@ https://github.com/user-attachments/assets/4b4adb4d-7c70-43ea-a2c1-9be57d211484
 
 ### Decision Demo
 
+`llama_ros` supports llama.cpp decision models: OpenJEV, Lev, Kev, Nimble,
+Laya and Clef. A decision model scores the options of typed questions about a
+state without generating text. The type is detected from the model metadata,
+so any upstream decision GGUF works.
+
+The node exposes an `evaluate_decisions` service
+(`llama_msgs/srv/EvaluateDecisions`):
+
+```
+string state                 # one state shared by all questions (JSON or text)
+sensor_msgs/Image[] images   # optional; OpenJEV only
+DecisionQuestion[] questions # must be non-empty
+---
+DecisionAnswer[] answers     # aligned 1:1 with questions
+```
+
+Each question is a `choice` (pick one option key), a `score` (rate along 2 to
+10 ordered levels) or a `noul` (probability that a statement holds). Answers
+carry `success`/`error`; choice and score answers also carry probabilities for
+the option keys and a `confidence` (a `noul` answer reports its probability in
+`noul`, and `confidence` stays 0). A failing question does not prevent the
+other questions from being answered; Clef is the exception, since it answers
+all questions in one joint pass and fails them together. Images are accepted
+only for OpenJEV, up to 8 per request, and require the `llava` node with a
+multimodal projector.
+
+Supported models and their GGUFs: `ggml-org/OpenJEV-GGUF`,
+`ggml-org/Laya-GGUF`, `ggml-org/Kev-4B-GGUF` (also 0.8B/9B),
+`ggml-org/Bespoke-Nimble-9B-v3-GGUF`, `ggml-org/Clef-GGUF` (also Flash) and
+`ggml-org/Julia-1-GGUF`.
+
+Run the demo:
+
 ```shell
 ros2 launch llama_bringup decision.launch.py
 ```
@@ -1741,6 +1774,11 @@ ros2 launch llama_bringup decision.launch.py
 ```shell
 ros2 run llama_demos decision_demo_node
 ```
+
+The demo sends all questions of a scenario in one batch request. Note that
+questions are currently decoded independently (no shared-prompt-prefix
+grouping yet), except Clef which answers all questions of a request in one
+joint forward pass.
 
 ### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
 

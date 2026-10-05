@@ -31,6 +31,8 @@
 #include "common.h"
 #include "llama.h"
 
+#include "llama_ros/types.hpp"
+
 namespace llama_utils {
 struct ChatCompletionsContext;
 }
@@ -121,14 +123,23 @@ public:
   explicit DecisionRequestHandler(Llama *llama) : RequestHandler(llama) {}
 
   /**
-   * @brief Prepares a slot for decision evaluation.
+   * @brief Prepares a slot for decision evaluation from a token prompt.
    *
    * @param tokens The tokenized decision prompt.
-   * @param column The question type column read from the embeddings output.
+   * @param meta Where to read the model output of each option.
    * @param slot The slot to prepare.
    */
-  void handle(const std::vector<llama_token> &tokens, int32_t column,
-              ServerSlot *slot);
+  void handle(const std::vector<llama_token> &tokens,
+              const DecisionTaskMeta &meta, ServerSlot *slot);
+
+  /**
+   * @brief Prepares a slot whose prompt tokens were already filled in
+   * (multimodal path).
+   *
+   * @param meta Where to read the model output of each option.
+   * @param slot The slot to prepare.
+   */
+  void handle_prefilled(const DecisionTaskMeta &meta, ServerSlot *slot);
 };
 
 /**

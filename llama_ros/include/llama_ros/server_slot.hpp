@@ -76,8 +76,8 @@ public:
   /// @brief The task type associated with the slot.
   ServerTaskType task_type = SERVER_TASK_TYPE_COMPLETION;
 
-  /// @brief The question type column read from the embeddings output.
-  int32_t decision_column = 0;
+  /// @brief Where to read the model output of each decision option.
+  DecisionTaskMeta decision;
 
   /// @brief Whether the KV-cached prefix may be reused for this task.
   bool cache_prompt = true;

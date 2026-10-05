@@ -171,20 +171,59 @@ enum DecisionQuestionType {
  * @brief Represents a question for a decision model.
  */
 struct DecisionQuestion {
+  /// @brief Identifier used by the model templates (e.g. "0", "1").
+  std::string id;
+
   /// @brief The question type.
   DecisionQuestionType type;
 
   /// @brief The question instructions.
   std::string instructions;
 
-  /// @brief The state the question is about.
-  std::string state;
-
   /// @brief The option keys (choice only, ignored otherwise).
   std::vector<std::string> keys;
 
   /// @brief The option descriptions (aligned with keys or levels).
   std::vector<std::string> descriptions;
+};
+
+/**
+ * @brief Represents one option of a decision question.
+ */
+struct DecisionOption {
+  /// @brief The option key given to the model.
+  std::string key;
+
+  /// @brief The option description (empty means none).
+  std::string description;
+};
+
+/**
+ * @brief Where to read the model output of each option, mirroring upstream
+ * server_task::decision.
+ */
+struct DecisionTaskMeta {
+  /// @brief Logits of these tokens, at the last prompt token.
+  std::vector<llama_token> labels;
+
+  /// @brief Embedding rows of the options, at these prompt positions.
+  std::vector<int32_t> markers;
+
+  /// @brief Embedding column (Laya).
+  int32_t column = 0;
+
+  /// @brief Kev: last prompt row, dot-producted with each marker.
+  int32_t pointer = -1;
+
+  /// @brief Clef: one decision order value per prompt token.
+  std::vector<int32_t> order;
+
+  /// @brief Clef: number of scored options.
+  int32_t n_scores = 0;
+
+  /// @brief Whether the readout needs the embeddings output.
+  /// @note pointer/column are only meaningful together with markers.
+  bool needs_embeddings() const { return !markers.empty() || !order.empty(); }
 };
 
 /**

@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ChatDeltaChunk.msg"
   "msg/UsageStats.msg"
   "msg/ChatReasoningFormat.msg"
+  "msg/DecisionQuestion.msg"
+  "msg/DecisionAnswer.msg"
 
   "action/GenerateResponse.action"
   "action/GenerateChatCompletions.action"
@@ -43,7 +45,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/UpdateLoRAs.srv"
   "srv/RerankDocuments.srv"
   "srv/GetMetadata.srv"
-  "srv/EvaluateDecision.srv"
+  "srv/EvaluateDecisions.srv"
   DEPENDENCIES sensor_msgs
 )
 

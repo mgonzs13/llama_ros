@@ -27,7 +27,8 @@ import json
 
 import rclpy
 from llama_ros.llama_client_node import LlamaClientNode
-from llama_msgs.srv import EvaluateDecision
+from llama_msgs.msg import DecisionQuestion
+from llama_msgs.srv import EvaluateDecisions
 
 SCENARIOS = [
     {
@@ -61,32 +62,26 @@ CHOICE_DESCRIPTIONS = [
 SCORE_DESCRIPTIONS = ["not urgent", "slightly urgent", "urgent", "critical"]
 
 
-def evaluate(
-    llama_client, state, question_type, instructions, keys=None, descriptions=None
-):
-    req = EvaluateDecision.Request()
-    req.type = question_type
-    req.instructions = instructions
+def evaluate(llama_client, state, questions):
+    req = EvaluateDecisions.Request()
     req.state = json.dumps(state)
-    req.keys = keys if keys is not None else []
-    req.descriptions = descriptions if descriptions is not None else []
-
-    return llama_client.evaluate_decision(req)
+    req.questions = questions
+    return llama_client.evaluate_decisions(req)
 
 
-def print_answer(name, res):
-    if not res.success:
-        print(f"  {name}: failed: {res.error}")
+def print_answer(name, answer):
+    if not answer.success:
+        print(f"  {name}: failed: {answer.error}")
         return
 
-    if res.type == EvaluateDecision.Request.CHOICE:
-        print(f"  {name}: {res.choice} (confidence {res.confidence:.3f})")
-    elif res.type == EvaluateDecision.Request.SCORE:
-        print(f"  {name}: {res.score:.2f} (confidence {res.confidence:.3f})")
+    if answer.type == DecisionQuestion.CHOICE:
+        print(f"  {name}: {answer.choice} (confidence {answer.confidence:.3f})")
+    elif answer.type == DecisionQuestion.SCORE:
+        print(f"  {name}: {answer.score:.2f} (confidence {answer.confidence:.3f})")
     else:
-        print(f"  {name}: P(true) = {res.noul:.3f}")
+        print(f"  {name}: P(true) = {answer.noul:.3f}")
 
-    for key, probability in zip(res.keys, res.probabilities):
+    for key, probability in zip(answer.keys, answer.probabilities):
         print(f"    {key}: {probability:.3f}")
 
 
@@ -97,32 +92,33 @@ def run_scenario(llama_client, scenario):
     print(f"=== {scenario['name']}")
     print(f"  state: {json.dumps(state)}")
 
-    choice = evaluate(
-        llama_client,
-        state,
-        EvaluateDecision.Request.CHOICE,
-        f"{hint} Choose the best next action for the robot.",
-        keys=CHOICE_KEYS,
-        descriptions=CHOICE_DESCRIPTIONS,
-    )
-    print_answer("choice", choice)
+    choice = DecisionQuestion()
+    choice.type = DecisionQuestion.CHOICE
+    choice.instructions = f"{hint} Choose the best next action for the robot."
+    choice.keys = CHOICE_KEYS
+    choice.descriptions = CHOICE_DESCRIPTIONS
 
-    score = evaluate(
-        llama_client,
-        state,
-        EvaluateDecision.Request.SCORE,
-        f"{hint} How urgent is it to recharge the battery now?",
-        descriptions=SCORE_DESCRIPTIONS,
-    )
-    print_answer("score", score)
+    score = DecisionQuestion()
+    score.type = DecisionQuestion.SCORE
+    score.instructions = f"{hint} How urgent is it to recharge the battery now?"
+    score.descriptions = SCORE_DESCRIPTIONS
 
-    noul = evaluate(
-        llama_client,
-        state,
-        EvaluateDecision.Request.NOUL,
-        f"{hint} The battery is sufficient to keep cleaning for at least 30 more minutes.",
+    noul = DecisionQuestion()
+    noul.type = DecisionQuestion.NOUL
+    noul.instructions = (
+        f"{hint} The battery is sufficient to keep cleaning for at least "
+        "30 more minutes."
     )
-    print_answer("noul", noul)
+
+    response = evaluate(llama_client, state, [choice, score, noul])
+
+    if len(response.answers) != 3:
+        print(f"  expected 3 answers, got {len(response.answers)}")
+        return
+
+    print_answer("choice", response.answers[0])
+    print_answer("score", response.answers[1])
+    print_answer("noul", response.answers[2])
 
 
 def main():

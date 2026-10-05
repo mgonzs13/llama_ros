@@ -138,7 +138,7 @@ bool Llava::load_mtmds(std::vector<std::vector<uint8_t>> mtmds,
 }
 
 void Llava::clear_mtmds() {
-  LLAMA_LOG_ERROR("Clearing mtmds...");
+  LLAMA_LOG_INFO("Clearing mtmds...");
   this->bitmaps.entries.clear();
   this->videos.clear();
 }
@@ -224,6 +224,48 @@ void Llava::process_input_chunks(mtmd::input_chunks &chunks,
       slot->map_pos_to_media[start_pos] = std::move(new_chunk);
     }
   }
+}
+
+void Llava::prepare_decision_slot(
+    const std::string &prompt, const llama_ros::DecisionQuestion &question,
+    const std::vector<llama_ros::DecisionOption> &options, size_t n_images,
+    llama_ros::ServerSlot *slot) {
+  if (n_images == 0) {
+    llama_ros::Llama::prepare_decision_slot(prompt, question, options, n_images,
+                                            slot);
+    return;
+  }
+
+  if (this->decision_model_ == nullptr ||
+      !this->decision_model_->supports_images()) {
+    throw std::runtime_error("images are not supported by this decision model");
+  }
+  if (this->mtmd_ctx == nullptr) {
+    throw std::runtime_error("multimodal projector is not loaded");
+  }
+
+  slot->prompt_tokens.clear();
+  mtmd_input_text inp_txt = {
+      prompt.c_str(),
+      prompt.size(),
+      /* add_special */ false,
+      /* parse_special */ true,
+  };
+  mtmd::input_chunks chunks(mtmd_input_chunks_init());
+  auto bitmaps_c_ptr = this->bitmaps.c_ptr();
+  const int32_t tokenized =
+      mtmd_tokenize(this->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
+  if (tokenized != 0) {
+    throw std::runtime_error("Failed to tokenize decision prompt");
+  }
+  this->process_input_chunks(chunks, slot);
+
+  llama_ros::DecisionTaskMeta meta;
+  this->decision_model_->fill_task(slot->prompt_tokens, question, options,
+                                   meta);
+
+  this->handle_prefilled_decision_req(meta, slot);
 }
 
 void llava_ros::Llava::handle_completion_req(

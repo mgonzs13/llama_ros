@@ -160,6 +160,14 @@ protected:
    * This method processes the input audios and prepares them.
    */
   bool load_audios(std::vector<std_msgs::msg::UInt8MultiArray> audios_msg);
+
+  /**
+   * @brief Loads decision images into the Llava model.
+   *
+   * @return The number of loaded images, 0 when none could be loaded.
+   */
+  size_t load_decision_images(
+      const std::vector<sensor_msgs::msg::Image> &images) override;
 };
 
 } // namespace llava_ros

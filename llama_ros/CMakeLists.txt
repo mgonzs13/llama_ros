@@ -38,6 +38,7 @@ endif()
 # Common source files
 set(LLAMA_CORE_SOURCES
   src/llama_ros/llama.cpp
+  src/llama_ros/decision_model.cpp
   src/llama_ros/prompt_cache.cpp
   src/llama_ros/server_slot.cpp
   src/llama_ros/slot_manager.cpp
@@ -135,6 +136,7 @@ if(BUILD_TESTING)
     test/test_llama_lora.cpp
     test/test_llama_embeddings.cpp
     test/test_llama_decision.cpp
+    test/test_decision_model.cpp
     test/test_llama_rerank.cpp
     test/test_kv_cache_reuse.cpp
     test/test_prompt_cache.cpp
@@ -151,6 +153,38 @@ if(BUILD_TESTING)
   
   target_link_libraries(${PROJECT_NAME}_tests
     llama_cpp_vendor::llama
+    llama_cpp_vendor::llama-common
+    ${CMAKE_THREAD_LIBS_INIT}
+    ament_index_cpp::ament_index_cpp
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    ${llama_msgs_TARGETS}
+    ${llama_cpp_vendor_TARGETS}
+    ${llama_hfhub_vendor_TARGETS}
+    yaml-cpp
+    Threads::Threads
+  )
+
+  ament_add_gtest(${PROJECT_NAME}_llava_tests
+    test/test_main.cpp
+    test/test_llava_decision.cpp
+    src/llava_ros/llava.cpp
+    src/llava_ros/llava_request_handler.cpp
+    ${LLAMA_CORE_SOURCES}
+    ${LLAMA_UTILS_SOURCES}
+    TIMEOUT 600
+  )
+
+  target_include_directories(${PROJECT_NAME}_llava_tests PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${OpenCV_INCLUDE_DIRS}
+  )
+
+  target_link_libraries(${PROJECT_NAME}_llava_tests
+    cv_bridge::cv_bridge
+    llama_cpp_vendor::llama
+    llama_cpp_vendor::mtmd
     llama_cpp_vendor::llama-common
     ${CMAKE_THREAD_LIBS_INIT}
     ament_index_cpp::ament_index_cpp
