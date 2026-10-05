@@ -93,6 +93,7 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<bool>("model", {
                                               {"warmup", true},
                                               {"check_tensors", false},
+                                              {"load_mtp", false},
                                           });
 
   // Multimodal projector parameters (mmproj.*)
@@ -119,12 +120,17 @@ void llama_utils::declare_llama_params(
                                                    {"n_predict", -1},
                                                    {"n_parallel", 1},
                                                    {"n_outputs_max", 0},
+                                                   {"n_sequences", 1},
+                                                   {"n_outputs_max_per_seq", 1},
                                                });
 
   node->declare_parameters<std::string>("context", {
                                                        {"numa", "none"},
                                                        {"pooling_type", ""},
                                                        {"attention_type", ""},
+                                                       {"embd_out", ""},
+                                                       {"embd_sep", "\n"},
+                                                       {"cls_sep", "\t"},
                                                    });
 
   node->declare_parameters<bool>("context", {
@@ -278,6 +284,7 @@ void llama_utils::declare_llama_params(
                                                  {"n_ctx_checkpoints", 32},
                                                  {"checkpoint_min_step", 256},
                                                  {"cache_ram_mib", 8192},
+                                                 {"kv_unified_per_slot", 0},
                                              });
 
   node->declare_parameters<bool>("cache", {
@@ -297,6 +304,11 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<std::string>("speculative", {
                                                            {"type", "none"},
                                                        });
+
+  // Synthetic n-gram speculation lengths/rates
+  node->declare_parameter<double>("speculative.synth_len", -1.0);
+  node->declare_parameter<std::vector<double>>("speculative.synth_rates",
+                                               std::vector<double>({}));
 
   // Draft model parameters (speculative.draft.*)
   node->declare_parameters<std::string>("speculative.draft.model",
@@ -326,7 +338,47 @@ void llama_utils::declare_llama_params(
   node->declare_parameters<bool>("speculative.draft",
                                  {
                                      {"backend_sampling", true},
+                                     {"probabilistic", false},
                                  });
+
+  // Draft CPU parameters (speculative.draft.cpu.*)
+  node->declare_parameters<int32_t>("speculative.draft.cpu",
+                                    {
+                                        {"n_threads", -1},
+                                        {"poll", 50},
+                                    });
+  node->declare_parameters<std::string>("speculative.draft.cpu",
+                                        {
+                                            {"mask", ""},
+                                            {"range", ""},
+                                            {"priority", "normal"},
+                                        });
+  node->declare_parameters<bool>("speculative.draft.cpu", {
+                                                              {"strict", false},
+                                                          });
+
+  // Draft CPU batch parameters (speculative.draft.cpu_batch.*)
+  node->declare_parameters<int32_t>("speculative.draft.cpu_batch",
+                                    {
+                                        {"n_threads", -1},
+                                        {"poll", 50},
+                                    });
+  node->declare_parameters<std::string>("speculative.draft.cpu_batch",
+                                        {
+                                            {"mask", ""},
+                                            {"range", ""},
+                                            {"priority", "normal"},
+                                        });
+  node->declare_parameters<bool>("speculative.draft.cpu_batch",
+                                 {
+                                     {"strict", false},
+                                 });
+
+  // Draft devices and tensor buffer overrides
+  node->declare_parameter<std::vector<std::string>>(
+      "speculative.draft.devices", std::vector<std::string>({}));
+  node->declare_parameter<std::vector<std::string>>(
+      "speculative.draft.tensor_buft_overrides", std::vector<std::string>({}));
 
   // Speculative ngram-mod parameters
   node->declare_parameters<int32_t>("speculative.ngram_mod",
@@ -423,6 +475,15 @@ LlamaParams llama_utils::get_llama_params(
   double speculative_p_split = 0.0;
   std::string speculative_cache_type_k;
   std::string speculative_cache_type_v;
+  std::vector<std::string> draft_devices;
+  std::string draft_cpu_mask;
+  std::string draft_cpu_range;
+  std::string draft_cpu_mask_batch;
+  std::string draft_cpu_range_batch;
+  std::string draft_priority;
+  std::string draft_priority_batch;
+  int32_t draft_poll = 50;
+  int32_t draft_poll_batch = 50;
 
   std::string load_mode;
   std::string lazy_mode;
@@ -444,6 +505,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("model.filename", params.params.model.hf_file);
   node->get_parameter("model.warmup", params.params.warmup);
   node->get_parameter("model.check_tensors", params.params.check_tensors);
+  node->get_parameter("model.load_mtp", params.params.load_mtp);
 
   if (params.params.model.path.empty()) {
     params.params.model.path = download_model(params.params.model.hf_repo,
@@ -485,6 +547,12 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("context.swa_full", params.params.swa_full);
   node->get_parameter("context.cont_batching", params.params.cont_batching);
   node->get_parameter("context.n_outputs_max", params.params.n_outputs_max);
+  node->get_parameter("context.n_sequences", params.params.n_sequences);
+  node->get_parameter("context.n_outputs_max_per_seq",
+                      params.params.n_outputs_max_per_seq);
+  node->get_parameter("context.embd_out", params.params.embd_out);
+  node->get_parameter("context.embd_sep", params.params.embd_sep);
+  node->get_parameter("context.cls_sep", params.params.cls_sep);
 
   // seed
   if (seed < 0) {
@@ -935,6 +1003,8 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("cache.checkpoint_min_step",
                       params.params.checkpoint_min_step);
   node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
+  node->get_parameter("cache.kv_unified_per_slot",
+                      params.params.kv_unified_per_slot);
 
   params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
   params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
@@ -965,6 +1035,88 @@ LlamaParams llama_utils::get_llama_params(
                       params.params.speculative.draft.mparams.hf_file);
   params.params.speculative.draft.backend_sampling =
       node->get_parameter("speculative.draft.backend_sampling").as_bool();
+  params.params.speculative.draft.probabilistic =
+      node->get_parameter("speculative.draft.probabilistic").as_bool();
+
+  // Synthetic n-gram speculation
+  node->get_parameter("speculative.synth_len",
+                      params.params.speculative.synth_len);
+  node->get_parameter("speculative.synth_rates",
+                      params.params.speculative.synth_rates);
+
+  // Draft CPU parameters (speculative.draft.cpu.*)
+  node->get_parameter("speculative.draft.cpu.n_threads",
+                      params.params.speculative.draft.cpuparams.n_threads);
+  node->get_parameter("speculative.draft.cpu.mask", draft_cpu_mask);
+  node->get_parameter("speculative.draft.cpu.range", draft_cpu_range);
+  node->get_parameter("speculative.draft.cpu.priority", draft_priority);
+  node->get_parameter("speculative.draft.cpu.strict",
+                      params.params.speculative.draft.cpuparams.strict_cpu);
+  node->get_parameter("speculative.draft.cpu.poll", draft_poll);
+
+  if (params.params.speculative.draft.cpuparams.n_threads < 0) {
+    params.params.speculative.draft.cpuparams.n_threads =
+        common_cpu_get_num_math();
+  }
+  if (!draft_cpu_mask.empty()) {
+    params.params.speculative.draft.cpuparams.mask_valid = true;
+    parse_cpu_mask(draft_cpu_mask,
+                   params.params.speculative.draft.cpuparams.cpumask);
+  }
+  if (!draft_cpu_range.empty()) {
+    params.params.speculative.draft.cpuparams.mask_valid = true;
+    parse_cpu_mask(draft_cpu_range,
+                   params.params.speculative.draft.cpuparams.cpumask);
+  }
+  params.params.speculative.draft.cpuparams.priority =
+      parse_priority(draft_priority);
+  params.params.speculative.draft.cpuparams.poll = draft_poll;
+
+  // Draft CPU batch parameters (speculative.draft.cpu_batch.*)
+  node->get_parameter(
+      "speculative.draft.cpu_batch.n_threads",
+      params.params.speculative.draft.cpuparams_batch.n_threads);
+  node->get_parameter("speculative.draft.cpu_batch.mask", draft_cpu_mask_batch);
+  node->get_parameter("speculative.draft.cpu_batch.range",
+                      draft_cpu_range_batch);
+  node->get_parameter("speculative.draft.cpu_batch.priority",
+                      draft_priority_batch);
+  node->get_parameter(
+      "speculative.draft.cpu_batch.strict",
+      params.params.speculative.draft.cpuparams_batch.strict_cpu);
+  node->get_parameter("speculative.draft.cpu_batch.poll", draft_poll_batch);
+
+  if (params.params.speculative.draft.cpuparams_batch.n_threads < 0) {
+    params.params.speculative.draft.cpuparams_batch.n_threads =
+        common_cpu_get_num_math();
+  }
+  if (!draft_cpu_mask_batch.empty()) {
+    params.params.speculative.draft.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(draft_cpu_mask_batch,
+                   params.params.speculative.draft.cpuparams_batch.cpumask);
+  }
+  if (!draft_cpu_range_batch.empty()) {
+    params.params.speculative.draft.cpuparams_batch.mask_valid = true;
+    parse_cpu_mask(draft_cpu_range_batch,
+                   params.params.speculative.draft.cpuparams_batch.cpumask);
+  }
+  params.params.speculative.draft.cpuparams_batch.priority =
+      parse_priority(draft_priority_batch);
+  params.params.speculative.draft.cpuparams_batch.poll = draft_poll_batch;
+
+  // Draft devices
+  node->get_parameter("speculative.draft.devices", draft_devices);
+  for (const std::string &d : draft_devices) {
+    if (d.empty()) {
+      continue;
+    }
+    auto *dev = ggml_backend_dev_by_name(d.c_str());
+    if (!dev || ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
+      LLAMA_LOG_ERROR("Invalid draft device: %s", d.c_str());
+    } else {
+      params.params.speculative.draft.devices.push_back(dev);
+    }
+  }
 
   // Draft model KV cache types
   node->get_parameter("speculative.draft.cache_type_k",
@@ -1130,6 +1282,57 @@ LlamaParams llama_utils::get_llama_params(
       }
 
       params.params.tensor_buft_overrides.push_back({nullptr, nullptr});
+    }
+  }
+
+  // ============================================================
+  // Draft tensor buffer overrides
+  // ============================================================
+  {
+    std::vector<std::string> draft_buft_override_strs;
+    node->get_parameter("speculative.draft.tensor_buft_overrides",
+                        draft_buft_override_strs);
+
+    if (!draft_buft_override_strs.empty()) {
+      ggml_backend_load_all();
+      std::map<std::string, ggml_backend_buffer_type_t> buft_list;
+
+      for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        auto *dev = ggml_backend_dev_get(i);
+        auto *buft = ggml_backend_dev_buffer_type(dev);
+        if (buft) {
+          buft_list[ggml_backend_buft_name(buft)] = buft;
+        }
+      }
+
+      static std::list<std::string> draft_buft_patterns;
+      for (const auto &s : draft_buft_override_strs) {
+        auto pos = s.find('=');
+        if (pos == std::string::npos) {
+          RCLCPP_ERROR(node->get_logger(),
+                       "Invalid draft tensor buft override '%s', expected "
+                       "pattern=buft_name",
+                       s.c_str());
+          continue;
+        }
+
+        std::string tensor_name = s.substr(0, pos);
+        std::string buffer_type = s.substr(pos + 1);
+        auto it = buft_list.find(buffer_type);
+        if (it == buft_list.end()) {
+          RCLCPP_ERROR(node->get_logger(),
+                       "Unknown buffer type '%s' in draft tensor buft override",
+                       buffer_type.c_str());
+          continue;
+        }
+        draft_buft_patterns.push_back(tensor_name);
+        params.params.speculative.draft.tensor_buft_overrides.push_back(
+            {draft_buft_patterns.back().c_str(), it->second});
+      }
+
+      // null terminator, as upstream arg.cpp does
+      params.params.speculative.draft.tensor_buft_overrides.push_back(
+          {nullptr, nullptr});
     }
   }
 

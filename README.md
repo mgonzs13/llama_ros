@@ -434,6 +434,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `model.filename`      | `string` | `""`    | Filename of the model in the HuggingFace repository  |
 | `model.warmup`        | `bool`   | `true`  | Run a warmup inference on load                       |
 | `model.check_tensors` | `bool`   | `false` | Validate model tensor data on load                   |
+| `model.load_mtp`      | `bool`   | `false` | Load MTP/NextN layers for multi-token prediction     |
 
 #### Multimodal Projector (`mmproj.*`)
 
@@ -448,30 +449,30 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### Context / Inference (`context.*`)
 
-| Param                               | Type     | Default      | Description                                                                                                                                                               |
-| ----------------------------------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `context.seed`                      | `int32`  | `-1`         | RNG seed for sampling (`-1` for default)                                                                                                                                  |
-| `context.n_ctx`                     | `int32`  | `0`          | Context size in tokens (`0` for model default)                                                                                                                            |
-| `context.n_batch`                   | `int32`  | `2048`       | Logical batch size for prompt processing                                                                                                                                  |
-| `context.n_ubatch`                  | `int32`  | `512`        | Physical batch size                                                                                                                                                       |
-| `context.n_keep`                    | `int32`  | `0`          | Number of tokens to keep from the initial prompt on context shift                                                                                                         |
-| `context.n_chunks`                  | `int32`  | `-1`         | Max number of chunks to process (`-1` for unlimited)                                                                                                                      |
-| `context.n_predict`                 | `int32`  | `-1`         | Max tokens to predict (`-1` for unlimited when using ctx_shift)                                                                                                           |
-| `context.n_parallel`                | `int32`  | `1`          | Number of parallel sequences to decode                                                                                                                                    |
-| `context.n_outputs_max`             | `int32`  | `0`          | Maximum number of outputs per slot (`0` for unlimited)                                                                                                                    |
-| `context.numa`                      | `string` | `"none"`     | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count`                                                                                           |
-| `context.pooling_type`              | `string` | `""`         | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                                                                                                                  |
-| `context.attention_type`            | `string` | `""`         | Attention type: `causal` or `non_causal`                                                                                                                                  |
-| `context.embedding`                 | `bool`   | `false`      | Enable embedding mode                                                                                                                                                     |
-| `context.reranking`                 | `bool`   | `false`      | Enable reranking mode (sets pooling to `rerank` and enables embedding)                                                                                                    |
-| `context.ctx_shift`                 | `bool`   | `false`      | Enable context shifting                                                                                                                                                   |
-| `context.swa_full`                  | `bool`   | `false`      | Enable full sliding window attention                                                                                                                                      |
-| `context.cont_batching`             | `bool`   | `true`       | Enable continuous batching                                                                                                                                                |
-| `context.use_jinja`                 | `bool`   | `true`       | Use Jinja2 templating engine for chat templates (required for tool calls and reasoning)                                                                                   |
-| `context.prefill_assistant`         | `bool`   | `true`       | Prefill any trailing assistant message into the response                                                                                                                  |
-| `context.force_pure_content_parser` | `bool`   | `false`      | Bypass Jinja template tool-call/reasoning parsing and force raw content output for all requests. Useful as a fallback when the template parser produces incorrect results |
-| `context.enable_reasoning`          | `int32`  | `-1`         | Server-level reasoning control: `-1` = auto (follow template), `0` = disable thinking, `1` = enable thinking                                                              |
-| `context.reasoning_format`          | `string` | `"deepseek"` | How reasoning content is returned in API responses: `none`, `auto`, `deepseek_legacy`, or `deepseek`                                                                      |
+| Param                           | Type     | Default  | Description                                                                     |
+| ------------------------------- | -------- | -------- | ------------------------------------------------------------------------------- |
+| `context.seed`                  | `int32`  | `-1`     | RNG seed for sampling (`-1` for default)                                        |
+| `context.n_ctx`                 | `int32`  | `0`      | Context size in tokens (`0` for model default)                                  |
+| `context.n_batch`               | `int32`  | `2048`   | Logical batch size for prompt processing                                        |
+| `context.n_ubatch`              | `int32`  | `512`    | Physical batch size                                                             |
+| `context.n_keep`                | `int32`  | `0`      | Number of tokens to keep from the initial prompt on context shift               |
+| `context.n_chunks`              | `int32`  | `-1`     | Max number of chunks to process (`-1` for unlimited)                            |
+| `context.n_predict`             | `int32`  | `-1`     | Max tokens to predict (`-1` for unlimited when using ctx_shift)                 |
+| `context.n_parallel`            | `int32`  | `1`      | Number of parallel sequences to decode                                          |
+| `context.n_outputs_max`         | `int32`  | `0`      | Maximum number of outputs in a batch (`0` for `n_batch`)                        |
+| `context.n_sequences`           | `int32`  | `1`      | Number of sequences to decode                                                   |
+| `context.n_outputs_max_per_seq` | `int32`  | `1`      | Maximum number of outputs per sequence                                          |
+| `context.numa`                  | `string` | `"none"` | NUMA strategy: `none`, `distribute`, `isolate`, `numactl`, `mirror`, or `count` |
+| `context.pooling_type`          | `string` | `""`     | Pooling type: `none`, `mean`, `cls`, `last`, or `rerank`                        |
+| `context.attention_type`        | `string` | `""`     | Attention type: `causal` or `non_causal`                                        |
+| `context.embd_out`              | `string` | `""`     | Embedding output format: `""` (default), `array`, `json`, or `json+`            |
+| `context.embd_sep`              | `string` | `"\n"`   | Separator between embeddings                                                    |
+| `context.cls_sep`               | `string` | `"\t"`   | Separator between classification sequences                                      |
+| `context.embedding`             | `bool`   | `false`  | Enable embedding mode                                                           |
+| `context.reranking`             | `bool`   | `false`  | Enable reranking mode (sets pooling to `rerank` and enables embedding)          |
+| `context.ctx_shift`             | `bool`   | `false`  | Enable context shifting                                                         |
+| `context.swa_full`              | `bool`   | `false`  | Enable full sliding window attention                                            |
+| `context.cont_batching`         | `bool`   | `true`   | Enable continuous batching                                                      |
 
 #### GPU / Backend (`gpu.*`)
 
@@ -579,6 +580,7 @@ The following tables list all the ROS 2 parameters available when launching `lla
 | `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)            |
 | `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                  |
 | `cache.checkpoint_min_step` | `int32`  | `256`   | Minimum spacing between context checkpoints                                                      |
+| `cache.kv_unified_per_slot` | `int32`  | `0`     | Maximum context per parallel slot when `memory.kv_unified` is enabled (`0` = unset)              |
 
 #### Fit Parameters (`fit.*`)
 
@@ -593,27 +595,51 @@ Speculative decoding uses draft tokens to accelerate generation, then verifies t
 
 **Note:** Speculative decoding requires `context.n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
 
-| Param              | Type     | Default  | Description                                                                                                                                                   |
-| ------------------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `speculative.type` | `string` | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
+| Param                     | Type       | Default  | Description                                                                                                                                                   |
+| ------------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.type`        | `string`   | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
+| `speculative.synth_len`   | `double`   | `-1.0`   | Synthetic n-gram speculation length (`-1.0` = disabled)                                                                                                       |
+| `speculative.synth_rates` | `double[]` | `[]`     | Synthetic n-gram speculation rates                                                                                                                            |
 
 ##### Draft Model (`speculative.draft.*`)
 
 Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`).
 
-| Param                                | Type     | Default | Description                                                                                                                                                                                             |
-| ------------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `speculative.draft.n_max`            | `int32`  | `16`    | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
-| `speculative.draft.n_min`            | `int32`  | `0`     | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
-| `speculative.draft.p_min`            | `double` | `0.75`  | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
-| `speculative.draft.p_split`          | `double` | `0.1`   | Split probability threshold for speculative sampling                                                                                                                                                    |
-| `speculative.draft.n_gpu_layers`     | `int32`  | `-1`    | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
-| `speculative.draft.cache_type_k`     | `string` | `"f16"` | KV cache type for K in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
-| `speculative.draft.cache_type_v`     | `string` | `"f16"` | KV cache type for V in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
-| `speculative.draft.model.path`       | `string` | `""`    | Local file path to the draft model GGUF file                                                                                                                                                            |
-| `speculative.draft.model.repo`       | `string` | `""`    | HuggingFace repository ID for the draft model                                                                                                                                                           |
-| `speculative.draft.model.filename`   | `string` | `""`    | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
-| `speculative.draft.backend_sampling` | `bool`   | `true`  | Whether to offload draft sampling to the backend                                                                                                                                                        |
+| Param                                     | Type       | Default | Description                                                                                                                                                                                             |
+| ----------------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.draft.n_max`                 | `int32`    | `16`    | Maximum number of tokens to draft per speculative step                                                                                                                                                  |
+| `speculative.draft.n_min`                 | `int32`    | `0`     | Minimum number of draft tokens required to attempt verification. If the draft model produces fewer tokens than this, the draft is discarded and a single token is generated instead. `0` is recommended |
+| `speculative.draft.p_min`                 | `double`   | `0.75`  | Minimum probability threshold for draft tokens (greedy)                                                                                                                                                 |
+| `speculative.draft.p_split`               | `double`   | `0.1`   | Split probability threshold for speculative sampling                                                                                                                                                    |
+| `speculative.draft.n_gpu_layers`          | `int32`    | `-1`    | Number of layers to offload to GPU for the draft model (`-1` for all)                                                                                                                                   |
+| `speculative.draft.cache_type_k`          | `string`   | `"f16"` | KV cache type for K in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
+| `speculative.draft.cache_type_v`          | `string`   | `"f16"` | KV cache type for V in the draft model (e.g. `f16`, `q8_0`, `q4_0`)                                                                                                                                     |
+| `speculative.draft.model.path`            | `string`   | `""`    | Local file path to the draft model GGUF file                                                                                                                                                            |
+| `speculative.draft.model.repo`            | `string`   | `""`    | HuggingFace repository ID for the draft model                                                                                                                                                           |
+| `speculative.draft.model.filename`        | `string`   | `""`    | Filename of the draft model in the HuggingFace repository                                                                                                                                               |
+| `speculative.draft.backend_sampling`      | `bool`     | `true`  | Whether to offload draft sampling to the backend                                                                                                                                                        |
+| `speculative.draft.probabilistic`         | `bool`     | `false` | Sample the draft and verify by rejection instead of argmax and match                                                                                                                                    |
+| `speculative.draft.devices`               | `string[]` | `[]`    | GPU devices to use for the draft model (device names, e.g. `CUDA0`)                                                                                                                                     |
+| `speculative.draft.tensor_buft_overrides` | `string[]` | `[]`    | Draft tensor buffer overrides, format `pattern=buft_name`                                                                                                                                               |
+
+##### Draft CPU (`speculative.draft.cpu.*` and `speculative.draft.cpu_batch.*`)
+
+Thread configuration for the draft model, same fields as `cpu.*` / `cpu_batch.*`.
+
+| Param                                   | Type     | Default    | Description                                     |
+| --------------------------------------- | -------- | ---------- | ----------------------------------------------- |
+| `speculative.draft.cpu.n_threads`       | `int32`  | `-1`       | Draft CPU threads (`-1` for auto)               |
+| `speculative.draft.cpu.mask`            | `string` | `""`       | Draft CPU affinity mask                         |
+| `speculative.draft.cpu.range`           | `string` | `""`       | Draft CPU affinity range                        |
+| `speculative.draft.cpu.priority`        | `string` | `"normal"` | Draft thread priority (`low`, `normal`, `high`) |
+| `speculative.draft.cpu.strict`          | `bool`   | `false`    | Fail if the draft CPU affinity cannot be set    |
+| `speculative.draft.cpu.poll`            | `int32`  | `50`       | Draft polling level (`0`-`100`)                 |
+| `speculative.draft.cpu_batch.n_threads` | `int32`  | `-1`       | Draft CPU batch threads (`-1` for auto)         |
+| `speculative.draft.cpu_batch.mask`      | `string` | `""`       | Draft CPU batch affinity mask                   |
+| `speculative.draft.cpu_batch.range`     | `string` | `""`       | Draft CPU batch affinity range                  |
+| `speculative.draft.cpu_batch.priority`  | `string` | `"normal"` | Draft batch thread priority                     |
+| `speculative.draft.cpu_batch.strict`    | `bool`   | `false`    | Fail if the draft batch affinity cannot be set  |
+| `speculative.draft.cpu_batch.poll`      | `int32`  | `50`       | Draft batch polling level (`0`-`100`)           |
 
 ##### Ngram-mod (`speculative.ngram_mod.*`)
 
@@ -1043,21 +1069,21 @@ questions.
 
 #### `GenerateChatCompletions` Goal (`llama_msgs/action/GenerateChatCompletions`)
 
-| Field                       | Type                         | Default | Description                                                                                                 |
-| --------------------------- | ---------------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `messages`                  | `ChatMessage[]`              | `[]`    | Conversation history as a list of chat messages                                                             |
-| `add_generation_prompt`     | `bool`                       | `false` | Append the generation prompt token sequence after the last message                                          |
-| `use_jinja`                 | `bool`                       | `false` | Use Jinja2 chat template (required for tool calls and reasoning)                                            |
-| `tools`                     | `ChatReqTool[]`              | `[]`    | List of tools the model may call                                                                            |
-| `tool_choice`               | `int32`                      | `0`     | Tool selection mode: `0` = auto, `1` = required (must call a tool), `2` = none                              |
-| `extract_reasoning`         | `bool`                       | `false` | Extract `<think>` reasoning content from the response into `reasoning_content`                              |
-| `sampling_config`           | `SamplingConfig`             | —       | Per-request sampling configuration (see `SamplingConfig` table above)                                       |
-| `reasoning_format`          | `ChatReasoningFormat`        | `3`     | How reasoning content is returned: `0`=none, `1`=auto, `2`=deepseek_legacy, `3`=deepseek                    |
-| `images`                    | `sensor_msgs/Image[]`        | `[]`    | Images for VLM inference                                                                                    |
-| `audios`                    | `std_msgs/UInt8MultiArray[]` | `[]`    | Audio buffers for multimodal inference                                                                      |
-| `parallel_tool_calls`       | `bool`                       | `false` | Allow the model to return multiple tool calls in a single message                                           |
-| `stream`                    | `bool`                       | `false` | Stream partial results as feedback messages                                                                 |
-| `force_pure_content_parser` | `bool`                       | `false` | Per-request override of `context.force_pure_content_parser` — bypasses template tool-call/reasoning parsing |
+| Field                       | Type                         | Default | Description                                                                                     |
+| --------------------------- | ---------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `messages`                  | `ChatMessage[]`              | `[]`    | Conversation history as a list of chat messages                                                 |
+| `add_generation_prompt`     | `bool`                       | `false` | Append the generation prompt token sequence after the last message                              |
+| `use_jinja`                 | `bool`                       | `false` | Use Jinja2 chat template (required for tool calls and reasoning)                                |
+| `tools`                     | `ChatReqTool[]`              | `[]`    | List of tools the model may call                                                                |
+| `tool_choice`               | `int32`                      | `0`     | Tool selection mode: `0` = auto, `1` = required (must call a tool), `2` = none                  |
+| `extract_reasoning`         | `bool`                       | `false` | Extract `<think>` reasoning content from the response into `reasoning_content`                  |
+| `sampling_config`           | `SamplingConfig`             | —       | Per-request sampling configuration (see `SamplingConfig` table above)                           |
+| `reasoning_format`          | `ChatReasoningFormat`        | `3`     | How reasoning content is returned: `0`=none, `1`=auto, `2`=deepseek_legacy, `3`=deepseek        |
+| `images`                    | `sensor_msgs/Image[]`        | `[]`    | Images for VLM inference                                                                        |
+| `audios`                    | `std_msgs/UInt8MultiArray[]` | `[]`    | Audio buffers for multimodal inference                                                          |
+| `parallel_tool_calls`       | `bool`                       | `false` | Allow the model to return multiple tool calls in a single message                               |
+| `stream`                    | `bool`                       | `false` | Stream partial results as feedback messages                                                     |
+| `force_pure_content_parser` | `bool`                       | `false` | Bypass Jinja template tool-call/reasoning parsing and force raw content output for this request |
 
 #### `GenerateChatCompletions` Result (`llama_msgs/action/GenerateChatCompletions`)
 
