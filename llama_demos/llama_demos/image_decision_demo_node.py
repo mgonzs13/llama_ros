@@ -48,17 +48,17 @@ def load_image_from_url(url):
 def build_questions():
     choice = DecisionQuestion()
     choice.type = DecisionQuestion.CHOICE
-    choice.instructions = "What is the main subject of the image?"
-    choice.keys = ["person", "food", "animal", "object"]
+    choice.instructions = "What is the race of the subject in the image?"
+    choice.keys = ["human", "elf", "orc", "dwarf", "other"]
 
     score = DecisionQuestion()
     score.type = DecisionQuestion.SCORE
-    score.instructions = "How cluttered is the scene?"
-    score.descriptions = ["empty", "moderate", "busy"]
+    score.instructions = "How big is the food?"
+    score.descriptions = ["small", "medium", "large"]
 
     noul = DecisionQuestion()
     noul.type = DecisionQuestion.NOUL
-    noul.instructions = "Is there a person in the image?"
+    noul.instructions = "Is it a fantasy character?"
 
     return [choice, score, noul]
 
