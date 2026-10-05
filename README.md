@@ -742,6 +742,305 @@ The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatComp
 | `reasoning_budget_message` | `string`           | `""`                              | Text inserted before the thinking end tag when the reasoning budget is exhausted (e.g. `"Wait, I need to conclude."`)                                                                                                          |
 | `reasoning_control`        | `bool`             | `false`                           | Create the budget sampler on demand so reasoning can be ended at runtime                                                                                                                                                       |
 
+#### `LogitBias` (`llama_msgs/msg/LogitBias`)
+
+| Field   | Type      | Default | Description                     |
+| ------- | --------- | ------- | ------------------------------- |
+| `token` | `int32`   | —       | Token to apply the bias to      |
+| `bias`  | `float32` | —       | Bias added to the token's logit |
+
+#### `LogitBiasArray` (`llama_msgs/msg/LogitBiasArray`)
+
+| Field  | Type          | Default | Description          |
+| ------ | ------------- | ------- | -------------------- |
+| `data` | `LogitBias[]` | `[]`    | List of logit biases |
+
+#### `GrammarTrigger` (`llama_msgs/msg/GrammarTrigger`)
+
+| Constant                             | Value |
+| ------------------------------------ | ----- |
+| `GRAMMAR_TRIGGER_TYPE_TOKEN`         | `0`   |
+| `GRAMMAR_TRIGGER_TYPE_WORD`          | `1`   |
+| `GRAMMAR_TRIGGER_TYPE_PATTERN`       | `2`   |
+| `GRAMMAR_TRIGGER_TYPE_PATTERN_START` | `3`   |
+
+| Field   | Type     | Default | Description                               |
+| ------- | -------- | ------- | ----------------------------------------- |
+| `type`  | `int32`  | `0`     | Trigger type (one of the constants above) |
+| `value` | `string` | `""`    | Trigger word or pattern                   |
+| `token` | `int32`  | `0`     | Trigger token (for token triggers)        |
+
+#### `ChatMessage` (`llama_msgs/msg/ChatMessage`)
+
+| Field               | Type             | Default | Description                                                 |
+| ------------------- | ---------------- | ------- | ----------------------------------------------------------- |
+| `role`              | `string`         | `""`    | Message role (`system`, `user`, `assistant`, `tool`)        |
+| `content`           | `string`         | `""`    | Message content                                             |
+| `content_parts`     | `ChatContent[]`  | `[]`    | Content split into parts (used for multimodal placeholders) |
+| `tool_calls`        | `ChatToolCall[]` | `[]`    | Tool calls made by the assistant                            |
+| `reasoning_content` | `string`         | `""`    | Reasoning content extracted from the model output           |
+| `tool_name`         | `string`         | `""`    | Name of the required tool                                   |
+| `tool_call_id`      | `string`         | `""`    | ID of the tool call                                         |
+
+#### `ChatContent` (`llama_msgs/msg/ChatContent`)
+
+| Field  | Type     | Default | Description                       |
+| ------ | -------- | ------- | --------------------------------- |
+| `type` | `string` | `""`    | Part type (`text`, image marker…) |
+| `text` | `string` | `""`    | Part text                         |
+
+#### `ChatToolCall` (`llama_msgs/msg/ChatToolCall`)
+
+| Field       | Type     | Default | Description                  |
+| ----------- | -------- | ------- | ---------------------------- |
+| `name`      | `string` | `""`    | Tool name                    |
+| `arguments` | `string` | `""`    | Tool arguments (JSON string) |
+| `id`        | `string` | `""`    | Tool call ID                 |
+| `index`     | `int32`  | `0`     | Tool call index              |
+
+#### `ChatReqTool` (`llama_msgs/msg/ChatReqTool`)
+
+| Field      | Type       | Default      | Description                 |
+| ---------- | ---------- | ------------ | --------------------------- |
+| `type`     | `string`   | `"function"` | Tool type (only `function`) |
+| `function` | `ChatTool` | —            | Tool definition             |
+
+#### `ChatTool` (`llama_msgs/msg/ChatTool`)
+
+| Constant               | Value |
+| ---------------------- | ----- |
+| `TOOL_CHOICE_AUTO`     | `0`   |
+| `TOOL_CHOICE_REQUIRED` | `1`   |
+| `TOOL_CHOICE_NONE`     | `2`   |
+
+| Field         | Type     | Default | Description                   |
+| ------------- | -------- | ------- | ----------------------------- |
+| `name`        | `string` | `""`    | Tool name                     |
+| `description` | `string` | `""`    | Tool description              |
+| `parameters`  | `string` | `""`    | Tool parameters (JSON schema) |
+
+#### `ChatReasoningFormat` (`llama_msgs/msg/ChatReasoningFormat`)
+
+| Constant                                  | Value |
+| ----------------------------------------- | ----- |
+| `COMMON_REASONING_FORMAT_NONE`            | `0`   |
+| `COMMON_REASONING_FORMAT_AUTO`            | `1`   |
+| `COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY` | `2`   |
+| `COMMON_REASONING_FORMAT_DEEPSEEK`        | `3`   |
+
+#### `Metadata` (`llama_msgs/msg/Metadata`)
+
+Returned by the `get_metadata` service (available for every model type).
+
+| Field       | Type            | Default | Description                           |
+| ----------- | --------------- | ------- | ------------------------------------- |
+| `general`   | `GeneralInfo`   | —       | General model info                    |
+| `model`     | `ModelInfo`     | —       | Architecture info                     |
+| `tokenizer` | `TokenizerInfo` | —       | Tokenizer info                        |
+| `sampling`  | `SamplingInfo`  | —       | Sampling defaults stored in the model |
+| `decision`  | `DecisionInfo`  | —       | Decision-model info                   |
+
+#### `GeneralInfo` (`llama_msgs/msg/GeneralInfo`)
+
+| Field                  | Type              | Default | Description                                      |
+| ---------------------- | ----------------- | ------- | ------------------------------------------------ |
+| `architecture`         | `string`          | `""`    | Architecture the model implements                |
+| `quantization_version` | `uint32`          | `0`     | Quantization format version (0 if not quantized) |
+| `alignment`            | `uint32`          | `0`     | Global alignment                                 |
+| `name`                 | `string`          | `""`    | Human-readable model name                        |
+| `author`               | `string`          | `""`    | Model author                                     |
+| `version`              | `string`          | `""`    | Model version                                    |
+| `organization`         | `string`          | `""`    | Model organization                               |
+| `basename`             | `string`          | `""`    | Base model name / architecture                   |
+| `finetune`             | `string`          | `""`    | What the base model was optimized toward         |
+| `description`          | `string`          | `""`    | Free-form description                            |
+| `quantized_by`         | `string`          | `""`    | Who quantized the model                          |
+| `size_label`           | `string`          | `""`    | Size class (e.g. `4B`, `270M`)                   |
+| `license`              | `string`          | `""`    | License identifier                               |
+| `license_name`         | `string`          | `""`    | Human-friendly license name                      |
+| `license_link`         | `string`          | `""`    | URL to the license                               |
+| `url`                  | `string`          | `""`    | Model homepage URL                               |
+| `repo_url`             | `string`          | `""`    | Model repository URL                             |
+| `doi`                  | `string`          | `""`    | Digital Object Identifier                        |
+| `uuid`                 | `string`          | `""`    | Universally unique identifier                    |
+| `file_type`            | `string`          | `""`    | Majority tensor type of the file                 |
+| `tags`                 | `string[]`        | `[]`    | Tags associated with the model                   |
+| `languages`            | `string[]`        | `[]`    | Languages supported by the model                 |
+| `datasets`             | `string[]`        | `[]`    | Datasets used to train the model                 |
+| `base_models`          | `BaseModelInfo[]` | `[]`    | Base models this model derives from              |
+
+#### `ModelInfo` (`llama_msgs/msg/ModelInfo`)
+
+| Field                   | Type            | Default | Description                                    |
+| ----------------------- | --------------- | ------- | ---------------------------------------------- |
+| `context_length`        | `uint64`        | `0`     | Training context length in tokens              |
+| `embedding_length`      | `uint64`        | `0`     | Embedding layer size                           |
+| `block_count`           | `uint64`        | `0`     | Number of attention + feed-forward blocks      |
+| `feed_forward_length`   | `uint64`        | `0`     | Feed-forward layer length                      |
+| `use_parallel_residual` | `bool`          | `false` | Whether parallel residual connections are used |
+| `tensor_data_layout`    | `string`        | `""`    | Tensor data layout chosen during conversion    |
+| `expert_count`          | `uint32`        | `0`     | Number of experts (MoE models)                 |
+| `expert_used_count`     | `uint32`        | `0`     | Experts used per token (MoE models)            |
+| `attention`             | `AttentionInfo` | —       | Attention info                                 |
+| `rope`                  | `RoPEInfo`      | —       | RoPE info                                      |
+
+#### `AttentionInfo` (`llama_msgs/msg/AttentionInfo`)
+
+| Field                    | Type      | Default | Description                     |
+| ------------------------ | --------- | ------- | ------------------------------- |
+| `head_count`             | `uint64`  | `0`     | Number of attention heads       |
+| `head_count_kv`          | `uint64`  | `0`     | Number of key/value heads (GQA) |
+| `max_alibi_bias`         | `float32` | `0.0`   | Maximum ALiBI bias              |
+| `clamp_kqv`              | `float32` | `0.0`   | Clamp value for Q, K and V      |
+| `layer_norm_epsilon`     | `float32` | `0.0`   | Layer normalization epsilon     |
+| `layer_norm_rms_epsilon` | `float32` | `0.0`   | RMS normalization epsilon       |
+| `key_length`             | `uint32`  | `0`     | Key head size (optional)        |
+| `value_length`           | `uint32`  | `0`     | Value head size (optional)      |
+
+#### `RoPEInfo` (`llama_msgs/msg/RoPEInfo`)
+
+| Field                             | Type      | Default | Description                                   |
+| --------------------------------- | --------- | ------- | --------------------------------------------- |
+| `dimension_count`                 | `uint64`  | `0`     | Number of rotary dimensions                   |
+| `freq_base`                       | `float32` | `0.0`   | RoPE base frequency                           |
+| `scaling_type`                    | `string`  | `""`    | Scaling type (`none`, `linear`, `yarn`)       |
+| `scaling_factor`                  | `float32` | `0.0`   | RoPE context scaling factor                   |
+| `scaling_original_context_length` | `uint32`  | `0`     | Original context length of the base model     |
+| `scaling_finetuned`               | `bool`    | `false` | Whether the model was fine-tuned with scaling |
+
+#### `TokenizerInfo` (`llama_msgs/msg/TokenizerInfo`)
+
+| Field                | Type       | Default | Description                                |
+| -------------------- | ---------- | ------- | ------------------------------------------ |
+| `model`              | `string`   | `""`    | Tokenizer model name                       |
+| `bos_token_id`       | `uint32`   | `0`     | Beginning-of-sequence token id             |
+| `eos_token_id`       | `uint32`   | `0`     | End-of-sequence token id                   |
+| `unknown_token_id`   | `uint32`   | `0`     | Unknown token id                           |
+| `padding_token_id`   | `uint32`   | `0`     | Padding token id                           |
+| `separator_token_id` | `uint32`   | `0`     | Separator token id                         |
+| `add_bos_token`      | `bool`     | `false` | Whether a BOS token is added               |
+| `chat_template`      | `string`   | `""`    | Default chat template (untruncated)        |
+| `add_eos_token`      | `bool`     | `false` | Whether an EOS token is added              |
+| `mask_token_id`      | `uint32`   | `0`     | Mask token id (0 if absent)                |
+| `chat_templates`     | `string[]` | `[]`    | Named chat templates, e.g. `["systemone"]` |
+
+#### `BaseModelInfo` (`llama_msgs/msg/BaseModelInfo`)
+
+| Field          | Type     | Default | Description               |
+| -------------- | -------- | ------- | ------------------------- |
+| `name`         | `string` | `""`    | Base model name           |
+| `author`       | `string` | `""`    | Base model author         |
+| `version`      | `string` | `""`    | Base model version        |
+| `organization` | `string` | `""`    | Base model organization   |
+| `repo_url`     | `string` | `""`    | Base model repository URL |
+
+#### `SamplingInfo` (`llama_msgs/msg/SamplingInfo`)
+
+Sampling defaults stored in the GGUF metadata (`general.sampling.*`). Absent
+keys are reported as `0`/empty.
+
+| Field             | Type       | Default | Description                                  |
+| ----------------- | ---------- | ------- | -------------------------------------------- |
+| `sequence`        | `string[]` | `[]`    | Recommended sampler sequence                 |
+| `top_k`           | `int32`    | `0`     | Top-K sampling (0 = disabled)                |
+| `top_p`           | `float32`  | `0.0`   | Top-P sampling (0.0 = not declared)          |
+| `min_p`           | `float32`  | `0.0`   | Min-P sampling (0.0 = disabled)              |
+| `xtc_probability` | `float32`  | `0.0`   | XTC probability (0.0 = disabled)             |
+| `xtc_threshold`   | `float32`  | `0.0`   | XTC threshold                                |
+| `temp`            | `float32`  | `0.0`   | Temperature                                  |
+| `penalty_last_n`  | `int32`    | `0`     | Repetition penalty window                    |
+| `penalty_repeat`  | `float32`  | `0.0`   | Repetition penalty                           |
+| `mirostat`        | `int32`    | `0`     | Mirostat mode (0 = disabled, 1 = v1, 2 = v2) |
+| `mirostat_tau`    | `float32`  | `0.0`   | Mirostat tau                                 |
+| `mirostat_eta`    | `float32`  | `0.0`   | Mirostat eta                                 |
+
+#### `DecisionInfo` (`llama_msgs/msg/DecisionInfo`)
+
+Tells whether the node exposes the `evaluate_decisions` service and which
+upstream decision type the model declares.
+
+| Field                | Type        | Default | Description                                                         |
+| -------------------- | ----------- | ------- | ------------------------------------------------------------------- |
+| `enabled`            | `bool`      | `false` | Whether `evaluate_decisions` is exposed                             |
+| `type`               | `string`    | `""`    | `openjev`, `lev`, `kev`, `nimble`, `laya` or `clef` (empty if none) |
+| `max_head_tokens`    | `uint32`    | `0`     | Decision max head tokens (0 if absent)                              |
+| `temperature_names`  | `string[]`  | `[]`    | Temperature names, e.g. `"choice"`, `"choice.3_5"`                  |
+| `temperatures`       | `float32[]` | `[]`    | Temperature values, aligned with `temperature_names`                |
+| `systemone_template` | `string`    | `""`    | `systemone` chat template (empty if absent)                         |
+
+#### `DecisionQuestion` (`llama_msgs/msg/DecisionQuestion`)
+
+One typed question of an `evaluate_decisions` request.
+
+| Constant | Value |
+| -------- | ----- |
+| `CHOICE` | `0`   |
+| `SCORE`  | `1`   |
+| `NOUL`   | `2`   |
+
+| Field          | Type       | Default | Description                                                            |
+| -------------- | ---------- | ------- | ---------------------------------------------------------------------- |
+| `type`         | `uint8`    | `0`     | Question type (one of the constants above)                             |
+| `instructions` | `string`   | `""`    | Question instructions                                                  |
+| `keys`         | `string[]` | `[]`    | Choice option keys (ignored otherwise)                                 |
+| `descriptions` | `string[]` | `[]`    | Choice option descriptions; score levels (2..10); Noul `[false, true]` |
+
+#### `DecisionAnswer` (`llama_msgs/msg/DecisionAnswer`)
+
+One answer of an `evaluate_decisions` response, aligned 1:1 with the request
+questions.
+
+| Field           | Type        | Default | Description                                       |
+| --------------- | ----------- | ------- | ------------------------------------------------- |
+| `success`       | `bool`      | `false` | Whether the question was answered                 |
+| `error`         | `string`    | `""`    | Error message when `success` is false             |
+| `type`          | `uint8`     | `0`     | Question type (see `DecisionQuestion`)            |
+| `choice`        | `string`    | `""`    | Best option key (choice questions)                |
+| `score`         | `float32`   | `0.0`   | Expected level (score questions)                  |
+| `noul`          | `float32`   | `0.0`   | P(true) (Noul questions)                          |
+| `confidence`    | `float32`   | `0.0`   | Answer confidence (0 for Noul)                    |
+| `keys`          | `string[]`  | `[]`    | Ordered option keys, aligned with `probabilities` |
+| `probabilities` | `float32[]` | `[]`    | Probability of each option                        |
+
+#### `Response` (`llama_msgs/msg/Response`)
+
+| Field    | Type               | Default | Description                       |
+| -------- | ------------------ | ------- | --------------------------------- |
+| `text`   | `string`           | `""`    | Generated text                    |
+| `tokens` | `int32[]`          | `[]`    | Generated token ids               |
+| `probs`  | `TokenProbArray[]` | `[]`    | Probabilities per generated token |
+
+#### `PartialResponse` (`llama_msgs/msg/PartialResponse`)
+
+| Field   | Type             | Default | Description                                            |
+| ------- | ---------------- | ------- | ------------------------------------------------------ |
+| `text`  | `string`         | `""`    | Delta text of the streamed response                    |
+| `token` | `int32`          | `0`     | Token of the delta                                     |
+| `probs` | `TokenProbArray` | —       | Probabilities of the selected and more probable tokens |
+
+#### `TokenProb` (`llama_msgs/msg/TokenProb`)
+
+| Field         | Type      | Default | Description                      |
+| ------------- | --------- | ------- | -------------------------------- |
+| `token`       | `int32`   | `0`     | Token id                         |
+| `probability` | `float32` | `0.0`   | Probability of the token         |
+| `token_text`  | `string`  | `""`    | Text representation of the token |
+
+#### `TokenProbArray` (`llama_msgs/msg/TokenProbArray`)
+
+| Field          | Type          | Default | Description                               |
+| -------------- | ------------- | ------- | ----------------------------------------- |
+| `data`         | `TokenProb[]` | `[]`    | Probabilities of the most probable tokens |
+| `chosen_token` | `int32`       | `0`     | Chosen token in the sampling              |
+
+#### `UsageStats` (`llama_msgs/msg/UsageStats`)
+
+| Field               | Type    | Default | Description                |
+| ------------------- | ------- | ------- | -------------------------- |
+| `completion_tokens` | `int32` | `0`     | Number of output tokens    |
+| `prompt_tokens`     | `int32` | `0`     | Number of input tokens     |
+| `total_tokens`      | `int32` | `0`     | Prompt + completion tokens |
+
 #### `GenerateChatCompletions` Goal (`llama_msgs/action/GenerateChatCompletions`)
 
 | Field                       | Type                         | Default | Description                                                                                                 |
@@ -759,6 +1058,89 @@ The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatComp
 | `parallel_tool_calls`       | `bool`                       | `false` | Allow the model to return multiple tool calls in a single message                                           |
 | `stream`                    | `bool`                       | `false` | Stream partial results as feedback messages                                                                 |
 | `force_pure_content_parser` | `bool`                       | `false` | Per-request override of `context.force_pure_content_parser` — bypasses template tool-call/reasoning parsing |
+
+#### `GenerateChatCompletions` Result (`llama_msgs/action/GenerateChatCompletions`)
+
+| Field                | Type           | Default             | Description               |
+| -------------------- | -------------- | ------------------- | ------------------------- |
+| `id`                 | `string`       | `""`                | Unique chat completion ID |
+| `choices`            | `ChatChoice[]` | `[]`                | List of chat completions  |
+| `created`            | `int32`        | `0`                 | Creation time             |
+| `model`              | `string`       | `""`                | Model used                |
+| `system_fingerprint` | `string`       | `""`                | System fingerprint        |
+| `object`             | `string`       | `"chat.completion"` | Object type               |
+| `usage`              | `UsageStats`   | —                   | Usage statistics          |
+
+#### `ChatChoice` (`llama_msgs/msg/ChatChoice`)
+
+| Field           | Type               | Default | Description                 |
+| --------------- | ------------------ | ------- | --------------------------- |
+| `message`       | `ChatMessage`      | —       | The message that was sent   |
+| `logprobs`      | `TokenProbArray[]` | `[]`    | Log probabilities           |
+| `finish_reason` | `string`           | `""`    | Reason the completion ended |
+| `index`         | `int32`            | `0`     | Choice index                |
+
+#### `GenerateChatCompletions` Feedback (`llama_msgs/action/GenerateChatCompletions`)
+
+| Field                | Type                | Default                   | Description               |
+| -------------------- | ------------------- | ------------------------- | ------------------------- |
+| `id`                 | `string`            | `""`                      | Unique chat completion ID |
+| `choices`            | `ChatChoiceChunk[]` | `[]`                      | List of chat chunks       |
+| `created`            | `int32`             | `0`                       | Creation time             |
+| `model`              | `string`            | `""`                      | Model used                |
+| `system_fingerprint` | `string`            | `""`                      | System fingerprint        |
+| `object`             | `string`            | `"chat.completion.chunk"` | Object type               |
+| `usage`              | `UsageStats`        | —                         | Usage statistics          |
+
+#### `ChatChoiceChunk` (`llama_msgs/msg/ChatChoiceChunk`)
+
+| Field           | Type             | Default | Description                 |
+| --------------- | ---------------- | ------- | --------------------------- |
+| `delta`         | `ChatDeltaChunk` | —       | Delta applied to chat state |
+| `logprobs`      | `TokenProbArray` | —       | Log probabilities           |
+| `finish_reason` | `string`         | `""`    | Reason the completion ended |
+| `index`         | `int32`          | `0`     | Choice index                |
+
+#### `ChatDeltaChunk` (`llama_msgs/msg/ChatDeltaChunk`)
+
+| Field               | Type             | Default | Description                    |
+| ------------------- | ---------------- | ------- | ------------------------------ |
+| `content`           | `string`         | `""`    | Delta content                  |
+| `role`              | `string`         | `""`    | Delta role                     |
+| `tool_calls`        | `ChatToolCall[]` | `[]`    | Tool calls in the delta        |
+| `reasoning_content` | `string`         | `""`    | Reasoning content in the delta |
+
+#### `GenerateResponse` Goal (`llama_msgs/action/GenerateResponse`)
+
+| Field             | Type                         | Default | Description                                               |
+| ----------------- | ---------------------------- | ------- | --------------------------------------------------------- |
+| `prompt`          | `string`                     | `""`    | Prompt                                                    |
+| `images`          | `sensor_msgs/Image[]`        | `[]`    | Images for VLMs                                           |
+| `audios`          | `std_msgs/UInt8MultiArray[]` | `[]`    | Audios for mtmd                                           |
+| `stop`            | `string[]`                   | `[]`    | Stop sequences                                            |
+| `precompute`      | `bool`                       | `false` | Evaluate the prompt and retain KV without sampling output |
+| `reset`           | `bool`                       | `false` | Whether to reset the context                              |
+| `sampling_config` | `SamplingConfig`             | —       | Per-request sampling configuration                        |
+
+#### `GenerateResponse` Result (`llama_msgs/action/GenerateResponse`)
+
+| Field      | Type       | Default | Description    |
+| ---------- | ---------- | ------- | -------------- |
+| `response` | `Response` | —       | Final response |
+
+#### `GenerateResponse` Feedback (`llama_msgs/action/GenerateResponse`)
+
+| Field              | Type              | Default | Description      |
+| ------------------ | ----------------- | ------- | ---------------- |
+| `partial_response` | `PartialResponse` | —       | Partial response |
+
+#### `LoRA` (`llama_msgs/msg/LoRA`)
+
+| Field   | Type      | Default | Description                  |
+| ------- | --------- | ------- | ---------------------------- |
+| `id`    | `int32`   | `0`     | LoRA ID                      |
+| `path`  | `string`  | `""`    | Path to the LoRA file        |
+| `scale` | `float32` | `0.0`   | Scale applied to the adapter |
 
 ### LoRA Adapters
 
