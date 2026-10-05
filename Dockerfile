@@ -30,7 +30,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies with pip
-RUN cd src/llama_ros && pip3 install --break-system-packages --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --upgrade pip || \
+    python3 -m pip install --break-system-packages --ignore-installed --upgrade pip
+RUN cd src/llama_ros && pip3 install --break-system-packages --no-cache-dir --ignore-installed -r requirements.txt
 
 # Install CUDA toolkit (optional)
 ARG USE_CUDA=0

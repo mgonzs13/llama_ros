@@ -47,7 +47,8 @@ Then clone the repository and install the Python dependencies:
 cd ~/ros2_ws/src
 git clone https://github.com/mgonzs13/llama_ros.git
 cd llama_ros
-pip3 install --break-system-packages -r requirements.txt
+python3 -m pip install --upgrade pip || python3 -m pip install --break-system-packages --ignore-installed --upgrade pip
+pip3 install --break-system-packages --ignore-installed -r requirements.txt
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
 colcon build --cmake-args -DGGML_CUDA=ON # add this for CUDA
