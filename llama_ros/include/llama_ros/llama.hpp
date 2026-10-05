@@ -773,11 +773,31 @@ protected:
 
   /**
    * @brief Tokenizes and fills a slot for a joint decision prompt.
+   *
+   * Virtual: Llava overrides it for multimodal prompts.
+   *
+   * @param prompt The rendered joint prompt.
+   * @param questions All questions of the request.
+   * @param n_images Number of images loaded in the model.
+   * @param slot The slot to fill.
    */
-  void
+  virtual void
   prepare_joint_decision_slot(const std::string &prompt,
                               const std::vector<DecisionQuestion> &questions,
-                              ServerSlot *slot);
+                              size_t n_images, ServerSlot *slot);
+
+  /**
+   * @brief Adds the media embeddings of a decision prompt to the batch.
+   *
+   * Used by run_loop for decision slots with media so the image embeddings
+   * and the scored text tokens are decoded together, as the Clef joint head
+   * reads decision orders per ubatch. The base implementation has no media
+   * support.
+   *
+   * @param slot The slot being processed.
+   * @return True when the media entries were added to the batch.
+   */
+  virtual bool process_decision_mtmd_batch(ServerSlot *slot);
 
   /**
    * @brief Parses a state string as JSON, falling back to plain text.

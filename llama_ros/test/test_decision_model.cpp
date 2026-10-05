@@ -475,3 +475,44 @@ TEST(DecisionModelTest, FormatRejectsNanScores) {
   EXPECT_THROW(model.format_answer(q, options, {{NAN, 0.0f}}),
                std::runtime_error);
 }
+
+TEST(DecisionModelTest, RenderJointInsertsImageMarkers) {
+  llama_ros::DecisionModelConfig config;
+  config.type = COMMON_DECISION_TYPE_CLEF;
+  config.n_options_max = 255;
+  config.noul_true_first = true;
+  config.choice_sorted = true;
+  llama_ros::DecisionModel model(config, test_template());
+
+  llama_ros::DecisionQuestion q;
+  q.id = "0";
+  q.type = llama_ros::DECISION_QUESTION_CHOICE;
+  q.instructions = "Pick.";
+  q.keys = {"a"};
+
+  const std::string marker = mtmd_default_marker();
+  const common_json state = common_json(std::string(marker) + " fake state");
+  const std::string prompt = model.render_joint(state, {q}, 1);
+
+  size_t count = 0;
+  size_t pos = prompt.find(marker);
+  while (pos != std::string::npos) {
+    count++;
+    pos = prompt.find(marker, pos + marker.size());
+  }
+  EXPECT_EQ(count, 1u);
+}
+
+TEST(DecisionModelTest, JointHeadEndValidatesLayout) {
+  const std::string marker = mtmd_default_marker();
+  const std::vector<std::pair<std::string, int32_t>> pieces = {
+      {"state ", 0}, {marker, 0}, {"question", 2}, {"option", 4}};
+
+  EXPECT_EQ(llama_ros::DecisionModel::joint_head_end(pieces, marker), 2u);
+  EXPECT_EQ(llama_ros::DecisionModel::joint_head_end(pieces, "no-marker"), 0u);
+
+  const std::vector<std::pair<std::string, int32_t>> bad = {
+      {"state ", 0}, {"question", 2}, {marker, 2}};
+  EXPECT_THROW(llama_ros::DecisionModel::joint_head_end(bad, marker),
+               std::runtime_error);
+}

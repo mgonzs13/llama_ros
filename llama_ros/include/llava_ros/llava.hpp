@@ -109,6 +109,19 @@ public:
                         size_t n_images, llama_ros::ServerSlot *slot) override;
 
   /**
+   * @brief Tokenizes a joint decision prompt with mtmd when it has images.
+   */
+  void prepare_joint_decision_slot(
+      const std::string &prompt,
+      const std::vector<llama_ros::DecisionQuestion> &questions,
+      size_t n_images, llama_ros::ServerSlot *slot) override;
+
+  /**
+   * @brief Adds the media embeddings of a decision prompt to the batch.
+   */
+  bool process_decision_mtmd_batch(llama_ros::ServerSlot *slot) override;
+
+  /**
    * @brief Handles a text completion request with multimodal support.
    *
    * Overrides the base Llama implementation to incorporate loaded

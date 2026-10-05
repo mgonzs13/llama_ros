@@ -1122,7 +1122,7 @@ Llama::evaluate_decisions_joint(const common_json &state,
     }
   };
 
-  if (n_images > 0) {
+  if (n_images > 0 && !this->decision_model_->supports_images()) {
     fail_all("images are not supported by this decision model");
     return results;
   }
@@ -1138,7 +1138,7 @@ Llama::evaluate_decisions_joint(const common_json &state,
 
   std::string prompt;
   try {
-    prompt = this->decision_model_->render_joint(state, questions);
+    prompt = this->decision_model_->render_joint(state, questions, n_images);
   } catch (const std::exception &e) {
     fail_all(std::string("Failed to render the decision prompt: ") + e.what());
     return results;
@@ -1155,7 +1155,7 @@ Llama::evaluate_decisions_joint(const common_json &state,
   auto fut = this->task_registry_->register_pending(gid);
 
   try {
-    this->prepare_joint_decision_slot(prompt, questions, slot);
+    this->prepare_joint_decision_slot(prompt, questions, n_images, slot);
   } catch (const std::exception &e) {
     this->fail_pending(gid, e.what());
     this->release_slot(slot);
@@ -1226,19 +1226,30 @@ void Llama::prepare_decision_slot(const std::string &prompt,
 
 void Llama::prepare_joint_decision_slot(
     const std::string &prompt, const std::vector<DecisionQuestion> &questions,
-    ServerSlot *slot) {
+    size_t n_images, ServerSlot *slot) {
+
+  if (n_images > 0) {
+    throw std::runtime_error("images are not supported by this node");
+  }
+
   std::vector<llama_token> tokens;
   DecisionTaskMeta meta;
   this->decision_model_->fill_task_joint(this->get_vocab(), questions, prompt,
-                                         tokens, meta);
+                                         0, tokens, meta);
 
-  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
+  if (tokens.size() >
+      (size_t)std::min(llama_n_batch(this->ctx), llama_n_ubatch(this->ctx))) {
     throw std::runtime_error(
         "The question, its options and the state must fit in one batch; "
-        "increase context.n_batch");
+        "increase context.n_batch and context.n_ubatch");
   }
 
   this->decision_handler_->handle(tokens, meta, slot);
+}
+
+bool Llama::process_decision_mtmd_batch(ServerSlot *slot) {
+  (void)slot;
+  return false;
 }
 
 void Llama::handle_prefilled_decision_req(const DecisionTaskMeta &meta,
@@ -2441,6 +2452,23 @@ void Llama::run_loop() {
             continue;
           }
 
+          if (slot.task_type == SERVER_TASK_TYPE_DECISION &&
+              this->decision_model_ != nullptr &&
+              this->decision_model_->is_joint() &&
+              !slot.map_pos_to_media.empty() &&
+              (size_t)slot.n_prompt_tokens >
+                  (size_t)std::min(llama_n_batch(this->ctx),
+                                   llama_n_ubatch(this->ctx))) {
+            LLAMA_LOG_WARN("Decision prompt exceeds the batch size on slot %d",
+                           slot.id);
+            this->fail_pending(slot.goal_id,
+                               "The question, its options and the state must "
+                               "fit in one batch; increase context.n_batch and "
+                               "context.n_ubatch");
+            this->release_slot(&slot);
+            continue;
+          }
+
           // Reuse the KV-cached prefix when allowed; fall back to a full wipe
           // when the prompt diverges or caching is disabled for this slot.
           const bool caching_allowed = this->params.cache_prompt &&
@@ -2528,13 +2556,21 @@ void Llama::run_loop() {
           continue;
         }
 
-        // process MTMD chunks if present
-        if (slot.n_past < slot.n_prompt_tokens &&
+        const bool joint_decision =
+            slot.task_type == SERVER_TASK_TYPE_DECISION &&
+            this->decision_model_ != nullptr &&
+            this->decision_model_->is_joint();
+
+        // process MTMD chunks if present; joint decision media is handled
+        // inline by the enqueue loop below so the whole prompt is decoded
+        // in one batch (the Clef head is stateless and cannot be split)
+        if (!joint_decision && slot.n_past < slot.n_prompt_tokens &&
             slot.prompt_tokens[slot.n_past] == LLAMA_TOKEN_NULL) {
           process_mtmd_chunk(&slot);
         }
 
         // enqueue prompt tokens up to the available batch capacity
+        bool enqueue_failed = false;
         while (slot.n_past < slot.n_prompt_tokens) {
           if (static_cast<uint32_t>(this->batch.size()) >=
               llama_n_batch(this->ctx)) {
@@ -2543,8 +2579,49 @@ void Llama::run_loop() {
 
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
           if (cur_tok == LLAMA_TOKEN_NULL) {
-            break; // end of text chunk
+            if (!joint_decision) {
+              break; // end of text chunk
+            }
+
+            // a joint decision prompt must own its batch: the Clef head
+            // reads decision_order spans and requires a single sequence
+            bool foreign = false;
+            for (const auto &batch_token : this->batch.tokens) {
+              if (batch_token.seq_id != slot.id ||
+                  !batch_token.seq_ids_extra.empty()) {
+                foreign = true;
+                break;
+              }
+            }
+            if (foreign) {
+              LLAMA_LOG_WARN(
+                  "Joint decision prompt cannot share a batch on slot %d",
+                  slot.id);
+              this->fail_pending(slot.goal_id,
+                                 "Joint decision prompts cannot share a "
+                                 "batch; set context.n_parallel to 1");
+              this->release_slot(&slot);
+              enqueue_failed = true;
+              break;
+            }
+
+            bool ok = false;
+            try {
+              ok = this->process_decision_mtmd_batch(&slot);
+            } catch (const std::exception &e) {
+              LLAMA_LOG_ERROR("Failed to process decision media: %s", e.what());
+              ok = false;
+            }
+            if (!ok) {
+              this->fail_pending(slot.goal_id,
+                                 "Failed to process decision media");
+              this->release_slot(&slot);
+              enqueue_failed = true;
+              break;
+            }
+            continue;
           }
+
           const bool need_embd = this->is_embedding() || this->is_reranking() ||
                                  (this->is_decision() &&
                                   this->decision_model_->needs_embeddings());
@@ -2559,6 +2636,25 @@ void Llama::run_loop() {
 
           slot.n_prompt_tokens_processed++;
           slot.n_past++;
+        }
+
+        if (enqueue_failed) {
+          continue;
+        }
+
+        if (joint_decision && slot.n_past < slot.n_prompt_tokens) {
+          // the batch capacity was reached before the whole prompt was
+          // enqueued; a split prompt would be discarded by the stateless
+          // Clef encoder
+          LLAMA_LOG_WARN(
+              "Joint decision prompt does not fit the batch on slot %d",
+              slot.id);
+          this->fail_pending(slot.goal_id,
+                             "The question, its options and the state must "
+                             "fit in one batch; increase context.n_batch and "
+                             "context.n_ubatch");
+          this->release_slot(&slot);
+          continue;
         }
 
         LLAMA_LOG_INFO("Processed %d/%d prompt tokens for slot %d",

@@ -51,6 +51,19 @@ Llava::Llava(const common_params &params, std::string system_prompt)
     mparams.image_min_tokens = this->params.image_min_tokens;
     mparams.image_max_tokens = this->params.image_max_tokens;
     mparams.batch_max_tokens = this->params.mtmd_batch_max_tokens;
+
+    // the joint head needs the whole prompt in one batch: cap the image token
+    // budget so image embeddings and text tokens fit together (mirrors the
+    // upstream mixed-batch warning)
+    if (this->is_decision() && this->decision_model_->is_joint() &&
+        this->params.n_ubatch > 0) {
+      const int32_t n_max = this->params.n_ubatch / 2;
+      if (mparams.image_max_tokens <= 0 || mparams.image_max_tokens > n_max) {
+        mparams.image_max_tokens = n_max;
+        mparams.image_min_tokens = std::min(mparams.image_min_tokens, n_max);
+      }
+    }
+
     mparams.flash_attn_type = this->params.flash_attn_type;
     mparams.warmup = this->params.warmup;
 
@@ -230,6 +243,11 @@ void Llava::prepare_decision_slot(
     const std::string &prompt, const llama_ros::DecisionQuestion &question,
     const std::vector<llama_ros::DecisionOption> &options, size_t n_images,
     llama_ros::ServerSlot *slot) {
+
+  // at most 8 images per request (node-level limit)
+  slot->decision_media_embd.clear();
+  slot->decision_media_embd.reserve(8);
+
   if (n_images == 0) {
     llama_ros::Llama::prepare_decision_slot(prompt, question, options, n_images,
                                             slot);
@@ -266,6 +284,143 @@ void Llava::prepare_decision_slot(
                                    meta);
 
   this->handle_prefilled_decision_req(meta, slot);
+}
+
+void Llava::prepare_joint_decision_slot(
+    const std::string &prompt,
+    const std::vector<llama_ros::DecisionQuestion> &questions, size_t n_images,
+    llama_ros::ServerSlot *slot) {
+
+  // at most 8 images per request (node-level limit)
+  slot->decision_media_embd.clear();
+  slot->decision_media_embd.reserve(8);
+
+  if (n_images == 0) {
+    llama_ros::Llama::prepare_joint_decision_slot(prompt, questions, n_images,
+                                                  slot);
+    return;
+  }
+
+  if (this->decision_model_ == nullptr ||
+      !this->decision_model_->supports_images()) {
+    throw std::runtime_error("images are not supported by this decision model");
+  }
+
+  if (this->mtmd_ctx == nullptr) {
+    throw std::runtime_error("multimodal projector is not loaded");
+  }
+
+  const auto pieces =
+      llama_ros::DecisionModel::split_joint_prompt(prompt, questions);
+  const size_t head_end =
+      llama_ros::DecisionModel::joint_head_end(pieces, mtmd_default_marker());
+
+  if (head_end == 0) {
+    throw std::runtime_error("unexpected layout of the decision prompt");
+  }
+
+  std::string head;
+  for (size_t i = 0; i < head_end; i++) {
+    head += pieces[i].first;
+  }
+
+  slot->prompt_tokens.clear();
+  slot->map_pos_to_media.clear();
+  mtmd_input_text inp_txt = {
+      head.c_str(),
+      head.size(),
+      /* add_special */ false,
+      /* parse_special */ true,
+  };
+
+  mtmd::input_chunks chunks(mtmd_input_chunks_init());
+  auto bitmaps_c_ptr = this->bitmaps.c_ptr();
+  const int32_t tokenized =
+      mtmd_tokenize(this->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
+
+  if (tokenized != 0) {
+    throw std::runtime_error("Failed to tokenize decision prompt");
+  }
+
+  this->process_input_chunks(chunks, slot);
+
+  llama_ros::DecisionTaskMeta meta;
+  this->decision_model_->fill_task_joint(this->get_vocab(), questions, prompt,
+                                         head_end, slot->prompt_tokens, meta);
+
+  if (slot->prompt_tokens.size() >
+      (size_t)std::min(llama_n_batch(this->ctx), llama_n_ubatch(this->ctx))) {
+    throw std::runtime_error(
+        "The question, its options and the state must fit in one batch; "
+        "increase context.n_batch and context.n_ubatch");
+  }
+
+  this->handle_prefilled_decision_req(meta, slot);
+}
+
+bool Llava::process_decision_mtmd_batch(llama_ros::ServerSlot *slot) {
+  if (this->mtmd_ctx == nullptr || slot == nullptr) {
+    return false;
+  }
+
+  const auto &chunk = find_chunk(slot->n_past, slot);
+  if (chunk == nullptr) {
+    return false;
+  }
+
+  // encode this chunk (one chunk per call; run_loop calls again for the next)
+  mtmd::batch_ptr mbatch(mtmd_batch_init(this->mtmd_ctx));
+  if (mbatch == nullptr) {
+    return false;
+  }
+
+  if (mtmd_batch_add_chunk(mbatch.get(), chunk.get()) != 0) {
+    return false;
+  }
+
+  if (mtmd_batch_encode(mbatch.get()) != 0) {
+    return false;
+  }
+
+  const float *embd = mtmd_batch_get_output_embd(mbatch.get(), chunk.get());
+  if (embd == nullptr) {
+    return false;
+  }
+
+  const auto *image = mtmd_input_chunk_get_tokens_image(chunk.get());
+  const bool is_mrope = mtmd_decode_use_mrope(this->mtmd_ctx);
+  const size_t n_tokens = mtmd_input_chunk_get_n_tokens(chunk.get());
+  const size_t n_embd = (size_t)llama_model_n_embd_inp(this->get_model());
+  const llama_pos pos_0 = slot->n_past;
+
+  // common_batch stores a non-owning view: keep a copy alive in the slot
+  // until the batch is decoded (cleared by ServerSlot::reset)
+  slot->decision_media_embd.emplace_back(embd, embd + n_tokens * n_embd);
+  const float *embd_copy = slot->decision_media_embd.back().data();
+
+  for (size_t i = 0; i < n_tokens; i++) {
+    llama_pos pos[GGML_MROPE_SECTIONS] = {
+        pos_0 + (llama_pos)i, pos_0 + (llama_pos)i, pos_0 + (llama_pos)i,
+        pos_0 + (llama_pos)i};
+
+    if (is_mrope && image != nullptr) {
+      const mtmd_decoder_pos rel =
+          mtmd_image_tokens_get_decoder_pos(image, pos_0, i);
+      pos[0] = (llama_pos)rel.t;
+      pos[1] = (llama_pos)rel.y;
+      pos[2] = (llama_pos)rel.x;
+      pos[3] = (llama_pos)rel.z;
+    }
+
+    this->batch.add_embd({embd_copy + i * n_embd, 1, n_embd}, pos, slot->id,
+                         true);
+  }
+
+  const int32_t n_pos = (int32_t)mtmd_input_chunk_get_n_pos(chunk.get());
+  slot->n_past += n_pos;
+  slot->n_prompt_tokens_processed += n_pos;
+  return true;
 }
 
 void llava_ros::Llava::handle_completion_req(

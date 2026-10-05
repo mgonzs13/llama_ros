@@ -79,6 +79,10 @@ public:
   /// @brief Where to read the model output of each decision option.
   DecisionTaskMeta decision;
 
+  /// @brief Encoded decision media embeddings, kept alive until the batch
+  /// is decoded (common_batch stores a non-owning view).
+  std::vector<std::vector<float>> decision_media_embd;
+
   /// @brief Whether the KV-cached prefix may be reused for this task.
   bool cache_prompt = true;
 

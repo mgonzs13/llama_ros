@@ -209,6 +209,17 @@ TEST_F(LlamaDecisionTest, RejectsInvalidQuestions) {
   EXPECT_TRUE(score_results[0].is_error());
 }
 
+TEST_F(LlamaDecisionTest, RejectsImagesForNonImageModel) {
+  llama_ros::DecisionQuestion question;
+  question.type = llama_ros::DECISION_QUESTION_CHOICE;
+  question.instructions = "Pick one.";
+  question.keys = {"a", "b"};
+
+  auto results = llama->evaluate_decisions("Some state.", {question}, 1);
+  ASSERT_EQ(results.size(), 1u);
+  EXPECT_TRUE(results[0].is_error());
+}
+
 TEST_F(LlamaDecisionTest, AnswersMultipleQuestions) {
   llama_ros::DecisionQuestion choice;
   choice.type = llama_ros::DECISION_QUESTION_CHOICE;
@@ -455,4 +466,49 @@ TEST_F(LlamaEnvDecisionTest, AnswersAllQuestionTypes) {
   EXPECT_TRUE(results[0].is_ok()) << results[0].error();
   EXPECT_TRUE(results[1].is_ok()) << results[1].error();
   EXPECT_TRUE(results[2].is_ok()) << results[2].error();
+}
+
+TEST_F(LlamaDecisionTest, ClefJointFillAssignsOrders) {
+  llama_ros::DecisionModelConfig config;
+  config.type = COMMON_DECISION_TYPE_CLEF;
+  config.n_options_max = 255;
+  config.noul_true_first = true;
+  config.choice_sorted = true;
+  llama_ros::DecisionModel model(config, nullptr);
+
+  llama_ros::DecisionQuestion question;
+  question.id = "0";
+  question.type = llama_ros::DECISION_QUESTION_CHOICE;
+  question.instructions = "Pick one.";
+  question.keys = {"red", "blue"};
+
+  const std::string prompt =
+      "state<<clef:sep>><<clef:question>>Pick one."
+      "<<clef:sep>><<clef:option>>red<<clef:sep>><<clef:option>>blue";
+
+  // text-only path: head_end = 0
+  std::vector<llama_token> tokens;
+  llama_ros::DecisionTaskMeta meta;
+  model.fill_task_joint(llama->get_vocab(), {question}, prompt, 0, tokens,
+                        meta);
+  EXPECT_EQ(meta.n_scores, 2);
+  ASSERT_EQ(meta.order.size(), tokens.size());
+  EXPECT_NE(std::find(meta.order.begin(), meta.order.end(), 2),
+            meta.order.end());
+  EXPECT_EQ(std::count(meta.order.begin(), meta.order.end(), 4), 2);
+
+  // mixed path: the head entries stay at order 0 and are preserved
+  std::vector<llama_token> mixed_tokens = {11, 12, 13};
+  llama_ros::DecisionTaskMeta mixed_meta;
+  model.fill_task_joint(llama->get_vocab(), {question}, prompt, 1, mixed_tokens,
+                        mixed_meta);
+  ASSERT_GE(mixed_tokens.size(), 3u);
+  EXPECT_EQ(mixed_tokens[0], 11);
+  EXPECT_EQ(mixed_tokens[1], 12);
+  EXPECT_EQ(mixed_tokens[2], 13);
+  ASSERT_EQ(mixed_meta.order.size(), mixed_tokens.size());
+  EXPECT_EQ(mixed_meta.order[0], 0);
+  EXPECT_EQ(mixed_meta.order[1], 0);
+  EXPECT_EQ(mixed_meta.order[2], 0);
+  EXPECT_EQ(mixed_meta.n_scores, 2);
 }

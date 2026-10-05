@@ -2174,6 +2174,27 @@ questions are currently decoded independently (no shared-prompt-prefix
 grouping yet), except Clef which answers all questions of a request in one
 joint forward pass.
 
+### Image Decision Demo
+
+Clef decision models accept images through the `llava` node with a multimodal
+projector. The image decision demo downloads a fixed image from a URL (pass a
+different URL as the first argument to override it) and sends it with a
+`choice`, a `score` and a `noul` question; Clef answers all of them in one
+joint forward pass.
+
+```shell
+ros2 launch llama_bringup image-decision.launch.py
+```
+
+```shell
+ros2 run llama_demos image_decision_demo_node [image_url]
+```
+
+Up to 8 images are accepted per request. The whole prompt (text plus image
+embeddings) must fit in one batch, so `context.n_batch`/`n_ubatch` must be
+large enough; the multimodal projector's `image_max_tokens` is capped to half
+the ubatch for joint decision models.
+
 ### RAG Demo (LLM + chat template + RAG + Reranking + Stream)
 
 ```shell

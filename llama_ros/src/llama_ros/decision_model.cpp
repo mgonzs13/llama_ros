@@ -284,6 +284,7 @@ void DecisionModel::init_from_model(const llama_model *model) {
     this->config_.n_options_max = 255;
     this->config_.noul_true_first = true;
     this->config_.choice_sorted = true;
+    this->config_.supports_images = true;
 
   } else {
     throw std::runtime_error("unsupported decision model type: " + type_name);
@@ -582,15 +583,18 @@ void DecisionModel::fill_task_laya(std::vector<llama_token> &tokens,
   tokens = std::move(out);
 }
 
-std::string DecisionModel::render_joint(
-    const common_json &state,
-    const std::vector<DecisionQuestion> &questions) const {
+std::string
+DecisionModel::render_joint(const common_json &state,
+                            const std::vector<DecisionQuestion> &questions,
+                            size_t n_images) const {
+
+  if (this->tmpl_ == nullptr) {
+    throw std::runtime_error("decision model has no template");
+  }
+
   common_json inp_questions = common_json::array();
-
   for (const auto &question : questions) {
-
     common_json options = common_json::array();
-
     for (const auto &opt : this->options_from_question(question)) {
       common_json option = common_json::object();
       option["key"] = opt.key;
@@ -599,7 +603,6 @@ std::string DecisionModel::render_joint(
                                   : common_json(opt.description);
       options.push_back(option);
     }
-
     common_json q = common_json::object();
     q["id"] = question.id;
     q["type"] = std::string(decision_question_type_name(question.type));
@@ -613,19 +616,60 @@ std::string DecisionModel::render_joint(
   inp["state"] = state;
   inp["questions"] = inp_questions;
   inp = decision_replace_text(decision_sort_keys(inp), CLEF_MARKER, "<<clef ");
+
+  // the template puts one media marker per image
+  common_json images = common_json::array();
+  if (n_images > 0) {
+    inp = decision_replace_text(inp, mtmd_default_marker(), " ");
+    for (size_t i = 0; i < n_images; i++) {
+      images.push_back(mtmd_default_marker());
+    }
+  }
+  inp["images"] = images;
   inp["sep"] = CLEF_SEP;
   inp["mark_question"] = CLEF_MARK_QUESTION;
   inp["mark_option"] = CLEF_MARK_OPTION;
-
-  if (this->tmpl_ == nullptr) {
-    throw std::runtime_error("decision model has no template");
-  }
 
   jinja::context ctx(this->tmpl_->source());
   jinja::global_from_json(ctx, inp, false);
   jinja::runtime runtime(ctx);
   const jinja::value results = runtime.execute(this->tmpl_->prog);
   return jinja::runtime::gather_string_parts(results)->as_string().str();
+}
+
+size_t DecisionModel::joint_head_end(
+    const std::vector<std::pair<std::string, int32_t>> &pieces,
+    const std::string &media_marker) {
+
+  if (media_marker.empty()) {
+    return 0;
+  }
+
+  size_t i = 0;
+  while (i < pieces.size() &&
+         pieces[i].first.find(media_marker) == std::string::npos) {
+    i++;
+  }
+
+  if (i == pieces.size()) {
+    return 0;
+  }
+
+  // the head must not contain scored pieces
+  for (size_t j = 0; j <= i; j++) {
+    if (pieces[j].second != 0) {
+      throw std::runtime_error("unexpected layout of the decision prompt");
+    }
+  }
+
+  // only one contiguous head is supported
+  for (size_t j = i + 1; j < pieces.size(); j++) {
+    if (pieces[j].first.find(media_marker) != std::string::npos) {
+      throw std::runtime_error("unexpected layout of the decision prompt");
+    }
+  }
+
+  return i + 1;
 }
 
 std::vector<std::pair<std::string, int32_t>> DecisionModel::split_joint_prompt(
@@ -674,14 +718,22 @@ std::vector<std::pair<std::string, int32_t>> DecisionModel::split_joint_prompt(
 
 void DecisionModel::fill_task_joint(
     const llama_vocab *vocab, const std::vector<DecisionQuestion> &questions,
-    const std::string &prompt, std::vector<llama_token> &tokens,
-    DecisionTaskMeta &meta) const {
-  tokens.clear();
-  meta.order.clear();
+    const std::string &prompt, size_t head_end,
+    std::vector<llama_token> &tokens, DecisionTaskMeta &meta) const {
+
+  const auto pieces = split_joint_prompt(prompt, questions);
+  if (head_end > pieces.size()) {
+    throw std::runtime_error("unexpected layout of the decision prompt");
+  }
+
+  // the head entries (media placeholders) are not read by the head
+  meta.order.assign(tokens.size(), 0);
   meta.n_scores = 0;
 
   // the model was trained with the pieces tokenized one by one
-  for (const auto &[piece, order] : split_joint_prompt(prompt, questions)) {
+  for (size_t i = head_end; i < pieces.size(); i++) {
+    const std::string &piece = pieces[i].first;
+    const int32_t order = pieces[i].second;
     const auto piece_tokens = common_tokenize(vocab, piece, false, true);
 
     if (order != 0 && piece_tokens.empty()) {

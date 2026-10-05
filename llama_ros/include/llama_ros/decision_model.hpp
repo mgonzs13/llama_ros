@@ -245,12 +245,13 @@ public:
    *
    * @param state The state shared by all questions.
    * @param questions All questions of the request.
+   * @param n_images Number of image markers to insert in the prompt.
    * @return The rendered joint prompt with the Clef markers.
    * @throws std::runtime_error When the model has no template.
    */
-  std::string
-  render_joint(const common_json &state,
-               const std::vector<DecisionQuestion> &questions) const;
+  std::string render_joint(const common_json &state,
+                           const std::vector<DecisionQuestion> &questions,
+                           size_t n_images) const;
 
   /**
    * @brief Fills the token prompt and readout metadata of one question.
@@ -276,19 +277,22 @@ public:
    * @brief Tokenizes a joint prompt and fills its readout metadata (Clef).
    *
    * The prompt is tokenized piece by piece so each token gets a decision
-   * order, and the number of scored options is recorded.
+   * order. `tokens` may already contain the mtmd-tokenized head entries;
+   * the pieces from `head_end` on are appended with `common_tokenize`.
    *
    * @param vocab The model vocabulary.
    * @param questions All questions of the request, in order.
    * @param prompt The joint prompt from `render_joint`.
-   * @param tokens The output token sequence.
+   * @param head_end Number of leading pieces already in `tokens`
+   * (0 for the text-only path).
+   * @param tokens The token sequence: head entries in, full prompt out.
    * @param meta The readout metadata, modified in place.
    * @throws std::invalid_argument When a question or option span is empty.
    * @throws std::runtime_error On an unexpected prompt layout.
    */
   void fill_task_joint(const llama_vocab *vocab,
                        const std::vector<DecisionQuestion> &questions,
-                       const std::string &prompt,
+                       const std::string &prompt, size_t head_end,
                        std::vector<llama_token> &tokens,
                        DecisionTaskMeta &meta) const;
 
@@ -308,6 +312,22 @@ public:
   static std::vector<std::pair<std::string, int32_t>>
   split_joint_prompt(const std::string &prompt,
                      const std::vector<DecisionQuestion> &questions);
+
+  /**
+   * @brief Locates the leading pieces tokenized with the media (the "head").
+   *
+   * The media marker must appear in a piece with order 0 (state) and no
+   * scored piece may precede it.
+   *
+   * @param pieces The pieces from `split_joint_prompt`.
+   * @param media_marker The media marker text (mtmd_default_marker()).
+   * @return The number of leading pieces that form the head, 0 when the
+   * marker is absent.
+   * @throws std::runtime_error When the marker sits in a scored piece.
+   */
+  static size_t
+  joint_head_end(const std::vector<std::pair<std::string, int32_t>> &pieces,
+                 const std::string &media_marker);
 
   /**
    * @brief Computes the answer of a question from the raw model outputs.
