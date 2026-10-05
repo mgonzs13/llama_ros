@@ -108,6 +108,12 @@ ros2 llama prompt "Do you know ROS 2?" -t 0.0
 
 First of all, you need to create a launch file to use llama_ros or llava_ros. This launch file will contain the main parameters to download the model from HuggingFace and configure it. Take a look at the following examples and the [predefined launch files](llama_bringup/launch).
 
+`llama_bringup` also ships a generic `base.launch.py` that takes `params_file` (a model YAML), `executable` (`llama_node` or `llava_node`), `node_name` and `namespace` arguments, so any predefined model YAML can be launched with it, e.g.:
+
+```shell
+ros2 launch llama_bringup base.launch.py params_file:=$(ros2 pkg prefix llama_bringup)/share/llama_bringup/models/Llama-3.yaml executable:=llama_node
+```
+
 #### llama_ros (Python Launch)
 
 <details>
@@ -141,7 +147,7 @@ def generate_launch_description():
 ```
 
 ```shell
-ros2 launch llama_bringup marcoroni.launch.py
+ros2 launch <path/to/marcoroni.launch.py>
 ```
 
 </details>
@@ -222,7 +228,7 @@ prompt:
 ```
 
 ```shell
-ros2 llama launch Qwen2.yaml
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/Qwen2.yaml
 ```
 
 </details>
@@ -232,7 +238,7 @@ ros2 llama launch Qwen2.yaml
 <details>
 <summary>Click to expand</summary>
 
-[Speculative decoding](https://arxiv.org/abs/2302.01318) accelerates text generation by drafting candidate tokens and verifying them in parallel with the main model. llama_ros supports draft-model-based methods (`draft-simple`, `draft-eagle3`, `draft-mtp`) and self-speculative ngram-based methods (`ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, `ngram-cache`) that require no separate model. Note that speculative decoding requires `context.n_parallel: 1`.
+[Speculative decoding](https://arxiv.org/abs/2302.01318) accelerates text generation by drafting candidate tokens and verifying them in parallel with the main model. llama_ros supports draft-model-based methods (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`) and self-speculative ngram-based methods (`ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, `ngram-cache`) that require no separate model. Note that speculative decoding requires `context.n_parallel: 1`.
 
 ```yaml
 /**:
@@ -303,7 +309,7 @@ def generate_launch_description():
 ```
 
 ```shell
-ros2 launch llama_bringup llava.launch.py
+ros2 launch <path/to/llava.launch.py>
 ```
 
 </details>
@@ -356,7 +362,7 @@ def generate_launch_description():
 ```
 
 ```shell
-ros2 launch llama_bringup llava.launch.py
+ros2 launch llama_bringup base.launch.py params_file:=$(ros2 pkg prefix llama_bringup)/share/llama_bringup/models/llava-mistral.yaml executable:=llava_node node_name:=llava_node
 ```
 
 </details>
@@ -409,7 +415,7 @@ def generate_launch_description():
 ```
 
 ```shell
-ros2 launch llama_bringup llava.launch.py
+ros2 launch llama_bringup base.launch.py params_file:=$(ros2 pkg prefix llama_bringup)/share/llama_bringup/models/Qwen2-Audio.yaml executable:=llava_node node_name:=llava_node
 ```
 
 </details>
@@ -571,16 +577,16 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 #### KV Cache (`cache.*`)
 
-| Param                       | Type     | Default | Description                                                                                      |
-| --------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------ |
-| `cache.type_k`              | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1` |
-| `cache.type_v`              | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                           |
-| `cache.cache_prompt`        | `bool`   | `true`  | Enable prompt caching (reuse previously evaluated KV state)                                      |
-| `cache.cache_ram_mib`       | `int32`  | `8192`  | RAM limit for the prompt cache in MiB (`-1` = no limit, `0` = disable cache)                     |
-| `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)            |
-| `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                  |
-| `cache.checkpoint_min_step` | `int32`  | `256`   | Minimum spacing between context checkpoints                                                      |
-| `cache.kv_unified_per_slot` | `int32`  | `0`     | Maximum context per parallel slot when `memory.kv_unified` is enabled (`0` = unset)              |
+| Param                       | Type     | Default | Description                                                                                                                      |
+| --------------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `cache.type_k`              | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1`                                 |
+| `cache.type_v`              | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                                                           |
+| `cache.cache_prompt`        | `bool`   | `true`  | Enable prompt caching (reuse previously evaluated KV state)                                                                      |
+| `cache.cache_ram_mib`       | `int32`  | `8192`  | RAM limit for the prompt cache in MiB (`-1` = no limit, `0` = disable cache)                                                     |
+| `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)                                            |
+| `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                                                  |
+| `cache.checkpoint_min_step` | `int32`  | `256`   | Minimum spacing between context checkpoints                                                                                      |
+| `cache.kv_unified_per_slot` | `int32`  | `0`     | Context limit per parallel slot (`0` = unset). When set with `context.n_ctx: 0`, the shared KV pool is sized to `n_parallel * N` |
 
 #### Fit Parameters (`fit.*`)
 
@@ -595,15 +601,15 @@ Speculative decoding uses draft tokens to accelerate generation, then verifies t
 
 **Note:** Speculative decoding requires `context.n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
 
-| Param                     | Type       | Default  | Description                                                                                                                                                   |
-| ------------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `speculative.type`        | `string`   | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
-| `speculative.synth_len`   | `double`   | `-1.0`   | Synthetic n-gram speculation length (`-1.0` = disabled)                                                                                                       |
-| `speculative.synth_rates` | `double[]` | `[]`     | Synthetic n-gram speculation rates                                                                                                                            |
+| Param                     | Type       | Default  | Description                                                                                                                                                                                   |
+| ------------------------- | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.type`        | `string`   | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
+| `speculative.synth_len`   | `double`   | `-1.0`   | Target mean synthetic acceptance length, including the target token (benchmarking only, `-1.0` = disabled)                                                                                    |
+| `speculative.synth_rates` | `double[]` | `[]`     | Unconditional per-position synthetic acceptance probabilities (benchmarking only)                                                                                                             |
 
 ##### Draft Model (`speculative.draft.*`)
 
-Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`).
+Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`).
 
 | Param                                     | Type       | Default | Description                                                                                                                                                                                             |
 | ----------------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -626,20 +632,20 @@ Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`).
 
 Thread configuration for the draft model, same fields as `cpu.*` / `cpu_batch.*`.
 
-| Param                                   | Type     | Default    | Description                                     |
-| --------------------------------------- | -------- | ---------- | ----------------------------------------------- |
-| `speculative.draft.cpu.n_threads`       | `int32`  | `-1`       | Draft CPU threads (`-1` for auto)               |
-| `speculative.draft.cpu.mask`            | `string` | `""`       | Draft CPU affinity mask                         |
-| `speculative.draft.cpu.range`           | `string` | `""`       | Draft CPU affinity range                        |
-| `speculative.draft.cpu.priority`        | `string` | `"normal"` | Draft thread priority (`low`, `normal`, `high`) |
-| `speculative.draft.cpu.strict`          | `bool`   | `false`    | Fail if the draft CPU affinity cannot be set    |
-| `speculative.draft.cpu.poll`            | `int32`  | `50`       | Draft polling level (`0`-`100`)                 |
-| `speculative.draft.cpu_batch.n_threads` | `int32`  | `-1`       | Draft CPU batch threads (`-1` for auto)         |
-| `speculative.draft.cpu_batch.mask`      | `string` | `""`       | Draft CPU batch affinity mask                   |
-| `speculative.draft.cpu_batch.range`     | `string` | `""`       | Draft CPU batch affinity range                  |
-| `speculative.draft.cpu_batch.priority`  | `string` | `"normal"` | Draft batch thread priority                     |
-| `speculative.draft.cpu_batch.strict`    | `bool`   | `false`    | Fail if the draft batch affinity cannot be set  |
-| `speculative.draft.cpu_batch.poll`      | `int32`  | `50`       | Draft batch polling level (`0`-`100`)           |
+| Param                                   | Type     | Default    | Description                                                             |
+| --------------------------------------- | -------- | ---------- | ----------------------------------------------------------------------- |
+| `speculative.draft.cpu.n_threads`       | `int32`  | `-1`       | Draft CPU threads (`-1` for auto)                                       |
+| `speculative.draft.cpu.mask`            | `string` | `""`       | Draft CPU affinity mask                                                 |
+| `speculative.draft.cpu.range`           | `string` | `""`       | Draft CPU affinity range                                                |
+| `speculative.draft.cpu.priority`        | `string` | `"normal"` | Draft thread priority: `low`, `normal`, `medium`, `high`, or `realtime` |
+| `speculative.draft.cpu.strict`          | `bool`   | `false`    | Fail if the draft CPU affinity cannot be set                            |
+| `speculative.draft.cpu.poll`            | `int32`  | `50`       | Draft polling level (`0`-`100`)                                         |
+| `speculative.draft.cpu_batch.n_threads` | `int32`  | `-1`       | Draft CPU batch threads (`-1` for auto)                                 |
+| `speculative.draft.cpu_batch.mask`      | `string` | `""`       | Draft CPU batch affinity mask                                           |
+| `speculative.draft.cpu_batch.range`     | `string` | `""`       | Draft CPU batch affinity range                                          |
+| `speculative.draft.cpu_batch.priority`  | `string` | `"normal"` | Draft batch thread priority                                             |
+| `speculative.draft.cpu_batch.strict`    | `bool`   | `false`    | Fail if the draft batch affinity cannot be set                          |
+| `speculative.draft.cpu_batch.poll`      | `int32`  | `50`       | Draft batch polling level (`0`-`100`)                                   |
 
 ##### Ngram-mod (`speculative.ngram_mod.*`)
 
@@ -1078,7 +1084,7 @@ questions.
 | `tool_choice`               | `int32`                      | `0`     | Tool selection mode: `0` = auto, `1` = required (must call a tool), `2` = none                  |
 | `extract_reasoning`         | `bool`                       | `false` | Extract `<think>` reasoning content from the response into `reasoning_content`                  |
 | `sampling_config`           | `SamplingConfig`             | —       | Per-request sampling configuration (see `SamplingConfig` table above)                           |
-| `reasoning_format`          | `ChatReasoningFormat`        | `3`     | How reasoning content is returned: `0`=none, `1`=auto, `2`=deepseek_legacy, `3`=deepseek        |
+| `reasoning_format`          | `ChatReasoningFormat`        | `0`     | How reasoning content is returned: `0`=none, `1`=auto, `2`=deepseek_legacy, `3`=deepseek        |
 | `images`                    | `sensor_msgs/Image[]`        | `[]`    | Images for VLM inference                                                                        |
 | `audios`                    | `std_msgs/UInt8MultiArray[]` | `[]`    | Audio buffers for multimodal inference                                                          |
 | `parallel_tool_calls`       | `bool`                       | `false` | Allow the model to return multiple tool calls in a single message                               |
@@ -2164,7 +2170,7 @@ The node exposes an `evaluate_decisions` service
 
 ```
 string state                 # one state shared by all questions (JSON or text)
-sensor_msgs/Image[] images   # optional; OpenJEV only
+sensor_msgs/Image[] images   # optional; OpenJEV and Clef
 DecisionQuestion[] questions # must be non-empty
 ---
 DecisionAnswer[] answers     # aligned 1:1 with questions
@@ -2177,7 +2183,7 @@ the option keys and a `confidence` (a `noul` answer reports its probability in
 `noul`, and `confidence` stays 0). A failing question does not prevent the
 other questions from being answered; Clef is the exception, since it answers
 all questions in one joint pass and fails them together. Images are accepted
-only for OpenJEV, up to 8 per request, and require the `llava` node with a
+for OpenJEV and Clef, up to 8 per request, and require the `llava` node with a
 multimodal projector.
 
 Supported models and their GGUFs: `ggml-org/OpenJEV-GGUF`,
