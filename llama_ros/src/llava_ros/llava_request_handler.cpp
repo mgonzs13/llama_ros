@@ -27,6 +27,8 @@
 #include "llama_utils/logs.hpp"
 #include "llava_ros/llava.hpp"
 
+#include <algorithm>
+
 using namespace llava_ros;
 
 LlavaCompletionRequestHandler::LlavaCompletionRequestHandler(Llava *llava)
@@ -144,5 +146,94 @@ void LlavaChatCompletionRequestHandler::handle(
   slot->chat_format = chat_context.chat_prompt_instance.format;
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = llama_ros::SERVER_TASK_TYPE_COMPLETION;
+  slot->state = llama_ros::SLOT_STATE_STARTED;
+}
+
+LlavaEmbeddingRequestHandler::LlavaEmbeddingRequestHandler(Llava *llava)
+    : RequestHandler(llava), llava_(llava) {}
+
+void LlavaEmbeddingRequestHandler::handle(const std::string &input_prompt,
+                                          llama_ros::ServerSlot *slot) {
+  slot->prompt_tokens.clear();
+  slot->map_pos_to_media.clear();
+  slot->embedding_media_embd.clear();
+
+  if (this->llava_->mtmd_ctx == nullptr) {
+    throw std::runtime_error(
+        "Multimodal embeddings require a multimodal projector; set "
+        "mmproj.path (and do not set mmproj.disabled)");
+  }
+
+  const std::string marker = mtmd_default_marker();
+  const size_t n_bitmaps = this->llava_->bitmaps.entries.size();
+
+  size_t n_markers = 0;
+  for (size_t pos = input_prompt.find(marker); pos != std::string::npos;
+       pos = input_prompt.find(marker, pos + marker.size())) {
+    n_markers++;
+  }
+
+  if (n_markers != n_bitmaps) {
+    throw std::runtime_error(
+        "The prompt must contain exactly one <__media__> marker per "
+        "image/audio: found " +
+        std::to_string(n_markers) + " marker(s) for " +
+        std::to_string(n_bitmaps) + " media item(s)");
+  }
+
+  if (this->llava_->params.n_parallel != 1) {
+    throw std::runtime_error(
+        "Multimodal embeddings require context.n_parallel = 1 (got " +
+        std::to_string(this->llava_->params.n_parallel) +
+        "); pooled embeddings are only correct with a single slot");
+  }
+
+  mtmd_input_text inp_txt = {
+      input_prompt.c_str(),
+      input_prompt.size(),
+      /* add_special */ true,
+      /* parse_special */ true,
+  };
+
+  mtmd::input_chunks chunks(mtmd_input_chunks_init());
+  auto bitmaps_c_ptr = this->llava_->bitmaps.c_ptr();
+  int32_t tokenized =
+      mtmd_tokenize(this->llava_->mtmd_ctx, chunks.ptr.get(), &inp_txt,
+                    bitmaps_c_ptr.data(), bitmaps_c_ptr.size());
+
+  if (tokenized != 0) {
+    throw std::runtime_error("Failed to tokenize multimodal embedding prompt");
+  }
+
+  // media chunks inject mtmd_input_chunk_get_n_tokens() batch entries, which
+  // can exceed the placeholder count for M-RoPE vision models
+  size_t n_batch_entries = 0;
+  for (size_t i = 0; i < chunks.size(); i++) {
+    n_batch_entries += (size_t)mtmd_input_chunk_get_n_tokens(chunks[i]);
+  }
+
+  const size_t n_max =
+      std::min((size_t)llama_n_batch(this->llava_->get_ctx()),
+               (size_t)llama_n_ubatch(this->llava_->get_ctx()));
+  if (n_batch_entries > n_max) {
+    throw std::runtime_error(
+        "Multimodal embedding input (" + std::to_string(n_batch_entries) +
+        " batch entries) does not fit in one batch/ubatch (" +
+        std::to_string(n_max) +
+        "); increase context.n_batch/context.n_ubatch or shorten the input");
+  }
+
+  slot->prompt_tokens.clear();
+  this->llava_->process_input_chunks(chunks, slot);
+
+  if (slot->sampler != nullptr) {
+    common_sampler_free(slot->sampler);
+  }
+
+  slot->sampler = common_sampler_init(this->llava_->get_model(),
+                                      this->llava_->params.sampling);
+  slot->cache_prompt = false;
+  LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
+  slot->task_type = llama_ros::SERVER_TASK_TYPE_EMBEDDING;
   slot->state = llama_ros::SLOT_STATE_STARTED;
 }

@@ -1306,6 +1306,43 @@ class ExampleNode(Node):
 
 </details>
 
+#### Multimodal Embeddings
+
+<details>
+<summary>Click to expand</summary>
+
+Multimodal embedding models (such as [EmbeddingGemma 2](https://huggingface.co/ggml-org/embeddinggemma-2-GGUF)) map text, images, and audio into a single vector space. They require `llava_node` with a multimodal projector (`mmproj`) and embedding mode enabled.
+
+```shell
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/EmbeddingGemma-2.yaml
+```
+
+The `generate_embeddings` service accepts `sensor_msgs/Image[] images` and `std_msgs/UInt8MultiArray[] audios`. The prompt must contain one `<__media__>` placeholder per media item, in order (images first, then audios):
+
+```python
+from cv_bridge import CvBridge
+import cv2
+from llama_msgs.srv import GenerateEmbeddings
+
+image = cv2.imread("/path/to/image.jpg")
+
+req = GenerateEmbeddings.Request()
+req.prompt = "task: sentence similarity | query: a red square <__media__>"
+req.images.append(CvBridge().cv2_to_imgmsg(image))
+
+embeddings = llama_client.generate_embeddings(req).embeddings  # 768 floats
+```
+
+Notes:
+
+- `context.n_parallel: 1` is required: pooled embeddings are only correct when the whole multimodal prompt is decoded as a single sequence in a single batch. The service rejects media otherwise.
+- The whole prompt (text + media) must fit in `min(context.n_batch, context.n_ubatch)`. An image costs 280 tokens at the default vision budget.
+- EmbeddingGemma 2 has an 8K context window; set `context.n_ctx: 8192`.
+- The full native output dimension is returned (768 for EmbeddingGemma 2).
+- Use the model's task instruction prefixes (`task: search result | query: ...`, `task: sentence similarity | query: ...`, `title: ... | text: ...`) for best quality. Prefixes apply to text only.
+
+</details>
+
 #### Generate Response
 
 <details>
@@ -2143,6 +2180,16 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.
 
 ```shell
 ros2 run llama_demos llama_embeddings_demo_node
+```
+
+### Multimodal Embeddings Generation Demo
+
+```shell
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/EmbeddingGemma-2.yaml
+```
+
+```shell
+ros2 run llama_demos llama_multimodal_embeddings_demo_node
 ```
 
 https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced

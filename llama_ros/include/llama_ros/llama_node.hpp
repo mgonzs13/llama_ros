@@ -289,6 +289,30 @@ protected:
    */
   void join_worker_threads();
 
+  /**
+   * @brief Callback for the GenerateEmbeddings service.
+   *
+   * Generates embeddings for the input prompt. Virtual so multimodal nodes
+   * can load media before delegating to this implementation.
+   *
+   * @param request The request with the prompt and optional media.
+   * @param response The response object to populate with the embeddings.
+   */
+  virtual void generate_embeddings_service_callback(
+      const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request>
+          request,
+      std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response);
+
+  /**
+   * @brief Whether this node supports multimodal embedding requests.
+   *
+   * Multimodal nodes override this so the base media rejection does not
+   * fire when they delegate to the shared embeddings callback.
+   *
+   * @return True when images/audios are accepted by this node.
+   */
+  virtual bool supports_multimodal_embeddings() const { return false; }
+
 private:
   /**
    * @brief Service for retrieving metadata.
@@ -420,21 +444,6 @@ private:
   void detokenize_service_callback(
       const std::shared_ptr<llama_msgs::srv::Detokenize::Request> request,
       std::shared_ptr<llama_msgs::srv::Detokenize::Response> response);
-
-  /**
-   * @brief Callback for the GenerateEmbeddings service.
-   *
-   * This service generates embeddings for input text or tokens.
-   *
-   * @param request The request object containing the input for embedding
-   * generation.
-   * @param response The response object to populate with the generated
-   * embeddings.
-   */
-  void generate_embeddings_service_callback(
-      const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request>
-          request,
-      std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response);
 
   /**
    * @brief Callback for the EvaluateDecisions service.

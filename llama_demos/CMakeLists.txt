@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 set(DEMO_NODES
   llama_demo_node
   llama_embeddings_demo_node
+  llama_multimodal_embeddings_demo_node
   llama_rerank_demo_node
   decision_demo_node
   image_decision_demo_node

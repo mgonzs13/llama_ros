@@ -84,6 +84,7 @@ void ServerSlot::reset() {
   this->map_pos_to_media.clear();
   this->decision = DecisionTaskMeta{};
   this->decision_media_embd.clear();
+  this->embedding_media_embd.clear();
   this->prompt_tokens.clear();
   // kv_cached_tokens and n_kv_cache are intentionally preserved: they track
   // the KV state of this slot's sequence, which survives request boundaries.

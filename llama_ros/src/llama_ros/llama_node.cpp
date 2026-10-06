@@ -481,6 +481,14 @@ void LlamaNode::generate_embeddings_service_callback(
     return;
   }
 
+  if ((!request->images.empty() || !request->audios.empty()) &&
+      !this->supports_multimodal_embeddings()) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Multimodal embeddings require llava_node with a "
+                 "multimodal projector (set mmproj.path)");
+    return;
+  }
+
   auto result = this->llama->generate_embeddings(request->prompt);
   if (result.is_error()) {
     RCLCPP_ERROR(this->get_logger(), "Failed to generate embeddings: %s",

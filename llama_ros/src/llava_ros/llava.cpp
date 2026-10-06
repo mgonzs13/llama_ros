@@ -77,9 +77,22 @@ Llava::Llava(const common_params &params, std::string system_prompt)
       std::make_unique<LlavaCompletionRequestHandler>(this);
   this->llava_chat_completion_handler_ =
       std::make_unique<LlavaChatCompletionRequestHandler>(this);
+  this->llava_embedding_handler_ =
+      std::make_unique<LlavaEmbeddingRequestHandler>(this);
 
   // set inital values
   this->reset();
+}
+
+void Llava::handle_embeddings_req(const std::string &input_prompt,
+                                  llama_ros::ServerSlot *slot) {
+  if (this->bitmaps.entries.empty() &&
+      input_prompt.find(mtmd_default_marker()) == std::string::npos) {
+    llama_ros::Llama::handle_embeddings_req(input_prompt, slot);
+    return;
+  }
+
+  this->llava_embedding_handler_->handle(input_prompt, slot);
 }
 
 Llava::~Llava() { mtmd_free(this->mtmd_ctx); }
@@ -398,6 +411,70 @@ bool Llava::process_decision_mtmd_batch(llama_ros::ServerSlot *slot) {
   // until the batch is decoded (cleared by ServerSlot::reset)
   slot->decision_media_embd.emplace_back(embd, embd + n_tokens * n_embd);
   const float *embd_copy = slot->decision_media_embd.back().data();
+
+  for (size_t i = 0; i < n_tokens; i++) {
+    llama_pos pos[GGML_MROPE_SECTIONS] = {
+        pos_0 + (llama_pos)i, pos_0 + (llama_pos)i, pos_0 + (llama_pos)i,
+        pos_0 + (llama_pos)i};
+
+    if (is_mrope && image != nullptr) {
+      const mtmd_decoder_pos rel =
+          mtmd_image_tokens_get_decoder_pos(image, pos_0, i);
+      pos[0] = (llama_pos)rel.t;
+      pos[1] = (llama_pos)rel.y;
+      pos[2] = (llama_pos)rel.x;
+      pos[3] = (llama_pos)rel.z;
+    }
+
+    this->batch.add_embd({embd_copy + i * n_embd, 1, n_embd}, pos, slot->id,
+                         true);
+  }
+
+  const int32_t n_pos = (int32_t)mtmd_input_chunk_get_n_pos(chunk.get());
+  slot->n_past += n_pos;
+  slot->n_prompt_tokens_processed += n_pos;
+  return true;
+}
+
+bool Llava::process_embedding_mtmd_batch(llama_ros::ServerSlot *slot) {
+  if (this->mtmd_ctx == nullptr || slot == nullptr) {
+    return false;
+  }
+
+  const auto &chunk = find_chunk(slot->n_past, slot);
+  if (chunk == nullptr) {
+    return false;
+  }
+
+  // encode this chunk (one chunk per call; run_loop calls again for the next)
+  mtmd::batch_ptr mbatch(mtmd_batch_init(this->mtmd_ctx));
+  if (mbatch == nullptr) {
+    return false;
+  }
+
+  if (mtmd_batch_add_chunk(mbatch.get(), chunk.get()) != 0) {
+    return false;
+  }
+
+  if (mtmd_batch_encode(mbatch.get()) != 0) {
+    return false;
+  }
+
+  const float *embd = mtmd_batch_get_output_embd(mbatch.get(), chunk.get());
+  if (embd == nullptr) {
+    return false;
+  }
+
+  const auto *image = mtmd_input_chunk_get_tokens_image(chunk.get());
+  const bool is_mrope = mtmd_decode_use_mrope(this->mtmd_ctx);
+  const size_t n_tokens = mtmd_input_chunk_get_n_tokens(chunk.get());
+  const size_t n_embd = (size_t)llama_model_n_embd_inp(this->get_model());
+  const llama_pos pos_0 = slot->n_past;
+
+  // common_batch stores a non-owning view: keep a copy alive in the slot
+  // until the batch is decoded (cleared by ServerSlot::reset)
+  slot->embedding_media_embd.emplace_back(embd, embd + n_tokens * n_embd);
+  const float *embd_copy = slot->embedding_media_embd.back().data();
 
   for (size_t i = 0; i < n_tokens; i++) {
     llama_pos pos[GGML_MROPE_SECTIONS] = {

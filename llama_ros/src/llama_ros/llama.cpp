@@ -827,7 +827,14 @@ Llama::generate_embeddings(const std::string &text) {
   slot->goal_id = gid;
   auto fut = this->task_registry_->register_pending(gid);
 
-  this->embedding_handler_->handle(text, slot);
+  try {
+    this->handle_embeddings_req(text, slot);
+  } catch (const std::exception &e) {
+    this->fail_pending(gid, e.what());
+    this->release_slot(slot);
+    return Result<ServerTaskResultEmbedding>::error(
+        std::string("Failed to prepare embedding request: ") + e.what());
+  }
 
   try {
     auto result = fut.get();
@@ -1248,6 +1255,11 @@ void Llama::prepare_joint_decision_slot(
 }
 
 bool Llama::process_decision_mtmd_batch(ServerSlot *slot) {
+  (void)slot;
+  return false;
+}
+
+bool Llama::process_embedding_mtmd_batch(ServerSlot *slot) {
   (void)slot;
   return false;
 }
@@ -2561,12 +2573,14 @@ void Llama::run_loop() {
             this->decision_model_ != nullptr &&
             this->decision_model_->is_joint();
 
-        // process MTMD chunks if present; joint decision media is handled
-        // inline by the enqueue loop below so the whole prompt is decoded
-        // in one batch (the Clef head is stateless and cannot be split)
+        // process MTMD chunks if present; joint decision and embedding media
+        // are handled inline by the enqueue loop below so the whole prompt is
+        // decoded in one batch
         if (!joint_decision && slot.n_past < slot.n_prompt_tokens &&
-            slot.prompt_tokens[slot.n_past] == LLAMA_TOKEN_NULL) {
-          process_mtmd_chunk(&slot);
+            slot.prompt_tokens[slot.n_past] == LLAMA_TOKEN_NULL &&
+            !(slot.task_type == SERVER_TASK_TYPE_EMBEDDING &&
+              this->is_embedding())) {
+          this->process_mtmd_chunk(&slot);
         }
 
         // enqueue prompt tokens up to the available batch capacity
@@ -2579,6 +2593,27 @@ void Llama::run_loop() {
 
           llama_token cur_tok = slot.prompt_tokens[slot.n_past];
           if (cur_tok == LLAMA_TOKEN_NULL) {
+            if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING &&
+                this->is_embedding()) {
+              bool ok = false;
+              try {
+                ok = this->process_embedding_mtmd_batch(&slot);
+              } catch (const std::exception &e) {
+                LLAMA_LOG_ERROR("Failed to process embedding media: %s",
+                                e.what());
+                ok = false;
+              }
+              if (!ok) {
+                this->fail_pending(slot.goal_id,
+                                   "Failed to process multimodal embedding "
+                                   "media");
+                this->release_slot(&slot);
+                enqueue_failed = true;
+                break;
+              }
+              continue;
+            }
+
             if (!joint_decision) {
               break; // end of text chunk
             }
@@ -3045,7 +3080,7 @@ void Llama::send_embedding_result(ServerSlot *slot, int32_t off,
   result->id_slot = slot->id;
   result->id = slot->goal_id;
   result->n_tokens = n_tokens;
-  const int n_embd = llama_model_n_embd(this->model);
+  const int n_embd = llama_model_n_embd_out(this->model);
 
   std::vector<float> embd_res(n_embd, 0.0f);
 

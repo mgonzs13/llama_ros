@@ -170,6 +170,7 @@ if(BUILD_TESTING)
   ament_add_gtest(${PROJECT_NAME}_llava_tests
     test/test_main.cpp
     test/test_llava_decision.cpp
+    test/test_llava_embeddings.cpp
     src/llava_ros/llava.cpp
     src/llava_ros/llava_request_handler.cpp
     ${LLAMA_CORE_SOURCES}

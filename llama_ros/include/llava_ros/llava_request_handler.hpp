@@ -100,6 +100,33 @@ private:
   Llava *llava_;
 };
 
+/**
+ * @brief Handles embedding requests with multimodal support.
+ *
+ * Tokenizes a prompt containing <__media__> placeholders together with the
+ * images/audios loaded in the Llava instance.
+ */
+class LlavaEmbeddingRequestHandler : public llama_ros::RequestHandler {
+public:
+  /**
+   * @brief Constructs a LlavaEmbeddingRequestHandler.
+   *
+   * @param llava Pointer to the Llava instance that owns this handler.
+   */
+  explicit LlavaEmbeddingRequestHandler(Llava *llava);
+
+  /**
+   * @brief Prepares a slot for multimodal embedding generation.
+   *
+   * @param input_prompt The input prompt with one <__media__> per media item.
+   * @param slot The slot to prepare.
+   */
+  void handle(const std::string &input_prompt, llama_ros::ServerSlot *slot);
+
+private:
+  Llava *llava_;
+};
+
 } // namespace llava_ros
 
 #endif

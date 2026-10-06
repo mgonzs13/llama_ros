@@ -217,3 +217,29 @@ bool LlavaNode::load_audios(
   }
   return true;
 }
+
+void LlavaNode::generate_embeddings_service_callback(
+    const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request> request,
+    std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response) {
+  // empty prompts have no media side effects; let the base validate them
+  if (request->prompt.empty()) {
+    llama_ros::LlamaNode::generate_embeddings_service_callback(request,
+                                                               response);
+    return;
+  }
+
+  // the embeddings service only exists in embedding mode (no completion
+  // actions are created), and the executor is single-threaded, so mutating
+  // the shared bitmaps here cannot race the run loop
+  static_cast<Llava *>(this->llama.get())->clear_mtmds();
+
+  if (!this->load_images(request->images)) {
+    return;
+  }
+
+  if (!this->load_audios(request->audios)) {
+    return;
+  }
+
+  llama_ros::LlamaNode::generate_embeddings_service_callback(request, response);
+}

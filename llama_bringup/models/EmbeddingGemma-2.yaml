@@ -1,0 +1,28 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: ggml-org/embeddinggemma-2-GGUF
+      filename: embeddinggemma-2-Q8_0.gguf
+
+    # Multimodal projector parameters
+    mmproj:
+      repo: ggml-org/embeddinggemma-2-GGUF
+      filename: mmproj-embeddinggemma-2-Q8_0.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 1024
+      n_ubatch: 1024
+      n_parallel: 1
+      embedding: true
+      pooling_type: mean
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 0
+
+    # CPU parameters
+    cpu:
+      n_threads: 1

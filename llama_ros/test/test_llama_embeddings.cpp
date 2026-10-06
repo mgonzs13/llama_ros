@@ -21,9 +21,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <chrono>
+#include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "huggingface_hub.h"
 #include "llama_ros/llama.hpp"
@@ -244,4 +247,77 @@ TEST_F(LlamaEmbeddingsTest, HandlesLongText) {
 
   EXPECT_FALSE(embedding_result.embeddings.empty());
   EXPECT_GT(embedding_result.n_tokens, 10);
+}
+
+/**
+ * @brief Test suite for EmbeddingGemma 2 text embeddings.
+ *
+ * EmbeddingGemma 2 has an input dimension of 512 and a pooled output
+ * dimension of 768, so it catches output-dimension regressions.
+ */
+class LlamaEmbeddingGemmaTest : public ::testing::Test {
+protected:
+  void SetUp() override {
+    params = std::make_unique<llama_utils::LlamaParams>();
+
+    params->params.n_ctx = 512;
+    params->params.n_batch = 128;
+    params->params.n_ubatch = 128;
+    params->params.cpuparams.n_threads = 1;
+    params->params.cpuparams_batch.n_threads = 1;
+    params->params.sampling.seed = LLAMA_DEFAULT_SEED;
+    params->params.embedding = true;
+    params->params.pooling_type = LLAMA_POOLING_TYPE_MEAN;
+
+    auto result = huggingface_hub::hf_hub_download_with_shards(
+        "ggml-org/embeddinggemma-2-GGUF", "embeddinggemma-2-Q8_0.gguf");
+    ASSERT_TRUE(result.success) << "Failed to download model";
+    ASSERT_FALSE(result.path.empty()) << "Model path is empty";
+    params->params.model.path = result.path;
+
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
+    ASSERT_NE(llama, nullptr);
+    ASSERT_TRUE(llama->is_embedding());
+
+    run_loop_thread = std::thread([this]() {
+      try {
+        this->llama->run_loop();
+      } catch (...) {
+      }
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  void TearDown() override {
+    if (llama) {
+      llama->cancel();
+    }
+    if (run_loop_thread.joinable()) {
+      run_loop_thread.join();
+    }
+    llama.reset();
+    params.reset();
+  }
+
+  std::unique_ptr<llama_ros::Llama> llama;
+  std::unique_ptr<llama_utils::LlamaParams> params;
+  std::thread run_loop_thread;
+};
+
+TEST_F(LlamaEmbeddingGemmaTest, TextEmbeddingHasFullOutputDimension) {
+  auto result = llama->generate_embeddings(
+      "task: sentence similarity | query: hello world");
+  ASSERT_TRUE(result.is_ok()) << result.error();
+  ASSERT_EQ(result.value().embeddings.size(), 1u);
+
+  const auto &embedding = result.value().embeddings.front();
+  ASSERT_EQ(embedding.size(), 768u);
+
+  float norm = 0.0f;
+  for (const float value : embedding) {
+    ASSERT_TRUE(std::isfinite(value));
+    norm += value * value;
+  }
+  EXPECT_NEAR(std::sqrt(norm), 1.0f, 1e-3f);
 }

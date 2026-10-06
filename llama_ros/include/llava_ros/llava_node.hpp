@@ -162,6 +162,26 @@ protected:
   bool load_audios(std::vector<std_msgs::msg::UInt8MultiArray> audios_msg);
 
   /**
+   * @brief Callback for the GenerateEmbeddings service with media support.
+   *
+   * Loads the request images/audios into the Llava model and then delegates
+   * to the base implementation.
+   *
+   * @param request The request with the prompt and optional media.
+   * @param response The response object to populate with the embeddings.
+   */
+  void generate_embeddings_service_callback(
+      const std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Request>
+          request,
+      std::shared_ptr<llama_msgs::srv::GenerateEmbeddings::Response> response)
+      override;
+
+  /**
+   * @brief This node supports multimodal embedding requests.
+   */
+  bool supports_multimodal_embeddings() const override { return true; }
+
+  /**
    * @brief Loads decision images into the Llava model.
    *
    * @return The number of loaded images, 0 when none could be loaded.

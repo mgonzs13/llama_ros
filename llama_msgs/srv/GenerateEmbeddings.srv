@@ -1,4 +1,6 @@
-string prompt                       # prompt
+string prompt                       # prompt; use <__media__> for each image/audio
+sensor_msgs/Image[] images          # images for multimodal embedding models
+std_msgs/UInt8MultiArray[] audios   # audios for multimodal embedding models
 int32 normalization      2          # normalization (-1=none, 0=max absolute int16, 1=taxicab, 2=euclidean, >2=p-norm)
 ---
 float32[] embeddings                # embeddings

@@ -40,6 +40,7 @@ namespace llava_ros {
 // Forward declarations
 class LlavaCompletionRequestHandler;
 class LlavaChatCompletionRequestHandler;
+class LlavaEmbeddingRequestHandler;
 
 /**
  * @brief Represents the Llava model, extending the Llama model with image
@@ -120,6 +121,26 @@ public:
    * @brief Adds the media embeddings of a decision prompt to the batch.
    */
   bool process_decision_mtmd_batch(llama_ros::ServerSlot *slot) override;
+
+  /**
+   * @brief Handles an embeddings request with multimodal support.
+   *
+   * Uses the multimodal handler when media is loaded or the prompt contains
+   * a media marker, and the base text-only handler otherwise.
+   *
+   * @param input_prompt The input text to generate embeddings for.
+   * @param slot The server slot to use for processing.
+   */
+  void handle_embeddings_req(const std::string &input_prompt,
+                             llama_ros::ServerSlot *slot) override;
+
+  /**
+   * @brief Adds the media embeddings of an embedding prompt to the batch.
+   *
+   * @param slot The slot being processed.
+   * @return True when the media entries were added to the batch.
+   */
+  bool process_embedding_mtmd_batch(llama_ros::ServerSlot *slot) override;
 
   /**
    * @brief Handles a text completion request with multimodal support.
@@ -212,6 +233,11 @@ protected:
       llava_chat_completion_handler_;
 
   /**
+   * @brief Specialized embedding handler for Llava.
+   */
+  std::unique_ptr<LlavaEmbeddingRequestHandler> llava_embedding_handler_;
+
+  /**
    * @brief Bitmaps for image processing.
    *
    * This structure holds the bitmap data for images used in the model.
@@ -227,6 +253,7 @@ protected:
   // members
   friend class LlavaCompletionRequestHandler;
   friend class LlavaChatCompletionRequestHandler;
+  friend class LlavaEmbeddingRequestHandler;
 };
 
 } // namespace llava_ros

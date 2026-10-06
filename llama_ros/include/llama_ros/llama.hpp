@@ -229,7 +229,8 @@ public:
    * @param input_prompt The input text to generate embeddings for.
    * @param slot The server slot to use for processing.
    */
-  void handle_embeddings_req(const std::string &input_prompt, ServerSlot *slot);
+  virtual void handle_embeddings_req(const std::string &input_prompt,
+                                     ServerSlot *slot);
 
   /**
    * @brief Handles a text completion request.
@@ -798,6 +799,18 @@ protected:
    * @return True when the media entries were added to the batch.
    */
   virtual bool process_decision_mtmd_batch(ServerSlot *slot);
+
+  /**
+   * @brief Adds the media embeddings of an embedding prompt to the batch.
+   *
+   * Used by run_loop for embedding slots with media so the media embeddings
+   * and the text tokens are decoded together (mean pooling must see all
+   * tokens). The base implementation has no media support.
+   *
+   * @param slot The slot being processed.
+   * @return True when the media entries were added to the batch.
+   */
+  virtual bool process_embedding_mtmd_batch(ServerSlot *slot);
 
   /**
    * @brief Parses a state string as JSON, falling back to plain text.
