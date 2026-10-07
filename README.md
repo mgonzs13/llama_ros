@@ -1,6 +1,6 @@
 # llama_ros
 
-This repository provides a set of ROS 2 packages to integrate [llama.cpp](https://github.com/ggerganov/llama.cpp) into ROS 2. Using the llama_ros packages, you can easily incorporate the powerful optimization capabilities of [llama.cpp](https://github.com/ggerganov/llama.cpp) into your ROS 2 projects by running [GGUF](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)-based [LLMs](https://huggingface.co/models?sort=trending&search=gguf+7b) and [VLMs](https://huggingface.co/models?sort=trending&search=gguf+llava). You can also use features from llama.cpp such as [GBNF grammars](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md) and modify LoRAs in real-time.
+This repository provides a set of ROS 2 packages to integrate [llama.cpp](https://github.com/ggerganov/llama.cpp) into ROS 2. Using the llama_ros packages, you can easily incorporate the powerful optimization capabilities of [llama.cpp](https://github.com/ggerganov/llama.cpp) into your ROS 2 projects by running [GGUF](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)-based [LLMs](https://huggingface.co/models?sort=trending&search=gguf+7b), [VLMs](https://huggingface.co/models?sort=trending&search=gguf+llava), audio-language, embedding and reranking models. It also provides an OpenAI-compatible chat completions interface with tool calling, reasoning and streaming, as well as [speculative decoding](https://arxiv.org/abs/2302.01318) and decision models such as OpenJEV, Lev, Kev, Nimble, Laya and Clef. You can also use features from llama.cpp such as [GBNF grammars](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md) and modify LoRAs in real-time.
 
 <div align="center">
 
@@ -28,6 +28,7 @@ This repository provides a set of ROS 2 packages to integrate [llama.cpp](https:
    - [Speculative Decoding](#speculative-decoding-speculative)
    - [LoRA Adapters](#lora-adapters)
    - [Messages](#messages)
+   - [Services](#services)
    - [ROS 2 Clients](#ros-2-clients)
    - [LangChain](#langchain)
 5. [Demos](#demos)
@@ -722,6 +723,8 @@ Used with `speculative.type: ngram-cache`. Self-speculative decoding with a 3-le
 
 ### Messages
 
+`llama_msgs` defines the messages and actions used by `llama_node` and `llava_node`. The tables below document the fields of each type. The service interfaces are documented in the [Services](#services) section.
+
 #### `SamplingConfig` (`llama_msgs/msg/SamplingConfig`)
 
 The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatCompletions` goals to configure sampling behaviour per request.
@@ -860,6 +863,10 @@ The `SamplingConfig` message is used in `GenerateResponse` and `GenerateChatComp
 | `COMMON_REASONING_FORMAT_AUTO`            | `1`   |
 | `COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY` | `2`   |
 | `COMMON_REASONING_FORMAT_DEEPSEEK`        | `3`   |
+
+| Field   | Type    | Default | Description                                   |
+| ------- | ------- | ------- | --------------------------------------------- |
+| `value` | `int32` | `0`     | Reasoning format (one of the constants above) |
 
 #### `Metadata` (`llama_msgs/msg/Metadata`)
 
@@ -1175,6 +1182,117 @@ questions.
 | `path`  | `string`  | `""`    | Path to the LoRA file        |
 | `scale` | `float32` | `0.0`   | Scale applied to the adapter |
 
+### Services
+
+`llama_msgs` also defines the services exposed by `llama_node` and `llava_node` under the node namespace (e.g. `/llama/tokenize`).
+
+#### `Tokenize` (`llama_msgs/srv/Tokenize`)
+
+**Request**
+
+| Field  | Type     | Default | Description      |
+| ------ | -------- | ------- | ---------------- |
+| `text` | `string` | `""`    | Text to tokenize |
+
+**Response**
+
+| Field    | Type      | Default | Description           |
+| -------- | --------- | ------- | --------------------- |
+| `tokens` | `int32[]` | `[]`    | Token ids of the text |
+
+#### `Detokenize` (`llama_msgs/srv/Detokenize`)
+
+**Request**
+
+| Field    | Type      | Default | Description             |
+| -------- | --------- | ------- | ----------------------- |
+| `tokens` | `int32[]` | `[]`    | Token ids to detokenize |
+
+**Response**
+
+| Field  | Type     | Default | Description                  |
+| ------ | -------- | ------- | ---------------------------- |
+| `text` | `string` | `""`    | Text decoded from the tokens |
+
+#### `GenerateEmbeddings` (`llama_msgs/srv/GenerateEmbeddings`)
+
+**Request**
+
+| Field           | Type                         | Default | Description                                                                               |
+| --------------- | ---------------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| `prompt`        | `string`                     | `""`    | Prompt; use `<__media__>` as a placeholder for each image/audio                           |
+| `images`        | `sensor_msgs/Image[]`        | `[]`    | Images for multimodal embedding models                                                    |
+| `audios`        | `std_msgs/UInt8MultiArray[]` | `[]`    | Audios for multimodal embedding models                                                    |
+| `normalization` | `int32`                      | `2`     | Normalization: `-1`=none, `0`=max absolute int16, `1`=taxicab, `2`=euclidean, `>2`=p-norm |
+
+**Response**
+
+| Field        | Type        | Default | Description                |
+| ------------ | ----------- | ------- | -------------------------- |
+| `embeddings` | `float32[]` | `[]`    | Generated embeddings       |
+| `n_tokens`   | `int32`     | `0`     | Number of tokens processed |
+
+#### `RerankDocuments` (`llama_msgs/srv/RerankDocuments`)
+
+**Request**
+
+| Field       | Type       | Default | Description                          |
+| ----------- | ---------- | ------- | ------------------------------------ |
+| `query`     | `string`   | `""`    | Query to score the documents against |
+| `documents` | `string[]` | `[]`    | Documents to rerank                  |
+
+**Response**
+
+| Field    | Type        | Default | Description                        |
+| -------- | ----------- | ------- | ---------------------------------- |
+| `scores` | `float32[]` | `[]`    | Relevance scores for the documents |
+
+#### `GetMetadata` (`llama_msgs/srv/GetMetadata`)
+
+This service has an empty request.
+
+**Response**
+
+| Field      | Type       | Default | Description                          |
+| ---------- | ---------- | ------- | ------------------------------------ |
+| `metadata` | `Metadata` | —       | Metadata info (see `Metadata` above) |
+
+#### `ListLoRAs` (`llama_msgs/srv/ListLoRAs`)
+
+This service has an empty request.
+
+**Response**
+
+| Field   | Type     | Default | Description                           |
+| ------- | -------- | ------- | ------------------------------------- |
+| `loras` | `LoRA[]` | `[]`    | LoRAs loaded when launching llama_ros |
+
+#### `UpdateLoRAs` (`llama_msgs/srv/UpdateLoRAs`)
+
+**Request**
+
+| Field   | Type     | Default | Description                                             |
+| ------- | -------- | ------- | ------------------------------------------------------- |
+| `loras` | `LoRA[]` | `[]`    | LoRAs to update. A LoRA with scale `0.0` deactivates it |
+
+This service has an empty response.
+
+#### `EvaluateDecisions` (`llama_msgs/srv/EvaluateDecisions`)
+
+**Request**
+
+| Field       | Type                  | Default | Description                                      |
+| ----------- | --------------------- | ------- | ------------------------------------------------ |
+| `state`     | `string`              | `""`    | One state shared by all questions (JSON or text) |
+| `images`    | `sensor_msgs/Image[]` | `[]`    | Optional images (OpenJEV and Clef)               |
+| `questions` | `DecisionQuestion[]`  | `[]`    | Typed questions (must be non-empty)              |
+
+**Response**
+
+| Field     | Type               | Default | Description                            |
+| --------- | ------------------ | ------- | -------------------------------------- |
+| `answers` | `DecisionAnswer[]` | `[]`    | Answers aligned 1:1 with the questions |
+
 ### LoRA Adapters
 
 You can use LoRA adapters when launching LLMs. Using llama.cpp features, you can load multiple adapters choosing the scale to apply for each adapter. Here you have an example of using LoRA adapters with Phi-3. You can list the
@@ -1268,7 +1386,7 @@ class ExampleNode(Node):
         req = Detokenize.Request()
         req.tokens = [123, 123]
 
-        # call the tokenize service
+        # call the detokenize service
         self.srv_client.wait_for_service()
         text = self.srv_client.call(req).text
 ```
