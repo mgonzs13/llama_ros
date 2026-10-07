@@ -1,0 +1,12 @@
+<map id="llama_ros::DecisionAnswer" name="llama_ros::DecisionAnswer">
+<area shape="rect" id="Node000001" title="Represents an answer from a decision model." alt="" coords="106,289,284,314"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="59,136,51,176,52,197,59,216,78,240,103,260,155,286,153,291,100,264,74,244,55,219,47,198,46,176,54,135"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="115,192,275,218"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="97,128,180,189,177,194,94,133"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="198,233,198,288,192,288,192,233"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="299,192,427,218"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="329,228,218,290,215,286,327,223"/>
+</map>

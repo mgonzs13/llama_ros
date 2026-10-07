@@ -1,0 +1,19 @@
+<map id="llama_ros::DecisionModel" name="llama_ros::DecisionModel">
+<area shape="rect" id="Node000001" title="Decision model logic, a port of upstream server&#45;decision.cpp." alt="" coords="927,146,1095,172"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1DecisionModelConfig.html" title="Plain configuration of a decision model, independent of llama.cpp." alt="" coords="659,100,827,141"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="843,132,927,144,926,149,842,137"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="382,5,506,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="521,41,633,72,696,97,694,102,631,78,520,46"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="364,142,524,168"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="539,143,631,133,658,129,659,135,632,138,540,148"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="178,142,255,168"/>
+<area shape="poly" id="edge6_Node000002_Node000005" title=" " alt="" coords="254,133,279,124,376,105,454,101,632,110,658,111,658,116,632,115,454,106,377,111,280,130,256,138"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="271,152,364,152,364,158,271,158"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="373,192,515,233"/>
+<area shape="poly" id="edge8_Node000007_Node000005" title=" " alt="" coords="258,172,280,181,327,193,373,201,372,207,326,198,279,186,256,177"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="5,135,129,175"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="144,152,178,152,178,158,144,158"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="529,200,580,189,630,170,642,161,654,151,680,139,682,144,657,156,646,166,633,175,582,194,530,205"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="656,165,830,206"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="845,181,903,177,947,170,948,175,903,182,846,187"/>
+</map>

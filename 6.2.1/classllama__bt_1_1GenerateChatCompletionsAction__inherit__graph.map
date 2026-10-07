@@ -1,0 +1,8 @@
+<map id="llama_bt::GenerateChatCompletionsAction" name="llama_bt::GenerateChatCompletionsAction">
+<area shape="rect" id="Node000001" title="A llama_bt::BtActionNode class that wraps llama_msgs::action::GenerateChatCompletions." alt="" coords="5,183,234,223"/>
+<area shape="rect" id="Node000002" href="$classllama__bt_1_1BtActionNode.html" title=" " alt="" coords="27,79,212,135"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,150,122,182,117,182,117,150"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="48,5,191,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="114,46,114,78,108,78,108,46"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="131,46,131,78,125,78,125,46"/>
+</map>
