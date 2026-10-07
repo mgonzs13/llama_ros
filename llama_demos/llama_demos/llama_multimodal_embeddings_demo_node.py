@@ -71,7 +71,7 @@ def main():
 
     emb = llama_client.generate_embeddings(emb_req).embeddings
     print(f"Embedding size: {len(emb)}")
-    print(f"First values: {emb[:8]}")
+    print(f"First values: {emb}")
 
     rclpy.shutdown()
 

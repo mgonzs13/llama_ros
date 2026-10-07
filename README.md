@@ -2182,6 +2182,8 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/bge-base-en-v1.5.
 ros2 run llama_demos llama_embeddings_demo_node
 ```
 
+https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
+
 ### Multimodal Embeddings Generation Demo
 
 ```shell
@@ -2191,8 +2193,6 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/EmbeddingGemma-2.
 ```shell
 ros2 run llama_demos llama_multimodal_embeddings_demo_node
 ```
-
-https://github.com/user-attachments/assets/7d722017-27dc-417c-ace7-bf6b747e4ced
 
 ### Reranking Demo
 
