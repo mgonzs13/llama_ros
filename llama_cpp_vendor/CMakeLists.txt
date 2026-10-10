@@ -67,6 +67,15 @@ if(GGML_CUDA)
   )
 endif()
 
+if(GGML_OPENCL)
+  set_target_properties(
+    ggml-opencl PROPERTIES
+    OUTPUT_NAME "llama_ggml_opencl"
+    INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+    CXX_STANDARD 17
+  )
+endif()
+
 if(GGML_HIP)
   set_target_properties(
     ggml-hip PROPERTIES
@@ -195,6 +204,10 @@ set(INSTALL_TARGETS
 
 if(GGML_CUDA)
   list(APPEND INSTALL_TARGETS ggml-cuda)
+endif()
+
+if(GGML_OPENCL)
+  list(APPEND INSTALL_TARGETS ggml-opencl)
 endif()
 
 if(GGML_HIP)
