@@ -76,6 +76,15 @@ if(GGML_OPENCL)
   )
 endif()
 
+if(GGML_HEXAGON)
+  set_target_properties(
+    ggml-hexagon PROPERTIES
+    OUTPUT_NAME "llama_ggml_hexagon"
+    INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>"
+    CXX_STANDARD 17
+  )
+endif()
+
 if(GGML_HIP)
   set_target_properties(
     ggml-hip PROPERTIES
@@ -208,6 +217,10 @@ endif()
 
 if(GGML_OPENCL)
   list(APPEND INSTALL_TARGETS ggml-opencl)
+endif()
+
+if(GGML_HEXAGON)
+  list(APPEND INSTALL_TARGETS ggml-hexagon)
 endif()
 
 if(GGML_HIP)
