@@ -39,7 +39,7 @@ sudo apt install ocl-icd-opencl-dev
 Then snapshot the target libraries to the host (run on the board):
 
 ```bash
-sudo rsync -aHAX --numeric-ids \
+sudo rsync -aHAX --numeric-ids --info=progress2 \
   --exclude={"/usr/share/doc/*","/usr/share/man/*","/usr/share/locale/*","/usr/share/icons/*","/usr/share/fonts/*","/usr/lib/firmware/*","/usr/lib/modules/*","/usr/lib/debug/*","/usr/src/*"} \
   /usr /lib /opt/ros user@host:~/sysroot/
 ```
@@ -94,7 +94,7 @@ colcon build --merge-install --packages-select llama_cpp_vendor --cmake-args ...
 From the host:
 
 ```bash
-rsync -aP install/ user@ventuno:~/ros2_ws/install/
+rsync -aP install/ user@host:~/ros2_ws/install/
 ```
 
 ## 5. Run on the board
