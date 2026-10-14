@@ -21,8 +21,10 @@ How it works:
 - `qemu-user-static` on the host so aarch64 binaries can run during the build:
   `sudo apt install qemu-user-static binfmt-support`
   (or `docker run --privileged --rm tonistiigi/binfmt --install arm64`).
-- The board running Ubuntu 24.04 + ROS 2 Jazzy, reachable over SSH.
-- `rsync` installed on the board and the host.
+- The board running Ubuntu 24.04 + ROS 2 Jazzy, reachable over SSH as `user@ventuno`
+  (`ventuno` = the board's hostname or IP).
+- `rsync` installed on the board and the host, plus passwordless `sudo` on the board
+  (the sysroot is pulled from the host via `--rsync-path="sudo rsync"`).
 
 ## 1. Prepare the board and create the sysroot
 
@@ -36,12 +38,13 @@ sudo apt install build-essential python3-dev libopencv-dev
 sudo apt install ocl-icd-opencl-dev
 ```
 
-Then snapshot the target libraries to the host (run on the board):
+Then snapshot the target libraries to the host (run on the host):
 
 ```bash
-sudo rsync -aHAX --numeric-ids --info=progress2 \
+mkdir -p ~/sysroot
+sudo rsync -aHAX --numeric-ids --info=progress2 --rsync-path="sudo rsync" \
   --exclude={"/usr/share/doc/*","/usr/share/man/*","/usr/share/locale/*","/usr/share/icons/*","/usr/share/fonts/*","/usr/lib/firmware/*","/usr/lib/modules/*","/usr/lib/debug/*","/usr/src/*"} \
-  /usr /lib /opt/ros user@host:~/sysroot/
+  user@ventuno:/usr user@ventuno:/lib user@ventuno:/opt/ros ~/sysroot/
 ```
 
 Re-run this after installing or removing packages on the board.
@@ -94,7 +97,7 @@ colcon build --merge-install --packages-select llama_cpp_vendor --cmake-args ...
 From the host:
 
 ```bash
-rsync -aP install/ user@host:~/ros2_ws/install/
+rsync -aP install/ user@ventuno:~/ros2_ws/install/
 ```
 
 ## 5. Run on the board
