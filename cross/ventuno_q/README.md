@@ -71,7 +71,7 @@ way.
 From the repo root:
 
 ```bash
-docker build -f cross/ventuno_q/Dockerfile -t llama_ros_cross .
+docker build -f cross/ventuno_q/Dockerfile -t ventune_cross .
 ```
 
 ## 3. Build llama_ros
@@ -79,7 +79,7 @@ docker build -f cross/ventuno_q/Dockerfile -t llama_ros_cross .
 From the repo root:
 
 ```bash
-docker run --rm -it -v ~/sysroot:/sysroot -v $PWD:/workspace llama_ros_cross
+docker run --rm -it -v ~/sysroot:/sysroot -v $PWD:/workspace ventune_cross
 ```
 
 Inside the container:
