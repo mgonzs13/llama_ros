@@ -644,6 +644,11 @@ LlamaParams llama_utils::get_llama_params(
     }
   }
 
+  // llama.cpp expects a null-terminated device list
+  if (!params.params.devices.empty()) {
+    params.params.devices.push_back(nullptr);
+  }
+
   // mmproj device: "none" disables GPU offload for the projector, otherwise
   // fall back to the first device from gpu.devices when unset
   if (!mmproj_device.empty()) {
@@ -1116,6 +1121,11 @@ LlamaParams llama_utils::get_llama_params(
     } else {
       params.params.speculative.draft.devices.push_back(dev);
     }
+  }
+
+  // llama.cpp expects a null-terminated device list
+  if (!params.params.speculative.draft.devices.empty()) {
+    params.params.speculative.draft.devices.push_back(nullptr);
   }
 
   // Draft model KV cache types

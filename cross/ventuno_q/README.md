@@ -178,5 +178,12 @@ device name for OpenCL).
 - `ggml-hex: ... failed to open session : ... error 0x80000406` (`AEE_EUNABLETOLOAD`): the
   FastRPC stub cannot find the HTP skel. Export `ADSP_LIBRARY_PATH` (and
   `CDSP_LIBRARY_PATH`) as in step 5 and make sure `libggml-htp-vNN.so` was deployed.
+- `ggml-hex: ... buffer mapping failed : ... error 0x00000001` / `fastrpc_mmap failed`: the
+  model plus its contexts exceed a session's mappable address space (~3 GiB). Reduce
+  `context.n_batch`, set `gpu.no_kv_offload: true`, and/or use a smaller model or quant.
+  To layer-split across virtual sessions, export `GGML_HEXAGON_DEVICES=2` before launching
+  (registers the `HTP0` and `HTP1` sessions at backend load) and select them with
+  `gpu.devices: ["HTP0", "HTP1"]`; `gpu.devices` alone only filters already-registered
+  devices.
 - Only Hexagon architectures v73, v75, v79 and v81 have prebuilt skels. If the runtime reports
   a different architecture, the NPU is not supported by this backend.
