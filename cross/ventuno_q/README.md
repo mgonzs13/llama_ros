@@ -145,6 +145,9 @@ ggml-hex: Hexagon Arch version vXX
 load_tensors:      HTP0 model buffer size  = ...
 ```
 
+With multiple NPU sessions the registry line reports `ndev N` and each session gets its own
+`HTPi model buffer size` line (see "Multiple NPU sessions").
+
 ## Selecting the accelerator
 
 `gpu.n_gpu_layers` (`-1` = all layers) offloads to an accelerator. With both backends built,
@@ -157,6 +160,35 @@ ros2 run llama_ros llama_node --ros-args --params-file params.yaml \
 
 Use the device names printed in the startup log (`HTP0` for the Hexagon NPU, the Adreno
 device name for OpenCL).
+
+## Multiple NPU sessions (larger models)
+
+A single HTP session provides ~3 GiB of mappable memory. When the model plus its contexts
+does not fit (e.g. a 4B model with `draft-mtp` speculative decoding, which uses a second
+context), allocate several virtual sessions and layer-split across them.
+
+On the board, export the session count **before launching** — the sessions are registered when
+the Hexagon backend loads, so `gpu.devices` alone cannot create them:
+
+```bash
+export GGML_HEXAGON_DEVICES=4   # allocates HTP0, HTP1, HTP2, HTP3
+```
+
+Then list the sessions in the params file; with `n_gpu_layers: -1` the layers are split
+evenly:
+
+```yaml
+gpu:
+  n_gpu_layers: -1
+  devices: [HTP0, HTP1, HTP2, HTP3]
+```
+
+With `GGML_HEXAGON_DEVICES=N` the sessions are named `HTP0` .. `HTP<N-1>`. The
+`physical:virtual` notation works too (`GGML_HEXAGON_DEVICES=HTP0:0,HTP0:1,HTP0:2,HTP0:3`),
+but the names listed in `gpu.devices` must match it exactly. If one session is enough, leave
+`gpu.devices` unset to use the default device selection. To reduce the per-session footprint,
+lower `context.n_batch` and/or set `gpu.no_kv_offload: true` (moves the KV cache to the CPU),
+which may let you use fewer sessions.
 
 ## Troubleshooting
 
@@ -180,10 +212,7 @@ device name for OpenCL).
   `CDSP_LIBRARY_PATH`) as in step 5 and make sure `libggml-htp-vNN.so` was deployed.
 - `ggml-hex: ... buffer mapping failed : ... error 0x00000001` / `fastrpc_mmap failed`: the
   model plus its contexts exceed a session's mappable address space (~3 GiB). Reduce
-  `context.n_batch`, set `gpu.no_kv_offload: true`, and/or use a smaller model or quant.
-  To layer-split across virtual sessions, export `GGML_HEXAGON_DEVICES=2` before launching
-  (registers the `HTP0` and `HTP1` sessions at backend load) and select them with
-  `gpu.devices: ["HTP0", "HTP1"]`; `gpu.devices` alone only filters already-registered
-  devices.
+  `context.n_batch`, set `gpu.no_kv_offload: true`, use a smaller model or quant, or
+  layer-split across virtual sessions (see "Multiple NPU sessions").
 - Only Hexagon architectures v73, v75, v79 and v81 have prebuilt skels. If the runtime reports
   a different architecture, the NPU is not supported by this backend.
