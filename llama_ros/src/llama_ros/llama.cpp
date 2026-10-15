@@ -1222,10 +1222,13 @@ void Llama::prepare_decision_slot(const std::string &prompt,
   DecisionTaskMeta meta;
   this->decision_model_->fill_task(tokens, question, options, meta);
 
-  if (tokens.size() > (size_t)llama_n_batch(this->ctx)) {
+  // a non-causal decision model (vllm-d3) evaluates the whole prompt in one
+  // ubatch
+  if (tokens.size() >
+      (size_t)std::min(llama_n_batch(this->ctx), llama_n_ubatch(this->ctx))) {
     throw std::runtime_error(
         "The question, its options and the state must fit in one batch; "
-        "increase context.n_batch");
+        "increase context.n_batch and context.n_ubatch");
   }
 
   this->decision_handler_->handle(tokens, meta, slot);

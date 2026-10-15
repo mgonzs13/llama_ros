@@ -52,7 +52,7 @@ struct DecisionModelConfig {
   bool supports_images = false;
 
   /// @brief Maximum number of options accepted (label count for OpenJEV,
-  /// Lev and Nimble; 255 for the other types).
+  /// Lev, Nimble and Pplx/VllmD3; 255 for the other types).
   size_t n_options_max = 0;
 
   /// @brief Whether Noul options are ordered true, false (OpenJEV, Clef).
@@ -62,7 +62,7 @@ struct DecisionModelConfig {
   bool choice_sorted = false;
 
   /// @brief Single-token labels scored through the logits output
-  /// (OpenJEV, Lev, Nimble).
+  /// (OpenJEV, Lev, Nimble, Pplx/VllmD3).
   std::vector<llama_token> labels;
 
   /// @brief Text of each label given to the template (Lev, Nimble).
