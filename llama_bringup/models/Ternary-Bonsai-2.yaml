@@ -1,0 +1,24 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: prism-ml/Ternary-Bonsai-2-9B-gguf
+      filename: Ternary-Bonsai-2-9B-Q2_0.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 4096
+      n_batch: 256
+      n_predict: -1
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: -1
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML
