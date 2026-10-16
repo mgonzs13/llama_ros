@@ -1,0 +1,10 @@
+<map id="llama_utils::CompletionContext" name="llama_utils::CompletionContext">
+<area shape="rect" id="Node000001" title="Represents the context for text completions." alt="" coords="5,289,204,314"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="66,95,143,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="103,136,99,175,98,218,105,288,100,289,93,218,93,174,97,136"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="156,192,315,218"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="135,128,220,189,217,194,132,133"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="43,5,166,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="107,61,107,95,102,95,102,61"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="208,229,123,290,120,286,205,225"/>
+</map>

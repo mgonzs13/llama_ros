@@ -1,0 +1,9 @@
+<map id="llama_ros::ServerTaskResultEmbedding" name="llama_ros::ServerTaskResultEmbedding">
+<area shape="rect" id="Node000001" title="Result of an embedding generation task." alt="" coords="64,214,251,254"/>
+<area shape="rect" id="Node000002" href="$structllama__ros_1_1ServerTaskResult.html" title="Base class for server task results." alt="" coords="5,110,193,135"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,148,150,212,145,214,110,150"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="216,102,368,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="258,155,183,215,180,211,255,151"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="229,5,356,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="295,46,295,102,290,102,290,46"/>
+</map>
