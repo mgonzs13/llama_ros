@@ -174,9 +174,6 @@ public:
 
     /// @brief The OpenAI-compatible completion ID.
     std::string oaicompat_cmpl_id;
-
-    /// @brief The OpenAI-compatible chat syntax parameters.
-    common_chat_parser_params oaicompat_chat_syntax;
   } params;
 
   /// @brief The prompt tokens.
@@ -193,6 +190,15 @@ public:
 
   /// @brief The parsed chat message.
   common_chat_msg chat_msg;
+
+  /// @brief Chat session owning all parsing for this generation.
+  common_chat_session chat_session;
+
+  /// @brief Bytes of generated_text already fed to the chat session.
+  size_t chat_fed_len = 0;
+
+  /// @brief Whether the chat session was finished for this generation.
+  bool chat_finished = false;
 
   /// @brief The chat format being used.
   common_chat_format chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;

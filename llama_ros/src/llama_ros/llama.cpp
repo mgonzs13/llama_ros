@@ -263,12 +263,6 @@ Llama::Llama(const common_params &params, std::string system_prompt,
         llama_model_n_swa(this->model) > 0;
   }
 
-  // Host-RAM prompt cache (0 disables, < 0 means unlimited)
-  if (this->params.cache_ram_mib != 0) {
-    this->prompt_cache_ = std::make_unique<PromptCache>(
-        this->params.cache_ram_mib, this->params.n_ctx);
-  }
-
   // Slots
   const int32_t n_ctx_slot = this->params.n_ctx / this->params.n_parallel;
   LLAMA_LOG_INFO("slot context size: %d", n_ctx_slot);
@@ -368,6 +362,22 @@ Llama::Llama(const common_params &params, std::string system_prompt,
       this->params.grp_attn_w);
 
   this->init_decision();
+
+  // Host-RAM prompt cache (0 disables, < 0 means unlimited). Decision models
+  // rarely repeat a state, so the cache is opt-in for them; mirrors the
+  // llama.cpp server (cache_ram_explicit is set by --cache-ram upstream).
+  if (this->is_decision() && !this->params.cache_ram_explicit) {
+    LLAMA_LOG_INFO("decision model: prompt cache disabled by default, set "
+                   "cache.cache_ram_explicit to true to enable it");
+    this->params.cache_ram_mib = 0;
+    this->params.cache_idle_slots = false;
+  }
+
+  // Host-RAM prompt cache (0 disables, < 0 means unlimited)
+  if (this->params.cache_ram_mib != 0) {
+    this->prompt_cache_ = std::make_unique<PromptCache>(
+        this->params.cache_ram_mib, this->params.n_ctx);
+  }
 
   llama_set_embeddings(
       this->ctx,
@@ -2055,6 +2065,11 @@ void Llama::init_speculative() {
     params_dft.n_gpu_layers = spec_params.draft.n_gpu_layers;
     params_dft.cache_type_k = spec_params.draft.cache_type_k;
     params_dft.cache_type_v = spec_params.draft.cache_type_v;
+    if (spec_params.draft.n_ubatch > 0) {
+      params_dft.n_ubatch = spec_params.draft.n_ubatch;
+    }
+    // the MoE expert cache is only used by the target context
+    params_dft.moe_cache_size = 0;
     if (spec_params.draft.cpuparams.n_threads > 0) {
       params_dft.cpuparams = spec_params.draft.cpuparams;
       params_dft.cpuparams_batch = spec_params.draft.cpuparams_batch;
@@ -2098,6 +2113,8 @@ void Llama::init_speculative() {
     auto cparams_mtp = common_context_params_to_llama(this->params);
     cparams_mtp.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
     cparams_mtp.n_rs_seq = 0;
+    // the MoE expert cache is only used by the target context
+    cparams_mtp.moe_cache_size = 0;
     this->ctx_dft_ = llama_init_from_model(this->model, cparams_mtp);
     if (this->ctx_dft_ == nullptr) {
       LLAMA_LOG_ERROR("Failed to create MTP context, speculative decoding "

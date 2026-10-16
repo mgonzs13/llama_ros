@@ -93,7 +93,8 @@ struct DecisionModelConfig {
  * options in a single forward pass, without generating tokens. This class
  * owns the type-specific behavior:
  *
- * - OpenJEV, Lev and Nimble score single-token labels through the logits.
+ * - OpenJEV, Lev, Nimble, Pplx-decider and Vllm-d3 score single-token labels
+ *   through the logits.
  * - Kev scores options through a scaled dot product of embedding rows.
  * - Laya reads one embedding column per option.
  * - Clef answers all questions of a request in one joint prompt.

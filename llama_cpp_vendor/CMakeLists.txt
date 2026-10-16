@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        b11465
+  GIT_TAG        v0.7.0
   GIT_SHALLOW    FALSE
 )
 
@@ -137,6 +137,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/muse-glimmer.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-omni.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/parakeet.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp

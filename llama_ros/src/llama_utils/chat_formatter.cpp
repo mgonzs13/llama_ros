@@ -54,8 +54,8 @@ ChatFormatter::apply_template(const common_chat_templates_inputs &inputs) {
 }
 
 common_chat_msg
-ChatFormatter::parse_response(const std::string &text, bool is_partial,
+ChatFormatter::parse_response(const common_chat_input &input, bool is_partial,
                               const common_chat_parser_params &chat_syntax) {
 
-  return common_chat_parse(text, is_partial, chat_syntax);
+  return common_chat_parse(input, is_partial, chat_syntax);
 }

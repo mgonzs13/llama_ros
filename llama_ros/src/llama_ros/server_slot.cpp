@@ -29,15 +29,23 @@ using namespace llama_ros;
 const common_chat_msg &ServerSlot::update_chat_msg(
     std::vector<common_chat_msg_diff> &oaicompat_msg_diffs) {
 
+  // After finish() the session asserts on further feed()/finish() calls.
+  if (this->chat_finished) {
+    oaicompat_msg_diffs.clear();
+    return this->chat_msg;
+  }
+
   auto previous_msg = this->chat_msg;
   common_chat_msg new_msg;
   bool parse_fallback = false;
 
+  const bool is_partial = this->stop != StopType::FULL_STOP;
+  common_chat_input added(this->generated_text.substr(this->chat_fed_len));
+  this->chat_fed_len = this->generated_text.size();
+
   try {
-    new_msg =
-        common_chat_parse(this->generated_text,
-                          /* is_partial= */ this->stop != StopType::FULL_STOP,
-                          this->params.oaicompat_chat_syntax);
+    new_msg = is_partial ? this->chat_session.feed(added)
+                         : this->chat_session.finish(added);
   } catch (const std::exception &e) {
     // PEG parser may fail when the grammar allows output the parser cannot
     // fully consume (e.g. multiple <tool_call> blocks with a single-block
@@ -49,6 +57,9 @@ const common_chat_msg &ServerSlot::update_chat_msg(
     new_msg.content = this->generated_text;
     parse_fallback = true;
   }
+
+  // finish() (successful or not) makes the session final
+  this->chat_finished = !is_partial;
 
   if (!new_msg.empty()) {
     std::function<std::string()> gen_tool_call_id =
@@ -78,6 +89,9 @@ void ServerSlot::reset() {
   this->chat_format = COMMON_CHAT_FORMAT_CONTENT_ONLY;
   this->generated_tool_call_ids.clear();
   this->chat_msg = {};
+  this->chat_session = common_chat_session{};
+  this->chat_fed_len = 0;
+  this->chat_finished = false;
 
   this->generated_probs.clear();
 

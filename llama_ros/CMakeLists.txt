@@ -142,6 +142,7 @@ if(BUILD_TESTING)
     test/test_kv_cache_reuse.cpp
     test/test_prompt_cache.cpp
     test/test_metadata_utils.cpp
+    test/test_chat_session_slot.cpp
     ${LLAMA_CORE_SOURCES}
     ${LLAMA_UTILS_SOURCES}
     TIMEOUT 600

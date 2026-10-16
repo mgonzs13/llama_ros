@@ -194,10 +194,8 @@ generate_chat_completions_feedback(
  * @brief Represents the context for chat completions.
  */
 struct ChatCompletionsContext {
-  common_chat_parser_params oaicompat_chat_syntax;
+  common_chat_session chat_session;
   common_params_sampling sparams;
-  common_chat_templates_inputs prompt_format_config;
-  common_chat_params chat_prompt_instance;
 };
 
 /**

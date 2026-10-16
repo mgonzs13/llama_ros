@@ -73,15 +73,15 @@ public:
   common_chat_templates *get_templates() const { return chat_templates_.get(); }
 
   /**
-   * @brief Parses a response string into structured chat message.
+   * @brief Parses a response into a structured chat message.
    *
-   * @param text The raw response text.
+   * @param input The input text (and optionally tokens) to parse.
    * @param is_partial Whether this is a partial response (streaming).
    * @param chat_syntax The chat syntax being used.
    * @return The parsed chat message.
    */
   static common_chat_msg
-  parse_response(const std::string &text, bool is_partial,
+  parse_response(const common_chat_input &input, bool is_partial,
                  const common_chat_parser_params &chat_syntax);
 
 private:

@@ -218,21 +218,19 @@ void ChatCompletionRequestHandler::handle(
 
   slot->reset();
 
-  common_chat_templates_inputs inputs = chat_context.prompt_format_config;
-  slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
+  slot->chat_session = std::move(chat_context.chat_session);
   slot->params.sampling = chat_context.sparams;
 
   if (slot->sampler != nullptr) {
     common_sampler_free(slot->sampler);
   }
 
-  slot->prompt_tokens =
-      common_tokenize(this->llama_->get_ctx(),
-                      chat_context.chat_prompt_instance.prompt, false, true);
+  slot->prompt_tokens = common_tokenize(
+      this->llama_->get_ctx(), slot->chat_session.prompt().str(), false, true);
   slot->sampler =
       common_sampler_init(this->llama_->get_model(), slot->params.sampling);
   slot->stream_callback = callback;
-  slot->chat_format = chat_context.chat_prompt_instance.format;
+  slot->chat_format = slot->chat_session.format();
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = SERVER_TASK_TYPE_COMPLETION;
   slot->state = SLOT_STATE_STARTED;

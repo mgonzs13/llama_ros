@@ -468,6 +468,22 @@ TEST(DecisionModelTest, FillTaskAssignsLabelsAndRejectsOverflow) {
                std::runtime_error);
 }
 
+TEST(DecisionModelTest, VllmD3UsesPplxLabelReadout) {
+  llama_ros::DecisionModelConfig config;
+  config.type = COMMON_DECISION_TYPE_VLLM_D3;
+  config.n_options_max = 255;
+  config.labels = {11, 12};
+  llama_ros::DecisionModel model(config, test_template());
+
+  llama_ros::DecisionTaskMeta meta;
+  std::vector<llama_token> tokens;
+  auto q = choice_question();
+  model.fill_task(tokens, q, model.options_from_question(q), meta);
+
+  EXPECT_FALSE(model.needs_embeddings());
+  EXPECT_EQ(meta.labels, (std::vector<llama_token>{11, 12}));
+}
+
 TEST(DecisionModelTest, FormatRejectsNanScores) {
   llama_ros::DecisionModel model(label_config(), test_template());
   auto q = choice_question();

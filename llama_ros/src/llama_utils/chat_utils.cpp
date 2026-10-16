@@ -287,72 +287,48 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
 
   // Get model chat template
   auto tmpls = llama->get_chat_formatter();
-  ctx.prompt_format_config = llama_utils::parse_chat_completions_goal(goal);
-  ctx.chat_prompt_instance =
-      llama->get_chat_params(tmpls->get_templates(), ctx.prompt_format_config);
+  auto session_inputs = llama_utils::parse_chat_completions_goal(goal);
+
+  // When thinking is disabled but the model supports it, Jinja templates
+  // pre-fill an empty <think></think> block in the generation_prompt. A parser
+  // built with reasoning_format=NONE has no rule to consume this block,
+  // causing the tags to leak into the content field. Build the session with
+  // reasoning_format=AUTO in that case (enable_thinking stays false) so the
+  // parser properly consumes the pre-filled thinking block. The actual prompt
+  // is unchanged because Jinja templates use enable_thinking (not
+  // reasoning_format) to control thinking pre-fill.
+  if (!session_inputs.enable_thinking &&
+      common_chat_templates_support_enable_thinking(tmpls->get_templates())) {
+    session_inputs.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
+  }
+
+  // The session applies the template and resolves the parser, the preserved
+  // tokens and the grammar triggers with the model vocab.
+  ctx.chat_session = common_chat_session(tmpls->get_templates(),
+                                         llama->get_vocab(), session_inputs);
+
   ctx.sparams = llama_utils::parse_sampling_params(goal->sampling_config,
                                                    llama->get_n_vocab());
 
-  // When thinking is disabled but the model supports it, Jinja templates
-  // pre-fill an empty <think></think> block in the generation_prompt. The PEG
-  // parser compiled with reasoning_format=NONE has no rule to consume this
-  // block, causing the tags to leak into the content field. Fix by regenerating
-  // the parser config with reasoning_format=AUTO (enable_thinking stays false)
-  // so the parser properly consumes the pre-filled thinking block. The actual
-  // prompt is unchanged because Jinja templates use enable_thinking (not
-  // reasoning_format) to control thinking pre-fill.
-  if (!ctx.prompt_format_config.enable_thinking &&
-      ctx.chat_prompt_instance.supports_thinking) {
-    auto format_config_for_parser = ctx.prompt_format_config;
-    format_config_for_parser.reasoning_format = COMMON_REASONING_FORMAT_AUTO;
-    auto chat_instance_for_parser = llama->get_chat_params(
-        tmpls->get_templates(), format_config_for_parser);
-    ctx.chat_prompt_instance.parser = chat_instance_for_parser.parser;
-  }
+  // An explicit user grammar wins over the template's tool-call grammar.
+  const auto user_grammar = ctx.sparams.grammar;
+  const bool user_grammar_set = !goal->sampling_config.grammar.empty();
+  const bool user_grammar_lazy = ctx.sparams.grammar_lazy;
 
-  ctx.oaicompat_chat_syntax.format = ctx.chat_prompt_instance.format;
-  ctx.oaicompat_chat_syntax.reasoning_format =
-      llama_utils::parse_reasoning_format(goal->reasoning_format.value);
-  ctx.oaicompat_chat_syntax.reasoning_in_content =
-      goal->stream && ctx.oaicompat_chat_syntax.reasoning_format ==
-                          COMMON_REASONING_FORMAT_DEEPSEEK_LEGACY;
-  ctx.oaicompat_chat_syntax.generation_prompt =
-      ctx.chat_prompt_instance.generation_prompt;
   // Tool-call and output-format grammars start with the generation prompt, so
   // the sampler must be advanced past it. Otherwise the grammar forces the
   // model to re-emit the generation prompt as content (mirrors llama.cpp's
-  // server, which sets both chat_parser_params and sampling.generation_prompt).
-  ctx.sparams.generation_prompt = ctx.chat_prompt_instance.generation_prompt;
-  ctx.oaicompat_chat_syntax.parse_tool_calls =
-      !goal->tools.empty() &&
-      ctx.prompt_format_config.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;
+  // server). This also applies the tool-call grammar, the preserved tokens
+  // (special tokens required by the chat template parser, e.g. <tool_call>)
+  // and the template's grammar triggers.
+  ctx.chat_session.apply_sampling(ctx.sparams);
 
-  // Load the PEG parser from the chat template so that common_chat_parse
-  // can properly extract tool calls and structured output from the response.
-  if (!ctx.chat_prompt_instance.parser.empty()) {
-    ctx.oaicompat_chat_syntax.parser.load(ctx.chat_prompt_instance.parser);
+  if (user_grammar_set) {
+    ctx.sparams.grammar = user_grammar;
   }
+  ctx.sparams.grammar_lazy = ctx.sparams.grammar_lazy || user_grammar_lazy;
 
-  // Add preserved tokens to the sampling config.
-  // These are special tokens required by the chat template parser
-  // (e.g. <tool_call>, </tool_call>) that must be tokenized as single tokens.
-  if (llama) {
-    const llama_vocab *vocab = llama->get_vocab();
-    for (const auto &token_str : ctx.chat_prompt_instance.preserved_tokens) {
-      auto ids = common_tokenize(vocab, token_str,
-                                 /* add_special= */ false,
-                                 /* parse_special= */ true);
-      if (ids.size() == 1) {
-        ctx.sparams.preserved_tokens.insert(ids[0]);
-      }
-    }
-  }
-
-  if (goal->sampling_config.grammar.empty() && goal->tools.size() != 0) {
-    if (!ctx.chat_prompt_instance.grammar.empty()) {
-      ctx.sparams.grammar = {COMMON_GRAMMAR_TYPE_TOOL_CALLS,
-                             ctx.chat_prompt_instance.grammar};
-    }
+  if (!user_grammar_set && goal->tools.size() != 0) {
 
     // Workaround for llama.cpp autoparser bug (b8261): when a template uses
     // per-call wrapping tags (e.g. <tool_call>...</tool_call> for each call,
@@ -361,8 +337,7 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
     // with comma separation. This is wrong — the model expects each call in
     // its own tag pair. Fix the grammar when parallel_tool_calls is true by
     // rewriting the tool-call rule so each call gets its own wrapper.
-    if (ctx.prompt_format_config.parallel_tool_calls &&
-        !ctx.sparams.grammar.empty()) {
+    if (session_inputs.parallel_tool_calls && !ctx.sparams.grammar.empty()) {
       // Look for the tool-call rule that has comma-separated repetition
       // inside a single pair of XML-like tags. Pattern in the grammar:
       //   tool-call ::= "OPEN" space CHOICES (space "," space CHOICES)* space
@@ -435,39 +410,18 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
     }
   }
 
-  if (goal->sampling_config.grammar_triggers.empty()) {
-    // Resolve WORD triggers to TOKEN triggers when possible,
-    // matching the llama.cpp server behavior.
-    for (auto trigger : ctx.chat_prompt_instance.grammar_triggers) {
-      if (trigger.type == COMMON_GRAMMAR_TRIGGER_TYPE_WORD && llama) {
-        const llama_vocab *vocab = llama->get_vocab();
-        auto ids = common_tokenize(vocab, trigger.value,
-                                   /* add_special= */ false,
-                                   /* parse_special= */ true);
-        if (ids.size() == 1) {
-          trigger.type = COMMON_GRAMMAR_TRIGGER_TYPE_TOKEN;
-          trigger.token = ids[0];
-        }
-      }
-      ctx.sparams.grammar_triggers.push_back(trigger);
-    }
-  }
-
-  ctx.sparams.grammar_lazy = ctx.chat_prompt_instance.grammar_lazy ||
-                             goal->sampling_config.grammar_lazy;
-
   // Set up reasoning budget vocab tokens if budget is active
   if (ctx.sparams.reasoning_budget_tokens >= 0 &&
-      !ctx.chat_prompt_instance.thinking_end_tags.empty() && llama) {
+      !ctx.chat_session.thinking_end_tags().empty() && llama) {
     const llama_vocab *vocab = llama->get_vocab();
     if (ctx.sparams.reasoning_budget_start.empty() &&
-        !ctx.chat_prompt_instance.thinking_start_tag.empty()) {
+        !ctx.chat_session.thinking_start_tag().empty()) {
       ctx.sparams.reasoning_budget_start =
-          common_tokenize(vocab, ctx.chat_prompt_instance.thinking_start_tag,
+          common_tokenize(vocab, ctx.chat_session.thinking_start_tag(),
                           /* add_special= */ false, /* parse_special= */ true);
     }
     if (ctx.sparams.reasoning_budget_end.empty()) {
-      for (const auto &tag : ctx.chat_prompt_instance.thinking_end_tags) {
+      for (const auto &tag : ctx.chat_session.thinking_end_tags()) {
         ctx.sparams.reasoning_budget_end.push_back(common_tokenize(
             vocab, tag,
             /* add_special= */ false, /* parse_special= */ true));
@@ -475,7 +429,7 @@ llama_utils::ChatCompletionsContext llama_utils::prepare_chat_completions_call(
     }
 
     if (ctx.sparams.reasoning_budget_forced.empty()) {
-      for (const auto &tag : ctx.chat_prompt_instance.thinking_end_tags) {
+      for (const auto &tag : ctx.chat_session.thinking_end_tags()) {
         ctx.sparams.reasoning_budget_forced = common_tokenize(
             vocab, ctx.sparams.reasoning_budget_message + tag,
             /* add_special= */ false, /* parse_special= */ true);

@@ -107,11 +107,14 @@ void LlavaChatCompletionRequestHandler::handle(
         callback) {
   LLAMA_LOG_INFO("Handling chat completion request");
 
-  common_chat_templates_inputs inputs = chat_context.prompt_format_config;
-  slot->params.oaicompat_chat_syntax = chat_context.oaicompat_chat_syntax;
+  slot->chat_session = std::move(chat_context.chat_session);
   slot->params.sampling = chat_context.sparams;
+  // this handler does not call reset(), clear the chat generation state
+  slot->chat_msg = {};
+  slot->chat_fed_len = 0;
+  slot->chat_finished = false;
 
-  std::string prompt_str = chat_context.chat_prompt_instance.prompt;
+  std::string prompt_str = slot->chat_session.prompt().str();
   if (this->llava_->mtmd_ctx == nullptr) {
     slot->prompt_tokens =
         common_tokenize(this->llava_->get_vocab(), prompt_str, true, true);
@@ -143,7 +146,7 @@ void LlavaChatCompletionRequestHandler::handle(
   slot->sampler =
       common_sampler_init(this->llava_->model, slot->params.sampling);
   slot->stream_callback = callback;
-  slot->chat_format = chat_context.chat_prompt_instance.format;
+  slot->chat_format = slot->chat_session.format();
   LLAMA_LOG_INFO("Prompt tokens size: %ld", slot->prompt_tokens.size());
   slot->task_type = llama_ros::SERVER_TASK_TYPE_COMPLETION;
   slot->state = llama_ros::SLOT_STATE_STARTED;

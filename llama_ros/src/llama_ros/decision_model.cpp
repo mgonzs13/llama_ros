@@ -173,12 +173,9 @@ void DecisionModel::init_from_model(const llama_model *model) {
       decision_meta_str(model, "general.architecture") + ".decision.";
   const std::string type_name = decision_meta_str(model, prefix + "type");
 
-  // decision types newer than the linked llama.cpp revision report UNKNOWN:
-  // vllm-d3 (llama.cpp #30383) uses the pplx-decider labels, its non-causal
-  // attention is read from the GGUF metadata by llama.cpp itself
-  if (model_type == COMMON_DECISION_TYPE_UNKNOWN && type_name == "vllm-d3") {
-    model_type = COMMON_DECISION_TYPE_PPLX_DECIDER;
-  }
+  // vllm-d3 is a known type since llama.cpp v0.7.0
+  // (COMMON_DECISION_TYPE_VLLM_D3); it behaves like pplx-decider, its
+  // non-causal attention is handled by llama.cpp from the GGUF metadata
 
   const char *tmpl_src = llama_model_chat_template(model, "systemone");
 
@@ -235,7 +232,8 @@ void DecisionModel::init_from_model(const llama_model *model) {
 
   } else if (model_type == COMMON_DECISION_TYPE_LEV ||
              model_type == COMMON_DECISION_TYPE_NIMBLE ||
-             model_type == COMMON_DECISION_TYPE_PPLX_DECIDER) {
+             model_type == COMMON_DECISION_TYPE_PPLX_DECIDER ||
+             model_type == COMMON_DECISION_TYPE_VLLM_D3) {
     // label codes are A..Z then AA..ZZ, only single-token ones are used
     std::vector<std::string> codes;
     for (char a = 'A'; a <= 'Z'; a++) {
@@ -487,7 +485,8 @@ void DecisionModel::fill_task(std::vector<llama_token> &tokens,
   case COMMON_DECISION_TYPE_OPENJEV:
   case COMMON_DECISION_TYPE_LEV:
   case COMMON_DECISION_TYPE_NIMBLE:
-  case COMMON_DECISION_TYPE_PPLX_DECIDER: {
+  case COMMON_DECISION_TYPE_PPLX_DECIDER:
+  case COMMON_DECISION_TYPE_VLLM_D3: {
     const size_t n = this->n_outputs(question, options);
     if (n > this->config_.labels.size()) {
       throw std::runtime_error("too many options for this decision model");

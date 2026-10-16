@@ -284,11 +284,13 @@ void llama_utils::declare_llama_params(
                                                  {"n_ctx_checkpoints", 32},
                                                  {"checkpoint_min_step", 256},
                                                  {"cache_ram_mib", 8192},
+                                                 {"moe_cache_mib", 0},
                                                  {"kv_unified_per_slot", 0},
                                              });
 
   node->declare_parameters<bool>("cache", {
                                               {"cache_prompt", true},
+                                              {"cache_ram_explicit", false},
                                           });
 
   // Fit parameters (fit.*)
@@ -323,6 +325,7 @@ void llama_utils::declare_llama_params(
                                         {"n_max", 16},
                                         {"n_min", 0},
                                         {"n_gpu_layers", -1},
+                                        {"n_ubatch", 0},
                                     });
 
   node->declare_parameters<double>("speculative.draft", {
@@ -1008,8 +1011,25 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("cache.checkpoint_min_step",
                       params.params.checkpoint_min_step);
   node->get_parameter("cache.cache_ram_mib", params.params.cache_ram_mib);
+  node->get_parameter("cache.cache_ram_explicit",
+                      params.params.cache_ram_explicit);
   node->get_parameter("cache.kv_unified_per_slot",
                       params.params.kv_unified_per_slot);
+
+  // moe_cache_mib: MiB -> bytes, non-positive disables the MoE expert cache
+  {
+    int32_t moe_cache_mib = 0;
+    node->get_parameter("cache.moe_cache_mib", moe_cache_mib);
+
+    if (moe_cache_mib < 0) {
+      RCLCPP_WARN(node->get_logger(),
+                  "cache.moe_cache_mib cannot be negative, disabling the MoE "
+                  "expert cache");
+      moe_cache_mib = 0;
+    }
+
+    params.params.moe_cache_size = (size_t)moe_cache_mib * 1024 * 1024;
+  }
 
   params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);
   params.params.cache_type_v = kv_cache_type_from_str(cache_type_v);
@@ -1032,6 +1052,14 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("speculative.draft.p_split", speculative_p_split);
   node->get_parameter("speculative.draft.n_gpu_layers",
                       params.params.speculative.draft.n_gpu_layers);
+  node->get_parameter("speculative.draft.n_ubatch",
+                      params.params.speculative.draft.n_ubatch);
+  if (params.params.speculative.draft.n_ubatch < 0) {
+    RCLCPP_WARN(node->get_logger(),
+                "speculative.draft.n_ubatch cannot be negative, using the "
+                "target n_ubatch");
+    params.params.speculative.draft.n_ubatch = 0;
+  }
   node->get_parameter("speculative.draft.model.path",
                       params.params.speculative.draft.mparams.path);
   node->get_parameter("speculative.draft.model.repo",

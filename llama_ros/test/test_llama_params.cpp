@@ -358,3 +358,33 @@ TEST_F(LlamaParamsTest, ParallelProcessingConfiguration) {
   EXPECT_EQ(params.params.n_parallel, 4);
   EXPECT_FALSE(params.params.cont_batching);
 }
+
+/**
+ * @brief Test that verifies the new llama.cpp v0.7.0 parameters and their
+ * mapping.
+ */
+TEST_F(LlamaParamsTest, NewV070Parameters) {
+  // Declared with the documented defaults
+  EXPECT_EQ(node->get_parameter("cache.moe_cache_mib").as_int(), 0);
+  EXPECT_EQ(node->get_parameter("speculative.draft.n_ubatch").as_int(), 0);
+  EXPECT_FALSE(node->get_parameter("cache.cache_ram_explicit").as_bool());
+
+  // MiB -> bytes conversion
+  node->set_parameter(rclcpp::Parameter("cache.moe_cache_mib", 512));
+  llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.moe_cache_size, (size_t)512 * 1024 * 1024);
+
+  // Non-positive values disable / are ignored
+  node->set_parameter(rclcpp::Parameter("cache.moe_cache_mib", -1));
+  node->set_parameter(rclcpp::Parameter("speculative.draft.n_ubatch", -3));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.moe_cache_size, (size_t)0);
+  EXPECT_EQ(params.params.speculative.draft.n_ubatch, 0);
+
+  // Pass-through values
+  node->set_parameter(rclcpp::Parameter("speculative.draft.n_ubatch", 128));
+  node->set_parameter(rclcpp::Parameter("cache.cache_ram_explicit", true));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.speculative.draft.n_ubatch, 128);
+  EXPECT_TRUE(params.params.cache_ram_explicit);
+}
