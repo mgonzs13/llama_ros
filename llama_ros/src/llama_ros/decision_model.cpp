@@ -256,6 +256,13 @@ void DecisionModel::init_from_model(const llama_model *model) {
 
     this->config_.n_options_max = this->config_.labels.size();
 
+    // upstream can_use_images: pplx-decider and vllm-d3 prompts have a place
+    // for images (lev and nimble do not)
+    if (model_type == COMMON_DECISION_TYPE_PPLX_DECIDER ||
+        model_type == COMMON_DECISION_TYPE_VLLM_D3) {
+      this->config_.supports_images = true;
+    }
+
   } else if (model_type == COMMON_DECISION_TYPE_KEV) {
     // the hidden state of an option is read at the token that ends it
     const auto toks = common_tokenize(vocab, "<|box_end|>", false, true);

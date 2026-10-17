@@ -48,7 +48,7 @@ struct DecisionModelConfig {
   /// @brief Upstream decision type (COMMON_DECISION_TYPE_NONE if disabled).
   common_decision_type type = COMMON_DECISION_TYPE_NONE;
 
-  /// @brief Whether the model accepts images (OpenJEV).
+  /// @brief Whether the model accepts images (OpenJEV, Clef, Pplx/VllmD3).
   bool supports_images = false;
 
   /// @brief Maximum number of options accepted (label count for OpenJEV,
@@ -98,6 +98,8 @@ struct DecisionModelConfig {
  * - Kev scores options through a scaled dot product of embedding rows.
  * - Laya reads one embedding column per option.
  * - Clef answers all questions of a request in one joint prompt.
+ * - OpenJEV, Clef, Pplx-decider and Vllm-d3 prompts have a place for images;
+ *   the other types reject them.
  *
  * Prompt rendering uses the model's "systemone" chat template. The class is
  * independent of the ROS layer and of the slot machinery; `Llama` calls it
@@ -153,7 +155,7 @@ public:
   /**
    * @brief Checks whether the model accepts images.
    *
-   * @return True if images are supported (OpenJEV).
+   * @return True if images are supported (OpenJEV, Clef, Pplx/VllmD3).
    */
   bool supports_images() const { return this->config_.supports_images; }
 

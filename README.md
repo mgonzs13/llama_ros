@@ -2352,8 +2352,8 @@ the option keys and a `confidence` (a `noul` answer reports its probability in
 `noul`, and `confidence` stays 0). A failing question does not prevent the
 other questions from being answered; Clef is the exception, since it answers
 all questions in one joint pass and fails them together. Images are accepted
-for OpenJEV and Clef, up to 8 per request, and require the `llava` node with a
-multimodal projector.
+for OpenJEV, Clef, Pplx-decider and Vllm-d3, up to 8 per request, and require
+the `llava` node with a multimodal projector.
 
 Supported models and their GGUFs: `ggml-org/OpenJEV-GGUF`,
 `ggml-org/Laya-GGUF`, `ggml-org/Kev-4B-GGUF` (also 0.8B/9B),
@@ -2377,14 +2377,21 @@ joint forward pass.
 
 ### Image Decision Demo
 
-Clef decision models accept images through the `llava` node with a multimodal
-projector. The image decision demo downloads a fixed image from a URL (pass a
-different URL as the first argument to override it) and sends it with a
-`choice`, a `score` and a `noul` question; Clef answers all of them in one
-joint forward pass.
+Clef, OpenJEV, Pplx-decider and Vllm-d3 decision models accept images through
+the `llava` node with a multimodal projector. The image decision demo downloads
+a fixed image from a URL (pass a different URL as the first argument to
+override it) and sends it with a `choice`, a `score` and a `noul` question;
+Clef answers all of them in one joint forward pass, the other types evaluate
+one question per pass.
 
 ```shell
 ros2 launch llama_bringup image-decision.launch.py
+```
+
+The launch file uses Clef; other image-capable models work too, for example:
+
+```shell
+ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/vllm-d3.yaml
 ```
 
 ```shell
