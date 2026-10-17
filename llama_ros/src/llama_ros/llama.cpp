@@ -1988,11 +1988,14 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
 
   std::vector<llama_token> new_tokens = tokens;
 
+  // Vocabs without an EOS token (BERT-style) must never get LLAMA_TOKEN_NULL
+  // appended: it would be mistaken for a media placeholder
+  const llama_token eos = this->get_token_eos();
+  const bool append_eos = add_eos && eos != LLAMA_TOKEN_NULL &&
+                          (tokens.empty() || tokens.back() != eos);
+
   // Reserve space for EOS token if needed
-  int effective_limit = limit_size;
-  if (add_eos && !tokens.empty() && tokens.back() != this->get_token_eos()) {
-    effective_limit = limit_size - 1;
-  }
+  int effective_limit = append_eos ? limit_size - 1 : limit_size;
 
   if ((int)tokens.size() > effective_limit) {
     LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
@@ -2001,9 +2004,8 @@ Llama::truncate_tokens(const std::vector<llama_token> &tokens, int limit_size,
   }
 
   // add eos if not present
-  if (add_eos && !new_tokens.empty() &&
-      new_tokens.back() != this->get_token_eos()) {
-    new_tokens.push_back(this->get_token_eos());
+  if (append_eos && !new_tokens.empty() && new_tokens.back() != eos) {
+    new_tokens.push_back(eos);
   }
 
   return new_tokens;
@@ -2615,6 +2617,23 @@ void Llama::run_loop() {
           if (cur_tok == LLAMA_TOKEN_NULL) {
             if (slot.task_type == SERVER_TASK_TYPE_EMBEDDING &&
                 this->is_embedding()) {
+              // A NULL token is a media placeholder, so it can only be
+              // processed when the slot maps it to a media chunk. Anything
+              // else (e.g. an invalid EOS appended to a text prompt) is a
+              // malformed prompt, not a media failure.
+              if (slot.map_pos_to_media.find(slot.n_past) ==
+                  slot.map_pos_to_media.end()) {
+                LLAMA_LOG_ERROR(
+                    "NULL token at position %d on slot %d has no media chunk",
+                    slot.n_past, slot.id);
+                this->fail_pending(slot.goal_id,
+                                   "Invalid NULL token in the embedding "
+                                   "prompt");
+                this->release_slot(&slot);
+                enqueue_failed = true;
+                break;
+              }
+
               bool ok = false;
               try {
                 ok = this->process_embedding_mtmd_batch(&slot);
@@ -2623,6 +2642,7 @@ void Llama::run_loop() {
                                 e.what());
                 ok = false;
               }
+
               if (!ok) {
                 this->fail_pending(slot.goal_id,
                                    "Failed to process multimodal embedding "
@@ -2631,6 +2651,7 @@ void Llama::run_loop() {
                 enqueue_failed = true;
                 break;
               }
+
               continue;
             }
 
@@ -2648,6 +2669,7 @@ void Llama::run_loop() {
                 break;
               }
             }
+
             if (foreign) {
               LLAMA_LOG_WARN(
                   "Joint decision prompt cannot share a batch on slot %d",
@@ -2667,6 +2689,7 @@ void Llama::run_loop() {
               LLAMA_LOG_ERROR("Failed to process decision media: %s", e.what());
               ok = false;
             }
+
             if (!ok) {
               this->fail_pending(slot.goal_id,
                                  "Failed to process decision media");
@@ -2674,6 +2697,7 @@ void Llama::run_loop() {
               enqueue_failed = true;
               break;
             }
+
             continue;
           }
 
@@ -2777,6 +2801,7 @@ void Llama::run_loop() {
           this->server_slots[0].kv_positions_valid) {
         abort_slot = &this->server_slots[0];
       }
+
       std::function<bool()> abort_callback;
       if (abort_slot != nullptr) {
         const uint64_t gid = abort_slot->goal_id;
@@ -2784,11 +2809,13 @@ void Llama::run_loop() {
           return this->task_registry_->is_cancel_requested(gid);
         };
       }
+
       int ret;
       {
         ScopedDecodeAbort abort_guard(this->ctx, std::move(abort_callback));
         ret = llama_process(this->ctx, LLAMA_PROCESS_TYPE_DECODE, batch_view);
       }
+
       if (ret == 2) {
         // v0.4.1 removes the failed ubatch and all following positions.
         // Earlier completed ubatches remain materialized in text attention KV.
@@ -2798,6 +2825,7 @@ void Llama::run_loop() {
               0,
               static_cast<int>(
                   llama_memory_seq_pos_max(this->get_memory(), slot.id) + 1));
+
           if (committed > slot.n_past ||
               (committed > 0 &&
                llama_memory_seq_pos_min(this->get_memory(), slot.id) != 0)) {
@@ -2807,6 +2835,7 @@ void Llama::run_loop() {
             this->release_slot(&slot);
             break;
           }
+
           slot.n_prompt_tokens_processed = std::max(
               0, slot.n_prompt_tokens_processed - (slot.n_past - committed));
           slot.n_past = committed;
@@ -2831,6 +2860,7 @@ void Llama::run_loop() {
             }
           }
         }
+
         break;
       }
 
@@ -2883,6 +2913,7 @@ void Llama::run_loop() {
           update_kv_cache(seq_id);
         }
       }
+
       for (auto &slot : this->server_slots) {
         if (slot.task_type == SERVER_TASK_TYPE_COMPLETION &&
             (slot.state == SLOT_STATE_PROCESSING_PROMPT ||
@@ -2892,11 +2923,13 @@ void Llama::run_loop() {
               slot.prompt_tokens.begin() +
                   std::min(slot.n_kv_cache, slot.n_prompt_tokens));
         }
+
         if (slot.precompute && slot.is_processing()) {
           LLAMA_LOG_INFO("Precompute progress: cached=%d/%d", slot.n_kv_cache,
                          slot.n_prompt_tokens);
         }
       }
+
       i_next = i + n_tokens;
       n_batch = llama_n_batch(this->ctx);
 

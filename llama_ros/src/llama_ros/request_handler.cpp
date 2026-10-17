@@ -34,12 +34,14 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
                                          int limit_size, bool add_eos) {
   std::vector<llama_token> new_tokens = tokens;
 
+  // Vocabs without an EOS token (BERT-style embedding models) must never get
+  // LLAMA_TOKEN_NULL appended: it would be mistaken for a media placeholder
+  const llama_token eos = this->llama_->get_token_eos();
+  const bool append_eos = add_eos && eos != LLAMA_TOKEN_NULL &&
+                          (tokens.empty() || tokens.back() != eos);
+
   // Reserve space for EOS token if needed
-  int effective_limit = limit_size;
-  if (add_eos &&
-      (tokens.empty() || tokens.back() != this->llama_->get_token_eos())) {
-    effective_limit = limit_size - 1;
-  }
+  int effective_limit = append_eos ? limit_size - 1 : limit_size;
 
   if ((int)tokens.size() > effective_limit) {
     LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
@@ -47,9 +49,8 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
     new_tokens.resize(effective_limit);
   }
 
-  if (add_eos && !new_tokens.empty() &&
-      new_tokens.back() != this->llama_->get_token_eos()) {
-    new_tokens.push_back(this->llama_->get_token_eos());
+  if (append_eos && !new_tokens.empty() && new_tokens.back() != eos) {
+    new_tokens.push_back(eos);
   }
 
   return new_tokens;
@@ -57,8 +58,11 @@ EmbeddingRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
 
 void EmbeddingRequestHandler::handle(const std::string &input_prompt,
                                      ServerSlot *slot) {
-  auto tokens =
-      common_tokenize(this->llama_->get_ctx(), input_prompt, false, true);
+  // BERT-style embedding vocabs have no EOS token; let their tokenizer add
+  // the special tokens they expect ([CLS] ... [SEP]) instead of appending EOS
+  const bool has_eos = this->llama_->get_token_eos() != LLAMA_TOKEN_NULL;
+  auto tokens = common_tokenize(this->llama_->get_ctx(), input_prompt,
+                                /*add_special=*/!has_eos, true);
   LLAMA_LOG_INFO("Tokenized prompt to %ld tokens", tokens.size());
   tokens = this->truncate_tokens(tokens, llama_n_batch(this->llama_->get_ctx()),
                                  true);
@@ -81,12 +85,14 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
                                       int limit_size, bool add_eos) {
   std::vector<llama_token> new_tokens = tokens;
 
+  // Vocabs without an EOS token (BERT-style rerankers) must never get
+  // LLAMA_TOKEN_NULL appended: it would be mistaken for a media placeholder
+  const llama_token eos = this->llama_->get_token_eos();
+  const bool append_eos = add_eos && eos != LLAMA_TOKEN_NULL &&
+                          (tokens.empty() || tokens.back() != eos);
+
   // Reserve space for EOS token if needed
-  int effective_limit = limit_size;
-  if (add_eos &&
-      (tokens.empty() || tokens.back() != this->llama_->get_token_eos())) {
-    effective_limit = limit_size - 1;
-  }
+  int effective_limit = append_eos ? limit_size - 1 : limit_size;
 
   if ((int)tokens.size() > effective_limit) {
     LLAMA_LOG_WARN("Prompt too long %ld, limit size %d, truncating...",
@@ -94,9 +100,8 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
     new_tokens.resize(effective_limit);
   }
 
-  if (add_eos && !new_tokens.empty() &&
-      new_tokens.back() != this->llama_->get_token_eos()) {
-    new_tokens.push_back(this->llama_->get_token_eos());
+  if (append_eos && !new_tokens.empty() && new_tokens.back() != eos) {
+    new_tokens.push_back(eos);
   }
 
   return new_tokens;
@@ -105,16 +110,31 @@ RerankRequestHandler::truncate_tokens(const std::vector<llama_token> &tokens,
 void RerankRequestHandler::handle(const std::string &query,
                                   const std::string &document,
                                   ServerSlot *slot) {
+  // BERT-style vocabs have no EOS token; never push special tokens the vocab
+  // does not define so no LLAMA_TOKEN_NULL ever reaches the prompt (e.g. the
+  // query/document separator is [SEP] for BERT rerankers)
+  const llama_token bos = this->llama_->get_token_bos();
+  const llama_token eos = this->llama_->get_token_eos();
+  const llama_token sep = this->llama_->get_token_sep();
+
   std::vector<llama_token> tokens;
-  tokens.push_back(this->llama_->get_token_bos());
+  if (bos != LLAMA_TOKEN_NULL) {
+    tokens.push_back(bos);
+  }
 
   auto tokens_query =
       common_tokenize(this->llama_->get_vocab(), query, false, true);
   auto truncated_query = this->truncate_tokens(
       tokens_query, (int)(this->llama_->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), truncated_query.begin(), truncated_query.end());
-  tokens.push_back(this->llama_->get_token_eos());
-  tokens.push_back(this->llama_->get_token_sep());
+
+  if (eos != LLAMA_TOKEN_NULL) {
+    tokens.push_back(eos);
+  }
+
+  if (sep != LLAMA_TOKEN_NULL) {
+    tokens.push_back(sep);
+  }
 
   auto tokens_document =
       common_tokenize(this->llama_->get_vocab(), document, false, true);
@@ -122,7 +142,10 @@ void RerankRequestHandler::handle(const std::string &query,
       tokens_document, (int)(this->llama_->params.n_batch / 2) - 2, true);
   tokens.insert(tokens.end(), truncated_document.begin(),
                 truncated_document.end());
-  tokens.push_back(this->llama_->get_token_eos());
+
+  if (eos != LLAMA_TOKEN_NULL) {
+    tokens.push_back(eos);
+  }
 
   tokens = this->truncate_tokens(tokens, llama_n_batch(this->llama_->get_ctx()),
                                  true);

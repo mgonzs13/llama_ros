@@ -321,3 +321,78 @@ TEST_F(LlamaEmbeddingGemmaTest, TextEmbeddingHasFullOutputDimension) {
   }
   EXPECT_NEAR(std::sqrt(norm), 1.0f, 1e-3f);
 }
+
+/**
+ * @brief Test suite for BERT-style embeddings (vocab without an EOS token).
+ *
+ * BERT vocabs have no EOS token, so appending one used to inject an invalid
+ * LLAMA_TOKEN_NULL into the prompt, which the run loop reported as a failed
+ * multimodal embedding.
+ */
+class LlamaBertEmbeddingsTest : public ::testing::Test {
+protected:
+  void SetUp() override {
+    params = std::make_unique<llama_utils::LlamaParams>();
+
+    params->params.n_ctx = 512;
+    params->params.n_batch = 128;
+    params->params.n_ubatch = 128;
+    params->params.cpuparams.n_threads = 1;
+    params->params.cpuparams_batch.n_threads = 1;
+    params->params.sampling.seed = LLAMA_DEFAULT_SEED;
+    params->params.embedding = true;
+
+    auto result = huggingface_hub::hf_hub_download_with_shards(
+        "mradermacher/GIST-small-Embedding-v0-GGUF",
+        "GIST-small-Embedding-v0.Q8_0.gguf");
+    ASSERT_TRUE(result.success) << "Failed to download model";
+    ASSERT_FALSE(result.path.empty()) << "Model path is empty";
+    params->params.model.path = result.path;
+
+    llama = std::make_unique<llama_ros::Llama>(params->params,
+                                               params->system_prompt);
+    ASSERT_NE(llama, nullptr);
+    ASSERT_TRUE(llama->is_embedding());
+    ASSERT_EQ(llama->get_token_eos(), LLAMA_TOKEN_NULL)
+        << "This test requires a vocab without an EOS token";
+
+    run_loop_thread = std::thread([this]() {
+      try {
+        this->llama->run_loop();
+      } catch (...) {
+      }
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  void TearDown() override {
+    if (llama) {
+      llama->cancel();
+    }
+    if (run_loop_thread.joinable()) {
+      run_loop_thread.join();
+    }
+    llama.reset();
+    params.reset();
+  }
+
+  std::unique_ptr<llama_ros::Llama> llama;
+  std::unique_ptr<llama_utils::LlamaParams> params;
+  std::thread run_loop_thread;
+};
+
+TEST_F(LlamaBertEmbeddingsTest, TextEmbeddingWithoutEosToken) {
+  auto result = llama->generate_embeddings("hello world");
+  ASSERT_TRUE(result.is_ok()) << result.error();
+  ASSERT_EQ(result.value().embeddings.size(), 1u);
+
+  const auto &embedding = result.value().embeddings.front();
+  ASSERT_EQ(embedding.size(), 384u);
+
+  float norm = 0.0f;
+  for (const float value : embedding) {
+    ASSERT_TRUE(std::isfinite(value));
+    norm += value * value;
+  }
+  EXPECT_GT(std::sqrt(norm), 0.0f);
+}
