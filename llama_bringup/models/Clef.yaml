@@ -15,7 +15,6 @@
       n_ctx: 8192
       n_batch: 2048
       n_predict: 2048
-      pooling_type: none
 
     # GPU / backend parameters
     gpu:
