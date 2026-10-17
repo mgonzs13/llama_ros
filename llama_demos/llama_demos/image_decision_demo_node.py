@@ -24,6 +24,7 @@
 
 
 import sys
+import time
 import urllib.request
 
 import cv2
@@ -103,7 +104,10 @@ def main():
     req.images = [image_msg]
     req.questions = build_questions()
 
+    initial_time = time.time()
     response = llama_client.evaluate_decisions(req)
+    end_time = time.time()
+    print(f"Time to respond: {end_time - initial_time:.2f} s")
 
     if len(response.answers) != 3:
         print(f"expected 3 answers, got {len(response.answers)}")

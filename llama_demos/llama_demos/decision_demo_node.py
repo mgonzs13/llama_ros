@@ -24,6 +24,7 @@
 
 
 import json
+import time
 
 import rclpy
 from llama_ros.llama_client_node import LlamaClientNode
@@ -110,7 +111,10 @@ def run_scenario(llama_client, scenario):
         "30 more minutes."
     )
 
+    initial_time = time.time()
     response = evaluate(llama_client, state, [choice, score, noul])
+    end_time = time.time()
+    print(f"Time to respond: {end_time - initial_time:.2f} s")
 
     if len(response.answers) != 3:
         print(f"  expected 3 answers, got {len(response.answers)}")
