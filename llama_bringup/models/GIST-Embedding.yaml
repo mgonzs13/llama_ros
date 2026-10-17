@@ -1,0 +1,21 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: mradermacher/GIST-small-Embedding-v0-GGUF
+      filename: GIST-small-Embedding-v0.Q8_0.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 2048
+      n_batch: 1024
+      n_predict: 2048
+      embedding: true
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: 0
+
+    # CPU parameters
+    cpu:
+      n_threads: 1
