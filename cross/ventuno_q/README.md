@@ -52,12 +52,15 @@ sudo rsync -aHAX --numeric-ids --info=progress2 --rsync-path="sudo -n rsync" \
   arduino@ventuno:/opt/ros ~/sysroot/opt/
 
 # /etc/alternatives is not copied, so update-alternatives symlinks (libblas.so.3,
-# liblapack.so.3) would dangle and break linking; copy the resolved files instead:
+# liblapack.so.3, libopenblas.so.0) would dangle and break linking; copy the
+# resolved files instead. On a board where BLAS/LAPACK come from OpenBLAS,
+# libblas.so.3/liblapack.so.3 are thin wrappers that need libopenblas.so.0:
 sudo rsync -aLR --numeric-ids --rsync-path="sudo -n rsync" \
   arduino@ventuno:/usr/lib/aarch64-linux-gnu/libblas.so.3 \
   arduino@ventuno:/usr/lib/aarch64-linux-gnu/liblapack.so.3 \
   arduino@ventuno:/usr/lib/aarch64-linux-gnu/libblas.so \
   arduino@ventuno:/usr/lib/aarch64-linux-gnu/liblapack.so \
+  arduino@ventuno:/usr/lib/aarch64-linux-gnu/libopenblas.so.0 \
   ~/sysroot/
 ```
 
@@ -201,9 +204,15 @@ which may let you use fewer sessions.
   board: the install tree was built with the sysroot ROS sourced. Rebuild per step 3 and
   redeploy; for an existing tree, source `/opt/ros/jazzy/setup.bash` and
   `~/ros2_ws/install/local_setup.bash` instead.
+- `warning: libopenblas.so.0, needed by .../liblapack.so.3, not found` followed by
+  `undefined reference to 'dtrti2_LN'`, `'sgemm_thread_nt'`, ... from `libblas.so.3` /
+  `liblapack.so.3`: the board gets BLAS/LAPACK from OpenBLAS, whose thin wrapper libraries
+  need `libopenblas.so.0`. That file is still a dangling `update-alternatives` symlink in
+  the sysroot. Re-run the dereferencing rsync from step 1 (it includes `libopenblas.so.0`).
 - `warning: liblapack.so.3, needed by ... not found` or `undefined reference to 'dgemm_'`,
   `'sgesdd_'`, ... from `libopencv_core.so`, `libarmadillo.so.12`, `libarpack.so.2`: dangling
-  BLAS/LAPACK symlinks in the sysroot; run the dereferencing rsync from step 1.
+  BLAS/LAPACK symlinks in the sysroot; run the dereferencing rsync from step 1. Verify with
+  `find ~/sysroot -xtype l | grep -E 'lib(blas|lapack|openblas)'`, which should print nothing.
 - `Make sure HEXAGON_SDK_ROOT ...` or `string sub-command FIND requires 3 or 4 parameters` at
   `hexagon_fun.cmake`: Hexagon SDK flags are wrong or missing; pass the `-DHEXAGON_*` and
   `-DPREBUILT_LIB_DIR=linux_aarch64` arguments from step 3.
