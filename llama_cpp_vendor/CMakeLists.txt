@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        v0.7.0
+  GIT_TAG        v0.8.0
   GIT_SHALLOW    FALSE
 )
 
@@ -136,23 +136,30 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/minimax-m3.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/muse-glimmer.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/muse-spark-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-omni.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/parakeet.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen2vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/sensenova-u1.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3a.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-seanet.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pockettts-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3tts-spkenc.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/lfm3vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/lfm3a.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/lfm3a-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/ling3vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/soprano.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/voxtral-rt.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/youtuvl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/yasa2.cpp
 )
