@@ -1,0 +1,7 @@
+<map id="llava_ros::LlavaNode" name="llava_ros::LlavaNode">
+<area shape="rect" id="Node000001" title="Represents a ROS 2 node for managing llava.cpp operations." alt="" coords="34,153,176,178"/>
+<area shape="rect" id="Node000002" href="$classllama__ros_1_1LlamaNode.html" title="Represents a ROS 2 lifecycle node for managing Llama operations." alt="" coords="30,79,180,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,120,108,152,102,152,102,120"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,205,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="108,46,108,79,102,79,102,46"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="llama_ros::Metadata::SamplingInfo" name="llama_ros::Metadata::SamplingInfo">
+<area shape="rect" id="Node000001" title="Sampling defaults stored in the model." alt="" coords="16,289,154,329"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,192,165,218"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="88,233,88,288,82,288,82,233"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="46,95,124,121"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="88,136,88,191,82,191,82,136"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="23,5,147,46"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="88,61,88,95,82,95,82,61"/>
+</map>

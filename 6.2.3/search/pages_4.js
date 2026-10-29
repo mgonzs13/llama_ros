@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['decision_20demo_0',['Decision Demo',['../index.html#autotoc_md121',1,'Decision Demo'],['../index.html#autotoc_md122',1,'Image Decision Demo']]],
+  ['decisionanswer_1',['&lt;span class=&quot;tt&quot;&gt;DecisionAnswer&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionAnswer&lt;/span&gt;)',['../index.html#autotoc_md65',1,'']]],
+  ['decisionanswer_20llama_5fmsgs_20msg_20decisionanswer_2',['&lt;span class=&quot;tt&quot;&gt;DecisionAnswer&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionAnswer&lt;/span&gt;)',['../index.html#autotoc_md65',1,'']]],
+  ['decisioninfo_3',['&lt;span class=&quot;tt&quot;&gt;DecisionInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionInfo&lt;/span&gt;)',['../index.html#autotoc_md63',1,'']]],
+  ['decisioninfo_20llama_5fmsgs_20msg_20decisioninfo_4',['&lt;span class=&quot;tt&quot;&gt;DecisionInfo&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionInfo&lt;/span&gt;)',['../index.html#autotoc_md63',1,'']]],
+  ['decisionquestion_5',['&lt;span class=&quot;tt&quot;&gt;DecisionQuestion&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionQuestion&lt;/span&gt;)',['../index.html#autotoc_md64',1,'']]],
+  ['decisionquestion_20llama_5fmsgs_20msg_20decisionquestion_6',['&lt;span class=&quot;tt&quot;&gt;DecisionQuestion&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/msg/DecisionQuestion&lt;/span&gt;)',['../index.html#autotoc_md64',1,'']]],
+  ['decoding_7',['llama_ros (Speculative Decoding)',['../index.html#autotoc_md13',1,'']]],
+  ['decoding_20demo_8',['Decoding Demo',['../index.html#autotoc_md117',1,'MTP Speculative Decoding Demo'],['../index.html#autotoc_md116',1,'Speculative Decoding Demo']]],
+  ['decoding_20speculative_9',['Speculative Decoding (&lt;span class=&quot;tt&quot;&gt;speculative.*&lt;/span&gt;)',['../index.html#autotoc_md34',1,'']]],
+  ['deepseek_20r1_10',['Chat Reasoning Demo (DeepSeek-R1)',['../index.html#autotoc_md134',1,'']]],
+  ['demo_11',['Demo',['../index.html#autotoc_md137',1,'Agent Demo'],['../index.html#autotoc_md129',1,'Chat Audio Demo'],['../index.html#autotoc_md130',1,'Chat Multi-Audio Demo'],['../index.html#autotoc_md127',1,'Chat Multi-Image (User Input) Demo'],['../index.html#autotoc_md126',1,'Chat Multi-Image Demo'],['../index.html#autotoc_md131',1,'Chat Structured Output Demo'],['../index.html#autotoc_md124',1,'Chat Template Demo'],['../index.html#autotoc_md132',1,'Chat Tools Demo'],['../index.html#autotoc_md121',1,'Decision Demo'],['../index.html#autotoc_md118',1,'Embeddings Generation Demo'],['../index.html#autotoc_md122',1,'Image Decision Demo'],['../index.html#autotoc_md115',1,'LLM Demo'],['../index.html#autotoc_md128',1,'MTMD Audio Demo'],['../index.html#autotoc_md117',1,'MTP Speculative Decoding Demo'],['../index.html#autotoc_md119',1,'Multimodal Embeddings Generation Demo'],['../index.html#autotoc_md138',1,'Parallel Slots Demo'],['../index.html#autotoc_md136',1,'PDDL Demo'],['../index.html#autotoc_md135',1,'Reasoning + Tools Demo'],['../index.html#autotoc_md120',1,'Reranking Demo'],['../index.html#autotoc_md116',1,'Speculative Decoding Demo'],['../index.html#autotoc_md133',1,'Streaming Tools Demo'],['../index.html#autotoc_md125',1,'VLM Demo']]],
+  ['demo_20deepseek_20r1_12',['Chat Reasoning Demo (DeepSeek-R1)',['../index.html#autotoc_md134',1,'']]],
+  ['demo_20llm_20chat_20template_20rag_20reranking_20stream_13',['RAG Demo (LLM + chat template + RAG + Reranking + Stream)',['../index.html#autotoc_md123',1,'']]],
+  ['demos_14',['Demos',['../index.html#autotoc_md114',1,'']]],
+  ['detokenize_15',['Detokenize',['../index.html#autotoc_md83',1,'&lt;span class=&quot;tt&quot;&gt;Detokenize&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/srv/Detokenize&lt;/span&gt;)'],['../index.html#autotoc_md93',1,'Detokenize']]],
+  ['detokenize_20llama_5fmsgs_20srv_20detokenize_16',['&lt;span class=&quot;tt&quot;&gt;Detokenize&lt;/span&gt; (&lt;span class=&quot;tt&quot;&gt;llama_msgs/srv/Detokenize&lt;/span&gt;)',['../index.html#autotoc_md83',1,'']]],
+  ['docker_17',['Docker',['../index.html#autotoc_md4',1,'']]],
+  ['documents_18',['Rerank Documents',['../index.html#autotoc_md100',1,'']]],
+  ['draft_19',['Draft Model (&lt;span class=&quot;tt&quot;&gt;speculative.draft.*&lt;/span&gt;)',['../index.html#autotoc_md35',1,'']]],
+  ['draft_20cpu_20and_20speculative_20draft_20cpu_5fbatch_20',['Draft CPU (&lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu.*&lt;/span&gt; and &lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu_batch.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['draft_20cpu_20speculative_20draft_20cpu_20and_20speculative_20draft_20cpu_5fbatch_21',['Draft CPU (&lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu.*&lt;/span&gt; and &lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu_batch.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['draft_20cpu_5fbatch_22',['Draft CPU (&lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu.*&lt;/span&gt; and &lt;span class=&quot;tt&quot;&gt;speculative.draft.cpu_batch.*&lt;/span&gt;)',['../index.html#autotoc_md36',1,'']]],
+  ['draft_20model_20speculative_20draft_23',['Draft Model (&lt;span class=&quot;tt&quot;&gt;speculative.draft.*&lt;/span&gt;)',['../index.html#autotoc_md35',1,'']]]
+];

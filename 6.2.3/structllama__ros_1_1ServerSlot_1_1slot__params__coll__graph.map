@@ -1,0 +1,12 @@
+<map id="llama_ros::ServerSlot::slot_params" name="llama_ros::ServerSlot::slot_params">
+<area shape="rect" id="Node000001" title="Parameters for slot configuration." alt="" coords="123,306,267,347"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,193,148,234"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,243,149,280,175,304,171,308,146,284,106,247"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="340,201,499,226"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="383,236,236,308,234,303,380,231"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="178,95,255,121"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="216,136,210,192,199,306,194,306,205,192,211,136"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="255,126,397,198,394,203,252,131"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="155,5,278,46"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="219,61,219,95,214,95,214,61"/>
+</map>

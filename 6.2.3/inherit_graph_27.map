@@ -1,0 +1,19 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" href="$classllama__ros_1_1RequestHandler.html" title="Base interface for request handlers." alt="" coords="5,242,182,268"/>
+<area shape="rect" id="Node000001" href="$classllama__ros_1_1ChatCompletionRequestHandler.html" title="Handles chat completion requests." alt="" coords="244,5,419,46"/>
+<area shape="poly" id="edge9_Node000000_Node000001" title=" " alt="" coords="104,227,123,189,150,144,185,97,228,57,249,44,252,49,231,61,189,101,155,147,128,192,109,229"/>
+<area shape="rect" id="Node000002" href="$classllama__ros_1_1CompletionRequestHandler.html" title="Handles text completion requests." alt="" coords="233,71,430,111"/>
+<area shape="poly" id="edge10_Node000000_Node000002" title=" " alt="" coords="112,229,161,175,193,147,228,122,253,110,256,114,231,127,197,151,165,179,116,232"/>
+<area shape="rect" id="Node000003" href="$classllama__ros_1_1DecisionRequestHandler.html" title="Handles decision evaluation requests." alt="" coords="241,136,422,177"/>
+<area shape="poly" id="edge11_Node000000_Node000003" title=" " alt="" coords="132,232,229,187,262,175,264,180,231,192,134,237"/>
+<area shape="rect" id="Node000004" href="$classllama__ros_1_1EmbeddingRequestHandler.html" title="Handles embedding generation requests." alt="" coords="234,201,429,242"/>
+<area shape="poly" id="edge12_Node000000_Node000004" title=" " alt="" coords="197,238,233,233,233,238,197,243"/>
+<area shape="rect" id="Node000005" href="$classllama__ros_1_1RerankRequestHandler.html" title="Handles reranking requests." alt="" coords="245,267,418,307"/>
+<area shape="poly" id="edge13_Node000000_Node000005" title=" " alt="" coords="198,266,245,273,245,278,197,272"/>
+<area shape="rect" id="Node000006" href="$classllava__ros_1_1LlavaChatCompletionRequestHandler.html" title="Handles chat completion requests with multimodal support." alt="" coords="230,332,433,373"/>
+<area shape="poly" id="edge14_Node000000_Node000006" title=" " alt="" coords="135,273,231,317,264,329,262,334,229,321,133,278"/>
+<area shape="rect" id="Node000007" href="$classllava__ros_1_1LlavaCompletionRequestHandler.html" title="Handles text completion requests with multimodal support." alt="" coords="243,397,420,438"/>
+<area shape="poly" id="edge15_Node000000_Node000007" title=" " alt="" coords="117,278,166,330,197,358,231,382,256,394,254,399,228,387,194,362,162,334,113,282"/>
+<area shape="rect" id="Node000008" href="$classllava__ros_1_1LlavaEmbeddingRequestHandler.html" title="Handles embedding requests with multimodal support." alt="" coords="244,463,419,503"/>
+<area shape="poly" id="edge16_Node000000_Node000008" title=" " alt="" coords="109,280,128,318,155,363,190,408,231,448,252,460,249,465,228,452,186,412,150,366,123,320,104,283"/>
+</map>

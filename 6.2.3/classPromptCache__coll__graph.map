@@ -1,0 +1,9 @@
+<map id="PromptCache" name="PromptCache">
+<area shape="rect" id="Node000001" title="Byte&#45;bounded host&#45;RAM cache of prompt/sequence states, mirroring llama.cpp&#39;s server prompt cache." alt="" coords="51,325,151,351"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,214,174,254"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="104,270,104,325,98,325,98,270"/>
+<area shape="rect" id="Node000003" href="$structllama__ros_1_1PromptCacheEntry.html" title="One cached prompt state, keyed by its token sequence." alt="" coords="5,117,197,143"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="104,158,104,213,98,213,98,158"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="39,5,163,46"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="104,62,104,117,98,117,98,62"/>
+</map>
