@@ -1,0 +1,15 @@
+<map id="llama_ros::DecisionModelConfig" name="llama_ros::DecisionModelConfig">
+<area shape="rect" id="Node000001" title="Plain configuration of a decision model, independent of llama.cpp." alt="" coords="656,95,824,135"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="382,5,506,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="522,41,632,72,686,91,685,97,631,78,520,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="364,142,524,168"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="539,144,631,133,655,129,656,134,632,138,539,149"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="178,142,255,168"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="254,133,279,124,376,106,454,102,632,110,655,110,655,115,632,115,454,108,377,111,280,130,256,138"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="271,152,364,152,364,158,271,158"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="373,192,515,233"/>
+<area shape="poly" id="edge7_Node000006_Node000004" title=" " alt="" coords="258,172,280,181,327,193,373,201,372,207,326,198,279,186,256,177"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,135,129,175"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="144,152,178,152,178,158,144,158"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="530,198,580,187,631,172,670,154,706,133,708,138,673,158,633,176,582,192,531,203"/>
+</map>
