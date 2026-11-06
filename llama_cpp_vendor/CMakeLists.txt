@@ -8,7 +8,7 @@ find_package(OpenSSL QUIET)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        v0.8.0
+  GIT_TAG        v0.9.0
   GIT_SHALLOW    FALSE
 )
 
@@ -109,6 +109,8 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-image.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/chatterbox-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/chatterbox-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/conformer.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/deepseek4v.cpp
@@ -139,6 +141,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/muse-spark-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-omni.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-transcribe.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/paddleocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/parakeet.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/pixtral.cpp
