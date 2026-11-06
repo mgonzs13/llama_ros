@@ -168,6 +168,7 @@ ros2 launch <path/to/marcoroni.launch.py>
     context:
       n_ctx: 2048
       n_batch: 8
+      n_ubatch: 8
       n_predict: 2048
     gpu:
       n_gpu_layers: 0
@@ -219,6 +220,7 @@ ros2 launch llama_bringup spaetzle.launch.py
     context:
       n_ctx: 2048 # context of the LLM in tokens
       n_batch: 8 # batch size in tokens
+      n_ubatch: 8
       n_predict: 2048 # max tokens, -1 == inf
 
     gpu:
@@ -1315,6 +1317,7 @@ LoRAs using the `/llama/list_loras` service and modify their scales values by us
     context:
       n_ctx: 2048
       n_batch: 8
+      n_ubatch: 8
       n_predict: 2048
     gpu:
       n_gpu_layers: 0
@@ -2431,6 +2434,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2686,6 +2690,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2721,6 +2726,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2756,6 +2762,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2789,6 +2796,7 @@ ros2 llama launch DeepSeek-R1.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2824,6 +2832,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2857,6 +2866,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2890,6 +2900,7 @@ ros2 llama launch Qwen3.yaml
     context:
       n_ctx: 4096
       n_batch: 256
+      n_ubatch: 256
       n_predict: -1
     gpu:
       n_gpu_layers: -1
@@ -2927,6 +2938,7 @@ ros2 llama launch SmolLM2-slots.yaml
     context:
       n_ctx: 2048
       n_batch: 8
+      n_ubatch: 8
       n_predict: 2048
       n_parallel: 4
     gpu:

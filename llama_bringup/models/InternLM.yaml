@@ -9,6 +9,7 @@
     context:
       n_ctx: 2048
       n_batch: 8
+      n_ubatch: 8
       n_predict: 2048
 
     # GPU / backend parameters
