@@ -388,3 +388,38 @@ TEST_F(LlamaParamsTest, NewV070Parameters) {
   EXPECT_EQ(params.params.speculative.draft.n_ubatch, 128);
   EXPECT_TRUE(params.params.cache_ram_explicit);
 }
+
+/**
+ * @brief Test that verifies the new llama.cpp v1.0.0 parameters and their
+ * mapping.
+ */
+TEST_F(LlamaParamsTest, NewV100Parameters) {
+  // Declared with the documented defaults
+  EXPECT_TRUE(node->get_parameter("model.shards").as_string_array().empty());
+  EXPECT_FLOAT_EQ(
+      static_cast<float>(
+          node->get_parameter("cache.moe_cache_cpu_share").as_double()),
+      0.0f);
+
+  // Shard paths and MoE CPU share are passed through
+  node->set_parameter(rclcpp::Parameter(
+      "model.shards", std::vector<std::string>{"shard.gguf"}));
+  node->set_parameter(rclcpp::Parameter("cache.moe_cache_cpu_share", 0.25));
+  llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.model.shards, std::vector<std::string>{"shard.gguf"});
+  EXPECT_FLOAT_EQ(params.params.moe_cache_cpu_share, 0.25f);
+
+  // Out-of-range shares are clamped to [0.0, 1.0]
+  node->set_parameter(rclcpp::Parameter("cache.moe_cache_cpu_share", -0.5));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_FLOAT_EQ(params.params.moe_cache_cpu_share, 0.0f);
+
+  node->set_parameter(rclcpp::Parameter("cache.moe_cache_cpu_share", 1.5));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_FLOAT_EQ(params.params.moe_cache_cpu_share, 1.0f);
+
+  // FP8 is accepted as a KV cache type
+  node->set_parameter(rclcpp::Parameter("cache.type_k", "f8_e4m3"));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.cache_type_k, GGML_TYPE_F8_E4M3);
+}

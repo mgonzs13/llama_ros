@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -46,9 +47,9 @@ void replace_all(std::string &input, const std::string &old_str,
 }
 
 const std::vector<ggml_type> kv_cache_types = {
-    GGML_TYPE_F32,    GGML_TYPE_F16,  GGML_TYPE_BF16,
-    GGML_TYPE_Q8_0,   GGML_TYPE_Q4_0, GGML_TYPE_Q4_1,
-    GGML_TYPE_IQ4_NL, GGML_TYPE_Q5_0, GGML_TYPE_Q5_1,
+    GGML_TYPE_F32,  GGML_TYPE_F16,  GGML_TYPE_BF16, GGML_TYPE_F8_E4M3,
+    GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, GGML_TYPE_Q4_1, GGML_TYPE_IQ4_NL,
+    GGML_TYPE_Q5_0, GGML_TYPE_Q5_1,
 };
 
 static ggml_type kv_cache_type_from_str(const std::string &s) {
@@ -95,6 +96,9 @@ void llama_utils::declare_llama_params(
                                               {"check_tensors", false},
                                               {"load_mtp", false},
                                           });
+
+  node->declare_parameter<std::vector<std::string>>(
+      "model.shards", std::vector<std::string>({}));
 
   // Multimodal projector parameters (mmproj.*)
   node->declare_parameters<std::string>("mmproj", {
@@ -292,6 +296,10 @@ void llama_utils::declare_llama_params(
                                               {"cache_prompt", true},
                                               {"cache_ram_explicit", false},
                                           });
+
+  node->declare_parameters<float>("cache", {
+                                               {"moe_cache_cpu_share", 0.0f},
+                                           });
 
   // Fit parameters (fit.*)
   node->declare_parameters<bool>("fit", {
@@ -509,6 +517,7 @@ LlamaParams llama_utils::get_llama_params(
   node->get_parameter("model.warmup", params.params.warmup);
   node->get_parameter("model.check_tensors", params.params.check_tensors);
   node->get_parameter("model.load_mtp", params.params.load_mtp);
+  node->get_parameter("model.shards", params.params.model.shards);
 
   if (params.params.model.path.empty()) {
     params.params.model.path = download_model(params.params.model.hf_repo,
@@ -1029,6 +1038,21 @@ LlamaParams llama_utils::get_llama_params(
     }
 
     params.params.moe_cache_size = (size_t)moe_cache_mib * 1024 * 1024;
+  }
+
+  // moe_cache_cpu_share: fraction of MoE cache misses computed on the CPU
+  {
+    node->get_parameter("cache.moe_cache_cpu_share",
+                        params.params.moe_cache_cpu_share);
+
+    if (params.params.moe_cache_cpu_share < 0.0f ||
+        params.params.moe_cache_cpu_share > 1.0f) {
+      RCLCPP_WARN(node->get_logger(),
+                  "cache.moe_cache_cpu_share must be in [0.0, 1.0], clamping "
+                  "it to the valid range");
+      params.params.moe_cache_cpu_share =
+          std::clamp(params.params.moe_cache_cpu_share, 0.0f, 1.0f);
+    }
   }
 
   params.params.cache_type_k = kv_cache_type_from_str(cache_type_k);

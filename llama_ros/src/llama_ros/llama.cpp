@@ -85,7 +85,7 @@ private:
  * cannot be read consistently (e.g. the sequence was cleared concurrently),
  * instead of aborting like common_prompt_checkpoint::update_tgt().
  */
-bool save_seq_state(std::vector<uint8_t> &data, llama_context *ctx,
+bool save_seq_state(common_state_data &data, llama_context *ctx,
                     llama_seq_id seq_id, llama_state_seq_flags flags) {
   if (ctx == nullptr) {
     return true;
@@ -110,7 +110,7 @@ bool save_seq_state(std::vector<uint8_t> &data, llama_context *ctx,
 /**
  * @brief Restore a sequence state previously captured with save_seq_state().
  */
-bool load_seq_state(const std::vector<uint8_t> &data, llama_context *ctx,
+bool load_seq_state(const common_state_data &data, llama_context *ctx,
                     llama_seq_id seq_id, llama_state_seq_flags flags) {
   if (ctx == nullptr || data.empty()) {
     return true;
