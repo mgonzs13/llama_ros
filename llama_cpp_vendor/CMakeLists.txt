@@ -4,11 +4,12 @@ project(llama_cpp_vendor)
 include(FetchContent)
 find_package(ament_cmake REQUIRED)
 find_package(OpenSSL QUIET)
+find_package(Threads REQUIRED)
 
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        v0.9.0
+  GIT_TAG        v1.0.0
   GIT_SHALLOW    FALSE
 )
 
@@ -103,12 +104,14 @@ set_target_properties(
 
 # mtmd
 add_library(mtmd
-  ${llama_SOURCE_DIR}/tools/mtmd/clip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-graph.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-helper-gen.cpp
-  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/mtmd-image.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-model.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/mtmd-subcontext.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/chatterbox-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/chatterbox-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/cogvlm.cpp
@@ -118,6 +121,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/deepseekocr2.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/dots3note.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/dotsocr.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/drama3-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/exaone4_5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4a.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4ua.cpp
@@ -132,6 +136,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llama4.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/llava.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/magevl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mimo-audio.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/mimovl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/minicpmv.cpp
@@ -172,13 +177,17 @@ target_include_directories(mtmd
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/tools/mtmd>
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/common>
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${llama_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/ggml/include>
     $<BUILD_INTERFACE:${llama_SOURCE_DIR}/vendor>
     $<INSTALL_INTERFACE:include>   
 )
 
 target_link_libraries(mtmd
+  PUBLIC
+    llama
   PRIVATE
+    Threads::Threads
     vendor::hash
     vendor::miniaudio
     vendor::stb
