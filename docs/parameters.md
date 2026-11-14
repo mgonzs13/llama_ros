@@ -13,14 +13,15 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 ## Model (`model.*`)
 
-| Param                 | Type     | Default | Description                                          |
-| --------------------- | -------- | ------- | ---------------------------------------------------- |
-| `model.path`          | `string` | `""`    | Local file path to the GGUF model                    |
-| `model.repo`          | `string` | `""`    | HuggingFace repository ID to download the model from |
-| `model.filename`      | `string` | `""`    | Filename of the model in the HuggingFace repository  |
-| `model.warmup`        | `bool`   | `true`  | Run a warmup inference on load                       |
-| `model.check_tensors` | `bool`   | `false` | Validate model tensor data on load                   |
-| `model.load_mtp`      | `bool`   | `false` | Load MTP/NextN layers for multi-token prediction     |
+| Param                 | Type       | Default | Description                                           |
+| --------------------- | ---------- | ------- | ----------------------------------------------------- |
+| `model.path`          | `string`   | `""`    | Local file path to the GGUF model                     |
+| `model.repo`          | `string`   | `""`    | HuggingFace repository ID to download the model from  |
+| `model.filename`      | `string`   | `""`    | Filename of the model in the HuggingFace repository   |
+| `model.warmup`        | `bool`     | `true`  | Run a warmup inference on load                        |
+| `model.check_tensors` | `bool`     | `false` | Validate model tensor data on load                    |
+| `model.load_mtp`      | `bool`     | `false` | Load MTP/NextN layers for multi-token prediction      |
+| `model.shards`        | `string[]` | `[]`    | Extra GGUF shards to load in addition to `model.path` |
 
 ## Multimodal Projector (`mmproj.*`)
 
@@ -159,12 +160,13 @@ The following tables list all the ROS 2 parameters available when launching `lla
 
 | Param                       | Type     | Default | Description                                                                                                                      |
 | --------------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `cache.type_k`              | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1`                                 |
+| `cache.type_k`              | `string` | `"f16"` | Data type for K cache: `f32`, `f16`, `bf16`, `f8_e4m3`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, or `q5_1`                      |
 | `cache.type_v`              | `string` | `"f16"` | Data type for V cache (same options as `cache.type_k`)                                                                           |
 | `cache.cache_prompt`        | `bool`   | `true`  | Enable prompt caching (reuse previously evaluated KV state)                                                                      |
 | `cache.cache_ram_mib`       | `int32`  | `8192`  | RAM limit for the prompt cache in MiB (`-1` = no limit, `0` = disable cache)                                                     |
 | `cache.cache_ram_explicit`  | `bool`   | `false` | Mark the prompt cache as explicitly configured. Decision models disable the prompt cache unless this is `true`                   |
 | `cache.moe_cache_mib`       | `int32`  | `0`     | GPU cache size in MiB for the MoE experts kept in host memory (split among GPUs like the layers; `0` = disabled)                 |
+| `cache.moe_cache_cpu_share` | `float`  | `0.0`   | Share of MoE cache misses computed on the CPU instead of being uploaded to the GPU, in `[0.0, 1.0]` (`0.0` = upload all)         |
 | `cache.n_cache_reuse`       | `int32`  | `0`     | Minimum chunk size in tokens to reuse from the KV cache via shifting (`0` = disabled)                                            |
 | `cache.n_ctx_checkpoints`   | `int32`  | `32`    | Maximum number of context checkpoints per slot (`0` = disabled)                                                                  |
 | `cache.checkpoint_min_step` | `int32`  | `256`   | Minimum spacing between context checkpoints                                                                                      |
