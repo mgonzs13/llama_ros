@@ -3,8 +3,8 @@ FROM ubuntu:24.04
 ARG ROS_DISTRO=jazzy
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV HEXAGON_SDK_ROOT=/opt/hexagon/6.6.0.0
-ENV HEXAGON_TOOLS_ROOT=/opt/hexagon/6.6.0.0/tools/HEXAGON_Tools/19.0.07
+ENV HEXAGON_SDK_ROOT=/opt/hexagon/6.7.0.0
+ENV HEXAGON_TOOLS_ROOT=/opt/hexagon/6.7.0.0/tools/HEXAGON_Tools/21.0.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential \
@@ -33,7 +33,7 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
       ros-${ROS_DISTRO}-ros-base \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/snapdragon-toolchain/arm64-linux:v0.7 /opt/hexagon /opt/hexagon
+COPY --from=ghcr.io/snapdragon-toolchain/arm64-linux:v0.8 /opt/hexagon /opt/hexagon
 
 RUN mkdir -p /sysroot
 

@@ -1,29 +1,19 @@
 # Cross-compiling llama_ros for the Arduino VENTUNO Q (aarch64, Hexagon / OpenCL)
 
-Builds the full `llama_ros` workspace on an x86_64 Linux host for an aarch64 target, e.g. the
-Arduino VENTUNO Q (Qualcomm Dragonwing IQ8 / QCS8275), with llama.cpp's Hexagon (NPU) and
-Adreno (OpenCL) backends enabled.
+Builds the full `llama_ros` workspace on an x86_64 Linux host for an aarch64 target, e.g. the Arduino VENTUNO Q (Qualcomm Dragonwing IQ8 / QCS8275), with llama.cpp's Hexagon (NPU) and Adreno (OpenCL) backends enabled.
 
-- `Dockerfile` — Ubuntu 24.04 cross-build image with clang for `aarch64-linux-gnu`,
-  `qemu-user-static`, ROS 2 Jazzy host tools and the Hexagon SDK 6.6.0.0 (from
-  `ghcr.io/snapdragon-toolchain/arm64-linux:v0.7`).
-- `toolchain-aarch64.cmake` — compiles against the board snapshot at `/sysroot` and searches
-  `/workspace/install` as an extra prefix, which is why `--merge-install` is mandatory.
+- `Dockerfile` — Ubuntu 24.04 cross-build image with clang for `aarch64-linux-gnu`, `qemu-user-static`, ROS 2 Jazzy host tools and the Hexagon SDK 6.7.0.0 (from `ghcr.io/snapdragon-toolchain/arm64-linux:v0.8`).
+- `toolchain-aarch64.cmake` — compiles against the board snapshot at `/sysroot` and searches `/workspace/install` as an extra prefix, which is why `--merge-install` is mandatory.
 
 ## Prerequisites
 
 - x86_64 Linux host with Docker.
-- `qemu-user-static` on the host so aarch64 binaries can run during the build:
-  `sudo apt install qemu-user-static binfmt-support` (or
-  `docker run --privileged --rm tonistiigi/binfmt --install arm64`).
-- Board running Ubuntu 24.04 + ROS 2 Jazzy, reachable over SSH as `arduino@ventuno`
-  (`ventuno` is the board's hostname or IP).
+- `qemu-user-static` on the host so aarch64 binaries can run during the build: `sudo apt install qemu-user-static binfmt-support` (or `docker run --privileged --rm tonistiigi/binfmt --install arm64`).
+- Board running Ubuntu 24.04 + ROS 2 Jazzy, reachable over SSH as `arduino@ventuno` (`ventuno` is the board's hostname or IP).
 
 ## 1. Prepare the board and create the sysroot
 
-Install the workspace dependencies on the board so the snapshot contains matching `-dev`
-packages. Only the sources are needed there (`rosdep` reads the `package.xml` files); nothing
-is built on the board:
+Install the workspace dependencies on the board so the snapshot contains matching `-dev` packages. Only the sources are needed there (`rosdep` reads the `package.xml` files); nothing is built on the board:
 
 ```bash
 git clone https://github.com/mgonzs13/llama_ros.git ~/ros2_ws/src/llama_ros
@@ -64,10 +54,7 @@ sudo rsync -aLR --numeric-ids --rsync-path="sudo -n rsync" \
   ~/sysroot/
 ```
 
-The sysroot must mirror the board: ROS belongs at `~/sysroot/opt/ros/jazzy`. Re-run all three
-rsyncs after installing or removing packages on the board. If another alternatives-managed
-file dangles (`find ~/sysroot -xtype l -lname '/etc/alternatives/*'`), dereference it the same
-way.
+The sysroot must mirror the board: ROS belongs at `~/sysroot/opt/ros/jazzy`. Re-run all three rsyncs after installing or removing packages on the board. If another alternatives-managed file dangles (`find ~/sysroot -xtype l -lname '/etc/alternatives/*'`), dereference it the same way.
 
 ## 2. Build the cross image
 
@@ -95,22 +82,17 @@ colcon build --merge-install --cmake-args \
   -DBUILD_TESTING=OFF \
   -DGGML_OPENCL=ON \
   -DGGML_HEXAGON=ON \
-  -DHEXAGON_SDK_ROOT=/opt/hexagon/6.6.0.0 \
-  -DHEXAGON_TOOLS_ROOT=/opt/hexagon/6.6.0.0/tools/HEXAGON_Tools/19.0.07 \
+  -DHEXAGON_SDK_ROOT=/opt/hexagon/6.7.0.0 \
+  -DHEXAGON_TOOLS_ROOT=/opt/hexagon/6.7.0.0/tools/HEXAGON_Tools/21.0.04 \
   -DPREBUILT_LIB_DIR=linux_aarch64
 ```
 
 Notes:
 
-- Source the container's ROS, not the sysroot copy: colcon records the underlay in
-  `install/setup.bash`, and `/opt/ros/jazzy` is the path that also exists on the board. The
-  target packages are still resolved from the sysroot by the toolchain.
-- `PREBUILT_LIB_DIR` is required by the Hexagon SDK (`hexagon_fun.cmake`); without it the
-  configure fails with `string sub-command FIND requires 3 or 4 parameters`.
-- Drop `-DGGML_OPENCL=ON` if the board has no Adreno OpenCL ICD (check with `clinfo` on the
-  board); drop `-DBUILD_TESTING=OFF` to build and cross-run tests through QEMU.
-- The backends land in `install/lib` as `libllama_ggml_hexagon.so` plus the HTP skels
-  (`libggml-htp-v73.so`, `v75`, `v79`, `v81`).
+- Source the container's ROS, not the sysroot copy: colcon records the underlay in `install/setup.bash`, and `/opt/ros/jazzy` is the path that also exists on the board. The target packages are still resolved from the sysroot by the toolchain.
+- `PREBUILT_LIB_DIR` is required by the Hexagon SDK (`hexagon_fun.cmake`); without it the configure fails with `string sub-command FIND requires 3 or 4 parameters`.
+- Drop `-DGGML_OPENCL=ON` if the board has no Adreno OpenCL ICD (check with `clinfo` on the board); drop `-DBUILD_TESTING=OFF` to build and cross-run tests through QEMU.
+- The backends land in `install/lib` as `libllama_ggml_hexagon.so` plus the HTP skels (`libggml-htp-v73.so`, `v75`, `v79`, `v81`, `v85`).
 
 To rebuild a single package while iterating:
 
@@ -128,8 +110,7 @@ rsync -aP install/ arduino@ventuno:~/ros2_ws/install/
 
 ## 5. Run on the board
 
-Set the environment before launching. `ADSP_LIBRARY_PATH` / `CDSP_LIBRARY_PATH` are how the
-FastRPC stub finds the HTP skels:
+Set the environment before launching. `ADSP_LIBRARY_PATH` / `CDSP_LIBRARY_PATH` are how the FastRPC stub finds the HTP skels:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -148,37 +129,30 @@ ggml-hex: Hexagon Arch version vXX
 load_tensors:      HTP0 model buffer size  = ...
 ```
 
-With multiple NPU sessions the registry line reports `ndev N` and each session gets its own
-`HTPi model buffer size` line (see "Multiple NPU sessions").
+With multiple NPU sessions the registry line reports `ndev N` and each session gets its own `HTPi model buffer size` line (see "Multiple NPU sessions").
 
 ## Selecting the accelerator
 
-`gpu.n_gpu_layers` (`-1` = all layers) offloads to an accelerator. With both backends built,
-OpenCL is registered first, so the Adreno GPU is picked by default. Select the NPU explicitly:
+`gpu.n_gpu_layers` (`-1` = all layers) offloads to an accelerator. With both backends built, OpenCL is registered first, so the Adreno GPU is picked by default. Select the NPU explicitly:
 
 ```bash
 ros2 run llama_ros llama_node --ros-args --params-file params.yaml \
   -p gpu.devices:="['HTP0']"
 ```
 
-Use the device names printed in the startup log (`HTP0` for the Hexagon NPU, the Adreno
-device name for OpenCL).
+Use the device names printed in the startup log (`HTP0` for the Hexagon NPU, the Adreno device name for OpenCL).
 
 ## Multiple NPU sessions (larger models)
 
-A single HTP session provides ~3 GiB of mappable memory. When the model plus its contexts
-does not fit (e.g. a 4B model with `draft-mtp` speculative decoding, which uses a second
-context), allocate several virtual sessions and layer-split across them.
+A single HTP session provides ~3 GiB of mappable memory. When the model plus its contexts does not fit (e.g. a 4B model with `draft-mtp` speculative decoding, which uses a second context), allocate several virtual sessions and layer-split across them.
 
-On the board, export the session count **before launching** — the sessions are registered when
-the Hexagon backend loads, so `gpu.devices` alone cannot create them:
+On the board, export the session count **before launching** — the sessions are registered when the Hexagon backend loads, so `gpu.devices` alone cannot create them:
 
 ```bash
 export GGML_HEXAGON_DEVICES=4   # allocates HTP0, HTP1, HTP2, HTP3
 ```
 
-Then list the sessions in the params file; with `n_gpu_layers: -1` the layers are split
-evenly:
+Then list the sessions in the params file; with `n_gpu_layers: -1` the layers are split evenly:
 
 ```yaml
 gpu:
@@ -186,42 +160,18 @@ gpu:
   devices: [HTP0, HTP1, HTP2, HTP3]
 ```
 
-With `GGML_HEXAGON_DEVICES=N` the sessions are named `HTP0` .. `HTP<N-1>`. The
-`physical:virtual` notation works too (`GGML_HEXAGON_DEVICES=HTP0:0,HTP0:1,HTP0:2,HTP0:3`),
-but the names listed in `gpu.devices` must match it exactly. If one session is enough, leave
-`gpu.devices` unset to use the default device selection. To reduce the per-session footprint,
-lower `context.n_batch` and/or set `gpu.no_kv_offload: true` (moves the KV cache to the CPU),
-which may let you use fewer sessions.
+With `GGML_HEXAGON_DEVICES=N` the sessions are named `HTP0` .. `HTP<N-1>`. The `physical:virtual` notation works too (`GGML_HEXAGON_DEVICES=HTP0:0,HTP0:1,HTP0:2,HTP0:3`), but the names listed in `gpu.devices` must match it exactly. If one session is enough, leave `gpu.devices` unset to use the default device selection. To reduce the per-session footprint, lower `context.n_batch` and/or set `gpu.no_kv_offload: true` (moves the KV cache to the CPU), which may let you use fewer sessions.
 
 ## Troubleshooting
 
-- `sudo: a terminal is required to read the password` during the sysroot pull: the `NOPASSWD`
-  rule from step 1 is missing on the board.
-- Missing package configuration or headers while configuring: the dependency is not in the
-  sysroot. Install it on the board (`rosdep install`), refresh the sysroot, and rebuild.
+- `sudo: a terminal is required to read the password` during the sysroot pull: the `NOPASSWD` rule from step 1 is missing on the board.
+- Missing package configuration or headers while configuring: the dependency is not in the sysroot. Install it on the board (`rosdep install`), refresh the sysroot, and rebuild.
 - `Exec format error` while building: QEMU/binfmt is not set up on the host.
-- `not found: "/sysroot/.../local_setup.bash"` when sourcing `install/setup.bash` on the
-  board: the install tree was built with the sysroot ROS sourced. Rebuild per step 3 and
-  redeploy; for an existing tree, source `/opt/ros/jazzy/setup.bash` and
-  `~/ros2_ws/install/local_setup.bash` instead.
-- `warning: libopenblas.so.0, needed by .../liblapack.so.3, not found` followed by
-  `undefined reference to 'dtrti2_LN'`, `'sgemm_thread_nt'`, ... from `libblas.so.3` /
-  `liblapack.so.3`: the board gets BLAS/LAPACK from OpenBLAS, whose thin wrapper libraries
-  need `libopenblas.so.0`. That file is still a dangling `update-alternatives` symlink in
-  the sysroot. Re-run the dereferencing rsync from step 1 (it includes `libopenblas.so.0`).
-- `warning: liblapack.so.3, needed by ... not found` or `undefined reference to 'dgemm_'`,
-  `'sgesdd_'`, ... from `libopencv_core.so`, `libarmadillo.so.12`, `libarpack.so.2`: dangling
-  BLAS/LAPACK symlinks in the sysroot; run the dereferencing rsync from step 1. Verify with
-  `find ~/sysroot -xtype l | grep -E 'lib(blas|lapack|openblas)'`, which should print nothing.
-- `Make sure HEXAGON_SDK_ROOT ...` or `string sub-command FIND requires 3 or 4 parameters` at
-  `hexagon_fun.cmake`: Hexagon SDK flags are wrong or missing; pass the `-DHEXAGON_*` and
-  `-DPREBUILT_LIB_DIR=linux_aarch64` arguments from step 3.
-- `ggml-hex: ... failed to open session : ... error 0x80000406` (`AEE_EUNABLETOLOAD`): the
-  FastRPC stub cannot find the HTP skel. Export `ADSP_LIBRARY_PATH` (and
-  `CDSP_LIBRARY_PATH`) as in step 5 and make sure `libggml-htp-vNN.so` was deployed.
-- `ggml-hex: ... buffer mapping failed : ... error 0x00000001` / `fastrpc_mmap failed`: the
-  model plus its contexts exceed a session's mappable address space (~3 GiB). Reduce
-  `context.n_batch`, set `gpu.no_kv_offload: true`, use a smaller model or quant, or
-  layer-split across virtual sessions (see "Multiple NPU sessions").
-- Only Hexagon architectures v73, v75, v79 and v81 have prebuilt skels. If the runtime reports
-  a different architecture, the NPU is not supported by this backend.
+- `not found: "/sysroot/.../local_setup.bash"` when sourcing `install/setup.bash` on the board: the install tree was built with the sysroot ROS sourced. Rebuild per step 3 and redeploy; for an existing tree, source `/opt/ros/jazzy/setup.bash` and `~/ros2_ws/install/local_setup.bash` instead.
+- `warning: libopenblas.so.0, needed by .../liblapack.so.3, not found` followed by `undefined reference to 'dtrti2_LN'`, `'sgemm_thread_nt'`, ... from `libblas.so.3` / `liblapack.so.3`: the board gets BLAS/LAPACK from OpenBLAS, whose thin wrapper libraries need `libopenblas.so.0`. That file is still a dangling `update-alternatives` symlink in the sysroot. Re-run the dereferencing rsync from step 1 (it includes `libopenblas.so.0`).
+- `warning: liblapack.so.3, needed by ... not found` or `undefined reference to 'dgemm_'`, `'sgesdd_'`, ... from `libopencv_core.so`, `libarmadillo.so.12`, `libarpack.so.2`: dangling BLAS/LAPACK symlinks in the sysroot; run the dereferencing rsync from step 1. Verify with `find ~/sysroot -xtype l | grep -E 'lib(blas|lapack|openblas)'`, which should print nothing.
+- `Make sure HEXAGON_SDK_ROOT ...` or `string sub-command FIND requires 3 or 4 parameters` at `hexagon_fun.cmake`: Hexagon SDK flags are wrong or missing; pass the `-DHEXAGON_*` and `-DPREBUILT_LIB_DIR=linux_aarch64` arguments from step 3.
+- `ggml-hex: ... failed to open session : ... error 0x80000406` (`AEE_EUNABLETOLOAD`): the FastRPC stub cannot find the HTP skel. Export `ADSP_LIBRARY_PATH` (and `CDSP_LIBRARY_PATH`) as in step 5 and make sure `libggml-htp-vNN.so` was deployed.
+- `ggml-hex: ... buffer mapping failed : ... error 0x00000001` / `fastrpc_mmap failed`: the model plus its contexts exceed a session's mappable address space (~3 GiB). Reduce `context.n_batch`, set `gpu.no_kv_offload: true`, use a smaller model or quant, or layer-split across virtual sessions (see "Multiple NPU sessions").
+- `call to undeclared function 'Q6_Vw_equals_Vsf'` (also `Q6_Vsf_equals_Vw`, `Q6_Vh_equals_Vhf`, `Q6_Vhf_equals_Vh`) while compiling `ggml-htp-v85`: the container still has Hexagon SDK 6.6.0.0. llama.cpp v1.0.0 builds a v85 skel, but SDK 6.6 has no v85 entry in `hexagon_arch.cmake`; it silently falls back to v68, where those intrinsics do not exist. Rebuild the cross image per step 2 (SDK 6.7.0.0 / tools 21.0.04) and remove the affected package build directories (`build/llama_cpp_vendor`, plus `build/whisper_cpp_vendor` if whisper_ros is in the same workspace) so the HTP sub-builds are reconfigured.
+- Only Hexagon architectures v73, v75, v79, v81 and v85 have prebuilt skels. If the runtime reports a different architecture, the NPU is not supported by this backend.
