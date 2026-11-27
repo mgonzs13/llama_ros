@@ -1,0 +1,12 @@
+<map id="llama_ros::Metadata::DecisionInfo" name="llama_ros::Metadata::DecisionInfo">
+<area shape="rect" id="Node000001" title="Decision&#45;model information." alt="" coords="209,306,346,347"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="28,95,106,121"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="59,136,52,159,49,185,50,210,60,234,90,266,128,289,169,305,209,315,208,320,167,310,125,294,87,270,55,237,45,212,43,184,47,158,54,135"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="198,201,357,226"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="106,126,254,198,252,203,104,130"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="70,61,70,95,64,95,64,61"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="280,242,280,306,275,306,275,242"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="382,201,509,226"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="438,242,425,264,407,284,379,302,348,314,346,309,376,297,404,280,421,261,433,239"/>
+</map>

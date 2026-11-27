@@ -1,0 +1,19 @@
+<map id="GenerateResponseActionServer" name="GenerateResponseActionServer">
+<area shape="rect" id="Node000001" title=" " alt="" coords="864,148,1071,174"/>
+<area shape="rect" id="Node000002" href="$classTestActionServer.html" title=" " alt="" coords="544,91,814,132"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="818,132,888,145,888,150,817,138"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="256,180,350,206"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="365,188,439,181,519,167,543,158,620,130,621,135,545,163,521,173,440,187,365,193"/>
+<area shape="rect" id="Node000007" href="$classTestActionServer.html" title=" " alt="" coords="564,172,794,213"/>
+<area shape="poly" id="edge7_Node000007_Node000003" title=" " alt="" coords="365,198,434,203,500,204,564,201,564,207,500,209,434,209,365,203"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="196,5,410,76"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="425,61,567,88,566,93,424,66"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="221,114,384,140"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="400,121,543,114,543,120,400,126"/>
+<area shape="poly" id="edge9_Node000007_Node000005" title=" " alt="" coords="395,141,434,148,565,170,564,176,434,153,394,146"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="5,114,87,140"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="102,125,221,125,221,130,102,130"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="809,176,863,170,864,175,810,181"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="216,232,390,303"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="404,253,519,233,607,211,609,216,521,238,405,258"/>
+</map>

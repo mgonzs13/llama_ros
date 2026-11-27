@@ -1,0 +1,11 @@
+<map id="PrecomputeCancelTest" name="PrecomputeCancelTest">
+<area shape="rect" id="Node000001" title="Real CPU inference tests with cancellation at known graph work." alt="" coords="167,79,324,105"/>
+<area shape="rect" id="Node000003" href="$classInvalidatedCacheTest.html" title="Invalidated token metadata cannot be reused as materialized KV." alt="" coords="5,153,153,178"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="205,114,108,155,106,150,202,109"/>
+<area shape="rect" id="Node000004" href="$classMultiSlotCancelTest.html" title="Shared decode batches must not be aborted for one canceled goal." alt="" coords="176,153,315,178"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="248,120,248,152,243,152,243,120"/>
+<area shape="rect" id="Node000005" href="$classResetCacheTest.html" title="Explicit context resets must also discard host&#45;RAM snapshots." alt="" coords="338,153,457,178"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="286,109,373,150,371,154,284,114"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="200,5,292,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="248,46,248,79,243,79,243,46"/>
+</map>

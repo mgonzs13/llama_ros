@@ -1,0 +1,7 @@
+<map id="llama_ros::DecisionTaskMeta" name="llama_ros::DecisionTaskMeta">
+<area shape="rect" id="Node000001" title="Where to read the model output of each option, mirroring upstream server_task::decision." alt="" coords="50,137,241,163"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,129,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,58,140,135,136,138,86,61"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="153,13,296,38"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="211,53,172,115,156,139,152,136,167,112,207,50"/>
+</map>

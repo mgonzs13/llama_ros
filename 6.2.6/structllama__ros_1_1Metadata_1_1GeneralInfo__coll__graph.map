@@ -1,0 +1,15 @@
+<map id="llama_ros::Metadata::GeneralInfo" name="llama_ros::Metadata::GeneralInfo">
+<area shape="rect" id="Node000001" title="General information about the model." alt="" coords="1087,334,1225,375"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="178,291,255,316"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="260,282,279,277,467,243,544,233,617,229,689,230,766,237,955,269,1000,281,1044,297,1118,331,1116,336,1042,302,998,286,954,274,766,243,689,236,617,235,545,239,468,248,280,282,261,287"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="592,316,751,342"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="271,304,591,322,591,327,271,309"/>
+<area shape="rect" id="Node000006" href="$structllama__ros_1_1Metadata_1_1GeneralInfo_1_1BaseModelInfo.html" title="A base model this model derives from." alt="" coords="380,417,568,457"/>
+<area shape="poly" id="edge7_Node000006_Node000002" title=" " alt="" coords="225,331,231,358,242,387,258,414,281,435,304,446,328,452,380,454,380,460,327,458,302,451,278,439,254,417,237,389,226,359,219,333"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,283,129,324"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="144,301,178,301,178,306,144,306"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="767,332,775,333,1087,348,1087,354,775,338,767,337"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="775,404,954,459"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="969,415,1063,393,1114,373,1116,378,1064,398,970,420"/>
+<area shape="poly" id="edge6_Node000005_Node000006" title=" " alt="" coords="583,433,774,430,775,435,583,438"/>
+</map>

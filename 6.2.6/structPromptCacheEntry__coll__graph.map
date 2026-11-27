@@ -1,0 +1,5 @@
+<map id="PromptCacheEntry" name="PromptCacheEntry">
+<area shape="rect" id="Node000001" title="One cached prompt state, keyed by its token sequence." alt="" coords="5,117,135,143"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="8,5,132,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="73,62,73,117,67,117,67,62"/>
+</map>
