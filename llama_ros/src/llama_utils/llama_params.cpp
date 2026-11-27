@@ -1562,6 +1562,13 @@ void llama_utils::apply_eog_logit_biases(
     llama_msgs::msg::SamplingConfig &sampling_config,
     const struct llama_vocab *vocab, const struct llama_context *ctx) {
 
+  if (sampling_config.ignore_eos && (!sampling_config.grammar.empty() ||
+                                     !sampling_config.grammar_schema.empty())) {
+    LLAMA_LOG_WARN("ignore_eos is not supported with a grammar, disabling "
+                   "ignore_eos\n");
+    sampling_config.ignore_eos = false;
+  }
+
   // Check if vocab has an EOS token when ignore_eos is enabled
   if (sampling_config.ignore_eos &&
       llama_vocab_eos(vocab) == LLAMA_TOKEN_NULL) {

@@ -423,3 +423,20 @@ TEST_F(LlamaParamsTest, NewV100Parameters) {
   params = llama_utils::get_llama_params(node);
   EXPECT_EQ(params.params.cache_type_k, GGML_TYPE_F8_E4M3);
 }
+
+/**
+ * @brief Test that verifies the new llama.cpp v1.1.0 speculative types.
+ */
+TEST_F(LlamaParamsTest, NewV110SpeculativeTypes) {
+  node->set_parameter(rclcpp::Parameter("speculative.type", "draft-dflash2"));
+  llama_utils::LlamaParams params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.speculative.types,
+            std::vector<common_speculative_type>{
+                COMMON_SPECULATIVE_TYPE_DRAFT_DFLASH2});
+
+  node->set_parameter(rclcpp::Parameter("speculative.type", "draft-lilicorr"));
+  params = llama_utils::get_llama_params(node);
+  EXPECT_EQ(params.params.speculative.types,
+            std::vector<common_speculative_type>{
+                COMMON_SPECULATIVE_TYPE_DRAFT_LILICORR});
+}

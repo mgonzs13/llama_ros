@@ -185,15 +185,15 @@ Speculative decoding uses draft tokens to accelerate generation, then verifies t
 
 **Note:** Speculative decoding requires `context.n_parallel: 1` (single slot) and is not supported with embedding/reranking models.
 
-| Param                     | Type       | Default  | Description                                                                                                                                                                                   |
-| ------------------------- | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `speculative.type`        | `string`   | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
-| `speculative.synth_len`   | `double`   | `-1.0`   | Target mean synthetic acceptance length, including the target token (benchmarking only, `-1.0` = disabled)                                                                                    |
-| `speculative.synth_rates` | `double[]` | `[]`     | Unconditional per-position synthetic acceptance probabilities (benchmarking only)                                                                                                             |
+| Param                     | Type       | Default  | Description                                                                                                                                                                                                                      |
+| ------------------------- | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `speculative.type`        | `string`   | `"none"` | Speculative decoding type: `none`, `draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`, `draft-dflash2`, `draft-lilicorr`, `ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, or `ngram-cache` |
+| `speculative.synth_len`   | `double`   | `-1.0`   | Target mean synthetic acceptance length, including the target token (benchmarking only, `-1.0` = disabled)                                                                                                                       |
+| `speculative.synth_rates` | `double[]` | `[]`     | Unconditional per-position synthetic acceptance probabilities (benchmarking only)                                                                                                                                                |
 
 ### Draft Model (`speculative.draft.*`)
 
-Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`).
+Used with draft-model-based types (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`, `draft-dflash2`, `draft-lilicorr`).
 
 | Param                                     | Type       | Default | Description                                                                                                                                                                                             |
 | ----------------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

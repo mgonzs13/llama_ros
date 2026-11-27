@@ -166,7 +166,7 @@ ros2 llama launch ~/ros2_ws/src/llama_ros/llama_bringup/models/Qwen2.yaml
 <details>
 <summary>Click to expand</summary>
 
-[Speculative decoding](https://arxiv.org/abs/2302.01318) accelerates text generation by drafting candidate tokens and verifying them in parallel with the main model. llama_ros supports draft-model-based methods (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`) and self-speculative ngram-based methods (`ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, `ngram-cache`) that require no separate model. Note that speculative decoding requires `context.n_parallel: 1`.
+[Speculative decoding](https://arxiv.org/abs/2302.01318) accelerates text generation by drafting candidate tokens and verifying them in parallel with the main model. llama_ros supports draft-model-based methods (`draft-simple`, `draft-eagle3`, `draft-mtp`, `draft-dflash`, `draft-dspark`, `draft-dflash2`, `draft-lilicorr`) and self-speculative ngram-based methods (`ngram-simple`, `ngram-map-k`, `ngram-map-k4v`, `ngram-mod`, `ngram-cache`) that require no separate model. The DFlash family types must match the head of the draft model (`draft-dflash2` and `draft-lilicorr` require their corresponding DFlash draft head). Note that speculative decoding requires `context.n_parallel: 1`.
 
 ```yaml
 /**:

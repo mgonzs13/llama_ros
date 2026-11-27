@@ -3,7 +3,7 @@ int32 n_prev                        64                              # number of 
 int32 n_probs                       0                               # if greater than 0, output the probabilities of top n_probs tokens
 int32 min_keep                      0                               # 0 = disabled, otherwise samplers should return at least min_keep tokens
 
-bool ignore_eos                     false                           # ignore end of stream token and continue generating (implies --logit-bias 2-inf)
+bool ignore_eos                     false                           # ignore end of stream token and continue generating (implies --logit-bias 2-inf); ignored when a grammar or JSON schema is set
 bool no_perf                        false                           # disable performance metrics
 bool timing_per_token               false                           # collect per-token timing data
 LogitBiasArray logit_bias                                           # logit bias for specific tokens
