@@ -9,7 +9,7 @@ find_package(Threads REQUIRED)
 FetchContent_Declare(
   llama
   GIT_REPOSITORY https://github.com/ggml-org/llama.cpp.git
-  GIT_TAG        v1.0.0
+  GIT_TAG        v1.1.0
   GIT_SHALLOW    FALSE
 )
 
@@ -122,6 +122,15 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/dots3note.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/dotsocr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/drama3-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/fish-s2-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/fish-s2-spkenc.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/zonos3-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/yue2-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/voxcpm2-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/voxcpm2-spkenc.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/snake-vae.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/music3-gen.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/zonos3-spkenc.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/exaone4_5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4a.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/gemma4ua.cpp
@@ -131,6 +140,8 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/granite-speech.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/granite4-vision.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/hunyuanvl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/hy-v4.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/inkling2v.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/internvl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimik25.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/kimivl.cpp
@@ -144,6 +155,7 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/mobilenetv5.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/muse-glimmer.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/muse-spark-audio.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/vibevoice-asr.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-v2-vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-omni.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/nemotron-transcribe.cpp
@@ -163,7 +175,10 @@ add_library(mtmd
   ${llama_SOURCE_DIR}/tools/mtmd/models/lfm3a-gen.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/qwen3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/ling3vl.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/moshi.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/soprano.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/kokoro.cpp
+  ${llama_SOURCE_DIR}/tools/mtmd/models/tiny-voca.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/siglip.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/step3vl.cpp
   ${llama_SOURCE_DIR}/tools/mtmd/models/whisper-enc.cpp
