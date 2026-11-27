@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+    # Model parameters
+    model:
+      repo: prithivMLmods/Domyn-Edge-SFT-GGUF
+      filename: Domyn-Edge-SFT.Q4_K_M.gguf
+
+    # Context / inference parameters
+    context:
+      n_ctx: 8192
+      n_batch: 256
+      n_ubatch: 256
+      n_predict: -1
+
+    # GPU / backend parameters
+    gpu:
+      n_gpu_layers: -1
+
+    # CPU parameters
+    cpu:
+      n_threads: -1
+
+    # Prompt & chat parameters
+    prompt:
+      system_prompt_type: ChatML
